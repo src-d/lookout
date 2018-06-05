@@ -1,0 +1,28 @@
+syntax = "proto3";
+package github.com.srcd.lookout;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "gopkg.in/bblfsh/sdk.v1/uast/generated.proto";
+
+option go_package = "api";
+
+// UAST uses protosizer instead of sizer, this is required for interoperability
+// with the generated proto from bblfsh.
+option (gogoproto.sizer_all) = false;
+option (gogoproto.protosizer_all) = true;
+
+message File {
+    // File path.
+    string path = 1;
+    // POSIX-style file mode.
+    uint32 mode = 2;
+    // Raw content of the file.
+    bytes content = 3;
+    // UAST.
+    gopkg.in.bblfsh.sdk.v1.uast.Node uast = 4;
+}
+
+message Change {
+    File old = 1;
+    File new = 2;
+}
