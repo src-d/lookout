@@ -59,7 +59,7 @@ message AnalysisRequest {
 }
 
 message AnalysisResponse {
-    string error = 1;
+    string status = 1;
 }
 
 // Analyzer service should be implemented by analyzers to receive analysis

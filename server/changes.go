@@ -1,7 +1,9 @@
-package api
+package server
 
 import (
 	"io"
+
+	"github.com/src-d/lookout/api"
 
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
@@ -11,7 +13,7 @@ type GitChangeScanner struct {
 	storer    storer.EncodedObjectStorer
 	base, top *object.Tree
 	tw        *object.TreeWalker
-	val       *ChangesResponse
+	val       *api.ChangesResponse
 	err       error
 	done      bool
 }
@@ -26,47 +28,50 @@ func NewGitChangeScanner(storer storer.EncodedObjectStorer,
 		tw:     object.NewTreeWalker(top, true, nil),
 	}
 }
-func NewErrorGitChangeScanner(err error) *GitChangeScanner {
-	return &GitChangeScanner{
-		done: true,
-		err:  err,
-	}
-}
 
 func (s *GitChangeScanner) Next() bool {
 	if s.done {
 		return false
 	}
 
-	name, _, err := s.tw.Next()
-	if err == io.EOF {
-		s.done = true
-		return false
+	for {
+		name, entry, err := s.tw.Next()
+		if err == io.EOF {
+			s.done = true
+			return false
+		}
+
+		if err != nil {
+			s.done = true
+			s.err = err
+			return false
+		}
+
+		if !entry.Mode.IsFile() {
+			continue
+		}
+
+		s.val = &api.ChangesResponse{}
+		s.val.Change = &api.Change{}
+		s.val.Change.New = &api.File{}
+		s.val.Change.New.Path = name
+
+		return true
 	}
-
-	if err != nil {
-		s.done = true
-		s.err = err
-		return false
-	}
-
-	s.val = &ChangesResponse{}
-	s.val.Change = &Change{}
-	s.val.Change.New = &File{}
-	s.val.Change.New.Path = name
-
-	return true
 }
 
 func (s *GitChangeScanner) Err() error {
 	return s.err
 }
 
-func (s *GitChangeScanner) Change() *ChangesResponse {
+func (s *GitChangeScanner) Change() *api.ChangesResponse {
 	return s.val
 }
 
 func (s *GitChangeScanner) Close() error {
-	s.tw.Close()
+	if s.tw != nil {
+		s.tw.Close()
+	}
+
 	return nil
 }

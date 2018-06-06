@@ -1,17 +1,19 @@
-package api
+package server
 
 import (
 	"fmt"
+
+	"github.com/src-d/lookout/api"
 )
 
 type DataReader interface {
-	GetChanges(*ChangesRequest) ChangeScanner
+	GetChanges(*api.ChangesRequest) (ChangeScanner, error)
 }
 
 type ChangeScanner interface {
 	Next() bool
 	Err() error
-	Change() *ChangesResponse
+	Change() *api.ChangesResponse
 	Close() error
 }
 
@@ -25,12 +27,18 @@ func NewServer(r DataReader) *Server {
 	}
 }
 
-var _ DataServer = &Server{}
+var _ api.DataServer = &Server{}
 
-func (s *Server) GetChanges(req *ChangesRequest, srv Data_GetChangesServer) error {
+func (s *Server) GetChanges(req *api.ChangesRequest,
+	srv api.Data_GetChangesServer) error {
+
 	ctx := srv.Context()
 	cancel := ctx.Done()
-	iter := s.DataReader.GetChanges(req)
+	iter, err := s.DataReader.GetChanges(req)
+	if err != nil {
+		return err
+	}
+
 	for iter.Next() {
 		select {
 		case <-cancel:
@@ -46,12 +54,8 @@ func (s *Server) GetChanges(req *ChangesRequest, srv Data_GetChangesServer) erro
 	}
 
 	if err := iter.Err(); err != nil {
-		if err := srv.Send(&ChangesResponse{
-			Error: err.Error(),
-		}); err != nil {
-			_ = iter.Close()
-			return err
-		}
+		_ = iter.Close()
+		return err
 	}
 
 	return iter.Close()

@@ -1,7 +1,9 @@
-package api
+package server
 
 import (
 	"fmt"
+
+	"github.com/src-d/lookout/api"
 
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -22,35 +24,37 @@ func NewGitDataReader(loader server.Loader) *GitDataReader {
 	}
 }
 
-func (r *GitDataReader) GetChanges(req *ChangesRequest) ChangeScanner {
+func (r *GitDataReader) GetChanges(req *api.ChangesRequest) (
+	ChangeScanner, error) {
 	ep, err := transport.NewEndpoint(req.GetRepository())
 	if err != nil {
-		return NewErrorGitChangeScanner(err)
+		return nil, err
 	}
 
 	s, err := r.loader.Load(ep)
 	if err != nil {
-		return NewErrorGitChangeScanner(err)
+		return nil, err
 	}
 
 	if req.GetTop() == "" {
-		return NewErrorGitChangeScanner(fmt.Errorf("top commit is mandatory"))
+		return nil, fmt.Errorf("top commit is mandatory")
 	}
 
 	var base, top *object.Tree
-	if req.GetBase() == "" {
+	if req.GetBase() != "" {
 		base, err = r.resolveCommitTree(s, plumbing.NewHash(req.GetBase()))
 		if err != nil {
-			return NewErrorGitChangeScanner(err)
+			return nil, fmt.Errorf("error retrieving base commit %s: %s",
+				req.GetBase(), err)
 		}
 	}
 
 	top, err = r.resolveCommitTree(s, plumbing.NewHash(req.GetTop()))
 	if err != nil {
-		return NewErrorGitChangeScanner(err)
+		return nil, err
 	}
 
-	return NewGitChangeScanner(s, base, top)
+	return NewGitChangeScanner(s, base, top), nil
 }
 
 const maxResolveLength = 20
