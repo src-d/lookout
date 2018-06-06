@@ -1,3 +1,3 @@
 package api
 
-//go:generate protoc --gofast_out=. api.proto
+//go:generate protoc --gofast_out=plugins=grpc:. api.proto

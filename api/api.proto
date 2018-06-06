@@ -26,3 +26,47 @@ message Change {
     File old = 1;
     File new = 2;
 }
+
+message ChangesRequest {
+    string repository = 1;
+    string base = 2;
+    string top = 3;
+    repeated FileSelector file_sectors = 4;
+}
+
+message FileSelector {
+    repeated string include_paths = 1;
+    repeated string exclude_paths = 2;
+    bool changed_only = 3;
+    bool want_contents = 4;
+    bool want_uast = 5;
+}
+
+message ChangesResponse {
+    string error = 1;
+    Change change = 2;
+}
+
+// Data services exposes VCS repositories.
+service Data {
+    rpc GetChanges (ChangesRequest) returns (stream ChangesResponse);
+}
+
+message AnalysisRequest {
+    string repository = 2;
+    string base_hash = 3;
+    string new_hash = 4;
+}
+
+message AnalysisResponse {
+    string error = 1;
+}
+
+// Analyzer service should be implemented by analyzers to receive analysis
+// requests from the server. It is currently implemented as a single long-lived
+// request, so cancellation is managed at gRPC level. Depending on how we plan
+// to implement the server, we might want to implement sending results as a
+// callback. For now, this is kept simple.
+service Analyzer {
+    rpc Analyze (AnalysisRequest) returns (AnalysisResponse);
+}
