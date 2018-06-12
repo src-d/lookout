@@ -3,19 +3,48 @@ package provider
 import (
 	"fmt"
 	"strings"
+	"time"
+
+	"gopkg.in/sourcegraph/go-vcsurl.v1"
 
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
+type PullRequestEvent struct {
+	ID        string //TODO: improve ID references
+	Action    string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Mergeable bool
+	PushEvent
+}
+
+func (e *PullRequestEvent) String() string {
+	return fmt.Sprintf(
+		"[pull-request] %s -{%d}-> %s",
+		e.Head.Reference.String(), len(e.Commits), e.Base.Reference.String(),
+	)
+}
+
 type PushEvent struct {
-	Reference plumbing.ReferenceName
-	// Head of the reference after pushing.
-	Head plumbing.Hash
+	Head ReferencePointer
 	// Head of the reference before pushing.
-	Base plumbing.Hash
+	Base ReferencePointer
 	// Commits included on this push event.
-	Commits []CommitPointer
+	Commits CommitPointers
+}
+
+func (e *PushEvent) String() string {
+	return fmt.Sprintf(
+		"[push] %s -{%d}-> %s",
+		e.Head.Reference.String(), len(e.Commits), e.Base.Reference.String(),
+	)
+}
+
+type ReferencePointer struct {
+	Repository *vcsurl.RepoInfo //TODO(mcuadros): improve repository references
+	Reference  *plumbing.Reference
 }
 
 type CommitPointer struct {
@@ -36,6 +65,17 @@ func (c *CommitPointer) String() string {
 		plumbing.CommitObject, c.Hash, c.Author.String(),
 		indent(c.Message),
 	)
+}
+
+type CommitPointers []CommitPointer
+
+func (c CommitPointers) String() string {
+	output := ""
+	for _, commit := range c {
+		output += commit.String()
+	}
+
+	return output
 }
 
 func indent(t string) string {

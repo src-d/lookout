@@ -7,13 +7,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-github/github"
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
 	"github.com/src-d/lookout/provider"
 	"gopkg.in/sourcegraph/go-vcsurl.v1"
-	errors "gopkg.in/src-d/go-errors.v0"
+	"gopkg.in/src-d/go-errors.v0"
 	"gopkg.in/src-d/go-log.v1"
 )
 
@@ -45,7 +44,7 @@ func (w *Watcher) Watch(ctx context.Context, opts provider.WatchOptions) error {
 			return err
 		}
 
-		w.handleEvents(events)
+		w.handleEvents(r, events)
 
 		fmt.Println(len(events), err, "sleep", w.poolInterval)
 		time.Sleep(w.poolInterval)
@@ -54,21 +53,24 @@ func (w *Watcher) Watch(ctx context.Context, opts provider.WatchOptions) error {
 	return nil
 }
 
-func (w *Watcher) handleEvents(events []*github.Event) {
+func (w *Watcher) handleEvents(r *vcsurl.RepoInfo, events []*github.Event) {
 	for _, e := range events {
-		if err := w.handleEvent(e); err != nil {
+		if err := w.handleEvent(r, e); err != nil {
 			fmt.Println(err)
 		}
 	}
 }
-func (w *Watcher) handleEvent(e *github.Event) error {
-	event, err := castEvent(e)
+func (w *Watcher) handleEvent(r *vcsurl.RepoInfo, e *github.Event) error {
+	event, err := castEvent(r, e)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(*e.Type)
-	spew.Dump(event)
+	if event == nil {
+		return nil
+	}
+
+	fmt.Println(event)
 
 	return nil
 }
