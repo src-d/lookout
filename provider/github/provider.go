@@ -90,8 +90,6 @@ func (w *Watcher) doEventRequest(ctx context.Context, username, repository strin
 		"reset-at":           resp.Rate.Reset,
 	}).Debugf("Requested more events")
 
-	//fmt.Println(resp.Response)
-
 	secs, _ := strconv.Atoi(resp.Response.Header.Get("X-Poll-Interval"))
 	w.poolInterval = time.Duration(secs) * time.Second
 

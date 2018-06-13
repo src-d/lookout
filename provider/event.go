@@ -2,44 +2,65 @@ package provider
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"gopkg.in/sourcegraph/go-vcsurl.v1"
-
 	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
+// Revision defines a range of commits, from a base to a head.
+type Revision struct {
+	// Base of the revision.
+	Base ReferencePointer
+	// Head of the revision.
+	Head ReferencePointer
+}
+
+func (r Revision) String() string {
+	if r.Base.Repository.CloneURL == r.Head.Repository.CloneURL {
+		return fmt.Sprintf("%s..%s", r.Head.Short(), r.Base.Short())
+	}
+
+	return fmt.Sprintf("%s..%s", r.Head.String(), r.Base.String())
+}
+
+// PullRequestEvent represents a PullRequest being created or updated.
 type PullRequestEvent struct {
-	ID        string //TODO: improve ID references
-	Action    string
+	ID string //TODO: improve ID references
+	// CreateAt is the timestamp of the creation date of the pull request.
 	CreatedAt time.Time
+	// UpdatedAt is the timestamp of the last modification of the pull request.
 	UpdatedAt time.Time
-	Mergeable bool
-	PushEvent
+	// IsMergeable, if the pull request is mergeable.
+	IsMergeable bool
+	// Source reference to the original branch and repository were the changes
+	// came from.
+	Source ReferencePointer
+	// Merge  test branch where the PullRequest was merged.
+	Merge ReferencePointer
+
+	Revision
 }
 
 func (e *PullRequestEvent) String() string {
-	return fmt.Sprintf(
-		"[pull-request] %s -{%d}-> %s",
-		e.Head.Reference.String(), len(e.Commits), e.Base.Reference.String(),
-	)
+	return fmt.Sprintf("[pull-request] %s", e.Revision)
 }
 
 type PushEvent struct {
-	Head ReferencePointer
-	// Head of the reference before pushing.
-	Base ReferencePointer
-	// Commits included on this push event.
-	Commits CommitPointers
+	ID string //TODO: improve ID references
+	// CreateAt is the timestamp of the creation date of the push event.
+	CreatedAt time.Time
+	// Commits is the number of commits in the push.
+	Commits int
+	// Commits is the number of distinct commits in the push.
+	DistinctCommits int
+
+	Revision
 }
 
 func (e *PushEvent) String() string {
-	return fmt.Sprintf(
-		"[push] %s -{%d}-> %s",
-		e.Head.Reference.String(), len(e.Commits), e.Base.Reference.String(),
-	)
+	return fmt.Sprintf("[push] %s", e.Revision)
+
 }
 
 type ReferencePointer struct {
@@ -47,46 +68,19 @@ type ReferencePointer struct {
 	Reference  *plumbing.Reference
 }
 
-type CommitPointer struct {
-	// Hahs of the commit.
-	Hash plumbing.Hash
-	// Author of the commit.
-	Author object.Signature
-	// Message is the commit message.
-	Message string
-	// Distinct whether this commit is distinct from any that have been pushed
-	// before.
-	Distinct bool
-}
-
-func (c *CommitPointer) String() string {
+// Short is a short string representation of a ReferencePointer.
+func (e *ReferencePointer) Short() string {
 	return fmt.Sprintf(
-		"%s %s\nAuthor: %s\n\n%s\n",
-		plumbing.CommitObject, c.Hash, c.Author.String(),
-		indent(c.Message),
+		"%s@%s",
+		e.Reference.Name().Short(),
+		e.Reference.Hash().String()[0:6],
 	)
 }
 
-type CommitPointers []CommitPointer
-
-func (c CommitPointers) String() string {
-	output := ""
-	for _, commit := range c {
-		output += commit.String()
-	}
-
-	return output
-}
-
-func indent(t string) string {
-	var output []string
-	for _, line := range strings.Split(t, "\n") {
-		if len(line) != 0 {
-			line = "    " + line
-		}
-
-		output = append(output, line)
-	}
-
-	return strings.Join(output, "\n")
+func (e *ReferencePointer) String() string {
+	return fmt.Sprintf(
+		"%s/%s@%s",
+		e.Repository.CloneURL, e.Reference.Name().Short(),
+		e.Reference.Hash().String()[0:6],
+	)
 }
