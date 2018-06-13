@@ -1,10 +1,12 @@
 package git
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/src-d/lookout/api"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/src-d/go-git-fixtures.v3"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -73,4 +75,161 @@ func (s *ScannerSuite) TestTreeScanner() {
 	require.NoError(cs.Close())
 
 	require.Len(changes, 9)
+}
+
+func (s *ScannerSuite) TestFilterScannerIncludeAll() {
+	fixtures := []*api.ChangesRequest{
+		{},
+		{IncludePattern: ".*"},
+	}
+
+	for i, fixture := range fixtures {
+		s.T().Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			require := require.New(t)
+
+			head := s.getCommit(s.Basic.Head)
+			headTree, err := head.Tree()
+			require.NoError(err)
+
+			cs := NewFilterScanner(
+				NewTreeScanner(s.Storer, headTree),
+				fixture.IncludePattern, fixture.ExcludePattern,
+			)
+
+			var changes []*api.Change
+			for cs.Next() {
+				changes = append(changes, cs.Change())
+			}
+
+			require.False(cs.Next())
+			require.NoError(cs.Err())
+			require.NoError(cs.Close())
+
+			require.Len(changes, 9)
+		})
+	}
+}
+
+func (s *ScannerSuite) TestFilterIncludeSome() {
+	fixtures := []*api.ChangesRequest{
+		{IncludePattern: `.*\.go`},
+		{IncludePattern: `.*\.go`, ExcludePattern: `.*\.php`},
+	}
+
+	for i, fixture := range fixtures {
+		s.T().Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			require := require.New(t)
+
+			head := s.getCommit(s.Basic.Head)
+			headTree, err := head.Tree()
+			require.NoError(err)
+
+			cs := NewFilterScanner(
+				NewTreeScanner(s.Storer, headTree),
+				fixture.IncludePattern, fixture.ExcludePattern,
+			)
+
+			var changes []*api.Change
+			for cs.Next() {
+				changes = append(changes, cs.Change())
+			}
+
+			require.False(cs.Next())
+			require.NoError(cs.Err())
+			require.NoError(cs.Close())
+
+			require.Len(changes, 2)
+		})
+	}
+}
+
+func (s *ScannerSuite) TestFilterExcludeOne() {
+	fixtures := []*api.ChangesRequest{
+		{IncludePattern: "", ExcludePattern: `\.gitignore`},
+		{IncludePattern: ".*", ExcludePattern: `json/short\.json`},
+	}
+
+	for i, fixture := range fixtures {
+		s.T().Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			require := require.New(t)
+
+			head := s.getCommit(s.Basic.Head)
+			headTree, err := head.Tree()
+			require.NoError(err)
+
+			cs := NewFilterScanner(
+				NewTreeScanner(s.Storer, headTree),
+				fixture.IncludePattern, fixture.ExcludePattern,
+			)
+
+			var changes []*api.Change
+			for cs.Next() {
+				changes = append(changes, cs.Change())
+			}
+
+			require.False(cs.Next())
+			require.NoError(cs.Err())
+			require.NoError(cs.Close())
+
+			require.Len(changes, 8)
+		})
+	}
+}
+
+func (s *ScannerSuite) TestBlobScanner() {
+	require := s.Require()
+
+	head := s.getCommit(s.Basic.Head)
+	headTree, err := head.Tree()
+	require.NoError(err)
+
+	cs := NewBlobScanner(
+		NewTreeScanner(s.Storer, headTree),
+		s.Storer,
+	)
+
+	changes := make(map[string]*api.Change)
+	for cs.Next() {
+		ch := cs.Change()
+		changes[ch.New.Path] = ch
+	}
+
+	require.False(cs.Next())
+	require.NoError(cs.Err())
+	require.NoError(cs.Close())
+
+	require.Len(changes, 9)
+	require.Equal(`package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, playground")
+}
+`, string(changes["vendor/foo.go"].New.Content))
+}
+
+func (s *ScannerSuite) TestDiffTreeScanner() {
+	require := s.Require()
+
+	head := s.getCommit(s.Basic.Head)
+	headTree, err := head.Tree()
+	require.NoError(err)
+
+	parent, err := head.Parent(0)
+	require.NoError(err)
+	parentTree, err := parent.Tree()
+	require.NoError(err)
+
+	cs := NewDiffTreeScanner(s.Storer, parentTree, headTree)
+	var changes []*api.Change
+	for cs.Next() {
+		changes = append(changes, cs.Change())
+	}
+
+	require.False(cs.Next())
+	require.NoError(cs.Err())
+	require.NoError(cs.Close())
+
+	require.Len(changes, 1)
 }

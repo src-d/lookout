@@ -49,15 +49,29 @@ func (r *Service) GetChanges(req *api.ChangesRequest) (
 		}
 	}
 
-	//TODO
-	_ = base
-
 	top, err = r.resolveCommitTree(s, plumbing.NewHash(req.GetTop()))
 	if err != nil {
 		return nil, err
 	}
 
-	return NewTreeScanner(s, top), nil
+	var scanner api.ChangeScanner
+
+	if base == nil {
+		scanner = NewTreeScanner(s, top)
+	} else {
+		scanner = NewDiffTreeScanner(s, base, top)
+	}
+
+	if req.IncludePattern != "" || req.ExcludePattern != "" {
+		scanner = NewFilterScanner(scanner,
+			req.IncludePattern, req.ExcludePattern)
+	}
+
+	if req.GetWantContents() {
+		scanner = NewBlobScanner(scanner, s)
+	}
+
+	return scanner, nil
 }
 
 const maxResolveLength = 20

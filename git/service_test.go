@@ -43,7 +43,7 @@ func (s *ServiceSuite) TearDownSuite() {
 	require.NoError(err)
 }
 
-func (s *ServiceSuite) Test() {
+func (s *ServiceSuite) TestTree() {
 	require := s.Require()
 
 	dr := NewService(server.MapLoader{
@@ -52,6 +52,22 @@ func (s *ServiceSuite) Test() {
 
 	resp, err := dr.GetChanges(&api.ChangesRequest{
 		Repository: "repo:///myrepo",
+		Top:        s.Basic.Head.String(),
+	})
+	require.NoError(err)
+	require.NotNil(resp)
+}
+
+func (s *ServiceSuite) TestDiffTree() {
+	require := s.Require()
+
+	dr := NewService(server.MapLoader{
+		"repo:///myrepo": s.Storer,
+	})
+
+	resp, err := dr.GetChanges(&api.ChangesRequest{
+		Repository: "repo:///myrepo",
+		Base:       "918c48b83bd081e863dbe1b80f8998f058cd8294",
 		Top:        s.Basic.Head.String(),
 	})
 	require.NoError(err)

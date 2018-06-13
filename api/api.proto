@@ -16,10 +16,12 @@ message File {
     string path = 1;
     // POSIX-style file mode.
     uint32 mode = 2;
+    // SHA1 of the file contents.
+    string sha1 = 3;
     // Raw content of the file.
-    bytes content = 3;
+    bytes content = 4;
     // UAST.
-    gopkg.in.bblfsh.sdk.v1.uast.Node uast = 4;
+    gopkg.in.bblfsh.sdk.v1.uast.Node uast = 5;
 }
 
 message Change {
@@ -31,15 +33,11 @@ message ChangesRequest {
     string repository = 1;
     string base = 2;
     string top = 3;
-    repeated FileSelector file_sectors = 4;
-}
-
-message FileSelector {
-    repeated string include_paths = 1;
-    repeated string exclude_paths = 2;
-    bool changed_only = 3;
-    bool want_contents = 4;
-    bool want_uast = 5;
+    string include_pattern = 4;
+    string exclude_pattern = 5;
+    bool changed_only = 6;
+    bool want_contents = 7;
+    bool want_uast = 8;
 }
 
 // Data services exposes VCS repositories.
