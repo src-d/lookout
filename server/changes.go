@@ -13,7 +13,7 @@ type GitChangeScanner struct {
 	storer    storer.EncodedObjectStorer
 	base, top *object.Tree
 	tw        *object.TreeWalker
-	val       *api.ChangesResponse
+	val       *api.Change
 	err       error
 	done      bool
 }
@@ -51,10 +51,9 @@ func (s *GitChangeScanner) Next() bool {
 			continue
 		}
 
-		s.val = &api.ChangesResponse{}
-		s.val.Change = &api.Change{}
-		s.val.Change.New = &api.File{}
-		s.val.Change.New.Path = name
+		s.val = &api.Change{}
+		s.val.New = &api.File{}
+		s.val.New.Path = name
 
 		return true
 	}
@@ -64,7 +63,7 @@ func (s *GitChangeScanner) Err() error {
 	return s.err
 }
 
-func (s *GitChangeScanner) Change() *api.ChangesResponse {
+func (s *GitChangeScanner) Change() *api.Change {
 	return s.val
 }
 

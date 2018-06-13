@@ -42,14 +42,9 @@ message FileSelector {
     bool want_uast = 5;
 }
 
-message ChangesResponse {
-    string error = 1;
-    Change change = 2;
-}
-
 // Data services exposes VCS repositories.
 service Data {
-    rpc GetChanges (ChangesRequest) returns (stream ChangesResponse);
+    rpc GetChanges (ChangesRequest) returns (stream Change);
 }
 
 message AnalysisRequest {

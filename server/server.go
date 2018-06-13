@@ -13,7 +13,7 @@ type DataReader interface {
 type ChangeScanner interface {
 	Next() bool
 	Err() error
-	Change() *api.ChangesResponse
+	Change() *api.Change
 	Close() error
 }
 

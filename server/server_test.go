@@ -198,14 +198,12 @@ func TestServerGetChangesIterError(t *testing.T) {
 	tearDownDataServer(t, srv)
 }
 
-func generateChanges(size int) []*api.ChangesResponse {
-	var changes []*api.ChangesResponse
+func generateChanges(size int) []*api.Change {
+	var changes []*api.Change
 	for i := 0; i < size; i++ {
-		changes = append(changes, &api.ChangesResponse{
-			Change: &api.Change{
-				New: &api.File{
-					Path: fmt.Sprintf("myfile%d", i),
-				},
+		changes = append(changes, &api.Change{
+			New: &api.File{
+				Path: fmt.Sprintf("myfile%d", i),
 			},
 		})
 	}
@@ -228,10 +226,10 @@ func (r *MockDataReader) GetChanges(req *api.ChangesRequest) (
 }
 
 type SliceChangeScanner struct {
-	Changes    []*api.ChangesResponse
+	Changes    []*api.Change
 	Error      error
 	ChangeTick chan struct{}
-	val        *api.ChangesResponse
+	val        *api.Change
 }
 
 func (s *SliceChangeScanner) Next() bool {
@@ -252,7 +250,7 @@ func (s *SliceChangeScanner) Err() error {
 	return s.Error
 }
 
-func (s *SliceChangeScanner) Change() *api.ChangesResponse {
+func (s *SliceChangeScanner) Change() *api.Change {
 	if s.ChangeTick != nil {
 		<-s.ChangeTick
 	}

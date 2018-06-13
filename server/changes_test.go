@@ -63,7 +63,7 @@ func (s *GitChangeScannerSuite) TestOneCommit() {
 	require.NoError(err)
 
 	cs := NewGitChangeScanner(s.Storer, nil, headTree)
-	var changes []*api.ChangesResponse
+	var changes []*api.Change
 	for cs.Next() {
 		changes = append(changes, cs.Change())
 	}
