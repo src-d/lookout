@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/src-d/lookout/api"
+	"github.com/src-d/lookout/git"
 	apisrv "github.com/src-d/lookout/server"
 
 	"github.com/stretchr/testify/suite"
@@ -38,7 +39,7 @@ func (s *DummySuite) SetupSuite() {
 	require.NoError(err)
 
 	s.apiServer = grpc.NewServer()
-	server := apisrv.NewServer(apisrv.NewGitDataReader(
+	server := apisrv.NewServer(git.NewService(
 		gitsrv.MapLoader{
 			"repo:///fixture/basic": sto,
 		},

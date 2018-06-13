@@ -1,4 +1,4 @@
-package server
+package git
 
 import (
 	"io"
@@ -9,27 +9,26 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 )
 
-type GitChangeScanner struct {
-	storer    storer.EncodedObjectStorer
-	base, top *object.Tree
-	tw        *object.TreeWalker
-	val       *api.Change
-	err       error
-	done      bool
+type TreeScanner struct {
+	storer storer.EncodedObjectStorer
+	tree   *object.Tree
+	tw     *object.TreeWalker
+	val    *api.Change
+	err    error
+	done   bool
 }
 
-func NewGitChangeScanner(storer storer.EncodedObjectStorer,
-	base, top *object.Tree) *GitChangeScanner {
+func NewTreeScanner(storer storer.EncodedObjectStorer,
+	tree *object.Tree) *TreeScanner {
 
-	return &GitChangeScanner{
+	return &TreeScanner{
 		storer: storer,
-		base:   base,
-		top:    top,
-		tw:     object.NewTreeWalker(top, true, nil),
+		tree:   tree,
+		tw:     object.NewTreeWalker(tree, true, nil),
 	}
 }
 
-func (s *GitChangeScanner) Next() bool {
+func (s *TreeScanner) Next() bool {
 	if s.done {
 		return false
 	}
@@ -59,15 +58,15 @@ func (s *GitChangeScanner) Next() bool {
 	}
 }
 
-func (s *GitChangeScanner) Err() error {
+func (s *TreeScanner) Err() error {
 	return s.err
 }
 
-func (s *GitChangeScanner) Change() *api.Change {
+func (s *TreeScanner) Change() *api.Change {
 	return s.val
 }
 
-func (s *GitChangeScanner) Close() error {
+func (s *TreeScanner) Close() error {
 	if s.tw != nil {
 		s.tw.Close()
 	}

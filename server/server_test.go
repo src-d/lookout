@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func setupDataServer(t *testing.T, dr *MockDataReader) (*grpc.Server,
+func setupDataServer(t *testing.T, dr *MockService) (*grpc.Server,
 	api.DataClient) {
 
 	t.Helper()
@@ -50,7 +50,7 @@ func TestServerOk(t *testing.T) {
 			Top:        "5262fd2b59d10e335a5c941140df16950958322d",
 		}
 		changes := generateChanges(i)
-		dr := &MockDataReader{
+		dr := &MockService{
 			T:               t,
 			ExpectedRequest: req,
 			ChangeScanner:   &SliceChangeScanner{Changes: changes},
@@ -89,7 +89,7 @@ func TestServerCancel(t *testing.T) {
 			}
 			changes := generateChanges(i)
 			tick := make(chan struct{}, 1)
-			dr := &MockDataReader{
+			dr := &MockService{
 				T:               t,
 				ExpectedRequest: req,
 				ChangeScanner: &SliceChangeScanner{
@@ -141,7 +141,7 @@ func TestServerGetChangesError(t *testing.T) {
 	}
 	changes := generateChanges(10)
 	ExpectedError := fmt.Errorf("TEST ERROR")
-	dr := &MockDataReader{
+	dr := &MockService{
 		T:               t,
 		ExpectedRequest: req,
 		Error:           ExpectedError,
@@ -173,7 +173,7 @@ func TestServerGetChangesIterError(t *testing.T) {
 	}
 	changes := generateChanges(10)
 	ExpectedError := fmt.Errorf("TEST ERROR")
-	dr := &MockDataReader{
+	dr := &MockService{
 		T:               t,
 		ExpectedRequest: req,
 		ChangeScanner: &SliceChangeScanner{
@@ -211,15 +211,15 @@ func generateChanges(size int) []*api.Change {
 	return changes
 }
 
-type MockDataReader struct {
+type MockService struct {
 	T               *testing.T
 	ExpectedRequest *api.ChangesRequest
-	ChangeScanner   ChangeScanner
+	ChangeScanner   api.ChangeScanner
 	Error           error
 }
 
-func (r *MockDataReader) GetChanges(req *api.ChangesRequest) (
-	ChangeScanner, error) {
+func (r *MockService) GetChanges(req *api.ChangesRequest) (
+	api.ChangeScanner, error) {
 	require := require.New(r.T)
 	require.Equal(r.ExpectedRequest, req)
 	return r.ChangeScanner, r.Error

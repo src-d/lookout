@@ -6,24 +6,13 @@ import (
 	"github.com/src-d/lookout/api"
 )
 
-type DataReader interface {
-	GetChanges(*api.ChangesRequest) (ChangeScanner, error)
-}
-
-type ChangeScanner interface {
-	Next() bool
-	Err() error
-	Change() *api.Change
-	Close() error
-}
-
 type Server struct {
-	DataReader DataReader
+	Service api.Service
 }
 
-func NewServer(r DataReader) *Server {
+func NewServer(s api.Service) *Server {
 	return &Server{
-		DataReader: r,
+		Service: s,
 	}
 }
 
@@ -34,7 +23,7 @@ func (s *Server) GetChanges(req *api.ChangesRequest,
 
 	ctx := srv.Context()
 	cancel := ctx.Done()
-	iter, err := s.DataReader.GetChanges(req)
+	iter, err := s.Service.GetChanges(req)
 	if err != nil {
 		return err
 	}

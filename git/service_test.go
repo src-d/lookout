@@ -1,4 +1,4 @@
-package server
+package git
 
 import (
 	"testing"
@@ -11,17 +11,17 @@ import (
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
 
-type GitDataReaderSuite struct {
+type ServiceSuite struct {
 	suite.Suite
 	Basic  *fixtures.Fixture
 	Storer storer.Storer
 }
 
-func TestGitDataReaderSuite(t *testing.T) {
-	suite.Run(t, new(GitDataReaderSuite))
+func TestServiceSuite(t *testing.T) {
+	suite.Run(t, new(ServiceSuite))
 }
 
-func (s *GitDataReaderSuite) SetupSuite() {
+func (s *ServiceSuite) SetupSuite() {
 	require := s.Require()
 
 	err := fixtures.Init()
@@ -36,17 +36,17 @@ func (s *GitDataReaderSuite) SetupSuite() {
 	s.Storer = sto
 }
 
-func (s *GitDataReaderSuite) TearDownSuite() {
+func (s *ServiceSuite) TearDownSuite() {
 	require := s.Require()
 
 	err := fixtures.Clean()
 	require.NoError(err)
 }
 
-func (s *GitDataReaderSuite) Test() {
+func (s *ServiceSuite) Test() {
 	require := s.Require()
 
-	dr := NewGitDataReader(server.MapLoader{
+	dr := NewService(server.MapLoader{
 		"repo:///myrepo": s.Storer,
 	})
 
@@ -58,10 +58,10 @@ func (s *GitDataReaderSuite) Test() {
 	require.NotNil(resp)
 }
 
-func (s *GitDataReaderSuite) TestErrorNoRepository() {
+func (s *ServiceSuite) TestErrorNoRepository() {
 	require := s.Require()
 
-	dr := NewGitDataReader(server.MapLoader{})
+	dr := NewService(server.MapLoader{})
 
 	resp, err := dr.GetChanges(&api.ChangesRequest{
 		Repository: "repo:///myrepo",
@@ -71,10 +71,10 @@ func (s *GitDataReaderSuite) TestErrorNoRepository() {
 	require.Nil(resp)
 }
 
-func (s *GitDataReaderSuite) TestErrorBadTop() {
+func (s *ServiceSuite) TestErrorBadTop() {
 	require := s.Require()
 
-	dr := NewGitDataReader(server.MapLoader{
+	dr := NewService(server.MapLoader{
 		"repo:///myrepo": s.Storer,
 	})
 

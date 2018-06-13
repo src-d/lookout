@@ -1,4 +1,4 @@
-package server
+package git
 
 import (
 	"testing"
@@ -13,17 +13,17 @@ import (
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
 
-type GitChangeScannerSuite struct {
+type ScannerSuite struct {
 	suite.Suite
 	Basic  *fixtures.Fixture
 	Storer storer.Storer
 }
 
-func TestGitChangeScannerSuite(t *testing.T) {
-	suite.Run(t, new(GitChangeScannerSuite))
+func TestScannerSuiteSuite(t *testing.T) {
+	suite.Run(t, new(ScannerSuite))
 }
 
-func (s *GitChangeScannerSuite) SetupSuite() {
+func (s *ScannerSuite) SetupSuite() {
 	require := s.Require()
 
 	err := fixtures.Init()
@@ -38,14 +38,14 @@ func (s *GitChangeScannerSuite) SetupSuite() {
 	s.Storer = sto
 }
 
-func (s *GitChangeScannerSuite) TearDownSuite() {
+func (s *ScannerSuite) TearDownSuite() {
 	require := s.Require()
 
 	err := fixtures.Clean()
 	require.NoError(err)
 }
 
-func (s *GitChangeScannerSuite) getCommit(h plumbing.Hash) *object.Commit {
+func (s *ScannerSuite) getCommit(h plumbing.Hash) *object.Commit {
 	s.T().Helper()
 	require := s.Require()
 	obj, err := s.Storer.EncodedObject(plumbing.CommitObject, h)
@@ -55,14 +55,14 @@ func (s *GitChangeScannerSuite) getCommit(h plumbing.Hash) *object.Commit {
 	return commit
 }
 
-func (s *GitChangeScannerSuite) TestOneCommit() {
+func (s *ScannerSuite) TestTreeScanner() {
 	require := s.Require()
 
 	head := s.getCommit(s.Basic.Head)
 	headTree, err := head.Tree()
 	require.NoError(err)
 
-	cs := NewGitChangeScanner(s.Storer, nil, headTree)
+	cs := NewTreeScanner(s.Storer, headTree)
 	var changes []*api.Change
 	for cs.Next() {
 		changes = append(changes, cs.Change())

@@ -1,4 +1,4 @@
-package server
+package git
 
 import (
 	"fmt"
@@ -12,20 +12,20 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/server"
 )
 
-type GitDataReader struct {
+type Service struct {
 	loader server.Loader
 }
 
-var _ DataReader = &GitDataReader{}
+var _ api.Service = &Service{}
 
-func NewGitDataReader(loader server.Loader) *GitDataReader {
-	return &GitDataReader{
+func NewService(loader server.Loader) *Service {
+	return &Service{
 		loader: loader,
 	}
 }
 
-func (r *GitDataReader) GetChanges(req *api.ChangesRequest) (
-	ChangeScanner, error) {
+func (r *Service) GetChanges(req *api.ChangesRequest) (
+	api.ChangeScanner, error) {
 	ep, err := transport.NewEndpoint(req.GetRepository())
 	if err != nil {
 		return nil, err
@@ -49,17 +49,20 @@ func (r *GitDataReader) GetChanges(req *api.ChangesRequest) (
 		}
 	}
 
+	//TODO
+	_ = base
+
 	top, err = r.resolveCommitTree(s, plumbing.NewHash(req.GetTop()))
 	if err != nil {
 		return nil, err
 	}
 
-	return NewGitChangeScanner(s, base, top), nil
+	return NewTreeScanner(s, top), nil
 }
 
 const maxResolveLength = 20
 
-func (r *GitDataReader) resolveCommitTree(s storer.Storer, h plumbing.Hash) (
+func (r *Service) resolveCommitTree(s storer.Storer, h plumbing.Hash) (
 	*object.Tree, error) {
 
 	c, err := r.resolveCommit(s, h)
@@ -75,7 +78,7 @@ func (r *GitDataReader) resolveCommitTree(s storer.Storer, h plumbing.Hash) (
 	return t, nil
 }
 
-func (r *GitDataReader) resolveCommit(s storer.Storer, h plumbing.Hash) (
+func (r *Service) resolveCommit(s storer.Storer, h plumbing.Hash) (
 	*object.Commit, error) {
 
 	for i := 0; i < maxResolveLength; i++ {
