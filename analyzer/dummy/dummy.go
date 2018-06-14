@@ -3,14 +3,15 @@ package dummy
 import (
 	"context"
 	"io"
-	"net"
 
 	"github.com/src-d/lookout/api"
+	lserver "github.com/src-d/lookout/server"
 
 	"google.golang.org/grpc"
 )
 
 type Analyzer struct {
+	grpcServer *grpc.Server
 }
 
 func New() *Analyzer {
@@ -19,26 +20,38 @@ func New() *Analyzer {
 
 var Default = New()
 
-func (a *Analyzer) Listen() error {
-	conn, err := grpc.Dial("0.0.0.0:9991", grpc.WithInsecure())
+func (a *Analyzer) Serve(listen, dataServer string) error {
+	dataServer, err := lserver.ToGoGrpcAddress(dataServer)
+	if err != nil {
+		return err
+	}
+
+	conn, err := grpc.Dial(dataServer,
+		grpc.WithInsecure(),
+		grpc.WithDefaultCallOptions(grpc.FailFast(false)))
 	if err != nil {
 		return err
 	}
 
 	dc := api.NewDataClient(conn)
 
-	lis, err := net.Listen("tcp", "0.0.0.0:9995")
+	lis, err := lserver.Listen(listen)
 	if err != nil {
 		return err
 	}
 
-	srv := grpc.NewServer()
-	api.RegisterAnalyzerServer(srv, &server{
+	a.grpcServer = grpc.NewServer()
+	api.RegisterAnalyzerServer(a.grpcServer, &server{
 		data: dc,
 	})
-	go srv.Serve(lis)
 
-	return nil
+	return a.grpcServer.Serve(lis)
+}
+
+func (a *Analyzer) Stop() {
+	if a.grpcServer != nil {
+		a.grpcServer.GracefulStop()
+	}
 }
 
 type server struct {

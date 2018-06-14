@@ -2,8 +2,8 @@ package dummy
 
 import (
 	"context"
-	"net"
 	"testing"
+	"time"
 
 	"github.com/src-d/lookout/api"
 	"github.com/src-d/lookout/git"
@@ -46,7 +46,7 @@ func (s *DummySuite) SetupSuite() {
 	))
 	api.RegisterDataServer(s.apiServer, server)
 
-	lis, err := net.Listen("tcp", "0.0.0.0:9991")
+	lis, err := apisrv.Listen("ipv4://0.0.0.0:9991")
 	require.NoError(err)
 
 	go s.apiServer.Serve(lis)
@@ -67,16 +67,23 @@ func (s *DummySuite) Test() {
 	require := s.Require()
 
 	a := &Analyzer{}
-	require.NoError(a.Listen())
+	done := make(chan error)
+	go func() {
+		done <- a.Serve("ipv4://0.0.0.0:9995", "ipv4://0.0.0.0:9991")
+	}()
 
 	conn, err := grpc.Dial("0.0.0.0:9995", grpc.WithInsecure())
 	require.NoError(err)
 
 	client := api.NewAnalyzerClient(conn)
-	resp, err := client.Analyze(context.TODO(), &api.AnalysisRequest{
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*10)
+	resp, err := client.Analyze(ctx, &api.AnalysisRequest{
 		Repository: "repo:///fixture/basic",
 		NewHash:    s.Basic.Head.String(),
 	})
 	require.NoError(err)
 	require.NotNil(resp)
+
+	a.Stop()
+	require.NoError(<-done)
 }
