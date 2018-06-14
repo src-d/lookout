@@ -46,13 +46,25 @@ service Data {
 }
 
 message AnalysisRequest {
-    string repository = 2;
-    string base_hash = 3;
-    string new_hash = 4;
+    string repository = 1;
+    string base_hash = 2;
+    string new_hash = 3;
 }
 
 message AnalysisResponse {
-    string status = 1;
+    repeated Comment comments = 1;
+}
+
+message Comment {
+    // File this comment belongs to. If empty, it is a global comment.
+    string file = 1;
+    // Line this comment refers to. If 0 (and file is set), it is a
+    // file-level comment. Line is expressed aqs a 1-based index.
+    int32 line = 2;
+    // Text of the comment.
+    string text = 3;
+    // Confidence in the comment. It should be an integer between 0 and 100.
+    uint32 confidence = 4;
 }
 
 // Analyzer service should be implemented by analyzers to receive analysis

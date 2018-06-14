@@ -87,7 +87,22 @@ func (c *AnalyzeCommand) Execute(args []string) error {
 		return err
 	}
 
-	fmt.Printf("Result: %#v\n", resp)
+	fmt.Println("BEGIN RESULT")
+	for _, comment := range resp.Comments {
+		if comment.File == "" {
+			fmt.Printf("GLOBAL: %s\n", comment.Text)
+			continue
+		}
+
+		if comment.Line == 0 {
+			fmt.Printf("%s: %s\n", comment.File, comment.Text)
+			continue
+		}
+
+		fmt.Printf("%s:%d: %s\n", comment.File, comment.Line, comment.Text)
+	}
+
+	fmt.Println("END RESULT")
 
 	grpcSrv.GracefulStop()
 	return <-serveResult
