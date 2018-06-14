@@ -4,7 +4,7 @@ package github.com.srcd.lookout;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "gopkg.in/bblfsh/sdk.v1/uast/generated.proto";
 
-option go_package = "pb";
+option go_package = "github.com/src-d/lookout/pb";
 
 // UAST uses protosizer instead of sizer, this is required for interoperability
 // with the generated proto from bblfsh.
@@ -21,7 +21,7 @@ message File {
     // Raw content of the file.
     bytes content = 4;
     // UAST.
-    gopkg.in.bblfsh.sdk.v1.uast.Node uast = 5;
+    gopkg.in.bblfsh.sdk.v1.uast.Node uast = 5 [(gogoproto.customname) = "UAST"];
 }
 
 message Change {
@@ -55,6 +55,7 @@ message AnalysisResponse {
     repeated Comment comments = 1;
 }
 
+// Comment is a comment on a commit or changeset.
 message Comment {
     // File this comment belongs to. If empty, it is a global comment.
     string file = 1;

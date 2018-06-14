@@ -8,6 +8,7 @@ import (
 	"testing/quick"
 
 	"github.com/stretchr/testify/require"
+	"gopkg.in/bblfsh/sdk.v1/uast"
 )
 
 func TestMarshallingRoundTrip(t *testing.T) {
@@ -48,6 +49,9 @@ func randomFile(rand *rand.Rand, size int) *File {
 	f.Mode = randomValidGitMode(rand)
 	f.Path = randomValidPath(rand)
 	f.Content = randomBytes(rand, size)
+	f.Uast = &uast.Node{
+		InternalType: "TEST",
+	}
 	return f
 }
 
