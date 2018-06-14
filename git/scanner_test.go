@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/src-d/lookout/api"
+	"github.com/src-d/lookout"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -65,7 +65,7 @@ func (s *ScannerSuite) TestTreeScanner() {
 	require.NoError(err)
 
 	cs := NewTreeScanner(s.Storer, headTree)
-	var changes []*api.Change
+	var changes []*lookout.Change
 	for cs.Next() {
 		changes = append(changes, cs.Change())
 	}
@@ -78,7 +78,7 @@ func (s *ScannerSuite) TestTreeScanner() {
 }
 
 func (s *ScannerSuite) TestFilterScannerIncludeAll() {
-	fixtures := []*api.ChangesRequest{
+	fixtures := []*lookout.ChangesRequest{
 		{},
 		{IncludePattern: ".*"},
 	}
@@ -96,7 +96,7 @@ func (s *ScannerSuite) TestFilterScannerIncludeAll() {
 				fixture.IncludePattern, fixture.ExcludePattern,
 			)
 
-			var changes []*api.Change
+			var changes []*lookout.Change
 			for cs.Next() {
 				changes = append(changes, cs.Change())
 			}
@@ -111,7 +111,7 @@ func (s *ScannerSuite) TestFilterScannerIncludeAll() {
 }
 
 func (s *ScannerSuite) TestFilterIncludeSome() {
-	fixtures := []*api.ChangesRequest{
+	fixtures := []*lookout.ChangesRequest{
 		{IncludePattern: `.*\.go`},
 		{IncludePattern: `.*\.go`, ExcludePattern: `.*\.php`},
 	}
@@ -129,7 +129,7 @@ func (s *ScannerSuite) TestFilterIncludeSome() {
 				fixture.IncludePattern, fixture.ExcludePattern,
 			)
 
-			var changes []*api.Change
+			var changes []*lookout.Change
 			for cs.Next() {
 				changes = append(changes, cs.Change())
 			}
@@ -144,7 +144,7 @@ func (s *ScannerSuite) TestFilterIncludeSome() {
 }
 
 func (s *ScannerSuite) TestFilterExcludeOne() {
-	fixtures := []*api.ChangesRequest{
+	fixtures := []*lookout.ChangesRequest{
 		{IncludePattern: "", ExcludePattern: `\.gitignore`},
 		{IncludePattern: ".*", ExcludePattern: `json/short\.json`},
 	}
@@ -162,7 +162,7 @@ func (s *ScannerSuite) TestFilterExcludeOne() {
 				fixture.IncludePattern, fixture.ExcludePattern,
 			)
 
-			var changes []*api.Change
+			var changes []*lookout.Change
 			for cs.Next() {
 				changes = append(changes, cs.Change())
 			}
@@ -188,7 +188,7 @@ func (s *ScannerSuite) TestBlobScanner() {
 		s.Storer,
 	)
 
-	changes := make(map[string]*api.Change)
+	changes := make(map[string]*lookout.Change)
 	for cs.Next() {
 		ch := cs.Change()
 		changes[ch.New.Path] = ch
@@ -222,7 +222,7 @@ func (s *ScannerSuite) TestDiffTreeScanner() {
 	require.NoError(err)
 
 	cs := NewDiffTreeScanner(s.Storer, parentTree, headTree)
-	var changes []*api.Change
+	var changes []*lookout.Change
 	for cs.Next() {
 		changes = append(changes, cs.Change())
 	}

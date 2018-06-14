@@ -7,7 +7,7 @@ import (
 
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
-	"github.com/src-d/lookout/api"
+	"github.com/src-d/lookout"
 
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
@@ -18,7 +18,7 @@ type TreeScanner struct {
 	storer storer.EncodedObjectStorer
 	tree   *object.Tree
 	tw     *object.TreeWalker
-	val    *api.Change
+	val    *lookout.Change
 	err    error
 	done   bool
 }
@@ -55,7 +55,7 @@ func (s *TreeScanner) Next() bool {
 			continue
 		}
 
-		ch := &api.Change{New: &api.File{
+		ch := &lookout.Change{New: &lookout.File{
 			Path: name,
 			Mode: uint32(entry.Mode),
 			Sha1: entry.Hash.String(),
@@ -70,7 +70,7 @@ func (s *TreeScanner) Err() error {
 	return s.err
 }
 
-func (s *TreeScanner) Change() *api.Change {
+func (s *TreeScanner) Change() *lookout.Change {
 	return s.val
 }
 
@@ -127,8 +127,8 @@ func (s *DiffTreeScanner) Err() error {
 	return s.err
 }
 
-func (s *DiffTreeScanner) Change() *api.Change {
-	return &api.Change{
+func (s *DiffTreeScanner) Change() *lookout.Change {
+	return &lookout.Change{
 		Old: gitChangeEntryToApiFile(s.val.From),
 		New: gitChangeEntryToApiFile(s.val.To),
 	}
@@ -138,12 +138,12 @@ func (s *DiffTreeScanner) Close() error {
 	return nil
 }
 
-func gitChangeEntryToApiFile(entry object.ChangeEntry) *api.File {
+func gitChangeEntryToApiFile(entry object.ChangeEntry) *lookout.File {
 	if entry.Name == "" {
 		return nil
 	}
 
-	return &api.File{
+	return &lookout.File{
 		Path: entry.Name,
 		Mode: uint32(entry.TreeEntry.Mode),
 		Sha1: entry.TreeEntry.Hash.String(),
@@ -151,19 +151,19 @@ func gitChangeEntryToApiFile(entry object.ChangeEntry) *api.File {
 }
 
 type FilterScanner struct {
-	Scanner           api.ChangeScanner
+	Scanner           lookout.ChangeScanner
 	includePatternRaw string
 	excludePatternRaw string
 	includePattern    *regexp.Regexp
 	excludePattern    *regexp.Regexp
-	val               *api.Change
+	val               *lookout.Change
 	started           bool
 	done              bool
 	err               error
 }
 
 func NewFilterScanner(
-	scanner api.ChangeScanner,
+	scanner lookout.ChangeScanner,
 	include, exclude string) *FilterScanner {
 	return &FilterScanner{
 		Scanner:           scanner,
@@ -220,7 +220,7 @@ func (s *FilterScanner) Err() error {
 	return s.Scanner.Err()
 }
 
-func (s *FilterScanner) Change() *api.Change {
+func (s *FilterScanner) Change() *lookout.Change {
 	return s.val
 }
 
@@ -253,15 +253,15 @@ func (s *FilterScanner) matchExclude(p string) bool {
 }
 
 type BlobScanner struct {
-	Scanner api.ChangeScanner
+	Scanner lookout.ChangeScanner
 	Storer  storer.EncodedObjectStorer
-	val     *api.Change
+	val     *lookout.Change
 	done    bool
 	err     error
 }
 
 func NewBlobScanner(
-	scanner api.ChangeScanner,
+	scanner lookout.ChangeScanner,
 	storer storer.EncodedObjectStorer) *BlobScanner {
 	return &BlobScanner{
 		Scanner: scanner,
@@ -296,7 +296,7 @@ func (s *BlobScanner) Next() bool {
 	return false
 }
 
-func (s *BlobScanner) addBlob(f *api.File) (err error) {
+func (s *BlobScanner) addBlob(f *lookout.File) (err error) {
 	if f == nil {
 		return nil
 	}
@@ -337,7 +337,7 @@ func (s *BlobScanner) Err() error {
 	return s.Scanner.Err()
 }
 
-func (s *BlobScanner) Change() *api.Change {
+func (s *BlobScanner) Change() *lookout.Change {
 	return s.val
 }
 

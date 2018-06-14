@@ -3,9 +3,12 @@ package main
 import (
 	"os"
 
-	"github.com/src-d/lookout/analyzer/dummy"
+	"github.com/src-d/lookout"
+
+	"github.com/src-d/lookout/dummy"
 
 	"github.com/jessevdk/go-flags"
+	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/grpclog/glogger"
 )
 
@@ -17,7 +20,33 @@ type ServeCommand struct {
 }
 
 func (c *ServeCommand) Execute(args []string) error {
-	return dummy.Default.Serve(c.Analyzer, c.DataServer)
+	var err error
+	c.DataServer, err = lookout.ToGoGrpcAddress(c.DataServer)
+	if err != nil {
+		return err
+	}
+
+	conn, err := grpc.Dial(c.DataServer,
+		grpc.WithInsecure(),
+		grpc.WithDefaultCallOptions(grpc.FailFast(false)),
+	)
+	if err != nil {
+		return err
+	}
+
+	a := &dummy.Analyzer{
+		DataClient: lookout.NewDataClient(conn),
+	}
+
+	server := grpc.NewServer()
+	lookout.RegisterAnalyzerServer(server, a)
+
+	lis, err := lookout.Listen(c.Analyzer)
+	if err != nil {
+		return err
+	}
+
+	return server.Serve(lis)
 }
 
 func main() {

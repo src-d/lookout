@@ -5,9 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/src-d/lookout/api"
+	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/git"
-	apisrv "github.com/src-d/lookout/server"
 
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -18,8 +17,11 @@ import (
 
 type DummySuite struct {
 	suite.Suite
-	Basic     *fixtures.Fixture
-	apiServer *grpc.Server
+	Basic          *fixtures.Fixture
+	analyzerServer *grpc.Server
+	apiServer      *grpc.Server
+	apiConn        *grpc.ClientConn
+	apiClient      *lookout.DataClient
 }
 
 func TestDummySuite(t *testing.T) {
@@ -39,51 +41,76 @@ func (s *DummySuite) SetupSuite() {
 	require.NoError(err)
 
 	s.apiServer = grpc.NewServer()
-	server := apisrv.NewServer(git.NewService(
-		gitsrv.MapLoader{
-			"repo:///fixture/basic": sto,
-		},
-	))
-	api.RegisterDataServer(s.apiServer, server)
+	server := &lookout.DataServerHandler{
+		ChangeGetter: git.NewService(
+			gitsrv.MapLoader{
+				"repo:///fixture/basic": sto,
+			},
+		),
+	}
+	lookout.RegisterDataServer(s.apiServer, server)
 
-	lis, err := apisrv.Listen("ipv4://0.0.0.0:9991")
+	lis, err := lookout.Listen("ipv4://0.0.0.0:9991")
 	require.NoError(err)
 
 	go s.apiServer.Serve(lis)
+
+	s.apiConn, err = grpc.Dial("0.0.0.0:9991", grpc.WithInsecure())
+	require.NoError(err)
+
+	s.apiClient = lookout.NewDataClient(s.apiConn)
 }
 
 func (s *DummySuite) TearDownSuite() {
-	require := s.Require()
+	assert := s.Assert()
+
+	if s.analyzerServer != nil {
+		s.analyzerServer.Stop()
+	}
 
 	if s.apiServer != nil {
 		s.apiServer.Stop()
 	}
 
+	if s.apiConn != nil {
+		err := s.apiConn.Close()
+		assert.NoError(err)
+	}
+
 	err := fixtures.Clean()
-	require.NoError(err)
+	assert.NoError(err)
 }
 
 func (s *DummySuite) Test() {
 	require := s.Require()
 
-	a := &Analyzer{}
+	a := &Analyzer{
+		DataClient: s.apiClient,
+	}
+
+	s.analyzerServer = grpc.NewServer()
+	lookout.RegisterAnalyzerServer(s.analyzerServer, a)
+
+	lis, err := lookout.Listen("ipv4://0.0.0.0:9995")
+	require.NoError(err)
+
 	done := make(chan error)
 	go func() {
-		done <- a.Serve("ipv4://0.0.0.0:9995", "ipv4://0.0.0.0:9991")
+		done <- s.analyzerServer.Serve(lis)
 	}()
 
 	conn, err := grpc.Dial("0.0.0.0:9995", grpc.WithInsecure())
 	require.NoError(err)
 
-	client := api.NewAnalyzerClient(conn)
+	client := lookout.NewAnalyzerClient(conn)
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*10)
-	resp, err := client.Analyze(ctx, &api.AnalysisRequest{
+	resp, err := client.Analyze(ctx, &lookout.AnalysisRequest{
 		Repository: "repo:///fixture/basic",
 		NewHash:    s.Basic.Head.String(),
 	})
 	require.NoError(err)
 	require.NotNil(resp)
 
-	a.Stop()
+	s.analyzerServer.Stop()
 	require.NoError(<-done)
 }

@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/src-d/lookout/api"
+	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/git"
-	"github.com/src-d/lookout/server"
 
 	"github.com/jessevdk/go-flags"
 	"google.golang.org/grpc"
+	_ "google.golang.org/grpc/grpclog/glogger"
 	gogit "gopkg.in/src-d/go-git.v4"
 	gogitsrv "gopkg.in/src-d/go-git.v4/plumbing/transport/server"
 )
@@ -56,10 +56,12 @@ func (c *AnalyzeCommand) Execute(args []string) error {
 	l := gogitsrv.MapLoader{
 		"repo:///repo": r.Storer,
 	}
-	srv := server.NewServer(git.NewService(l))
+	srv := &lookout.DataServerHandler{
+		ChangeGetter: git.NewService(l),
+	}
 	grpcSrv := grpc.NewServer()
-	api.RegisterDataServer(grpcSrv, srv)
-	lis, err := server.Listen(c.DataServer)
+	lookout.RegisterDataServer(grpcSrv, srv)
+	lis, err := lookout.Listen(c.DataServer)
 	if err != nil {
 		return err
 	}
@@ -67,7 +69,7 @@ func (c *AnalyzeCommand) Execute(args []string) error {
 	serveResult := make(chan error)
 	go func() { serveResult <- grpcSrv.Serve(lis) }()
 
-	c.Analyzer, err = server.ToGoGrpcAddress(c.Analyzer)
+	c.Analyzer, err = lookout.ToGoGrpcAddress(c.Analyzer)
 	if err != nil {
 		return err
 	}
@@ -77,8 +79,8 @@ func (c *AnalyzeCommand) Execute(args []string) error {
 		return err
 	}
 
-	client := api.NewAnalyzerClient(conn)
-	resp, err := client.Analyze(context.TODO(), &api.AnalysisRequest{
+	client := lookout.NewAnalyzerClient(conn)
+	resp, err := client.Analyze(context.TODO(), &lookout.AnalysisRequest{
 		Repository: "repo:///repo",
 		BaseHash:   parentHash,
 		NewHash:    headHash,

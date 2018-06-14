@@ -1,4 +1,4 @@
-package server_test
+package lookout
 
 import (
 	"context"
@@ -7,22 +7,21 @@ import (
 	"net"
 	"testing"
 
-	"github.com/src-d/lookout/api"
-	. "github.com/src-d/lookout/server"
+	"github.com/src-d/lookout/pb"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
 
 func setupDataServer(t *testing.T, dr *MockService) (*grpc.Server,
-	api.DataClient) {
+	pb.DataClient) {
 
 	t.Helper()
 	require := require.New(t)
 
-	srv := NewServer(dr)
+	srv := &DataServerHandler{ChangeGetter: dr}
 	grpcServer := grpc.NewServer()
-	api.RegisterDataServer(grpcServer, srv)
+	pb.RegisterDataServer(grpcServer, srv)
 
 	lis, err := net.Listen("tcp", "localhost:0")
 	require.NoError(err)
@@ -33,7 +32,7 @@ func setupDataServer(t *testing.T, dr *MockService) (*grpc.Server,
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	require.NoError(err)
 
-	client := api.NewDataClient(conn)
+	client := pb.NewDataClient(conn)
 
 	return grpcServer, client
 }
@@ -45,7 +44,7 @@ func tearDownDataServer(t *testing.T, srv *grpc.Server) {
 }
 func TestServerOk(t *testing.T) {
 	for i := 0; i <= 10; i++ {
-		req := &api.ChangesRequest{
+		req := &ChangesRequest{
 			Repository: "repo",
 			Top:        "5262fd2b59d10e335a5c941140df16950958322d",
 		}
@@ -83,7 +82,7 @@ func TestServerOk(t *testing.T) {
 func TestServerCancel(t *testing.T) {
 	for i := 0; i <= 10; i++ {
 		for j := 0; j < i; j++ {
-			req := &api.ChangesRequest{
+			req := &ChangesRequest{
 				Repository: "repo",
 				Top:        "5262fd2b59d10e335a5c941140df16950958322d",
 			}
@@ -135,7 +134,7 @@ func TestServerCancel(t *testing.T) {
 }
 
 func TestServerGetChangesError(t *testing.T) {
-	req := &api.ChangesRequest{
+	req := &ChangesRequest{
 		Repository: "repo",
 		Top:        "5262fd2b59d10e335a5c941140df16950958322d",
 	}
@@ -167,7 +166,7 @@ func TestServerGetChangesError(t *testing.T) {
 }
 
 func TestServerGetChangesIterError(t *testing.T) {
-	req := &api.ChangesRequest{
+	req := &ChangesRequest{
 		Repository: "repo",
 		Top:        "5262fd2b59d10e335a5c941140df16950958322d",
 	}
@@ -198,11 +197,11 @@ func TestServerGetChangesIterError(t *testing.T) {
 	tearDownDataServer(t, srv)
 }
 
-func generateChanges(size int) []*api.Change {
-	var changes []*api.Change
+func generateChanges(size int) []*Change {
+	var changes []*Change
 	for i := 0; i < size; i++ {
-		changes = append(changes, &api.Change{
-			New: &api.File{
+		changes = append(changes, &Change{
+			New: &File{
 				Path: fmt.Sprintf("myfile%d", i),
 			},
 		})
@@ -213,23 +212,23 @@ func generateChanges(size int) []*api.Change {
 
 type MockService struct {
 	T               *testing.T
-	ExpectedRequest *api.ChangesRequest
-	ChangeScanner   api.ChangeScanner
+	ExpectedRequest *ChangesRequest
+	ChangeScanner   ChangeScanner
 	Error           error
 }
 
-func (r *MockService) GetChanges(req *api.ChangesRequest) (
-	api.ChangeScanner, error) {
+func (r *MockService) GetChanges(req *ChangesRequest) (
+	ChangeScanner, error) {
 	require := require.New(r.T)
 	require.Equal(r.ExpectedRequest, req)
 	return r.ChangeScanner, r.Error
 }
 
 type SliceChangeScanner struct {
-	Changes    []*api.Change
+	Changes    []*Change
 	Error      error
 	ChangeTick chan struct{}
-	val        *api.Change
+	val        *Change
 }
 
 func (s *SliceChangeScanner) Next() bool {
@@ -250,7 +249,7 @@ func (s *SliceChangeScanner) Err() error {
 	return s.Error
 }
 
-func (s *SliceChangeScanner) Change() *api.Change {
+func (s *SliceChangeScanner) Change() *Change {
 	if s.ChangeTick != nil {
 		<-s.ChangeTick
 	}

@@ -3,7 +3,7 @@ package git
 import (
 	"fmt"
 
-	"github.com/src-d/lookout/api"
+	"github.com/src-d/lookout"
 
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -16,7 +16,7 @@ type Service struct {
 	loader server.Loader
 }
 
-var _ api.Service = &Service{}
+var _ lookout.ChangeGetter = &Service{}
 
 func NewService(loader server.Loader) *Service {
 	return &Service{
@@ -24,8 +24,8 @@ func NewService(loader server.Loader) *Service {
 	}
 }
 
-func (r *Service) GetChanges(req *api.ChangesRequest) (
-	api.ChangeScanner, error) {
+func (r *Service) GetChanges(req *lookout.ChangesRequest) (
+	lookout.ChangeScanner, error) {
 	ep, err := transport.NewEndpoint(req.GetRepository())
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (r *Service) GetChanges(req *api.ChangesRequest) (
 		return nil, err
 	}
 
-	var scanner api.ChangeScanner
+	var scanner lookout.ChangeScanner
 
 	if base == nil {
 		scanner = NewTreeScanner(s, top)

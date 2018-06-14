@@ -3,7 +3,8 @@ package git
 import (
 	"testing"
 
-	"github.com/src-d/lookout/api"
+	"github.com/src-d/lookout"
+
 	"github.com/stretchr/testify/suite"
 	fixtures "gopkg.in/src-d/go-git-fixtures.v3"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
@@ -50,7 +51,7 @@ func (s *ServiceSuite) TestTree() {
 		"repo:///myrepo": s.Storer,
 	})
 
-	resp, err := dr.GetChanges(&api.ChangesRequest{
+	resp, err := dr.GetChanges(&lookout.ChangesRequest{
 		Repository: "repo:///myrepo",
 		Top:        s.Basic.Head.String(),
 	})
@@ -65,7 +66,7 @@ func (s *ServiceSuite) TestDiffTree() {
 		"repo:///myrepo": s.Storer,
 	})
 
-	resp, err := dr.GetChanges(&api.ChangesRequest{
+	resp, err := dr.GetChanges(&lookout.ChangesRequest{
 		Repository: "repo:///myrepo",
 		Base:       "918c48b83bd081e863dbe1b80f8998f058cd8294",
 		Top:        s.Basic.Head.String(),
@@ -79,7 +80,7 @@ func (s *ServiceSuite) TestErrorNoRepository() {
 
 	dr := NewService(server.MapLoader{})
 
-	resp, err := dr.GetChanges(&api.ChangesRequest{
+	resp, err := dr.GetChanges(&lookout.ChangesRequest{
 		Repository: "repo:///myrepo",
 		Top:        s.Basic.Head.String(),
 	})
@@ -94,7 +95,7 @@ func (s *ServiceSuite) TestErrorBadTop() {
 		"repo:///myrepo": s.Storer,
 	})
 
-	resp, err := dr.GetChanges(&api.ChangesRequest{
+	resp, err := dr.GetChanges(&lookout.ChangesRequest{
 		Repository: "repo:///myrepo",
 		Top:        "979a482e63de12d39675ff741c5a0cf4f068c109",
 	})
