@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/bblfsh"
 	"github.com/src-d/lookout/git"
 
 	"github.com/jessevdk/go-flags"
@@ -20,6 +21,7 @@ var parser = flags.NewParser(nil, flags.Default)
 type AnalyzeCommand struct {
 	Analyzer   string `long:"analyzer" default:"ipv4://localhost:10302" env:"LOOKOUT_ANALYZER" description:"gRPC URL of the analyzer to use"`
 	DataServer string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
+	Bblfshd    string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
 	GitDir     string `long:"git-dir" default:"." env:"GIT_DIR" description:"path to the .git directory to analyze"`
 }
 
@@ -53,11 +55,24 @@ func (c *AnalyzeCommand) Execute(args []string) error {
 		parentHash = parentCommit.Hash.String()
 	}
 
+	c.Bblfshd, err = lookout.ToGoGrpcAddress(c.Bblfshd)
+	if err != nil {
+		return err
+	}
+
+	bblfshConn, err := grpc.Dial(c.Bblfshd, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+
 	l := gogitsrv.MapLoader{
 		"repo:///repo": r.Storer,
 	}
 	srv := &lookout.DataServerHandler{
-		ChangeGetter: git.NewService(l),
+		ChangeGetter: bblfsh.NewService(
+			git.NewService(l),
+			bblfshConn,
+		),
 	}
 	grpcSrv := grpc.NewServer()
 	lookout.RegisterDataServer(grpcSrv, srv)
