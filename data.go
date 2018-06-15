@@ -15,7 +15,10 @@ type ChangesRequest = pb.ChangesRequest
 type Change = pb.Change
 type File = pb.File
 
+// ChangeGetter is used to retrieve code changes.
 type ChangeGetter interface {
+	// GetChanges returns a ChangeScanner that scans all changes according
+	// to the request.
 	GetChanges(*ChangesRequest) (ChangeScanner, error)
 }
 
@@ -23,10 +26,18 @@ func RegisterDataServer(s *grpc.Server, srv *DataServerHandler) {
 	pb.RegisterDataServer(s, srv)
 }
 
+// ChangeScanner is a scanner for changes.
 type ChangeScanner interface {
+	// Next advances the scanner to the next change. It returns true if a new
+	// change is found, and false otherwise. After the user is done scanning,
+	// Err must be called to check if all changes were consumed or there was an
+	// error.
 	Next() bool
+	// Err returns any error found during scanning.
 	Err() error
+	// Change returns the current change.
 	Change() *Change
+	// Close closes the scanner.
 	Close() error
 }
 

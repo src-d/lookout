@@ -41,6 +41,8 @@ func ToNetListenerAddress(target string) (network, address string, err error) {
 	return
 }
 
+// ToGoGrpcAddress converts a standard gRPC target name to a
+// one that is supported by grpc-go.
 func ToGoGrpcAddress(address string) (string, error) {
 	n, a, err := ToNetListenerAddress(address)
 	if err != nil {
