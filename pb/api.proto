@@ -1,0 +1,78 @@
+syntax = "proto3";
+package github.com.srcd.lookout;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "gopkg.in/bblfsh/sdk.v1/uast/generated.proto";
+
+option go_package = "github.com/src-d/lookout/pb";
+
+// UAST uses protosizer instead of sizer, this is required for interoperability
+// with the generated proto from bblfsh.
+option (gogoproto.sizer_all) = false;
+option (gogoproto.protosizer_all) = true;
+
+message File {
+    // File path.
+    string path = 1;
+    // POSIX-style file mode.
+    uint32 mode = 2;
+    // SHA1 of the file contents.
+    string sha1 = 3;
+    // Raw content of the file.
+    bytes content = 4;
+    // UAST.
+    gopkg.in.bblfsh.sdk.v1.uast.Node uast = 5 [(gogoproto.customname) = "UAST"];
+}
+
+message Change {
+    File old = 1;
+    File new = 2;
+}
+
+message ChangesRequest {
+    string repository = 1;
+    string base = 2;
+    string top = 3;
+    string include_pattern = 4;
+    string exclude_pattern = 5;
+    bool changed_only = 6;
+    bool want_contents = 7;
+    bool want_uast = 8;
+}
+
+// Data services exposes VCS repositories.
+service Data {
+    rpc GetChanges (ChangesRequest) returns (stream Change);
+}
+
+message AnalysisRequest {
+    string repository = 1;
+    string base_hash = 2;
+    string new_hash = 3;
+}
+
+message AnalysisResponse {
+    repeated Comment comments = 1;
+}
+
+// Comment is a comment on a commit or changeset.
+message Comment {
+    // File this comment belongs to. If empty, it is a global comment.
+    string file = 1;
+    // Line this comment refers to. If 0 (and file is set), it is a
+    // file-level comment. Line is expressed aqs a 1-based index.
+    int32 line = 2;
+    // Text of the comment.
+    string text = 3;
+    // Confidence in the comment. It should be an integer between 0 and 100.
+    uint32 confidence = 4;
+}
+
+// Analyzer service should be implemented by analyzers to receive analysis
+// requests from the server. It is currently implemented as a single long-lived
+// request, so cancellation is managed at gRPC level. Depending on how we plan
+// to implement the server, we might want to implement sending results as a
+// callback. For now, this is kept simple.
+service Analyzer {
+    rpc Analyze (AnalysisRequest) returns (AnalysisResponse);
+}
