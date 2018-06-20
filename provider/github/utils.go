@@ -3,8 +3,9 @@ package github
 import (
 	"fmt"
 
-	"github.com/google/go-github/github"
 	"github.com/src-d/lookout"
+
+	"github.com/google/go-github/github"
 	"gopkg.in/sourcegraph/go-vcsurl.v1"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-log.v1"

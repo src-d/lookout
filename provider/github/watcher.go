@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/util/cache"
 
 	"github.com/google/go-github/github"
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
 	"gopkg.in/sourcegraph/go-vcsurl.v1"
-	"gopkg.in/src-d/go-errors.v0"
+	"gopkg.in/src-d/go-errors.v1"
 	"gopkg.in/src-d/go-log.v1"
 )
 
@@ -32,26 +33,32 @@ type Watcher struct {
 	o *lookout.WatchOptions
 	c *github.Client
 
+	cache *cache.ValidableCache
+
 	// delay is time in seconds to wait between requests
 	poolInterval time.Duration
 }
 
 // NewWatcher returns a new
 func NewWatcher(o *lookout.WatchOptions) (*Watcher, error) {
-	cache := httpcache.NewTransport(diskcache.New("/tmp/github"))
-	cache.MarkCachedResponses = true
-
 	r, err := vcsurl.Parse(o.URL)
 	if err != nil {
 		return nil, err
 	}
 
+	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
+
+	t := httpcache.NewTransport(cache)
+	t.MarkCachedResponses = true
+
 	return &Watcher{
 		r: r,
 		o: o,
 		c: github.NewClient(&http.Client{
-			Transport: cache,
+			Transport: t,
 		}),
+
+		cache: cache,
 	}, nil
 }
 
@@ -60,12 +67,12 @@ func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
 	log.With(log.Fields{"url": w.o.URL}).Infof("Starting watcher")
 
 	for {
-		events, err := w.doEventRequest(ctx, w.r.Username, w.r.Name)
+		resp, events, err := w.doEventRequest(ctx, w.r.Username, w.r.Name)
 		if err != nil && !NoErrNotModified.Is(err) {
 			return err
 		}
 
-		if err := w.handleEvents(cb, events); err != nil {
+		if err := w.handleEvents(cb, resp, events); err != nil {
 			if lookout.NoErrStopWatcher.Is(err) {
 				return nil
 			}
@@ -82,7 +89,11 @@ func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
 	}
 }
 
-func (w *Watcher) handleEvents(cb lookout.EventHandler, events []*github.Event) error {
+func (w *Watcher) handleEvents(cb lookout.EventHandler, resp *github.Response, events []*github.Event) error {
+	if len(events) == 0 {
+		return nil
+	}
+
 	for _, e := range events {
 		event, err := w.handleEvent(e)
 		if err != nil {
@@ -99,14 +110,17 @@ func (w *Watcher) handleEvents(cb lookout.EventHandler, events []*github.Event) 
 		}
 	}
 
-	return nil
+	log.Debugf("request to %s cached", resp.Request.URL)
+	return w.cache.Validate(resp.Request.URL.String())
 }
 
 func (w *Watcher) handleEvent(e *github.Event) (lookout.Event, error) {
 	return castEvent(w.r, e)
 }
 
-func (w *Watcher) doEventRequest(ctx context.Context, username, repository string) ([]*github.Event, error) {
+func (w *Watcher) doEventRequest(ctx context.Context, username, repository string) (
+	*github.Response, []*github.Event, error,
+) {
 	ctx, cancel := context.WithTimeout(ctx, RequestTimeout)
 	defer cancel()
 
@@ -114,11 +128,15 @@ func (w *Watcher) doEventRequest(ctx context.Context, username, repository strin
 		ctx, username, repository, &github.ListOptions{},
 	)
 
+	if err != nil {
+		return resp, nil, err
+	}
+
 	secs, _ := strconv.Atoi(resp.Response.Header.Get("X-Poll-Interval"))
 	w.poolInterval = time.Duration(secs) * time.Second
 
 	if isStatusNotModified(resp.Response) {
-		return nil, NoErrNotModified.New()
+		return nil, nil, NoErrNotModified.New()
 	}
 
 	log.With(log.Fields{
@@ -128,7 +146,7 @@ func (w *Watcher) doEventRequest(ctx context.Context, username, repository strin
 		"events":             len(events),
 	}).Debugf("Requested to events endpoint done.")
 
-	return events, err
+	return resp, events, err
 }
 
 func isStatusNotModified(resp *http.Response) bool {

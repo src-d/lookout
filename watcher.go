@@ -3,7 +3,7 @@ package lookout
 import (
 	"context"
 
-	"gopkg.in/src-d/go-errors.v0"
+	"gopkg.in/src-d/go-errors.v1"
 )
 
 var (
