@@ -11,7 +11,7 @@ import (
 	"gopkg.in/src-d/go-log.v1"
 )
 
-func castEvent(r *vcsurl.RepoInfo, e *github.Event) (lookout.Event, error) {
+func castEvent(r *lookout.RepositoryInfo, e *github.Event) (lookout.Event, error) {
 	switch e.GetType() {
 	case "PushEvent":
 		payload, err := e.ParsePayload()
@@ -32,7 +32,7 @@ func castEvent(r *vcsurl.RepoInfo, e *github.Event) (lookout.Event, error) {
 	return nil, nil
 }
 
-func castPushEvent(r *vcsurl.RepoInfo, e *github.Event, push *github.PushEvent) *lookout.PushEvent {
+func castPushEvent(r *lookout.RepositoryInfo, e *github.Event, push *github.PushEvent) *lookout.PushEvent {
 	pe := &lookout.PushEvent{}
 	pe.Provider = Provider
 	pe.InternalID = e.GetID()
@@ -69,7 +69,11 @@ func castHash(sha1 *string) plumbing.Hash {
 	return plumbing.NewHash(*sha1)
 }
 
-func castPullRequestEvent(r *vcsurl.RepoInfo, e *github.Event, pr *github.PullRequestEvent) *lookout.PullRequestEvent {
+func castPullRequestEvent(
+	r *lookout.RepositoryInfo,
+	e *github.Event, pr *github.PullRequestEvent,
+) *lookout.PullRequestEvent {
+
 	if pr.PullRequest == nil && pr.PullRequest.GetID() != 0 {
 		log.Warningf("missing pull request information in pull request event")
 		return nil

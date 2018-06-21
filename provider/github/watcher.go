@@ -29,7 +29,7 @@ var (
 )
 
 type Watcher struct {
-	r *vcsurl.RepoInfo
+	r *lookout.RepositoryInfo
 	o *lookout.WatchOptions
 	c *github.Client
 
