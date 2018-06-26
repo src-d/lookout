@@ -141,8 +141,10 @@ func (e *PushEvent) Revision() *CommitRevision {
 	return &e.CommitRevision
 }
 
+type RepositoryInfo = vcsurl.RepoInfo //TODO(mcuadros): improve repository references
+
 type ReferencePointer struct {
-	Repository *vcsurl.RepoInfo //TODO(mcuadros): improve repository references
+	Repository *RepositoryInfo
 	Reference  *plumbing.Reference
 }
 
