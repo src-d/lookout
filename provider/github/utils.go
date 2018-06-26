@@ -123,3 +123,31 @@ func castPullRequestBranch(b *github.PullRequestBranch) lookout.ReferencePointer
 		Hash:                  b.GetSHA(),
 	}
 }
+
+func extractOwner(ref lookout.ReferencePointer) (owner string, err error) {
+	if ref.Repository() == nil {
+		err = fmt.Errorf("nil repository")
+		return
+	}
+
+	owner = ref.Repository().Username
+	if owner == "" {
+		err = fmt.Errorf("empty owner")
+	}
+
+	return
+}
+
+func extractRepo(ref lookout.ReferencePointer) (repo string, err error) {
+	if ref.Repository() == nil {
+		err = fmt.Errorf("nil repository")
+		return
+	}
+
+	repo = ref.Repository().Name
+	if repo == "" {
+		err = fmt.Errorf("empty repository name")
+	}
+
+	return
+}
