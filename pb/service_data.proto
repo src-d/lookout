@@ -1,0 +1,46 @@
+syntax = "proto3";
+package pb;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "gopkg.in/bblfsh/sdk.v1/uast/generated.proto";
+
+// UAST uses protosizer instead of sizer, this is required for interoperability
+// with the generated proto from bblfsh.
+option (gogoproto.sizer_all) = false;
+option (gogoproto.protosizer_all) = true;
+option (gogoproto.goproto_getters_all) = false;
+
+
+// Data services exposes VCS repositories.
+service Data {
+    rpc GetChanges (ChangesRequest) returns (stream Change);
+}
+
+message File {
+    // File path.
+    string path = 1;
+    // POSIX-style file mode.
+    uint32 mode = 2;
+    // SHA1 of the file contents.
+    string sha1 = 3;
+    // Raw content of the file.
+    bytes content = 4;
+    // UAST.
+    gopkg.in.bblfsh.sdk.v1.uast.Node uast = 5 [(gogoproto.customname) = "UAST"];
+}
+
+message Change {
+    File old = 1;
+    File new = 2;
+}
+
+message ChangesRequest {
+    string repository = 1;
+    string base = 2;
+    string top = 3;
+    string include_pattern = 4;
+    string exclude_pattern = 5;
+    bool changed_only = 6;
+    bool want_contents = 7;
+    bool want_uast = 8;
+}

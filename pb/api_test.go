@@ -49,7 +49,7 @@ func randomFile(rand *rand.Rand, size int) *File {
 	f.Mode = randomValidGitMode(rand)
 	f.Path = randomValidPath(rand)
 	f.Content = randomBytes(rand, size)
-	f.Uast = &uast.Node{
+	f.UAST = &uast.Node{
 		InternalType: "TEST",
 	}
 	return f
