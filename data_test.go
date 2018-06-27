@@ -45,8 +45,10 @@ func tearDownDataServer(t *testing.T, srv *grpc.Server) {
 func TestServerOk(t *testing.T) {
 	for i := 0; i <= 10; i++ {
 		req := &ChangesRequest{
-			Repository: "repo",
-			Top:        "5262fd2b59d10e335a5c941140df16950958322d",
+			Head: &ReferencePointer{
+				InternalRepositoryURL: "repo",
+				Hash: "5262fd2b59d10e335a5c941140df16950958322d",
+			},
 		}
 		changes := generateChanges(i)
 		dr := &MockService{
@@ -83,8 +85,10 @@ func TestServerCancel(t *testing.T) {
 	for i := 0; i <= 10; i++ {
 		for j := 0; j < i; j++ {
 			req := &ChangesRequest{
-				Repository: "repo",
-				Top:        "5262fd2b59d10e335a5c941140df16950958322d",
+				Head: &ReferencePointer{
+					InternalRepositoryURL: "repo",
+					Hash: "5262fd2b59d10e335a5c941140df16950958322d",
+				},
 			}
 			changes := generateChanges(i)
 			tick := make(chan struct{}, 1)
@@ -135,8 +139,10 @@ func TestServerCancel(t *testing.T) {
 
 func TestServerGetChangesError(t *testing.T) {
 	req := &ChangesRequest{
-		Repository: "repo",
-		Top:        "5262fd2b59d10e335a5c941140df16950958322d",
+		Head: &ReferencePointer{
+			InternalRepositoryURL: "repo",
+			Hash: "5262fd2b59d10e335a5c941140df16950958322d",
+		},
 	}
 	changes := generateChanges(10)
 	ExpectedError := fmt.Errorf("TEST ERROR")
@@ -167,8 +173,10 @@ func TestServerGetChangesError(t *testing.T) {
 
 func TestServerGetChangesIterError(t *testing.T) {
 	req := &ChangesRequest{
-		Repository: "repo",
-		Top:        "5262fd2b59d10e335a5c941140df16950958322d",
+		Head: &ReferencePointer{
+			InternalRepositoryURL: "repo",
+			Hash: "5262fd2b59d10e335a5c941140df16950958322d",
+		},
 	}
 	changes := generateChanges(10)
 	ExpectedError := fmt.Errorf("TEST ERROR")
@@ -201,7 +209,7 @@ func generateChanges(size int) []*Change {
 	var changes []*Change
 	for i := 0; i < size; i++ {
 		changes = append(changes, &Change{
-			New: &File{
+			Head: &File{
 				Path: fmt.Sprintf("myfile%d", i),
 			},
 		})

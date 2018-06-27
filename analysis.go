@@ -6,8 +6,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type AnalysisRequest = pb.AnalysisRequest
-type AnalysisResponse = pb.AnalysisResponse
+type EventResponse = pb.EventResponse
 type Comment = pb.Comment
 
 type AnalyzerClient = pb.AnalyzerClient

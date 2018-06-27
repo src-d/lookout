@@ -26,7 +26,7 @@ func NewService(loader server.Loader) *Service {
 
 func (r *Service) GetChanges(req *lookout.ChangesRequest) (
 	lookout.ChangeScanner, error) {
-	ep, err := transport.NewEndpoint(req.GetRepository())
+	ep, err := transport.NewEndpoint(req.Head.Repository().CloneURL)
 	if err != nil {
 		return nil, err
 	}
@@ -36,20 +36,20 @@ func (r *Service) GetChanges(req *lookout.ChangesRequest) (
 		return nil, err
 	}
 
-	if req.GetTop() == "" {
-		return nil, fmt.Errorf("top commit is mandatory")
+	if req.Head == nil {
+		return nil, fmt.Errorf("head reference is mandatory")
 	}
 
 	var base, top *object.Tree
-	if req.GetBase() != "" {
-		base, err = r.resolveCommitTree(s, plumbing.NewHash(req.GetBase()))
+	if req.Base != nil {
+		base, err = r.resolveCommitTree(s, plumbing.NewHash(req.Base.Hash))
 		if err != nil {
 			return nil, fmt.Errorf("error retrieving base commit %s: %s",
-				req.GetBase(), err)
+				req.Base, err)
 		}
 	}
 
-	top, err = r.resolveCommitTree(s, plumbing.NewHash(req.GetTop()))
+	top, err = r.resolveCommitTree(s, plumbing.NewHash(req.Head.Hash))
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (r *Service) GetChanges(req *lookout.ChangesRequest) (
 			req.IncludePattern, req.ExcludePattern)
 	}
 
-	if req.GetWantContents() {
+	if req.WantContents {
 		scanner = NewBlobScanner(scanner, s)
 	}
 

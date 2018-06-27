@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/pb"
 	"github.com/src-d/lookout/util/cache"
 
 	"github.com/google/go-github/github"
@@ -68,7 +69,7 @@ func (s *WatcherTestSuite) TestWatch() {
 	err = w.Watch(ctx, func(e lookout.Event) error {
 		events++
 
-		s.Equal(lookout.PushEventType, e.Type())
+		s.Equal(pb.PushEventType, e.Type())
 		s.Equal("d1f57cc4e520766576c5f1d9e7655aeea5fbccfa", e.ID().String())
 		return nil
 	})

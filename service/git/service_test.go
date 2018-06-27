@@ -52,9 +52,12 @@ func (s *ServiceSuite) TestTree() {
 	})
 
 	resp, err := dr.GetChanges(&lookout.ChangesRequest{
-		Repository: "repo:///myrepo",
-		Top:        s.Basic.Head.String(),
+		Head: &lookout.ReferencePointer{
+			InternalRepositoryURL: "repo://myrepo",
+			Hash: s.Basic.Head.String(),
+		},
 	})
+
 	require.NoError(err)
 	require.NotNil(resp)
 }
@@ -67,9 +70,14 @@ func (s *ServiceSuite) TestDiffTree() {
 	})
 
 	resp, err := dr.GetChanges(&lookout.ChangesRequest{
-		Repository: "repo:///myrepo",
-		Base:       "918c48b83bd081e863dbe1b80f8998f058cd8294",
-		Top:        s.Basic.Head.String(),
+		Base: &lookout.ReferencePointer{
+			InternalRepositoryURL: "repo://myrepo",
+			Hash: "918c48b83bd081e863dbe1b80f8998f058cd8294",
+		},
+		Head: &lookout.ReferencePointer{
+			InternalRepositoryURL: "repo://myrepo",
+			Hash: s.Basic.Head.String(),
+		},
 	})
 	require.NoError(err)
 	require.NotNil(resp)
@@ -81,8 +89,10 @@ func (s *ServiceSuite) TestErrorNoRepository() {
 	dr := NewService(server.MapLoader{})
 
 	resp, err := dr.GetChanges(&lookout.ChangesRequest{
-		Repository: "repo:///myrepo",
-		Top:        s.Basic.Head.String(),
+		Head: &lookout.ReferencePointer{
+			InternalRepositoryURL: "repo:///myrepo",
+			Hash: s.Basic.Head.String(),
+		},
 	})
 	require.Error(err)
 	require.Nil(resp)
@@ -96,8 +106,10 @@ func (s *ServiceSuite) TestErrorBadTop() {
 	})
 
 	resp, err := dr.GetChanges(&lookout.ChangesRequest{
-		Repository: "repo:///myrepo",
-		Top:        "979a482e63de12d39675ff741c5a0cf4f068c109",
+		Head: &lookout.ReferencePointer{
+			InternalRepositoryURL: "repo:///myrepo",
+			Hash: "979a482e63de12d39675ff741c5a0cf4f068c109",
+		},
 	})
 	require.Error(err)
 	require.Nil(resp)

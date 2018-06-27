@@ -28,7 +28,7 @@ func (s *Service) GetChanges(req *lookout.ChangesRequest) (
 	lookout.ChangeScanner, error) {
 
 	wantContents := req.WantContents
-	if req.WantUast {
+	if req.WantUAST {
 		req.WantContents = true
 	}
 
@@ -37,7 +37,7 @@ func (s *Service) GetChanges(req *lookout.ChangesRequest) (
 		return nil, err
 	}
 
-	if !req.WantUast {
+	if !req.WantUAST {
 		return changes, nil
 	}
 
@@ -67,12 +67,12 @@ func (s *ChangeScanner) Next() bool {
 
 	s.val = s.underlying.Change()
 
-	if err := s.processFile(s.val.Old); err != nil {
+	if err := s.processFile(s.val.Base); err != nil {
 		s.err = err
 		return false
 	}
 
-	if err := s.processFile(s.val.New); err != nil {
+	if err := s.processFile(s.val.Head); err != nil {
 		s.err = err
 		return false
 	}
@@ -102,7 +102,7 @@ func (s *ChangeScanner) processFile(f *lookout.File) error {
 	}
 
 	var err error
-	f.Uast, err = s.parseFile(f)
+	f.UAST, err = s.parseFile(f)
 	if err != nil {
 		return err
 	}
@@ -116,13 +116,13 @@ func (s *ChangeScanner) processFile(f *lookout.File) error {
 
 func (s *ChangeScanner) parseFile(f *lookout.File) (
 	*uast.Node, error) {
-	if f.GetPath() == "" {
+	if f.Path == "" {
 		return nil, nil
 	}
 
 	req := &protocol.ParseRequest{
-		Filename: f.GetPath(),
-		Content:  string(f.GetContent()),
+		Filename: f.Path,
+		Content:  string(f.Content),
 		Encoding: protocol.UTF8,
 	}
 	resp, err := s.client.Parse(context.TODO(), req)

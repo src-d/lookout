@@ -191,7 +191,7 @@ func (s *ScannerSuite) TestBlobScanner() {
 	changes := make(map[string]*lookout.Change)
 	for cs.Next() {
 		ch := cs.Change()
-		changes[ch.New.Path] = ch
+		changes[ch.Head.Path] = ch
 	}
 
 	require.False(cs.Next())
@@ -206,7 +206,7 @@ import "fmt"
 func main() {
 	fmt.Println("Hello, playground")
 }
-`, string(changes["vendor/foo.go"].New.Content))
+`, string(changes["vendor/foo.go"].Head.Content))
 }
 
 func (s *ScannerSuite) TestDiffTreeScanner() {

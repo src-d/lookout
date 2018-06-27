@@ -5,6 +5,8 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
 option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.sizer_all) = false;
+option (gogoproto.protosizer_all) = true;
 
 // CommitRevision defines a range of commits, from a base to a head.
 message CommitRevision {

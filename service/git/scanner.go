@@ -55,10 +55,10 @@ func (s *TreeScanner) Next() bool {
 			continue
 		}
 
-		ch := &lookout.Change{New: &lookout.File{
+		ch := &lookout.Change{Head: &lookout.File{
 			Path: name,
 			Mode: uint32(entry.Mode),
-			Sha1: entry.Hash.String(),
+			Hash: entry.Hash.String(),
 		}}
 
 		s.val = ch
@@ -129,8 +129,8 @@ func (s *DiffTreeScanner) Err() error {
 
 func (s *DiffTreeScanner) Change() *lookout.Change {
 	return &lookout.Change{
-		Old: gitChangeEntryToApiFile(s.val.From),
-		New: gitChangeEntryToApiFile(s.val.To),
+		Base: gitChangeEntryToApiFile(s.val.From),
+		Head: gitChangeEntryToApiFile(s.val.To),
 	}
 }
 
@@ -146,7 +146,7 @@ func gitChangeEntryToApiFile(entry object.ChangeEntry) *lookout.File {
 	return &lookout.File{
 		Path: entry.Name,
 		Mode: uint32(entry.TreeEntry.Mode),
-		Sha1: entry.TreeEntry.Hash.String(),
+		Hash: entry.TreeEntry.Hash.String(),
 	}
 }
 
@@ -196,11 +196,11 @@ func (s *FilterScanner) Next() bool {
 	for s.Scanner.Next() {
 		ch := s.Scanner.Change()
 
-		if !s.matchInclude(ch.New.Path) {
+		if !s.matchInclude(ch.Head.Path) {
 			continue
 		}
 
-		if s.matchExclude(ch.New.Path) {
+		if s.matchExclude(ch.Head.Path) {
 			continue
 		}
 
@@ -276,13 +276,13 @@ func (s *BlobScanner) Next() bool {
 
 	for s.Scanner.Next() {
 		ch := s.Scanner.Change()
-		if err := s.addBlob(ch.GetOld()); err != nil {
+		if err := s.addBlob(ch.Base); err != nil {
 			s.done = true
 			s.err = err
 			return false
 		}
 
-		if err := s.addBlob(ch.GetNew()); err != nil {
+		if err := s.addBlob(ch.Head); err != nil {
 			s.done = true
 			s.err = err
 			return false
@@ -301,13 +301,12 @@ func (s *BlobScanner) addBlob(f *lookout.File) (err error) {
 		return nil
 	}
 
-	sha1 := f.GetSha1()
-	if sha1 == "" {
+	if f.Hash == "" {
 		return nil
 	}
 
 	obj, err := s.Storer.EncodedObject(
-		plumbing.BlobObject, plumbing.NewHash(sha1))
+		plumbing.BlobObject, plumbing.NewHash(f.Hash))
 	if err != nil {
 		return err
 	}

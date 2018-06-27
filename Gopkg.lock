@@ -263,7 +263,7 @@
     "unix",
     "windows"
   ]
-  revision = "a200a19cb90b19de298170992778b1fda7217bd6"
+  revision = "7138fd3d9dc8335c567ca206f4333fb75eb05d56"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -353,6 +353,7 @@
     ".",
     "helper/chroot",
     "helper/polyfill",
+    "memfs",
     "osfs",
     "util"
   ]
@@ -433,6 +434,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "50950b871bbfacd624b61e456580133e705549684700d741fe1b649b4e05dbf1"
+  inputs-digest = "d473c1db7f86def1b63e76f1a53cf5f59b7d0a9ec017358bf83a79a89ceaa66f"
   solver-name = "gps-cdcl"
   solver-version = 1

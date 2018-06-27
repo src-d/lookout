@@ -5,6 +5,8 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "event.proto";
 
 option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.sizer_all) = false;
+option (gogoproto.protosizer_all) = true;
 
 // Analyzer service should be implemented by analyzers to receive events from
 // the server. It is currently implemented as a single long-lived request, so

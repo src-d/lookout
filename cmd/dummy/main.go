@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/src-d/lookout"
-
 	"github.com/src-d/lookout/dummy"
 
 	"github.com/jessevdk/go-flags"
