@@ -95,11 +95,18 @@ func (c *AnalyzeCommand) Execute(args []string) error {
 	}
 
 	client := lookout.NewAnalyzerClient(conn)
-	resp, err := client.Analyze(context.TODO(), &lookout.AnalysisRequest{
-		Repository: "repo:///repo",
-		BaseHash:   parentHash,
-		NewHash:    headHash,
-	})
+	resp, err := client.NotifyPullRequestEvent(context.TODO(),
+		&lookout.PullRequestEvent{
+			CommitRevision: lookout.CommitRevision{
+				Base: lookout.ReferencePointer{
+					InternalRepositoryURL: "file:///repo",
+					Hash: parentHash,
+				},
+				Head: lookout.ReferencePointer{
+					InternalRepositoryURL: "file:///repo",
+					Hash: headHash,
+				},
+			}})
 	if err != nil {
 		return err
 	}
