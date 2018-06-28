@@ -1,9 +1,10 @@
-package lookout
+package git
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/src-d/lookout"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
 )
@@ -19,7 +20,7 @@ func NewSyncer(l *Library) *Syncer {
 }
 
 // Sync syncs the local git repository to the given commit revision.
-func (s *Syncer) Sync(ctx context.Context, rev *CommitRevision) error {
+func (s *Syncer) Sync(ctx context.Context, rev *lookout.CommitRevision) error {
 	r, err := s.l.GetOrInit(rev.Head.Repository())
 	if err != nil {
 		return err

@@ -1,8 +1,10 @@
-package lookout
+package git
 
 import (
 	"fmt"
 	"os"
+
+	"github.com/src-d/lookout"
 
 	"gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-errors.v1"
@@ -29,7 +31,8 @@ func NewLibrary(fs billy.Filesystem) *Library {
 
 // GetOrInit get the requested repository based on the given URL, or inits a
 // new repository.
-func (l *Library) GetOrInit(url *RepositoryInfo) (*git.Repository, error) {
+func (l *Library) GetOrInit(url *lookout.RepositoryInfo) (
+	*git.Repository, error) {
 	has, err := l.Has(url)
 	if err != nil {
 		return nil, err
@@ -43,7 +46,7 @@ func (l *Library) GetOrInit(url *RepositoryInfo) (*git.Repository, error) {
 }
 
 // Init inits a new repository for the given URL.
-func (l *Library) Init(url *RepositoryInfo) (*git.Repository, error) {
+func (l *Library) Init(url *lookout.RepositoryInfo) (*git.Repository, error) {
 	has, err := l.Has(url)
 	if err != nil {
 		return nil, err
@@ -76,7 +79,7 @@ func (l *Library) Init(url *RepositoryInfo) (*git.Repository, error) {
 }
 
 // Has returns true if a repository with the given URL exists.
-func (l *Library) Has(url *RepositoryInfo) (bool, error) {
+func (l *Library) Has(url *lookout.RepositoryInfo) (bool, error) {
 	_, err := l.fs.Stat(l.repositoryPath(url))
 	if err == nil {
 		return true, nil
@@ -90,7 +93,7 @@ func (l *Library) Has(url *RepositoryInfo) (bool, error) {
 }
 
 // Get get the requested repository based on the given URL.
-func (l *Library) Get(url *RepositoryInfo) (*git.Repository, error) {
+func (l *Library) Get(url *lookout.RepositoryInfo) (*git.Repository, error) {
 	has, err := l.Has(url)
 	if err != nil {
 		return nil, err
@@ -108,7 +111,8 @@ func (l *Library) Get(url *RepositoryInfo) (*git.Repository, error) {
 	return git.Open(s, nil)
 }
 
-func (l *Library) repositoryStorer(url *RepositoryInfo) (storage.Storer, error) {
+func (l *Library) repositoryStorer(url *lookout.RepositoryInfo) (
+	storage.Storer, error) {
 	fs, err := l.fs.Chroot(l.repositoryPath(url))
 	if err != nil {
 		return nil, err
@@ -117,6 +121,6 @@ func (l *Library) repositoryStorer(url *RepositoryInfo) (storage.Storer, error) 
 	return filesystem.NewStorage(fs)
 }
 
-func (l *Library) repositoryPath(url *RepositoryInfo) string {
+func (l *Library) repositoryPath(url *lookout.RepositoryInfo) string {
 	return fmt.Sprintf("%s/%s", url.RepoHost, url.FullName)
 }

@@ -1,4 +1,4 @@
-package lookout
+package git
 
 import (
 	"testing"
