@@ -62,3 +62,4 @@
   [[prune.project]]
     name = "gopkg.in/src-d/go-git-fixtures.v3"
     non-go = false
+    unused-packages = false
