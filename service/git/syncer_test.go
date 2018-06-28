@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/src-d/lookout"
+
 	"github.com/stretchr/testify/require"
 	"gopkg.in/sourcegraph/go-vcsurl.v1"
 	"gopkg.in/src-d/go-billy.v4/memfs"

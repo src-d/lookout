@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/src-d/lookout"
+
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
 )
