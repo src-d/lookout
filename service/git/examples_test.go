@@ -30,9 +30,14 @@ func Example() {
 	})
 
 	changes, err := srv.GetChanges(&lookout.ChangesRequest{
-		Repository: "repo://myrepo",
-		Base:       "af2d6a6954d532f8ffb47615169c8fdf9d383a1a",
-		Top:        "6ecf0ef2c2dffb796033e5a02219af86ec6584e5",
+		Base: &lookout.ReferencePointer{
+			InternalRepositoryURL: "repo:///myrepo",
+			Hash: "af2d6a6954d532f8ffb47615169c8fdf9d383a1a",
+		},
+		Head: &lookout.ReferencePointer{
+			InternalRepositoryURL: "repo:///myrepo",
+			Hash: "6ecf0ef2c2dffb796033e5a02219af86ec6584e5",
+		},
 	})
 	if err != nil {
 		panic(err)
@@ -40,7 +45,7 @@ func Example() {
 
 	for changes.Next() {
 		change := changes.Change()
-		fmt.Printf("changed: %s\n", change.GetNew().GetPath())
+		fmt.Printf("changed: %s\n", change.Head.Path)
 	}
 
 	if err := changes.Err(); err != nil {

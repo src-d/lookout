@@ -66,26 +66,31 @@ func (s *ServiceSuite) TestNoContents() {
 
 	expectedChanges := []*lookout.Change{
 		&lookout.Change{
-			New: &lookout.File{
+			Head: &lookout.File{
 				Path:    "f1new",
 				Content: []byte("f1 new"),
 			},
 		},
 		&lookout.Change{
-			Old: &lookout.File{
+			Base: &lookout.File{
 				Path:    "f2old",
 				Content: []byte("f2 old"),
 			},
-			New: &lookout.File{
+			Head: &lookout.File{
 				Path:    "f2new",
 				Content: []byte("f2 new"),
 			},
 		}}
 	req := &lookout.ChangesRequest{
-		Repository: "repo://myrepo",
-		Base:       "foo",
-		Top:        "bar",
-		WantUast:   true,
+		Base: &lookout.ReferencePointer{
+			InternalRepositoryURL: "repo://myrepo",
+			Hash: "foo",
+		},
+		Head: &lookout.ReferencePointer{
+			InternalRepositoryURL: "repo://myrepo",
+			Hash: "bar",
+		},
+		WantUAST: true,
 	}
 
 	underlying.ExpectedRequest = req
@@ -108,8 +113,8 @@ func (s *ServiceSuite) TestNoContents() {
 	require.NoError(scan.Err())
 	require.Equal(len(expectedChanges), len(changes))
 	for _, ch := range changes {
-		require.Equal(s.Mock.Nodes[ch.GetOld().GetPath()], ch.GetOld().GetUast())
-		require.Equal(s.Mock.Nodes[ch.GetNew().GetPath()], ch.GetNew().GetUast())
+		require.Equal(s.Mock.Nodes[ch.Base.Path], ch.Base.UAST)
+		require.Equal(s.Mock.Nodes[ch.Head.Path], ch.Head.UAST)
 	}
 
 	require.NoError(scan.Close())

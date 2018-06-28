@@ -37,17 +37,19 @@ func castPushEvent(r *lookout.RepositoryInfo, e *github.Event, push *github.Push
 	pe.Provider = Provider
 	pe.InternalID = e.GetID()
 	pe.CreatedAt = e.GetCreatedAt()
-	pe.Commits = push.GetSize()
-	pe.DistinctCommits = push.GetDistinctSize()
+	pe.Commits = uint32(push.GetSize())
+	pe.DistinctCommits = uint32(push.GetDistinctSize())
 
 	pe.Head = lookout.ReferencePointer{
-		Repository: r,
-		Reference:  plumbing.NewReferenceFromStrings(push.GetRef(), push.GetHead()),
+		InternalRepositoryURL: r.CloneURL,
+		ReferenceName:         plumbing.ReferenceName(push.GetRef()),
+		Hash:                  push.GetHead(),
 	}
 
 	pe.Base = lookout.ReferencePointer{
-		Repository: r,
-		Reference:  plumbing.NewReferenceFromStrings(push.GetRef(), push.GetBefore()),
+		InternalRepositoryURL: r.CloneURL,
+		ReferenceName:         plumbing.ReferenceName(push.GetRef()),
+		Hash:                  push.GetBefore(),
 	}
 
 	return pe
@@ -84,20 +86,16 @@ func castPullRequestEvent(
 	pre.InternalID = e.GetID()
 	pre.Source = castPullRequestBranch(pr.PullRequest.GetHead())
 	pre.Merge = lookout.ReferencePointer{
-		Repository: r,
-		Reference: plumbing.NewReferenceFromStrings(
-			fmt.Sprintf("refs/pull/%d/merge", pr.PullRequest.GetNumber()),
-			pr.PullRequest.GetMergeCommitSHA(),
-		),
+		InternalRepositoryURL: r.CloneURL,
+		ReferenceName:         plumbing.ReferenceName(fmt.Sprintf("refs/pull/%d/merge", pr.PullRequest.GetNumber())),
+		Hash:                  pr.PullRequest.GetMergeCommitSHA(),
 	}
 
 	pre.Base = castPullRequestBranch(pr.PullRequest.GetBase())
 	pre.Head = lookout.ReferencePointer{
-		Repository: r,
-		Reference: plumbing.NewReferenceFromStrings(
-			fmt.Sprintf("refs/pull/%d/head", pr.PullRequest.GetNumber()),
-			pr.PullRequest.GetHead().GetSHA(),
-		),
+		InternalRepositoryURL: r.CloneURL,
+		ReferenceName:         plumbing.ReferenceName(fmt.Sprintf("refs/pull/%d/head", pr.PullRequest.GetNumber())),
+		Hash:                  pr.PullRequest.GetHead().GetSHA(),
 	}
 
 	pre.IsMergeable = pr.PullRequest.GetMergeable()
@@ -120,10 +118,8 @@ func castPullRequestBranch(b *github.PullRequestBranch) lookout.ReferencePointer
 	}
 
 	return lookout.ReferencePointer{
-		Repository: r,
-		Reference: plumbing.NewReferenceFromStrings(
-			fmt.Sprintf("refs/heads/%s", b.GetRef()),
-			b.GetSHA(),
-		),
+		InternalRepositoryURL: r.CloneURL,
+		ReferenceName:         plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", b.GetRef())),
+		Hash:                  b.GetSHA(),
 	}
 }

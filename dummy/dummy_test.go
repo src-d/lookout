@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/src-d/lookout"
-	"github.com/src-d/lookout/git"
+	"github.com/src-d/lookout/service/git"
 
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -104,9 +104,13 @@ func (s *DummySuite) Test() {
 
 	client := lookout.NewAnalyzerClient(conn)
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*10)
-	resp, err := client.Analyze(ctx, &lookout.AnalysisRequest{
-		Repository: "repo:///fixture/basic",
-		NewHash:    s.Basic.Head.String(),
+	resp, err := client.NotifyPullRequestEvent(ctx, &lookout.PullRequestEvent{
+		CommitRevision: lookout.CommitRevision{
+			Head: lookout.ReferencePointer{
+				InternalRepositoryURL: "repo:///fixture/basic",
+				Hash: s.Basic.Head.String(),
+			},
+		},
 	})
 	require.NoError(err)
 	require.NotNil(resp)

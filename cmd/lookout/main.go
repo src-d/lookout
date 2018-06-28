@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/src-d/lookout"
-	"github.com/src-d/lookout/bblfsh"
-	"github.com/src-d/lookout/git"
+	"github.com/src-d/lookout/service/bblfsh"
+	"github.com/src-d/lookout/service/git"
 
 	"github.com/jessevdk/go-flags"
 	"google.golang.org/grpc"

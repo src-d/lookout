@@ -1,0 +1,65 @@
+syntax = "proto3";
+package pb;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.sizer_all) = false;
+option (gogoproto.protosizer_all) = true;
+
+// CommitRevision defines a range of commits, from a base to a head.
+message CommitRevision {
+    // Base of the revision.
+    ReferencePointer base = 1 [(gogoproto.nullable) = false];
+    // Head of the revision.
+    ReferencePointer head = 2 [(gogoproto.nullable) = false];
+}
+
+
+// ReferencePointer is the reference to a git refererence in a repository.
+message ReferencePointer {
+    // InternalRepositoryURL is the origina; clone URL not canonized.
+    string internal_repository_url = 1 [(gogoproto.customname) = "InternalRepositoryURL"];
+    // ReferenceName is the name of the reference pointing.
+    string ReferenceName = 2 [(gogoproto.casttype) = "gopkg.in/src-d/go-git.v4/plumbing.ReferenceName"];
+    // Hash is the hash of the reference pointing.
+    string Hash = 3;
+}
+
+// PushEvent represents a Push to a git repository.
+message PushEvent {
+    // Provider triggering this event.
+    string provider = 1;
+    // InternalId is the internal id for this event at the provider.
+    string internal_id = 2 [(gogoproto.customname) = "InternalID"];
+    // CreateAt is the timestamp of the creation date of the push event.
+    google.protobuf.Timestamp created_at = 3 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+    // Commits is the number of commits in the push.
+    uint32 commits = 4;
+    // Commits is the number of distinct commits in the push.
+    uint32 distinct_commits = 5;
+
+    CommitRevision commit_revision = 7 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// PullRequestEvent represents a PullRequest being created or updated.
+message PullRequestEvent {
+    // Provider triggering this event.
+    string provider = 1;
+    // InternalId is the internal id for this event at the provider.
+    string internal_id = 2 [(gogoproto.customname) = "InternalID"];
+    // CreateAt is the timestamp of the creation date of the push event.
+    google.protobuf.Timestamp created_at = 3 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+    // UpdatedAt is the timestamp of the last modification of the pull request.
+    google.protobuf.Timestamp updated_at = 4 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+    // IsMergeable, if the pull request is mergeable.
+    bool is_mergeable = 5;
+    // Source reference to the original branch and repository were the changes
+    // came from.
+    ReferencePointer source = 8 [(gogoproto.nullable) = false];
+    // Merge  test branch where the PullRequest was merged.
+    ReferencePointer merge = 9 [(gogoproto.nullable) = false];
+
+    CommitRevision commit_revision = 7 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
