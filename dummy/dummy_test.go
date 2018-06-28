@@ -44,7 +44,7 @@ func (s *DummySuite) SetupSuite() {
 	server := &lookout.DataServerHandler{
 		ChangeGetter: git.NewService(
 			gitsrv.MapLoader{
-				"repo:///fixture/basic": sto,
+				"file:///fixture/basic": sto,
 			},
 		),
 	}
@@ -106,8 +106,12 @@ func (s *DummySuite) Test() {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*10)
 	resp, err := client.NotifyPullRequestEvent(ctx, &lookout.PullRequestEvent{
 		CommitRevision: lookout.CommitRevision{
+			Base: lookout.ReferencePointer{
+				InternalRepositoryURL: "file:///fixture/basic",
+				Hash: "918c48b83bd081e863dbe1b80f8998f058cd8294",
+			},
 			Head: lookout.ReferencePointer{
-				InternalRepositoryURL: "repo:///fixture/basic",
+				InternalRepositoryURL: "file:///fixture/basic",
 				Hash: s.Basic.Head.String(),
 			},
 		},

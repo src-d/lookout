@@ -80,10 +80,18 @@ func (a *Analyzer) maxLineWidth(ch *lookout.Change) []*lookout.Comment {
 }
 
 func (a *Analyzer) isBinary(f *lookout.File) bool {
+	if f == nil {
+		return false
+	}
+
 	ok, err := binary.IsBinary(bytes.NewReader(f.Content))
 	return err != nil || ok
 }
 
 func (a *Analyzer) countLines(f *lookout.File) int {
+	if f == nil {
+		return 0
+	}
+
 	return bytes.Count(f.Content, []byte("\n"))
 }

@@ -48,12 +48,12 @@ func (s *ServiceSuite) TestTree() {
 	require := s.Require()
 
 	dr := NewService(server.MapLoader{
-		"repo:///myrepo": s.Storer,
+		"file:///myrepo": s.Storer,
 	})
 
 	resp, err := dr.GetChanges(&lookout.ChangesRequest{
 		Head: &lookout.ReferencePointer{
-			InternalRepositoryURL: "repo://myrepo",
+			InternalRepositoryURL: "file:///myrepo",
 			Hash: s.Basic.Head.String(),
 		},
 	})
@@ -66,16 +66,16 @@ func (s *ServiceSuite) TestDiffTree() {
 	require := s.Require()
 
 	dr := NewService(server.MapLoader{
-		"repo:///myrepo": s.Storer,
+		"file:///myrepo": s.Storer,
 	})
 
 	resp, err := dr.GetChanges(&lookout.ChangesRequest{
 		Base: &lookout.ReferencePointer{
-			InternalRepositoryURL: "repo://myrepo",
+			InternalRepositoryURL: "file:///myrepo",
 			Hash: "918c48b83bd081e863dbe1b80f8998f058cd8294",
 		},
 		Head: &lookout.ReferencePointer{
-			InternalRepositoryURL: "repo://myrepo",
+			InternalRepositoryURL: "file:///myrepo",
 			Hash: s.Basic.Head.String(),
 		},
 	})
@@ -90,7 +90,7 @@ func (s *ServiceSuite) TestErrorNoRepository() {
 
 	resp, err := dr.GetChanges(&lookout.ChangesRequest{
 		Head: &lookout.ReferencePointer{
-			InternalRepositoryURL: "repo:///myrepo",
+			InternalRepositoryURL: "file:///myrepo",
 			Hash: s.Basic.Head.String(),
 		},
 	})
@@ -102,12 +102,12 @@ func (s *ServiceSuite) TestErrorBadTop() {
 	require := s.Require()
 
 	dr := NewService(server.MapLoader{
-		"repo:///myrepo": s.Storer,
+		"file:///myrepo": s.Storer,
 	})
 
 	resp, err := dr.GetChanges(&lookout.ChangesRequest{
 		Head: &lookout.ReferencePointer{
-			InternalRepositoryURL: "repo:///myrepo",
+			InternalRepositoryURL: "file:///myrepo",
 			Hash: "979a482e63de12d39675ff741c5a0cf4f068c109",
 		},
 	})

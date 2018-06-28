@@ -112,10 +112,19 @@ func (s *ServiceSuite) TestNoContents() {
 
 	require.NoError(scan.Err())
 	require.Equal(len(expectedChanges), len(changes))
+
+	expectedNodes := make(map[string]*uast.Node)
 	for _, ch := range changes {
-		require.Equal(s.Mock.Nodes[ch.Base.Path], ch.Base.UAST)
-		require.Equal(s.Mock.Nodes[ch.Head.Path], ch.Head.UAST)
+		if ch.Base != nil {
+			expectedNodes[ch.Base.Path] = ch.Base.UAST
+		}
+
+		if ch.Head != nil {
+			expectedNodes[ch.Head.Path] = ch.Head.UAST
+		}
 	}
+
+	require.Equal(expectedNodes, s.Mock.Nodes)
 
 	require.NoError(scan.Close())
 }
