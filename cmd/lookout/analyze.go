@@ -10,7 +10,6 @@ import (
 
 	"google.golang.org/grpc"
 	gogit "gopkg.in/src-d/go-git.v4"
-	gogitsrv "gopkg.in/src-d/go-git.v4/plumbing/transport/server"
 )
 
 func init() {
@@ -67,12 +66,10 @@ func (c *AnalyzeCommand) Execute(args []string) error {
 		return err
 	}
 
-	l := gogitsrv.MapLoader{
-		"file:///repo": r.Storer,
-	}
+	loader := git.NewStorerCommitLoader(r.Storer)
 	srv := &lookout.DataServerHandler{
 		ChangeGetter: bblfsh.NewService(
-			git.NewService(l),
+			git.NewService(loader),
 			bblfshConn,
 		),
 	}

@@ -1,12 +1,12 @@
 package git
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/src-d/lookout"
 
 	"gopkg.in/src-d/go-git-fixtures.v3"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport/server"
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
 
@@ -25,20 +25,18 @@ func Example() {
 
 	// Create the git service with a repository loader that allows it to find
 	// a repository by ID.
-	srv := NewService(server.MapLoader{
-		"file:///myrepo": storer,
-	})
-
-	changes, err := srv.GetChanges(&lookout.ChangesRequest{
-		Base: &lookout.ReferencePointer{
-			InternalRepositoryURL: "file:///myrepo",
-			Hash: "af2d6a6954d532f8ffb47615169c8fdf9d383a1a",
-		},
-		Head: &lookout.ReferencePointer{
-			InternalRepositoryURL: "file:///myrepo",
-			Hash: "6ecf0ef2c2dffb796033e5a02219af86ec6584e5",
-		},
-	})
+	srv := NewService(&StorerCommitLoader{storer})
+	changes, err := srv.GetChanges(context.Background(),
+		&lookout.ChangesRequest{
+			Base: &lookout.ReferencePointer{
+				InternalRepositoryURL: "file:///myrepo",
+				Hash: "af2d6a6954d532f8ffb47615169c8fdf9d383a1a",
+			},
+			Head: &lookout.ReferencePointer{
+				InternalRepositoryURL: "file:///myrepo",
+				Hash: "6ecf0ef2c2dffb796033e5a02219af86ec6584e5",
+			},
+		})
 	if err != nil {
 		panic(err)
 	}

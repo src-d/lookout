@@ -24,7 +24,7 @@ func NewService(underlying lookout.ChangeGetter, conn *grpc.ClientConn) *Service
 	}
 }
 
-func (s *Service) GetChanges(req *lookout.ChangesRequest) (
+func (s *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 	lookout.ChangeScanner, error) {
 
 	wantContents := req.WantContents
@@ -32,7 +32,7 @@ func (s *Service) GetChanges(req *lookout.ChangesRequest) (
 		req.WantContents = true
 	}
 
-	changes, err := s.underlying.GetChanges(req)
+	changes, err := s.underlying.GetChanges(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -43,6 +43,7 @@ func (s *Service) GetChanges(req *lookout.ChangesRequest) (
 
 	return &ChangeScanner{
 		underlying:    changes,
+		ctx:           ctx,
 		client:        s.client,
 		purgeContents: !wantContents,
 	}, nil
@@ -50,6 +51,7 @@ func (s *Service) GetChanges(req *lookout.ChangesRequest) (
 
 type ChangeScanner struct {
 	underlying    lookout.ChangeScanner
+	ctx           context.Context
 	client        protocol.ProtocolServiceClient
 	purgeContents bool
 	val           *lookout.Change
@@ -125,7 +127,7 @@ func (s *ChangeScanner) parseFile(f *lookout.File) (
 		Content:  string(f.Content),
 		Encoding: protocol.UTF8,
 	}
-	resp, err := s.client.Parse(context.TODO(), req)
+	resp, err := s.client.Parse(s.ctx, req)
 	if err != nil {
 		return nil, err
 	}

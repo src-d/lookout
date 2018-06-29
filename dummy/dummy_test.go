@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-git-fixtures.v3"
-	gitsrv "gopkg.in/src-d/go-git.v4/plumbing/transport/server"
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
 
@@ -42,11 +41,7 @@ func (s *DummySuite) SetupSuite() {
 
 	s.apiServer = grpc.NewServer()
 	server := &lookout.DataServerHandler{
-		ChangeGetter: git.NewService(
-			gitsrv.MapLoader{
-				"file:///fixture/basic": sto,
-			},
-		),
+		ChangeGetter: git.NewService(&git.StorerCommitLoader{sto}),
 	}
 	lookout.RegisterDataServer(s.apiServer, server)
 

@@ -53,9 +53,10 @@ func (s *Syncer) Sync(ctx context.Context,
 		Force:      true,
 	}
 
-	if err := r.FetchContext(ctx, opts); err != nil {
-		return err
+	err = r.FetchContext(ctx, opts)
+	if err == git.NoErrAlreadyUpToDate {
+		return nil
 	}
 
-	return nil
+	return err
 }

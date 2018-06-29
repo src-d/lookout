@@ -19,7 +19,7 @@ type File = pb.File
 type ChangeGetter interface {
 	// GetChanges returns a ChangeScanner that scans all changes according
 	// to the request.
-	GetChanges(*ChangesRequest) (ChangeScanner, error)
+	GetChanges(context.Context, *ChangesRequest) (ChangeScanner, error)
 }
 
 func RegisterDataServer(s *grpc.Server, srv *DataServerHandler) {
@@ -52,7 +52,7 @@ func (s *DataServerHandler) GetChanges(req *ChangesRequest,
 
 	ctx := srv.Context()
 	cancel := ctx.Done()
-	iter, err := s.ChangeGetter.GetChanges(req)
+	iter, err := s.ChangeGetter.GetChanges(ctx, req)
 	if err != nil {
 		return err
 	}
