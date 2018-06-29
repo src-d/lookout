@@ -36,7 +36,7 @@ type Watcher struct {
 	cache *cache.ValidableCache
 
 	// delay is time in seconds to wait between requests
-	poolInterval time.Duration
+	pollInterval time.Duration
 }
 
 // NewWatcher returns a new
@@ -84,7 +84,7 @@ func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-time.After(w.poolInterval):
+		case <-time.After(w.pollInterval):
 			continue
 		}
 	}
@@ -134,7 +134,7 @@ func (w *Watcher) doEventRequest(ctx context.Context, username, repository strin
 	}
 
 	secs, _ := strconv.Atoi(resp.Response.Header.Get("X-Poll-Interval"))
-	w.poolInterval = time.Duration(secs) * time.Second
+	w.pollInterval = time.Duration(secs) * time.Second
 
 	if isStatusNotModified(resp.Response) {
 		return nil, nil, NoErrNotModified.New()
@@ -143,7 +143,7 @@ func (w *Watcher) doEventRequest(ctx context.Context, username, repository strin
 	log.With(log.Fields{
 		"remaining-requests": resp.Rate.Remaining,
 		"reset-at":           resp.Rate.Reset,
-		"pool-interval":      w.poolInterval,
+		"poll-interval":      w.pollInterval,
 		"events":             len(events),
 	}).Debugf("Requested to events endpoint done.")
 
