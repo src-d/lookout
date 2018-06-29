@@ -5,7 +5,12 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	_ "google.golang.org/grpc/grpclog/glogger"
+	"gopkg.in/src-d/go-log.v1"
 )
+
+func init() {
+	log.DefaultLogger = log.New(log.Fields{"app": "lookout"})
+}
 
 var parser = flags.NewParser(nil, flags.Default)
 

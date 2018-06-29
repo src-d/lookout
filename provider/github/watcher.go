@@ -40,7 +40,7 @@ type Watcher struct {
 }
 
 // NewWatcher returns a new
-func NewWatcher(o *lookout.WatchOptions) (*Watcher, error) {
+func NewWatcher(transport http.RoundTripper, o *lookout.WatchOptions) (*Watcher, error) {
 	r, err := vcsurl.Parse(o.URL)
 	if err != nil {
 		return nil, err
@@ -50,6 +50,7 @@ func NewWatcher(o *lookout.WatchOptions) (*Watcher, error) {
 
 	t := httpcache.NewTransport(cache)
 	t.MarkCachedResponses = true
+	t.Transport = transport
 
 	return &Watcher{
 		r: r,

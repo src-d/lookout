@@ -54,7 +54,7 @@ func (s *WatcherTestSuite) TestWatch() {
 		fmt.Fprint(w, `[{"id":"1", "type":"PushEvent", "payload":{"push_id": 1}}]`)
 	})
 
-	w, err := NewWatcher(&lookout.WatchOptions{
+	w, err := NewWatcher(nil, &lookout.WatchOptions{
 		URL: "github.com/mock/test",
 	})
 
@@ -84,7 +84,7 @@ func (s *WatcherTestSuite) TestWatch_WithError() {
 		fmt.Fprint(w, `[{"id":"1", "type":"PushEvent", "payload":{"push_id": 1}}]`)
 	})
 
-	w, err := NewWatcher(&lookout.WatchOptions{
+	w, err := NewWatcher(nil, &lookout.WatchOptions{
 		URL: "github.com/mock/test",
 	})
 

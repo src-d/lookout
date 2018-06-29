@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/provider/github"
@@ -21,11 +22,13 @@ func init() {
 }
 
 type ServeCommand struct {
-	Analyzer   string `long:"analyzer" default:"ipv4://localhost:10302" env:"LOOKOUT_ANALYZER" description:"gRPC URL of the analyzer to use"`
-	DataServer string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
-	Bblfshd    string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
-	Library    string `long:"library" default:"/tmp/lookout" env:"LOOKOUT_LIBRARY" description:"path to the lookout library"`
-	Positional struct {
+	GithubUser  string `long:"github-user" env:"GITHUB_USER" description:"user for the GitHub API"`
+	GithubToken string `long:"github-token" env:"GITHUB_TOKEN" description:"access token for the GitHub API"`
+	Analyzer    string `long:"analyzer" default:"ipv4://localhost:10302" env:"LOOKOUT_ANALYZER" description:"gRPC URL of the analyzer to use"`
+	DataServer  string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
+	Bblfshd     string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
+	Library     string `long:"library" default:"/tmp/lookout" env:"LOOKOUT_LIBRARY" description:"path to the lookout library"`
+	Positional  struct {
 		Repository string `positional-arg-name:"repository"`
 	} `positional-args:"yes" required:"yes"`
 
@@ -41,7 +44,12 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
-	watcher, err := github.NewWatcher(&lookout.WatchOptions{
+	t := &roundTripper{
+		Log:      log.DefaultLogger,
+		User:     c.GithubUser,
+		Password: c.GithubToken,
+	}
+	watcher, err := github.NewWatcher(t, &lookout.WatchOptions{
 		URL: c.Positional.Repository,
 	})
 	if err != nil {
@@ -116,7 +124,7 @@ func (c *ServeCommand) handleEvent(e lookout.Event) error {
 }
 
 func (c *ServeCommand) handlePR(e *lookout.PullRequestEvent) error {
-	log := log.New(log.Fields{
+	log := log.DefaultLogger.With(log.Fields{
 		"provider":   e.Provider,
 		"repository": e.Head.InternalRepositoryURL,
 		"head":       e.Head.ReferenceName,
@@ -158,3 +166,30 @@ func (p *LogPoster) Post(ctx context.Context, e lookout.Event,
 
 	return nil
 }
+
+type roundTripper struct {
+	Log      log.Logger
+	Base     http.RoundTripper
+	User     string
+	Password string
+}
+
+func (t *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	t.Log.With(log.Fields{
+		"url":  req.URL.String(),
+		"user": t.User,
+	}).Debugf("http request")
+
+	if t.User != "" {
+		req.SetBasicAuth(t.User, t.Password)
+	}
+
+	rt := t.Base
+	if rt == nil {
+		rt = http.DefaultTransport
+	}
+
+	return rt.RoundTrip(req)
+}
+
+var _ http.RoundTripper = &roundTripper{}
