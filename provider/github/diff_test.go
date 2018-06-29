@@ -18,6 +18,15 @@ func TestParseHunks(t *testing.T) {
 		NewLines:     1,
 	}}, hunks)
 
+	hunks, err = parseHunks("@@ -1 +1,3 @@")
+	require.NoError(err)
+	require.Equal([]*hunk{&hunk{
+		OldStartLine: 1,
+		OldLines:     1,
+		NewStartLine: 1,
+		NewLines:     3,
+	}}, hunks)
+
 	hunks, err = parseHunks("@@ -132,7 +132,7 @@")
 	require.NoError(err)
 	require.Equal([]*hunk{&hunk{

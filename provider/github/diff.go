@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"gopkg.in/src-d/go-errors.v1"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 var (
@@ -82,7 +83,13 @@ func (d *diffLines) hunks(file string) ([]*hunk, error) {
 		return nil, fmt.Errorf("file not found: %s", file)
 	}
 
-	return parseHunks(*ff.Patch)
+	hunks, err := parseHunks(*ff.Patch)
+	if err != nil {
+		log.DefaultLogger.With(log.Fields{"hunk": *ff.Patch}).Errorf(err, "bad hunks")
+		return nil, err
+	}
+
+	return hunks, nil
 }
 
 func parseHunks(s string) ([]*hunk, error) {
@@ -101,7 +108,7 @@ func parseHunks(s string) ([]*hunk, error) {
 	return hs, nil
 }
 
-var hunkPattern = regexp.MustCompile(`^(@@ -(\d+),(\d+) \+(\d+)(?:,(\d+))? @@[^@]*)(?:@@.*|$)`)
+var hunkPattern = regexp.MustCompile(`^(@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@[^@]*)(?:@@.*|$)`)
 
 func parseHunk(s string) (int, *hunk, error) {
 	var (
@@ -118,9 +125,13 @@ func parseHunk(s string) (int, *hunk, error) {
 		return 0, nil, fmt.Errorf("bad hunk format")
 	}
 
-	h.OldLines, err = strconv.Atoi(matches[3])
-	if err != nil {
-		return 0, nil, fmt.Errorf("bad hunk format")
+	if matches[3] == "" {
+		h.OldLines = 1
+	} else {
+		h.OldLines, err = strconv.Atoi(matches[3])
+		if err != nil {
+			return 0, nil, fmt.Errorf("bad hunk format")
+		}
 	}
 
 	h.NewStartLine, err = strconv.Atoi(matches[4])
