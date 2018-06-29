@@ -20,9 +20,9 @@ func NewSyncer(l *Library) *Syncer {
 	return &Syncer{l}
 }
 
-// Sync syncs the local git repository to the given commit revision.
-func (s *Syncer) Sync(ctx context.Context, rev *lookout.CommitRevision) error {
-	r, err := s.l.GetOrInit(rev.Head.Repository())
+// Sync syncs the local git repository to the given reference pointer.
+func (s *Syncer) Sync(ctx context.Context, rp lookout.ReferencePointer) error {
+	r, err := s.l.GetOrInit(rp.Repository())
 	if err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func (s *Syncer) Sync(ctx context.Context, rev *lookout.CommitRevision) error {
 	opts := &git.FetchOptions{
 		RemoteName: "origin",
 		RefSpecs: []config.RefSpec{
-			config.RefSpec(fmt.Sprintf("%s:%[1]s", rev.Head.ReferenceName)),
+			config.RefSpec(fmt.Sprintf("%s:%[1]s", rp.ReferenceName)),
 		},
 		Force: true,
 	}
