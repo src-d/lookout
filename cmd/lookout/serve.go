@@ -27,11 +27,13 @@ type ServeCommand struct {
 	Analyzer    string `long:"analyzer" default:"ipv4://localhost:10302" env:"LOOKOUT_ANALYZER" description:"gRPC URL of the analyzer to use"`
 	DataServer  string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
 	Bblfshd     string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
+	DryRun      bool   `long:"dry-run" env:"LOOKOUT_DRY_RUN" description:"analyze repositories and log the result without posting code reviews to GitHub"`
 	Library     string `long:"library" default:"/tmp/lookout" env:"LOOKOUT_LIBRARY" description:"path to the lookout library"`
 	Positional  struct {
 		Repository string `positional-arg-name:"repository"`
 	} `positional-args:"yes" required:"yes"`
 
+	poster   lookout.Poster
 	analyzer lookout.AnalyzerClient
 }
 
@@ -41,6 +43,10 @@ func (c *ServeCommand) Execute(args []string) error {
 	}
 
 	if err := c.initAnalyzer(); err != nil {
+		return err
+	}
+
+	if err := c.initPoster(); err != nil {
 		return err
 	}
 
@@ -57,6 +63,20 @@ func (c *ServeCommand) Execute(args []string) error {
 	}
 
 	return watcher.Watch(context.Background(), c.handleEvent)
+}
+
+func (c *ServeCommand) initPoster() error {
+	if c.DryRun {
+		c.poster = &LogPoster{log.DefaultLogger}
+	} else {
+		c.poster = github.NewPoster(&roundTripper{
+			Log:      log.DefaultLogger,
+			User:     c.GithubUser,
+			Password: c.GithubToken,
+		})
+	}
+
+	return nil
 }
 
 func (c *ServeCommand) initAnalyzer() error {
@@ -124,20 +144,31 @@ func (c *ServeCommand) handleEvent(e lookout.Event) error {
 }
 
 func (c *ServeCommand) handlePR(e *lookout.PullRequestEvent) error {
-	log := log.DefaultLogger.With(log.Fields{
+	logger := log.DefaultLogger.With(log.Fields{
 		"provider":   e.Provider,
 		"repository": e.Head.InternalRepositoryURL,
 		"head":       e.Head.ReferenceName,
 	})
-	log.Infof("processing pull request")
+	logger.Infof("processing pull request")
 	resp, err := c.analyzer.NotifyPullRequestEvent(context.TODO(), e)
 	if err != nil {
-		log.Errorf(err, "analysis failed")
+		logger.Errorf(err, "analysis failed")
 		return nil
 	}
 
-	poster := &LogPoster{log}
-	return poster.Post(context.TODO(), e, resp.Comments)
+	if len(resp.Comments) == 0 {
+		logger.Infof("no comments were produced")
+		return nil
+	}
+
+	logger.With(log.Fields{
+		"comments": len(resp.Comments),
+	}).Infof("posting analysis")
+	if err := c.poster.Post(context.TODO(), e, resp.Comments); err != nil {
+		logger.Errorf(err, "posting analysis failed")
+	}
+
+	return nil
 }
 
 type LogPoster struct {

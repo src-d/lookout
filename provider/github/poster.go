@@ -3,7 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
-	"strconv"
+	"net/http"
 	"strings"
 
 	"github.com/src-d/lookout"
@@ -28,9 +28,17 @@ type Poster struct {
 
 var _ lookout.Poster = &Poster{}
 
-// NewPoster creates a new poster given a GitHub API client.
-func NewPoster(rc ReviewCreator, cc CommitsComparator) *Poster {
-	return &Poster{rc: rc, cc: cc}
+// NewPoster creates a new poster for the GitHub API.
+func NewPoster(t http.RoundTripper) *Poster {
+	client := &http.Client{
+		Transport: t,
+	}
+
+	ghClient := github.NewClient(client)
+	return &Poster{
+		rc: ghClient.PullRequests,
+		cc: ghClient.Repositories,
+	}
 }
 
 // Post posts comments as a Pull Request Review.
@@ -98,10 +106,9 @@ func (p *Poster) validatePR(
 		return
 	}
 
-	pr, err = strconv.Atoi(e.InternalID)
-	if err != nil {
-		err = ErrEventNotSupported.Wrap(
-			fmt.Errorf("bad PR ID: %s", e.InternalID))
+	name := e.Head.ReferenceName.String()
+	if _, err = fmt.Sscanf(name, "refs/pull/%d/head", &pr); err != nil {
+		err = ErrEventNotSupported.Wrap(fmt.Errorf("bad PR: %s", name))
 		return
 	}
 
@@ -147,6 +154,8 @@ func createReviewRequest(
 	cs []*lookout.Comment,
 	dl *diffLines) (*github.PullRequestReviewRequest, error) {
 	req := &github.PullRequestReviewRequest{
+		// TODO: Add CommitID of HEAD to ensure that comments are attached to
+		//       the right lines.
 		Event: &approveEvent,
 	}
 
@@ -178,10 +187,8 @@ func createReviewRequest(
 		}
 	}
 
-	if len(bodyComments) > 0 {
-		body := strings.Join(bodyComments, "\n\n")
-		req.Body = &body
-	}
+	body := strings.Join(bodyComments, "\n\n")
+	req.Body = &body
 
 	return req, nil
 }

@@ -17,7 +17,7 @@ var (
 	hash1 = "f67e5455a86d0f2a366f1b980489fac77a373bd0"
 	hash2 = "02801e1a27a0a906d59530aeb81f4cd137f2c717"
 	base1 = plumbing.ReferenceName("base")
-	head1 = plumbing.ReferenceName("head")
+	head1 = plumbing.ReferenceName("refs/pull/42/head")
 )
 
 func TestPoster_Post_OK(t *testing.T) {
@@ -56,10 +56,9 @@ func TestPoster_Post_OK(t *testing.T) {
 		&github.Response{Response: &http.Response{StatusCode: 200}},
 		nil)
 
-	p := NewPoster(mrc, mcc)
+	p := &Poster{rc: mrc, cc: mcc}
 	ev := &lookout.PullRequestEvent{
-		Provider:   Provider,
-		InternalID: "42",
+		Provider: Provider,
 		CommitRevision: lookout.CommitRevision{
 			Base: lookout.ReferencePointer{
 				InternalRepositoryURL: "https://github.com/foo/bar",
@@ -96,10 +95,9 @@ func TestPoster_Post_BadProvider(t *testing.T) {
 
 	mcc := &commitsComparator{}
 	mrc := &reviewCreator{}
-	p := NewPoster(mrc, mcc)
+	p := &Poster{rc: mrc, cc: mcc}
 	ev := &lookout.PullRequestEvent{
-		Provider:   "badprovider",
-		InternalID: "42",
+		Provider: "badprovider",
 		CommitRevision: lookout.CommitRevision{
 			Base: lookout.ReferencePointer{
 				InternalRepositoryURL: "https://github.com/foo/bar",
@@ -131,10 +129,9 @@ func TestPoster_Post_BadReferenceNoRepository(t *testing.T) {
 
 	mcc := &commitsComparator{}
 	mrc := &reviewCreator{}
-	p := NewPoster(mrc, mcc)
+	p := &Poster{rc: mrc, cc: mcc}
 	ev := &lookout.PullRequestEvent{
-		Provider:   Provider,
-		InternalID: "42",
+		Provider: Provider,
 	}
 	cs := []*lookout.Comment{&lookout.Comment{
 		Text: "Global comment",
@@ -158,18 +155,21 @@ func TestPoster_Post_BadReferenceNoRepository(t *testing.T) {
 	mrc.AssertExpectations(t)
 }
 
-func TestPoster_Post_BadInternalID(t *testing.T) {
+func TestPoster_Post_BadReference(t *testing.T) {
 	require := require.New(t)
 
 	mcc := &commitsComparator{}
 	mrc := &reviewCreator{}
-	p := NewPoster(mrc, mcc)
+	p := &Poster{rc: mrc, cc: mcc}
 	ev := &lookout.PullRequestEvent{
-		Provider:   Provider,
-		InternalID: "badid",
+		Provider: Provider,
 		CommitRevision: lookout.CommitRevision{
 			Base: lookout.ReferencePointer{
 				InternalRepositoryURL: "https://github.com/foo/bar",
+			},
+			Head: lookout.ReferencePointer{
+				InternalRepositoryURL: "https://github.com/foo/bar",
+				ReferenceName:         plumbing.ReferenceName("BAD"),
 			}}}
 	cs := []*lookout.Comment{&lookout.Comment{
 		Text: "Global comment",
@@ -187,7 +187,7 @@ func TestPoster_Post_BadInternalID(t *testing.T) {
 	err := p.Post(context.Background(), ev, cs)
 	require.True(ErrEventNotSupported.Is(err))
 	require.Equal(
-		"event not supported: bad PR ID: badid", err.Error())
+		"event not supported: bad PR: BAD", err.Error())
 
 	mcc.AssertExpectations(t)
 	mrc.AssertExpectations(t)
