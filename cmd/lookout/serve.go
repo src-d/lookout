@@ -69,11 +69,14 @@ func (c *ServeCommand) initPoster() error {
 	if c.DryRun {
 		c.poster = &LogPoster{log.DefaultLogger}
 	} else {
-		c.poster = github.NewPoster(&roundTripper{
-			Log:      log.DefaultLogger,
-			User:     c.GithubUser,
-			Password: c.GithubToken,
-		})
+		c.poster = CompositePoster{
+			&LogPoster{log.DefaultLogger},
+			github.NewPoster(&roundTripper{
+				Log:      log.DefaultLogger,
+				User:     c.GithubUser,
+				Password: c.GithubToken,
+			}),
+		}
 	}
 
 	return nil
@@ -166,6 +169,20 @@ func (c *ServeCommand) handlePR(e *lookout.PullRequestEvent) error {
 	}).Infof("posting analysis")
 	if err := c.poster.Post(context.TODO(), e, resp.Comments); err != nil {
 		logger.Errorf(err, "posting analysis failed")
+	}
+
+	return nil
+}
+
+type CompositePoster []lookout.Poster
+
+func (p CompositePoster) Post(ctx context.Context, e lookout.Event,
+	comments []*lookout.Comment) error {
+
+	for _, poster := range p {
+		if err := poster.Post(ctx, e, comments); err != nil {
+			return err
+		}
 	}
 
 	return nil
