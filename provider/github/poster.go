@@ -77,7 +77,7 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.PullRequestEvent,
 	}
 
 	dl := newDiffLines(cc)
-	review, err := createReviewRequest(cs, dl)
+	review, err := createReviewRequest(e.Head.Hash, cs, dl)
 	if err != nil {
 		return err
 	}
@@ -148,15 +148,15 @@ type CommitsComparator interface {
 
 var _ CommitsComparator = &github.RepositoriesService{}
 
-var approveEvent = "APPROVE"
+var commentEvent = "COMMENT"
 
 func createReviewRequest(
+	hash string,
 	cs []*lookout.Comment,
 	dl *diffLines) (*github.PullRequestReviewRequest, error) {
 	req := &github.PullRequestReviewRequest{
-		// TODO: Add CommitID of HEAD to ensure that comments are attached to
-		//       the right lines.
-		Event: &approveEvent,
+		CommitID: &hash,
+		Event:    &commentEvent,
 	}
 
 	var bodyComments []string
