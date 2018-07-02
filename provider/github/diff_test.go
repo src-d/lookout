@@ -3,8 +3,38 @@ package github
 import (
 	"testing"
 
+	"github.com/google/go-github/github"
 	"github.com/stretchr/testify/require"
 )
+
+func TestDiffLines_ConvertLine(t *testing.T) {
+	require := require.New(t)
+
+	dl := newDiffLines(&github.CommitsComparison{
+		Files: []github.CommitFile{github.CommitFile{
+			Filename: strptr("main.go"),
+			Patch:    strptr("@@ -1 +1,3 @@"),
+		}},
+	})
+
+	line, err := dl.ConvertLine("main.go", 1)
+	require.NoError(err)
+	require.Equal(1, line)
+
+	line, err = dl.ConvertLine("main.go", 2)
+	require.NoError(err)
+	require.Equal(2, line)
+
+	line, err = dl.ConvertLine("main.go", 3)
+	require.NoError(err)
+	require.Equal(3, line)
+
+	line, err = dl.ConvertLine("main.go", 4)
+	require.Error(err)
+
+	line, err = dl.ConvertLine("bad.go", 1)
+	require.Error(err)
+}
 
 func TestParseHunks(t *testing.T) {
 	require := require.New(t)
