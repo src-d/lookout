@@ -1,14 +1,16 @@
 package git
 
 import (
+	"context"
+	"fmt"
 	"testing"
 
 	"github.com/src-d/lookout"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	fixtures "gopkg.in/src-d/go-git-fixtures.v3"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport/server"
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
 
@@ -47,11 +49,8 @@ func (s *ServiceSuite) TearDownSuite() {
 func (s *ServiceSuite) TestTree() {
 	require := s.Require()
 
-	dr := NewService(server.MapLoader{
-		"file:///myrepo": s.Storer,
-	})
-
-	resp, err := dr.GetChanges(&lookout.ChangesRequest{
+	dr := NewService(&StorerCommitLoader{s.Storer})
+	resp, err := dr.GetChanges(context.TODO(), &lookout.ChangesRequest{
 		Head: &lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///myrepo",
 			Hash: s.Basic.Head.String(),
@@ -65,11 +64,8 @@ func (s *ServiceSuite) TestTree() {
 func (s *ServiceSuite) TestDiffTree() {
 	require := s.Require()
 
-	dr := NewService(server.MapLoader{
-		"file:///myrepo": s.Storer,
-	})
-
-	resp, err := dr.GetChanges(&lookout.ChangesRequest{
+	dr := NewService(&StorerCommitLoader{s.Storer})
+	resp, err := dr.GetChanges(context.TODO(), &lookout.ChangesRequest{
 		Base: &lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///myrepo",
 			Hash: "918c48b83bd081e863dbe1b80f8998f058cd8294",
@@ -86,9 +82,13 @@ func (s *ServiceSuite) TestDiffTree() {
 func (s *ServiceSuite) TestErrorNoRepository() {
 	require := s.Require()
 
-	dr := NewService(server.MapLoader{})
+	m := &MockCommitLoader{}
+	m.On("LoadCommits", mock.Anything, mock.Anything).Once().Return(
+		nil, fmt.Errorf("ERROR"))
 
-	resp, err := dr.GetChanges(&lookout.ChangesRequest{
+	dr := NewService(m)
+
+	resp, err := dr.GetChanges(context.TODO(), &lookout.ChangesRequest{
 		Head: &lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///myrepo",
 			Hash: s.Basic.Head.String(),
@@ -101,11 +101,8 @@ func (s *ServiceSuite) TestErrorNoRepository() {
 func (s *ServiceSuite) TestErrorBadTop() {
 	require := s.Require()
 
-	dr := NewService(server.MapLoader{
-		"file:///myrepo": s.Storer,
-	})
-
-	resp, err := dr.GetChanges(&lookout.ChangesRequest{
+	dr := NewService(&StorerCommitLoader{s.Storer})
+	resp, err := dr.GetChanges(context.TODO(), &lookout.ChangesRequest{
 		Head: &lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///myrepo",
 			Hash: "979a482e63de12d39675ff741c5a0cf4f068c109",

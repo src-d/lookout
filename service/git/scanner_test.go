@@ -64,7 +64,7 @@ func (s *ScannerSuite) TestTreeScanner() {
 	headTree, err := head.Tree()
 	require.NoError(err)
 
-	cs := NewTreeScanner(s.Storer, headTree)
+	cs := NewTreeScanner(headTree)
 	var changes []*lookout.Change
 	for cs.Next() {
 		changes = append(changes, cs.Change())
@@ -92,7 +92,7 @@ func (s *ScannerSuite) TestFilterScannerIncludeAll() {
 			require.NoError(err)
 
 			cs := NewFilterScanner(
-				NewTreeScanner(s.Storer, headTree),
+				NewTreeScanner(headTree),
 				fixture.IncludePattern, fixture.ExcludePattern,
 			)
 
@@ -125,7 +125,7 @@ func (s *ScannerSuite) TestFilterIncludeSome() {
 			require.NoError(err)
 
 			cs := NewFilterScanner(
-				NewTreeScanner(s.Storer, headTree),
+				NewTreeScanner(headTree),
 				fixture.IncludePattern, fixture.ExcludePattern,
 			)
 
@@ -158,7 +158,7 @@ func (s *ScannerSuite) TestFilterExcludeOne() {
 			require.NoError(err)
 
 			cs := NewFilterScanner(
-				NewTreeScanner(s.Storer, headTree),
+				NewTreeScanner(headTree),
 				fixture.IncludePattern, fixture.ExcludePattern,
 			)
 
@@ -184,8 +184,8 @@ func (s *ScannerSuite) TestBlobScanner() {
 	require.NoError(err)
 
 	cs := NewBlobScanner(
-		NewTreeScanner(s.Storer, headTree),
-		s.Storer,
+		NewTreeScanner(headTree),
+		nil, headTree,
 	)
 
 	changes := make(map[string]*lookout.Change)
@@ -221,7 +221,7 @@ func (s *ScannerSuite) TestDiffTreeScanner() {
 	parentTree, err := parent.Tree()
 	require.NoError(err)
 
-	cs := NewDiffTreeScanner(s.Storer, parentTree, headTree)
+	cs := NewDiffTreeScanner(parentTree, headTree)
 	var changes []*lookout.Change
 	for cs.Next() {
 		changes = append(changes, cs.Change())

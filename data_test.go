@@ -225,7 +225,7 @@ type MockService struct {
 	Error           error
 }
 
-func (r *MockService) GetChanges(req *ChangesRequest) (
+func (r *MockService) GetChanges(ctx context.Context, req *ChangesRequest) (
 	ChangeScanner, error) {
 	require := require.New(r.T)
 	require.Equal(r.ExpectedRequest, req)

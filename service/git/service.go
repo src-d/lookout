@@ -1,6 +1,7 @@
 package git
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/src-d/lookout"
@@ -8,48 +9,24 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport/server"
 )
 
 type Service struct {
-	loader server.Loader
+	loader CommitLoader
 }
 
 var _ lookout.ChangeGetter = &Service{}
 
-func NewService(loader server.Loader) *Service {
+func NewService(loader CommitLoader) *Service {
 	return &Service{
 		loader: loader,
 	}
 }
 
-func (r *Service) GetChanges(req *lookout.ChangesRequest) (
+func (r *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 	lookout.ChangeScanner, error) {
-	ep, err := transport.NewEndpoint(req.Head.Repository().CloneURL)
-	if err != nil {
-		return nil, err
-	}
 
-	s, err := r.loader.Load(ep)
-	if err != nil {
-		return nil, err
-	}
-
-	if req.Head == nil {
-		return nil, fmt.Errorf("head reference is mandatory")
-	}
-
-	var base, top *object.Tree
-	if req.Base != nil {
-		base, err = r.resolveCommitTree(s, plumbing.NewHash(req.Base.Hash))
-		if err != nil {
-			return nil, fmt.Errorf("error retrieving base commit %s: %s",
-				req.Base, err)
-		}
-	}
-
-	top, err = r.resolveCommitTree(s, plumbing.NewHash(req.Head.Hash))
+	base, head, err := r.loadTrees(ctx, req.Base, req.Head)
 	if err != nil {
 		return nil, err
 	}
@@ -57,9 +34,9 @@ func (r *Service) GetChanges(req *lookout.ChangesRequest) (
 	var scanner lookout.ChangeScanner
 
 	if base == nil {
-		scanner = NewTreeScanner(s, top)
+		scanner = NewTreeScanner(head)
 	} else {
-		scanner = NewDiffTreeScanner(s, base, top)
+		scanner = NewDiffTreeScanner(base, head)
 	}
 
 	if req.IncludePattern != "" || req.ExcludePattern != "" {
@@ -68,13 +45,45 @@ func (r *Service) GetChanges(req *lookout.ChangesRequest) (
 	}
 
 	if req.WantContents {
-		scanner = NewBlobScanner(scanner, s)
+		scanner = NewBlobScanner(scanner, base, head)
 	}
 
 	return scanner, nil
 }
 
 const maxResolveLength = 20
+
+func (r *Service) loadTrees(ctx context.Context,
+	base, head *lookout.ReferencePointer) (*object.Tree, *object.Tree, error) {
+
+	var rps []lookout.ReferencePointer
+	if base != nil {
+		rps = append(rps, *base)
+	}
+
+	rps = append(rps, *head)
+
+	commits, err := r.loader.LoadCommits(ctx, rps...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	trees := make([]*object.Tree, len(commits))
+	for i, c := range commits {
+		t, err := c.Tree()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		trees[i] = t
+	}
+
+	if base == nil {
+		return nil, trees[0], nil
+	}
+
+	return trees[0], trees[1], nil
+}
 
 func (r *Service) resolveCommitTree(s storer.Storer, h plumbing.Hash) (
 	*object.Tree, error) {

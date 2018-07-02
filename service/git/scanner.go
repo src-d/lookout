@@ -5,8 +5,6 @@ import (
 	"io/ioutil"
 	"regexp"
 
-	"gopkg.in/src-d/go-git.v4/plumbing"
-
 	"github.com/src-d/lookout"
 
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -23,13 +21,11 @@ type TreeScanner struct {
 	done   bool
 }
 
-func NewTreeScanner(storer storer.EncodedObjectStorer,
-	tree *object.Tree) *TreeScanner {
+func NewTreeScanner(tree *object.Tree) *TreeScanner {
 
 	return &TreeScanner{
-		storer: storer,
-		tree:   tree,
-		tw:     object.NewTreeWalker(tree, true, nil),
+		tree: tree,
+		tw:   object.NewTreeWalker(tree, true, nil),
 	}
 }
 
@@ -83,28 +79,25 @@ func (s *TreeScanner) Close() error {
 }
 
 type DiffTreeScanner struct {
-	storer   storer.EncodedObjectStorer
-	old, new *object.Tree
-	val      *object.Change
-	err      error
-	started  bool
-	changes  object.Changes
+	base, head *object.Tree
+	val        *object.Change
+	err        error
+	started    bool
+	changes    object.Changes
 }
 
-func NewDiffTreeScanner(storer storer.EncodedObjectStorer,
-	old, new *object.Tree) *DiffTreeScanner {
+func NewDiffTreeScanner(base, head *object.Tree) *DiffTreeScanner {
 
 	return &DiffTreeScanner{
-		storer: storer,
-		old:    old,
-		new:    new,
+		base: base,
+		head: head,
 	}
 }
 
 func (s *DiffTreeScanner) Next() bool {
 	if !s.started {
 		defer func() { s.started = true }()
-		changes, err := object.DiffTree(s.old, s.new)
+		changes, err := object.DiffTree(s.base, s.head)
 		if err != nil {
 			s.err = err
 			return false
@@ -253,19 +246,20 @@ func (s *FilterScanner) matchExclude(p string) bool {
 }
 
 type BlobScanner struct {
-	Scanner lookout.ChangeScanner
-	Storer  storer.EncodedObjectStorer
-	val     *lookout.Change
-	done    bool
-	err     error
+	Scanner    lookout.ChangeScanner
+	Base, Head *object.Tree
+	val        *lookout.Change
+	done       bool
+	err        error
 }
 
 func NewBlobScanner(
 	scanner lookout.ChangeScanner,
-	storer storer.EncodedObjectStorer) *BlobScanner {
+	base, head *object.Tree) *BlobScanner {
 	return &BlobScanner{
 		Scanner: scanner,
-		Storer:  storer,
+		Base:    base,
+		Head:    head,
 	}
 }
 
@@ -276,13 +270,13 @@ func (s *BlobScanner) Next() bool {
 
 	for s.Scanner.Next() {
 		ch := s.Scanner.Change()
-		if err := s.addBlob(ch.Base); err != nil {
+		if err := s.addBlob(s.Base, ch.Base); err != nil {
 			s.done = true
 			s.err = err
 			return false
 		}
 
-		if err := s.addBlob(ch.Head); err != nil {
+		if err := s.addBlob(s.Head, ch.Head); err != nil {
 			s.done = true
 			s.err = err
 			return false
@@ -296,7 +290,7 @@ func (s *BlobScanner) Next() bool {
 	return false
 }
 
-func (s *BlobScanner) addBlob(f *lookout.File) (err error) {
+func (s *BlobScanner) addBlob(t *object.Tree, f *lookout.File) (err error) {
 	if f == nil {
 		return nil
 	}
@@ -305,18 +299,12 @@ func (s *BlobScanner) addBlob(f *lookout.File) (err error) {
 		return nil
 	}
 
-	obj, err := s.Storer.EncodedObject(
-		plumbing.BlobObject, plumbing.NewHash(f.Hash))
+	of, err := t.File(f.Path)
 	if err != nil {
 		return err
 	}
 
-	blob, err := object.DecodeBlob(obj)
-	if err != nil {
-		return err
-	}
-
-	r, err := blob.Reader()
+	r, err := of.Blob.Reader()
 	if err != nil {
 		return err
 	}
