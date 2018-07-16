@@ -1,15 +1,17 @@
 package main
 
 import (
+	stdlog "log"
 	"os"
 
 	"github.com/jessevdk/go-flags"
-	_ "google.golang.org/grpc/grpclog/glogger"
+	"google.golang.org/grpc/grpclog"
 	"gopkg.in/src-d/go-log.v1"
 )
 
 func init() {
 	log.DefaultLogger = log.New(log.Fields{"app": "lookout"})
+	grpclog.SetLogger(stdlog.New(os.Stdout, "", stdlog.LstdFlags))
 }
 
 var parser = flags.NewParser(nil, flags.Default)
