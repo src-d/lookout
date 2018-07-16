@@ -21,12 +21,14 @@ func init() {
 }
 
 type AnalyzeCommand struct {
-	Analyzer   string `long:"analyzer" default:"ipv4://localhost:10302" env:"LOOKOUT_ANALYZER" description:"gRPC URL of the analyzer to use"`
 	DataServer string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
 	Bblfshd    string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
 	GitDir     string `long:"git-dir" default:"." env:"GIT_DIR" description:"path to the .git directory to analyze"`
 	RevFrom    string `long:"from" default:"HEAD^" description:"name of the base revision for review event"`
 	RevTo      string `long:"to" default:"HEAD" description:"name of the head revision for review event"`
+	Args       struct {
+		Analyzer string `positional-arg-name:"analyzer" description:"gRPC URL of the analyzer to use"`
+	} `positional-args:"yes" required:"yes"`
 }
 
 func (c *AnalyzeCommand) Execute(args []string) error {
@@ -74,12 +76,12 @@ func (c *AnalyzeCommand) Execute(args []string) error {
 	serveResult := make(chan error)
 	go func() { serveResult <- grpcSrv.Serve(lis) }()
 
-	c.Analyzer, err = lookout.ToGoGrpcAddress(c.Analyzer)
+	c.Args.Analyzer, err = lookout.ToGoGrpcAddress(c.Args.Analyzer)
 	if err != nil {
 		return err
 	}
 
-	conn, err := grpc.Dial(c.Analyzer, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(c.Args.Analyzer, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return err
 	}
