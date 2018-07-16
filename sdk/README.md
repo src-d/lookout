@@ -1,8 +1,8 @@
 # Lookout Analyzer SDK
 
-An analyzer should implement [gRPC service](https://github.com/src-d/lookout/tree/master/pb/service_analyzer.proto) to receive events from the server.
+An analyzer is a gRPC server, that implements [Analyzer service](https://github.com/src-d/lookout/tree/master/pb/service_analyzer.proto) to receive events from the server.
 
-It also should use gRPC client for [data service](https://github.com/src-d/lookout/tree/master/pb/service_data.proto) to get content or UAST of the changes.
+An analyzer should use gRPC client to access [Data service](https://github.com/src-d/lookout/tree/master/pb/service_data.proto) to get content or UAST of the changes.
 
 All `.proto` files are located in [/pb](https://github.com/src-d/lookout/tree/master/pb) directory.
 
@@ -16,6 +16,8 @@ Dependencies:
 ```bash
 $ pip install grpcio-tools
 ```
+
+Read more about gRPC in [Python Quickstart](https://grpc.io/docs/quickstart/python.html).
 
 Generation:
 
@@ -32,8 +34,11 @@ Download the latest lookout binary from [releases](https://github.com/src-d/look
 
 Babelfish server is required. If you don't have it running, please read the [getting started guide](https://doc.bblf.sh/using-babelfish/getting-started.html), to learn more about how to start and use it.
 
-Run the binary inside a git repository directory with gRPC address of the analyzer to trigger review event.
+Run the binary inside a git repository directory with gRPC address of the analyzer
 
 ```bash
 $ ./lookout review ipv4://localhost:10302
 ```
+
+By default it would trigger review event with changes from `HEAD^` to `HEAD`.
+You can change it using additional flags `--from` and `--to`. Both flags accept [git revision](https://git-scm.com/docs/gitrevisions#_specifying_revisions).
