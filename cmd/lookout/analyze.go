@@ -14,13 +14,13 @@ import (
 )
 
 func init() {
-	if _, err := parser.AddCommand("analyze", "analyzes HEAD", "",
-		&AnalyzeCommand{}); err != nil {
+	if _, err := parser.AddCommand("review", "provides simple data server and triggers analyzer", "",
+		&ReviewCommand{}); err != nil {
 		panic(err)
 	}
 }
 
-type AnalyzeCommand struct {
+type ReviewCommand struct {
 	DataServer string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
 	Bblfshd    string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
 	GitDir     string `long:"git-dir" default:"." env:"GIT_DIR" description:"path to the .git directory to analyze"`
@@ -31,7 +31,7 @@ type AnalyzeCommand struct {
 	} `positional-args:"yes" required:"yes"`
 }
 
-func (c *AnalyzeCommand) Execute(args []string) error {
+func (c *ReviewCommand) Execute(args []string) error {
 	r, err := gogit.PlainOpenWithOptions(c.GitDir, &gogit.PlainOpenOptions{
 		DetectDotGit: true,
 	})
