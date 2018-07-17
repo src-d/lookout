@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/service/bblfsh"
@@ -86,18 +87,32 @@ func (c *ReviewCommand) Execute(args []string) error {
 		return err
 	}
 
+	fullGitPath, err := filepath.Abs(c.GitDir)
+	if err != nil {
+		return fmt.Errorf("can't resolve full path: %s", err)
+	}
+
+	fromRef := lookout.ReferencePointer{
+		InternalRepositoryURL: "file://" + fullGitPath,
+		ReferenceName:         plumbing.ReferenceName(c.RevFrom),
+		Hash:                  baseHash,
+	}
+
+	toRef := lookout.ReferencePointer{
+		InternalRepositoryURL: "file://" + fullGitPath,
+		ReferenceName:         plumbing.ReferenceName(c.RevTo),
+		Hash:                  headHash,
+	}
+
 	client := lookout.NewAnalyzerClient(conn)
 	resp, err := client.NotifyPullRequestEvent(context.TODO(),
 		&lookout.PullRequestEvent{
+			IsMergeable: true,
+			Source:      toRef,
+			Merge:       toRef,
 			CommitRevision: lookout.CommitRevision{
-				Base: lookout.ReferencePointer{
-					InternalRepositoryURL: "file:///repo",
-					Hash: baseHash,
-				},
-				Head: lookout.ReferencePointer{
-					InternalRepositoryURL: "file:///repo",
-					Hash: headHash,
-				},
+				Base: fromRef,
+				Head: toRef,
 			}})
 	if err != nil {
 		return err
