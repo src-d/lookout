@@ -25,7 +25,7 @@ Generation:
 $ PY_OUT_DIR=<directory for generated files> mkdir -p $PY_OUT_DIR && \
     python -m grpc_tools.protoc -Ipb \
     --python_out=$PY_OUT_DIR --grpc_python_out=$PY_OUT_DIR \
-    pb/*.proto
+    sdk/*.proto
 ```
 
 ## Testing
