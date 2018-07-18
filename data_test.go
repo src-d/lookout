@@ -124,30 +124,37 @@ func TestServerGetFilesOk(t *testing.T) {
 func TestServerCancel(t *testing.T) {
 	for i := 0; i <= 10; i++ {
 		for j := 0; j < i; j++ {
-			req := &ChangesRequest{
-				Head: &ReferencePointer{
-					InternalRepositoryURL: "repo",
-					Hash: "5262fd2b59d10e335a5c941140df16950958322d",
-				},
+			revision := &ReferencePointer{
+				InternalRepositoryURL: "repo",
+				Hash: "5262fd2b59d10e335a5c941140df16950958322d",
 			}
+			changesReq := &ChangesRequest{Head: revision}
+			filesReq := &FilesRequest{Revision: revision}
 			changes := generateChanges(i)
-			tick := make(chan struct{}, 1)
+			files := generateFiles(i)
+			changeTick := make(chan struct{}, 1)
+			fileTick := make(chan struct{}, 1)
 			dr := &MockService{
 				T:                t,
-				ExpectedCRequest: req,
+				ExpectedCRequest: changesReq,
+				ExpectedFRequest: filesReq,
 				ChangeScanner: &SliceChangeScanner{
 					Changes:    changes,
-					ChangeTick: tick,
+					ChangeTick: changeTick,
+				},
+				FileScanner: &SliceFileScanner{
+					Files:    files,
+					FileTick: fileTick,
 				},
 			}
 			srv, client := setupDataServer(t, dr)
 
-			t.Run(fmt.Sprintf("size-%d-cancel-at-%d", i, j),
+			t.Run(fmt.Sprintf("get-changes-size-%d-cancel-at-%d", i, j),
 				func(t *testing.T) {
 					require := require.New(t)
 
 					ctx, cancel := context.WithCancel(context.Background())
-					respClient, err := client.GetChanges(ctx, req)
+					respClient, err := client.GetChanges(ctx, changesReq)
 					require.NoError(err)
 					require.NotNil(respClient)
 					require.NoError(respClient.CloseSend())
@@ -157,21 +164,51 @@ func TestServerCancel(t *testing.T) {
 							break
 						}
 
-						tick <- struct{}{}
+						changeTick <- struct{}{}
 						actualResp, err := respClient.Recv()
 						require.NoError(err)
 						require.Equal(change, actualResp)
 					}
 
 					cancel()
-					tick <- struct{}{}
+					changeTick <- struct{}{}
 					actualResp, err := respClient.Recv()
 					require.Error(err)
 					require.Contains(err.Error(), "context cancel")
 					require.Zero(actualResp)
 				})
 
-			close(tick)
+			t.Run(fmt.Sprintf("get-files-size-%d-cancel-at-%d", i, j),
+				func(t *testing.T) {
+					require := require.New(t)
+
+					ctx, cancel := context.WithCancel(context.Background())
+					respClient, err := client.GetFiles(ctx, filesReq)
+					require.NoError(err)
+					require.NotNil(respClient)
+					require.NoError(respClient.CloseSend())
+
+					for idx, file := range files {
+						if idx >= j {
+							break
+						}
+
+						fileTick <- struct{}{}
+						actualResp, err := respClient.Recv()
+						require.NoError(err)
+						require.Equal(file, actualResp)
+					}
+
+					cancel()
+					fileTick <- struct{}{}
+					actualResp, err := respClient.Recv()
+					require.Error(err)
+					require.Contains(err.Error(), "context cancel")
+					require.Zero(actualResp)
+				})
+
+			close(changeTick)
+			close(fileTick)
 			tearDownDataServer(t, srv)
 		}
 	}
@@ -211,6 +248,38 @@ func TestServerGetChangesError(t *testing.T) {
 	tearDownDataServer(t, srv)
 }
 
+func TestServerGetFilesError(t *testing.T) {
+	req := &FilesRequest{
+		Revision: &ReferencePointer{
+			InternalRepositoryURL: "repo",
+			Hash: "5262fd2b59d10e335a5c941140df16950958322d",
+		},
+	}
+	files := generateFiles(10)
+	ExpectedError := fmt.Errorf("TEST ERROR")
+	dr := &MockService{
+		T:                t,
+		ExpectedFRequest: req,
+		Error:            ExpectedError,
+		FileScanner:      &SliceFileScanner{Files: files},
+	}
+	srv, client := setupDataServer(t, dr)
+
+	t.Run("test", func(t *testing.T) {
+		require := require.New(t)
+		respClient, err := client.GetFiles(context.TODO(), req)
+		require.NoError(err)
+		require.NotNil(respClient)
+
+		change, err := respClient.Recv()
+		require.Error(err)
+		require.Contains(err.Error(), ExpectedError.Error())
+		require.Zero(change)
+	})
+
+	tearDownDataServer(t, srv)
+}
+
 func TestServerGetChangesIterError(t *testing.T) {
 	req := &ChangesRequest{
 		Head: &ReferencePointer{
@@ -233,6 +302,40 @@ func TestServerGetChangesIterError(t *testing.T) {
 	t.Run("test", func(t *testing.T) {
 		require := require.New(t)
 		respClient, err := client.GetChanges(context.TODO(), req)
+		require.NoError(err)
+		require.NotNil(respClient)
+
+		change, err := respClient.Recv()
+		require.Error(err)
+		require.Contains(err.Error(), ExpectedError.Error())
+		require.Zero(change)
+	})
+
+	tearDownDataServer(t, srv)
+}
+
+func TestServerGetFilesIterError(t *testing.T) {
+	req := &FilesRequest{
+		Revision: &ReferencePointer{
+			InternalRepositoryURL: "repo",
+			Hash: "5262fd2b59d10e335a5c941140df16950958322d",
+		},
+	}
+	files := generateFiles(10)
+	ExpectedError := fmt.Errorf("TEST ERROR")
+	dr := &MockService{
+		T:                t,
+		ExpectedFRequest: req,
+		FileScanner: &SliceFileScanner{
+			Files: files,
+			Error: ExpectedError,
+		},
+	}
+	srv, client := setupDataServer(t, dr)
+
+	t.Run("test", func(t *testing.T) {
+		require := require.New(t)
+		respClient, err := client.GetFiles(context.TODO(), req)
 		require.NoError(err)
 		require.NotNil(respClient)
 
