@@ -35,21 +35,21 @@ type EventType int
 const (
 	_ EventType = iota
 	PushEventType
-	PullRequestEventType
+	ReviewEventType
 )
 
 // ID honors the Event interface.
-func (e *PullRequestEvent) ID() EventID {
+func (e *ReviewEvent) ID() EventID {
 	return ComputeEventID(e.Provider, e.InternalID)
 }
 
 // Type honors the Event interface.
-func (e *PullRequestEvent) Type() EventType {
-	return PullRequestEventType
+func (e *ReviewEvent) Type() EventType {
+	return ReviewEventType
 }
 
 // Revision honors the Event interface.
-func (e *PullRequestEvent) Revision() *CommitRevision {
+func (e *ReviewEvent) Revision() *CommitRevision {
 	return &e.CommitRevision
 }
 
