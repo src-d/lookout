@@ -43,7 +43,16 @@ func (a *Analyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent
 }
 
 func (a *Analyzer) NotifyPushEvent(ctx context.Context, e *lookout.PushEvent) (*lookout.EventResponse, error) {
-	return nil, fmt.Errorf("not implemented")
+	return &lookout.EventResponse{
+		Comments: []*lookout.Comment{
+			{Text: fmt.Sprintf(
+				"dummy comment for push event: %s -> %s (%d commits)",
+				e.CommitRevision.Base,
+				e.CommitRevision.Head,
+				e.Commits,
+			)},
+		},
+	}, nil
 }
 
 func (a *Analyzer) lineIncrease(ch *lookout.Change) []*lookout.Comment {
