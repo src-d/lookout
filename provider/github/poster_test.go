@@ -57,7 +57,7 @@ func TestPoster_Post_OK(t *testing.T) {
 		nil)
 
 	p := &Poster{rc: mrc, cc: mcc}
-	ev := &lookout.PullRequestEvent{
+	ev := &lookout.ReviewEvent{
 		Provider: Provider,
 		CommitRevision: lookout.CommitRevision{
 			Base: lookout.ReferencePointer{
@@ -96,7 +96,7 @@ func TestPoster_Post_BadProvider(t *testing.T) {
 	mcc := &commitsComparator{}
 	mrc := &reviewCreator{}
 	p := &Poster{rc: mrc, cc: mcc}
-	ev := &lookout.PullRequestEvent{
+	ev := &lookout.ReviewEvent{
 		Provider: "badprovider",
 		CommitRevision: lookout.CommitRevision{
 			Base: lookout.ReferencePointer{
@@ -130,7 +130,7 @@ func TestPoster_Post_BadReferenceNoRepository(t *testing.T) {
 	mcc := &commitsComparator{}
 	mrc := &reviewCreator{}
 	p := &Poster{rc: mrc, cc: mcc}
-	ev := &lookout.PullRequestEvent{
+	ev := &lookout.ReviewEvent{
 		Provider: Provider,
 	}
 	cs := []*lookout.Comment{&lookout.Comment{
@@ -161,7 +161,7 @@ func TestPoster_Post_BadReference(t *testing.T) {
 	mcc := &commitsComparator{}
 	mrc := &reviewCreator{}
 	p := &Poster{rc: mrc, cc: mcc}
-	ev := &lookout.PullRequestEvent{
+	ev := &lookout.ReviewEvent{
 		Provider: Provider,
 		CommitRevision: lookout.CommitRevision{
 			Base: lookout.ReferencePointer{

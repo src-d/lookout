@@ -135,7 +135,7 @@ func (c *ServeCommand) startServer() error {
 
 func (c *ServeCommand) handleEvent(e lookout.Event) error {
 	switch ev := e.(type) {
-	case *lookout.PullRequestEvent:
+	case *lookout.ReviewEvent:
 		return c.handlePR(ev)
 	default:
 		log.Debugf("ignoring unsupported event: %s", ev)
@@ -143,14 +143,14 @@ func (c *ServeCommand) handleEvent(e lookout.Event) error {
 	}
 }
 
-func (c *ServeCommand) handlePR(e *lookout.PullRequestEvent) error {
+func (c *ServeCommand) handlePR(e *lookout.ReviewEvent) error {
 	logger := log.DefaultLogger.With(log.Fields{
 		"provider":   e.Provider,
 		"repository": e.Head.InternalRepositoryURL,
 		"head":       e.Head.ReferenceName,
 	})
 	logger.Infof("processing pull request")
-	resp, err := c.analyzer.NotifyPullRequestEvent(context.TODO(), e)
+	resp, err := c.analyzer.NotifyReviewEvent(context.TODO(), e)
 	if err != nil {
 		logger.Errorf(err, "analysis failed")
 		return nil

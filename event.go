@@ -24,4 +24,4 @@ type RepositoryInfo = pb.RepositoryInfo
 type ReferencePointer = pb.ReferencePointer
 
 type PushEvent = pb.PushEvent
-type PullRequestEvent = pb.PullRequestEvent
+type ReviewEvent = pb.ReviewEvent

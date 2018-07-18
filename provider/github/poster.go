@@ -47,7 +47,7 @@ func NewPoster(t http.RoundTripper) *Poster {
 func (p *Poster) Post(ctx context.Context, e lookout.Event,
 	cs []*lookout.Comment) error {
 	switch ev := e.(type) {
-	case *lookout.PullRequestEvent:
+	case *lookout.ReviewEvent:
 		if ev.Provider != Provider {
 			return ErrEventNotSupported.Wrap(
 				fmt.Errorf("unsupported provider: %s", ev.Provider))
@@ -59,7 +59,7 @@ func (p *Poster) Post(ctx context.Context, e lookout.Event,
 	}
 }
 
-func (p *Poster) postPR(ctx context.Context, e *lookout.PullRequestEvent,
+func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 	cs []*lookout.Comment) error {
 
 	owner, repo, pr, err := p.validatePR(e)
@@ -91,7 +91,7 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.PullRequestEvent,
 }
 
 func (p *Poster) validatePR(
-	e *lookout.PullRequestEvent) (owner, repo string, pr int, err error) {
+	e *lookout.ReviewEvent) (owner, repo string, pr int, err error) {
 
 	base := e.Base
 	owner, err = extractOwner(base)
