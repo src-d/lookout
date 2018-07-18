@@ -19,6 +19,7 @@
 		File
 		Change
 		ChangesRequest
+		FilesRequest
 */
 package pb
 
