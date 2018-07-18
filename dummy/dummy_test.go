@@ -99,7 +99,7 @@ func (s *DummySuite) Test() {
 
 	client := lookout.NewAnalyzerClient(conn)
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*10)
-	resp, err := client.NotifyPullRequestEvent(ctx, &lookout.PullRequestEvent{
+	resp, err := client.NotifyReviewEvent(ctx, &lookout.ReviewEvent{
 		CommitRevision: lookout.CommitRevision{
 			Base: lookout.ReferencePointer{
 				InternalRepositoryURL: "file:///fixture/basic",

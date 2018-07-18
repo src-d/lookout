@@ -16,7 +16,7 @@ type Analyzer struct {
 
 var _ lookout.AnalyzerServer = &Analyzer{}
 
-func (a *Analyzer) NotifyPullRequestEvent(ctx context.Context, e *lookout.PullRequestEvent) (
+func (a *Analyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent) (
 	*lookout.EventResponse, error) {
 
 	changes, err := a.DataClient.GetChanges(ctx, &lookout.ChangesRequest{

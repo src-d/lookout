@@ -43,8 +43,8 @@ message PushEvent {
     CommitRevision commit_revision = 7 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
-// PullRequestEvent represents a PullRequest being created or updated.
-message PullRequestEvent {
+// ReviewEvent represents a Review (PullRequest in case of Github) being created or updated.
+message ReviewEvent {
     // Provider triggering this event.
     string provider = 1;
     // InternalId is the internal id for this event at the provider.
@@ -58,7 +58,7 @@ message PullRequestEvent {
     // Source reference to the original branch and repository were the changes
     // came from.
     ReferencePointer source = 8 [(gogoproto.nullable) = false];
-    // Merge  test branch where the PullRequest was merged.
+    // Merge test branch where the PullRequest was merged.
     ReferencePointer merge = 9 [(gogoproto.nullable) = false];
 
     CommitRevision commit_revision = 7 [(gogoproto.nullable) = false, (gogoproto.embed) = true];

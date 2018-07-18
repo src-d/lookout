@@ -14,12 +14,13 @@ option (gogoproto.protosizer_all) = true;
 // the server, we might want to implement sending results as a callback. For
 // now, this is kept simple.
 service Analyzer {
-    rpc NotifyPullRequestEvent (PullRequestEvent) returns (EventResponse);
+    rpc NotifyReviewEvent (ReviewEvent) returns (EventResponse);
     rpc NotifyPushEvent (PushEvent) returns (EventResponse);
 }
 
 message EventResponse {
     repeated Comment comments = 1;
+    // repeated Patch patches = 2;
 }
 
 // Comment is a comment on a commit or changeset.

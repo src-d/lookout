@@ -105,8 +105,8 @@ func (c *ReviewCommand) Execute(args []string) error {
 	}
 
 	client := lookout.NewAnalyzerClient(conn)
-	resp, err := client.NotifyPullRequestEvent(context.TODO(),
-		&lookout.PullRequestEvent{
+	resp, err := client.NotifyReviewEvent(context.TODO(),
+		&lookout.ReviewEvent{
 			IsMergeable: true,
 			Source:      toRef,
 			Merge:       toRef,

@@ -74,14 +74,14 @@ func castHash(sha1 *string) plumbing.Hash {
 func castPullRequestEvent(
 	r *lookout.RepositoryInfo,
 	e *github.Event, pr *github.PullRequestEvent,
-) *lookout.PullRequestEvent {
+) *lookout.ReviewEvent {
 
 	if pr.PullRequest == nil && pr.PullRequest.GetID() != 0 {
 		log.Warningf("missing pull request information in pull request event")
 		return nil
 	}
 
-	pre := &lookout.PullRequestEvent{}
+	pre := &lookout.ReviewEvent{}
 	pre.Provider = Provider
 	pre.InternalID = e.GetID()
 	pre.Source = castPullRequestBranch(pr.PullRequest.GetHead())
