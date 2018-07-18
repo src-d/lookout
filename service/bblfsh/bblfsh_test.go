@@ -57,11 +57,11 @@ func (s *ServiceSuite) TearDownSuite() {
 	}
 }
 
-func (s *ServiceSuite) TestNoContents() {
+func (s *ServiceSuite) TestChanges() {
 	require := s.Require()
 
-	underlying := &MockService{T: s.T()}
-	srv := NewService(underlying, s.BblfshClient)
+	underlying := &MockChangesService{T: s.T()}
+	srv := NewService(underlying, nil, s.BblfshClient)
 	require.NotNil(srv)
 
 	expectedChanges := []*lookout.Change{
@@ -129,6 +129,59 @@ func (s *ServiceSuite) TestNoContents() {
 	require.NoError(scan.Close())
 }
 
+func (s *ServiceSuite) TestFiles() {
+	require := s.Require()
+
+	underlying := &MockFilesService{T: s.T()}
+	srv := NewService(nil, underlying, s.BblfshClient)
+	require.NotNil(srv)
+
+	expectedFiles := []*lookout.File{
+		{
+			Path:    "f1new",
+			Content: []byte("f1 new"),
+		},
+		{
+			Path:    "f2new",
+			Content: []byte("f2 new"),
+		}}
+	req := &lookout.FilesRequest{
+		Revision: &lookout.ReferencePointer{
+			InternalRepositoryURL: "repo://myrepo",
+			Hash: "foo",
+		},
+		WantUAST: true,
+	}
+
+	underlying.ExpectedRequest = req
+	underlying.FileScanner = &SliceFileScanner{Files: expectedFiles}
+
+	s.Mock.Nodes = make(map[string]*uast.Node)
+	s.Mock.Nodes["f1new"] = &uast.Node{InternalType: "f1 new"}
+	s.Mock.Nodes["f2new"] = &uast.Node{InternalType: "f2 new"}
+
+	scan, err := srv.GetFiles(context.TODO(), req)
+	require.NoError(err)
+	require.NotNil(scan)
+
+	var files []*lookout.File
+	for scan.Next() {
+		files = append(files, scan.File())
+	}
+
+	require.NoError(scan.Err())
+	require.Equal(len(expectedFiles), len(files))
+
+	expectedNodes := make(map[string]*uast.Node)
+	for _, f := range files {
+		expectedNodes[f.Path] = f.UAST
+	}
+
+	require.Equal(expectedNodes, s.Mock.Nodes)
+
+	require.NoError(scan.Close())
+}
+
 type MockBblfshServer struct {
 	protocol.ProtocolServiceServer
 	Nodes map[string]*uast.Node
@@ -156,19 +209,34 @@ func (s *MockBblfshServer) Parse(ctx context.Context,
 	}, nil
 }
 
-type MockService struct {
+type MockChangesService struct {
 	T               *testing.T
 	ExpectedRequest *lookout.ChangesRequest
 	ChangeScanner   lookout.ChangeScanner
 	Error           error
 }
 
-func (r *MockService) GetChanges(ctx context.Context,
+func (r *MockChangesService) GetChanges(ctx context.Context,
 	req *lookout.ChangesRequest) (
 	lookout.ChangeScanner, error) {
 	require := require.New(r.T)
 	require.Equal(r.ExpectedRequest, req)
 	return r.ChangeScanner, r.Error
+}
+
+type MockFilesService struct {
+	T               *testing.T
+	ExpectedRequest *lookout.FilesRequest
+	FileScanner     lookout.FileScanner
+	Error           error
+}
+
+func (r *MockFilesService) GetFiles(ctx context.Context,
+	req *lookout.FilesRequest) (
+	lookout.FileScanner, error) {
+	require := require.New(r.T)
+	require.Equal(r.ExpectedRequest, req)
+	return r.FileScanner, r.Error
 }
 
 type SliceChangeScanner struct {
@@ -205,5 +273,42 @@ func (s *SliceChangeScanner) Change() *lookout.Change {
 }
 
 func (s *SliceChangeScanner) Close() error {
+	return nil
+}
+
+type SliceFileScanner struct {
+	Files    []*lookout.File
+	Error    error
+	FileTick chan struct{}
+	val      *lookout.File
+}
+
+func (s *SliceFileScanner) Next() bool {
+	if s.Error != nil {
+		return false
+	}
+
+	if len(s.Files) == 0 {
+		s.val = nil
+		return false
+	}
+
+	s.val, s.Files = s.Files[0], s.Files[1:]
+	return true
+}
+
+func (s *SliceFileScanner) Err() error {
+	return s.Error
+}
+
+func (s *SliceFileScanner) File() *lookout.File {
+	if s.FileTick != nil {
+		<-s.FileTick
+	}
+
+	return s.val
+}
+
+func (s *SliceFileScanner) Close() error {
 	return nil
 }

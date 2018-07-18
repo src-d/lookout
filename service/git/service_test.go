@@ -46,12 +46,27 @@ func (s *ServiceSuite) TearDownSuite() {
 	require.NoError(err)
 }
 
-func (s *ServiceSuite) TestTree() {
+func (s *ServiceSuite) TestTreeChanges() {
 	require := s.Require()
 
 	dr := NewService(&StorerCommitLoader{s.Storer})
 	resp, err := dr.GetChanges(context.TODO(), &lookout.ChangesRequest{
 		Head: &lookout.ReferencePointer{
+			InternalRepositoryURL: "file:///myrepo",
+			Hash: s.Basic.Head.String(),
+		},
+	})
+
+	require.NoError(err)
+	require.NotNil(resp)
+}
+
+func (s *ServiceSuite) TestTreeFiles() {
+	require := s.Require()
+
+	dr := NewService(&StorerCommitLoader{s.Storer})
+	resp, err := dr.GetFiles(context.TODO(), &lookout.FilesRequest{
+		Revision: &lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///myrepo",
 			Hash: s.Basic.Head.String(),
 		},

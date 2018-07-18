@@ -81,11 +81,12 @@ func (c *EventCommand) makeDataServer() (*grpc.Server, error) {
 	}
 
 	loader := git.NewStorerCommitLoader(c.repo.Storer)
+	gitService := git.NewService(loader)
+	bblfshService := bblfsh.NewService(gitService, gitService, bblfshConn)
+
 	srv := &lookout.DataServerHandler{
-		ChangeGetter: bblfsh.NewService(
-			git.NewService(loader),
-			bblfshConn,
-		),
+		ChangeGetter: bblfshService,
+		FileGetter:   bblfshService,
 	}
 	grpcSrv := grpc.NewServer()
 	lookout.RegisterDataServer(grpcSrv, srv)

@@ -16,7 +16,7 @@ type TreeScanner struct {
 	storer storer.EncodedObjectStorer
 	tree   *object.Tree
 	tw     *object.TreeWalker
-	val    *lookout.Change
+	val    *lookout.File
 	err    error
 	done   bool
 }
@@ -51,13 +51,11 @@ func (s *TreeScanner) Next() bool {
 			continue
 		}
 
-		ch := &lookout.Change{Head: &lookout.File{
+		s.val = &lookout.File{
 			Path: name,
 			Mode: uint32(entry.Mode),
 			Hash: entry.Hash.String(),
-		}}
-
-		s.val = ch
+		}
 		return true
 	}
 }
@@ -66,8 +64,12 @@ func (s *TreeScanner) Err() error {
 	return s.err
 }
 
-func (s *TreeScanner) Change() *lookout.Change {
+func (s *TreeScanner) File() *lookout.File {
 	return s.val
+}
+
+func (s *TreeScanner) Change() *lookout.Change {
+	return &lookout.Change{Head: s.val}
 }
 
 func (s *TreeScanner) Close() error {
@@ -143,29 +145,17 @@ func gitChangeEntryToApiFile(entry object.ChangeEntry) *lookout.File {
 	}
 }
 
-type FilterScanner struct {
-	Scanner           lookout.ChangeScanner
+type BaseFilterScanner struct {
 	includePatternRaw string
 	excludePatternRaw string
 	includePattern    *regexp.Regexp
 	excludePattern    *regexp.Regexp
-	val               *lookout.Change
 	started           bool
 	done              bool
 	err               error
 }
 
-func NewFilterScanner(
-	scanner lookout.ChangeScanner,
-	include, exclude string) *FilterScanner {
-	return &FilterScanner{
-		Scanner:           scanner,
-		includePatternRaw: include,
-		excludePatternRaw: exclude,
-	}
-}
-
-func (s *FilterScanner) Next() bool {
+func (s *BaseFilterScanner) Next(fn func() bool) bool {
 	if s.done {
 		return false
 	}
@@ -186,6 +176,77 @@ func (s *FilterScanner) Next() bool {
 		}
 	}
 
+	hasNext := fn()
+	if !hasNext {
+		s.done = true
+	}
+
+	return hasNext
+}
+
+func (s *BaseFilterScanner) compile(pat string) (*regexp.Regexp, error) {
+	if pat == "" {
+		return nil, nil
+	}
+
+	return regexp.Compile(pat)
+}
+
+func (s *BaseFilterScanner) matchInclude(p string) bool {
+	if s.includePattern == nil {
+		return true
+	}
+
+	return s.includePattern.MatchString(p)
+}
+
+func (s *BaseFilterScanner) matchExclude(p string) bool {
+	if s.excludePattern == nil {
+		return false
+	}
+
+	return s.excludePattern.MatchString(p)
+}
+
+type ChangeFilterScanner struct {
+	BaseFilterScanner
+	Scanner lookout.ChangeScanner
+	val     *lookout.Change
+}
+
+func NewChangeFilterScanner(
+	scanner lookout.ChangeScanner,
+	include, exclude string) *ChangeFilterScanner {
+	return &ChangeFilterScanner{
+		BaseFilterScanner: BaseFilterScanner{
+			includePatternRaw: include,
+			excludePatternRaw: exclude,
+		},
+		Scanner: scanner,
+	}
+}
+
+func (s *ChangeFilterScanner) Next() bool {
+	return s.BaseFilterScanner.Next(s.next)
+}
+
+func (s *ChangeFilterScanner) Err() error {
+	if s.err != nil {
+		return s.err
+	}
+
+	return s.Scanner.Err()
+}
+
+func (s *ChangeFilterScanner) Change() *lookout.Change {
+	return s.val
+}
+
+func (s *ChangeFilterScanner) Close() error {
+	return s.Scanner.Close()
+}
+
+func (s *ChangeFilterScanner) next() bool {
 	for s.Scanner.Next() {
 		ch := s.Scanner.Change()
 
@@ -200,12 +261,32 @@ func (s *FilterScanner) Next() bool {
 		s.val = ch
 		return true
 	}
-
-	s.done = true
 	return false
 }
 
-func (s *FilterScanner) Err() error {
+type FileFilterScanner struct {
+	BaseFilterScanner
+	Scanner lookout.FileScanner
+	val     *lookout.File
+}
+
+func NewFileFilterScanner(
+	scanner lookout.FileScanner,
+	include, exclude string) *FileFilterScanner {
+	return &FileFilterScanner{
+		BaseFilterScanner: BaseFilterScanner{
+			includePatternRaw: include,
+			excludePatternRaw: exclude,
+		},
+		Scanner: scanner,
+	}
+}
+
+func (s *FileFilterScanner) Next() bool {
+	return s.BaseFilterScanner.Next(s.next)
+}
+
+func (s *FileFilterScanner) Err() error {
 	if s.err != nil {
 		return s.err
 	}
@@ -213,57 +294,80 @@ func (s *FilterScanner) Err() error {
 	return s.Scanner.Err()
 }
 
-func (s *FilterScanner) Change() *lookout.Change {
+func (s *FileFilterScanner) File() *lookout.File {
 	return s.val
 }
 
-func (s *FilterScanner) Close() error {
+func (s *FileFilterScanner) Close() error {
 	return s.Scanner.Close()
 }
 
-func (s *FilterScanner) compile(pat string) (*regexp.Regexp, error) {
-	if pat == "" {
-		return nil, nil
-	}
+func (s *FileFilterScanner) next() bool {
+	for s.Scanner.Next() {
+		f := s.Scanner.File()
 
-	return regexp.Compile(pat)
-}
+		if !s.matchInclude(f.Path) {
+			continue
+		}
 
-func (s *FilterScanner) matchInclude(p string) bool {
-	if s.includePattern == nil {
+		if s.matchExclude(f.Path) {
+			continue
+		}
+
+		s.val = f
 		return true
 	}
-
-	return s.includePattern.MatchString(p)
+	return false
 }
 
-func (s *FilterScanner) matchExclude(p string) bool {
-	if s.excludePattern == nil {
-		return false
+type BaseBlobScanner struct {
+	done bool
+	err  error
+}
+
+func (s *BaseBlobScanner) addBlob(t *object.Tree, f *lookout.File) (err error) {
+	if f == nil {
+		return nil
 	}
 
-	return s.excludePattern.MatchString(p)
+	if f.Hash == "" {
+		return nil
+	}
+
+	of, err := t.File(f.Path)
+	if err != nil {
+		return err
+	}
+
+	r, err := of.Blob.Reader()
+	if err != nil {
+		return err
+	}
+
+	defer gitioutil.CheckClose(r, &err)
+
+	f.Content, err = ioutil.ReadAll(r)
+	return err
 }
 
-type BlobScanner struct {
+type ChangeBlobScanner struct {
+	BaseBlobScanner
 	Scanner    lookout.ChangeScanner
 	Base, Head *object.Tree
 	val        *lookout.Change
-	done       bool
-	err        error
 }
 
-func NewBlobScanner(
+func NewChangeBlobScanner(
 	scanner lookout.ChangeScanner,
-	base, head *object.Tree) *BlobScanner {
-	return &BlobScanner{
+	base, head *object.Tree) *ChangeBlobScanner {
+	return &ChangeBlobScanner{
 		Scanner: scanner,
 		Base:    base,
 		Head:    head,
 	}
 }
 
-func (s *BlobScanner) Next() bool {
+func (s *ChangeBlobScanner) Next() bool {
 	if s.done {
 		return false
 	}
@@ -290,33 +394,7 @@ func (s *BlobScanner) Next() bool {
 	return false
 }
 
-func (s *BlobScanner) addBlob(t *object.Tree, f *lookout.File) (err error) {
-	if f == nil {
-		return nil
-	}
-
-	if f.Hash == "" {
-		return nil
-	}
-
-	of, err := t.File(f.Path)
-	if err != nil {
-		return err
-	}
-
-	r, err := of.Blob.Reader()
-	if err != nil {
-		return err
-	}
-
-	defer gitioutil.CheckClose(r, &err)
-
-	f.Content, err = ioutil.ReadAll(r)
-	return err
-
-}
-
-func (s *BlobScanner) Err() error {
+func (s *ChangeBlobScanner) Err() error {
 	if s.err != nil {
 		return s.err
 	}
@@ -324,10 +402,61 @@ func (s *BlobScanner) Err() error {
 	return s.Scanner.Err()
 }
 
-func (s *BlobScanner) Change() *lookout.Change {
+func (s *ChangeBlobScanner) Change() *lookout.Change {
 	return s.val
 }
 
-func (s *BlobScanner) Close() error {
+func (s *ChangeBlobScanner) Close() error {
+	return s.Scanner.Close()
+}
+
+type FileBlobScanner struct {
+	BaseBlobScanner
+	Scanner lookout.FileScanner
+	Tree    *object.Tree
+	val     *lookout.File
+}
+
+func NewFileBlobScanner(scanner lookout.FileScanner, tree *object.Tree) *FileBlobScanner {
+	return &FileBlobScanner{
+		Scanner: scanner,
+		Tree:    tree,
+	}
+}
+
+func (s *FileBlobScanner) Next() bool {
+	if s.done {
+		return false
+	}
+
+	for s.Scanner.Next() {
+		f := s.Scanner.File()
+		if err := s.addBlob(s.Tree, f); err != nil {
+			s.done = true
+			s.err = err
+			return false
+		}
+
+		s.val = f
+		return true
+	}
+
+	s.done = true
+	return false
+}
+
+func (s *FileBlobScanner) Err() error {
+	if s.err != nil {
+		return s.err
+	}
+
+	return s.Scanner.Err()
+}
+
+func (s *FileBlobScanner) File() *lookout.File {
+	return s.val
+}
+
+func (s *FileBlobScanner) Close() error {
 	return s.Scanner.Close()
 }

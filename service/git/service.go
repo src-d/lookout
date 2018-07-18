@@ -40,12 +40,35 @@ func (r *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 	}
 
 	if req.IncludePattern != "" || req.ExcludePattern != "" {
-		scanner = NewFilterScanner(scanner,
+		scanner = NewChangeFilterScanner(scanner,
 			req.IncludePattern, req.ExcludePattern)
 	}
 
 	if req.WantContents {
-		scanner = NewBlobScanner(scanner, base, head)
+		scanner = NewChangeBlobScanner(scanner, base, head)
+	}
+
+	return scanner, nil
+}
+
+func (r *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (
+	lookout.FileScanner, error) {
+
+	_, tree, err := r.loadTrees(ctx, nil, req.Revision)
+	if err != nil {
+		return nil, err
+	}
+
+	var scanner lookout.FileScanner
+	scanner = NewTreeScanner(tree)
+
+	if req.IncludePattern != "" || req.ExcludePattern != "" {
+		scanner = NewFileFilterScanner(scanner,
+			req.IncludePattern, req.ExcludePattern)
+	}
+
+	if req.WantContents {
+		scanner = NewFileBlobScanner(scanner, tree)
 	}
 
 	return scanner, nil
