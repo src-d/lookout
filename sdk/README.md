@@ -1,10 +1,10 @@
 # Lookout Analyzer SDK
 
-An analyzer is a gRPC server, that implements [Analyzer service](https://github.com/src-d/lookout/tree/master/pb/service_analyzer.proto) to receive events from the server.
+An analyzer is a gRPC server, that implements [Analyzer service](https://github.com/src-d/lookout/tree/master/sdk/service_analyzer.proto) to receive events from the server.
 
-An analyzer should use gRPC client to access [Data service](https://github.com/src-d/lookout/tree/master/pb/service_data.proto) to get content or UAST of the changes.
+An analyzer should use gRPC client to access [Data service](https://github.com/src-d/lookout/tree/master/sdk/service_data.proto) to get content or UAST of the changes.
 
-All `.proto` files are located in [/pb](https://github.com/src-d/lookout/tree/master/pb) directory.
+All `.proto` files are located in [/sdk](https://github.com/src-d/lookout/tree/master/sdk) directory.
 
 
 ## Code generation
@@ -25,7 +25,7 @@ Generation:
 $ PY_OUT_DIR=<directory for generated files> mkdir -p $PY_OUT_DIR && \
     python -m grpc_tools.protoc -Ipb \
     --python_out=$PY_OUT_DIR --grpc_python_out=$PY_OUT_DIR \
-    pb/*.proto
+    sdk/*.proto
 ```
 
 ## Testing

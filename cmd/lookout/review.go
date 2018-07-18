@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/service/bblfsh"
@@ -10,23 +11,28 @@ import (
 
 	"google.golang.org/grpc"
 	gogit "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 func init() {
-	if _, err := parser.AddCommand("analyze", "analyzes HEAD", "",
-		&AnalyzeCommand{}); err != nil {
+	if _, err := parser.AddCommand("review", "provides simple data server and triggers analyzer", "",
+		&ReviewCommand{}); err != nil {
 		panic(err)
 	}
 }
 
-type AnalyzeCommand struct {
-	Analyzer   string `long:"analyzer" default:"ipv4://localhost:10302" env:"LOOKOUT_ANALYZER" description:"gRPC URL of the analyzer to use"`
+type ReviewCommand struct {
 	DataServer string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
 	Bblfshd    string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
 	GitDir     string `long:"git-dir" default:"." env:"GIT_DIR" description:"path to the .git directory to analyze"`
+	RevFrom    string `long:"from" default:"HEAD^" description:"name of the base revision for review event"`
+	RevTo      string `long:"to" default:"HEAD" description:"name of the head revision for review event"`
+	Args       struct {
+		Analyzer string `positional-arg-name:"analyzer" description:"gRPC URL of the analyzer to use"`
+	} `positional-args:"yes" required:"yes"`
 }
 
-func (c *AnalyzeCommand) Execute(args []string) error {
+func (c *ReviewCommand) Execute(args []string) error {
 	r, err := gogit.PlainOpenWithOptions(c.GitDir, &gogit.PlainOpenOptions{
 		DetectDotGit: true,
 	})
@@ -34,26 +40,14 @@ func (c *AnalyzeCommand) Execute(args []string) error {
 		return err
 	}
 
-	headRef, err := r.Head()
+	baseHash, err := getCommitHashByRev(r, c.RevFrom)
 	if err != nil {
-		return err
+		return fmt.Errorf("base revision error: %s", err)
 	}
 
-	headCommit, err := r.CommitObject(headRef.Hash())
+	headHash, err := getCommitHashByRev(r, c.RevTo)
 	if err != nil {
-		return err
-	}
-
-	headHash := headCommit.Hash.String()
-
-	var parentHash string
-	if len(headCommit.ParentHashes) > 0 {
-		parentCommit, err := headCommit.Parent(0)
-		if err != nil {
-			return err
-		}
-
-		parentHash = parentCommit.Hash.String()
+		return fmt.Errorf("head revision error: %s", err)
 	}
 
 	c.Bblfshd, err = lookout.ToGoGrpcAddress(c.Bblfshd)
@@ -83,28 +77,42 @@ func (c *AnalyzeCommand) Execute(args []string) error {
 	serveResult := make(chan error)
 	go func() { serveResult <- grpcSrv.Serve(lis) }()
 
-	c.Analyzer, err = lookout.ToGoGrpcAddress(c.Analyzer)
+	c.Args.Analyzer, err = lookout.ToGoGrpcAddress(c.Args.Analyzer)
 	if err != nil {
 		return err
 	}
 
-	conn, err := grpc.Dial(c.Analyzer, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(c.Args.Analyzer, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return err
+	}
+
+	fullGitPath, err := filepath.Abs(c.GitDir)
+	if err != nil {
+		return fmt.Errorf("can't resolve full path: %s", err)
+	}
+
+	fromRef := lookout.ReferencePointer{
+		InternalRepositoryURL: "file://" + fullGitPath,
+		ReferenceName:         plumbing.ReferenceName(c.RevFrom),
+		Hash:                  baseHash,
+	}
+
+	toRef := lookout.ReferencePointer{
+		InternalRepositoryURL: "file://" + fullGitPath,
+		ReferenceName:         plumbing.ReferenceName(c.RevTo),
+		Hash:                  headHash,
 	}
 
 	client := lookout.NewAnalyzerClient(conn)
 	resp, err := client.NotifyPullRequestEvent(context.TODO(),
 		&lookout.PullRequestEvent{
+			IsMergeable: true,
+			Source:      toRef,
+			Merge:       toRef,
 			CommitRevision: lookout.CommitRevision{
-				Base: lookout.ReferencePointer{
-					InternalRepositoryURL: "file:///repo",
-					Hash: parentHash,
-				},
-				Head: lookout.ReferencePointer{
-					InternalRepositoryURL: "file:///repo",
-					Hash: headHash,
-				},
+				Base: fromRef,
+				Head: toRef,
 			}})
 	if err != nil {
 		return err
@@ -129,4 +137,13 @@ func (c *AnalyzeCommand) Execute(args []string) error {
 
 	grpcSrv.GracefulStop()
 	return <-serveResult
+}
+
+func getCommitHashByRev(r *gogit.Repository, revName string) (string, error) {
+	h, err := r.ResolveRevision(plumbing.Revision(revName))
+	if err != nil {
+		return "", err
+	}
+
+	return h.String(), nil
 }

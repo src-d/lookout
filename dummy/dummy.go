@@ -20,8 +20,8 @@ func (a *Analyzer) NotifyPullRequestEvent(ctx context.Context, e *lookout.PullRe
 	*lookout.EventResponse, error) {
 
 	changes, err := a.DataClient.GetChanges(ctx, &lookout.ChangesRequest{
-		Base:         &e.Base,
-		Head:         &e.Head,
+		Base:         &e.CommitRevision.Base,
+		Head:         &e.CommitRevision.Head,
 		WantContents: true,
 	})
 	if err != nil {
@@ -64,6 +64,10 @@ func (a *Analyzer) lineIncrease(ch *lookout.Change) []*lookout.Comment {
 }
 
 func (a *Analyzer) maxLineWidth(ch *lookout.Change) []*lookout.Comment {
+	if ch.Head == nil {
+		return nil
+	}
+
 	lines := bytes.Split(ch.Head.Content, []byte("\n"))
 	var comments []*lookout.Comment
 	for i, line := range lines {
