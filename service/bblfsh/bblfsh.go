@@ -18,6 +18,7 @@ type Service struct {
 }
 
 var _ lookout.ChangeGetter = &Service{}
+var _ lookout.FileGetter = &Service{}
 
 // NewService creates new bblfsh Service
 func NewService(changes lookout.ChangeGetter, files lookout.FileGetter, conn *grpc.ClientConn) *Service {
