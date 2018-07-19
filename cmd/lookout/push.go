@@ -4,22 +4,23 @@ import (
 	"context"
 
 	"github.com/src-d/lookout"
-
 	"google.golang.org/grpc"
+	gogit "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 func init() {
-	if _, err := parser.AddCommand("review", "provides simple data server and triggers analyzer", "",
-		&ReviewCommand{}); err != nil {
+	if _, err := parser.AddCommand("push", "provides simple data server and triggers analyzer", "",
+		&PushCommand{}); err != nil {
 		panic(err)
 	}
 }
 
-type ReviewCommand struct {
+type PushCommand struct {
 	EventCommand
 }
 
-func (c *ReviewCommand) Execute(args []string) error {
+func (c *PushCommand) Execute(args []string) error {
 	if err := c.openRepository(); err != nil {
 		return err
 	}
@@ -53,11 +54,23 @@ func (c *ReviewCommand) Execute(args []string) error {
 	}
 
 	client := lookout.NewAnalyzerClient(conn)
-	resp, err := client.NotifyReviewEvent(context.TODO(),
-		&lookout.ReviewEvent{
-			IsMergeable: true,
-			Source:      *toRef,
-			Merge:       *toRef,
+
+	log, err := c.repo.Log(&gogit.LogOptions{From: plumbing.NewHash(toRef.Hash)})
+	var commits uint32
+	for {
+		commit, err := log.Next()
+		if err != nil {
+			return err
+		}
+		if commit.Hash.String() == fromRef.Hash {
+			break
+		}
+		commits++
+	}
+
+	resp, err := client.NotifyPushEvent(context.TODO(),
+		&lookout.PushEvent{
+			Commits: commits,
 			CommitRevision: lookout.CommitRevision{
 				Base: *fromRef,
 				Head: *toRef,
