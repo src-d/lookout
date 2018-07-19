@@ -114,6 +114,21 @@ func (s *DummySuite) Test() {
 	require.NoError(err)
 	require.NotNil(resp)
 
+	resp, err = client.NotifyPushEvent(ctx, &lookout.PushEvent{
+		CommitRevision: lookout.CommitRevision{
+			Base: lookout.ReferencePointer{
+				InternalRepositoryURL: "file:///fixture/basic",
+				Hash: "918c48b83bd081e863dbe1b80f8998f058cd8294",
+			},
+			Head: lookout.ReferencePointer{
+				InternalRepositoryURL: "file:///fixture/basic",
+				Hash: s.Basic.Head.String(),
+			},
+		},
+	})
+	require.NoError(err)
+	require.NotNil(resp)
+
 	s.analyzerServer.Stop()
 	require.NoError(<-done)
 }
