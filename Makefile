@@ -14,5 +14,11 @@ $(MAKEFILE):
 protogen:
 	$(GOCMD) install ./vendor/github.com/gogo/protobuf/protoc-gen-gogofaster
 	protoc \
-		-I sdk -I vendor -I vendor/github.com/gogo/protobuf/protobuf \
-		--gogofaster_out=plugins=grpc:pb sdk/*.proto
+		-I sdk \
+		--gogofaster_out=plugins=grpc,\
+Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types:pb \
+sdk/*.proto

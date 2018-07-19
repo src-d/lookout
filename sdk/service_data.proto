@@ -5,12 +5,7 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "gopkg.in/bblfsh/sdk.v1/uast/generated.proto";
 import "event.proto";
 
-// UAST uses protosizer instead of sizer, this is required for interoperability
-// with the generated proto from bblfsh.
-option (gogoproto.sizer_all) = false;
-option (gogoproto.protosizer_all) = true;
 option (gogoproto.goproto_getters_all) = false;
-
 
 // Data services exposes VCS repositories.
 service Data {
@@ -19,6 +14,9 @@ service Data {
 }
 
 message File {
+    option (gogoproto.sizer) = false;
+    option (gogoproto.protosizer) = true;
+
     // File path.
     string path = 1;
     // POSIX-style file mode.
@@ -32,6 +30,9 @@ message File {
 }
 
 message Change {
+    option (gogoproto.sizer) = false;
+    option (gogoproto.protosizer) = true;
+    
     File base = 1;
     File head = 2;
 }

@@ -3,10 +3,9 @@ package pb;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
 
 option (gogoproto.goproto_getters_all) = false;
-option (gogoproto.sizer_all) = false;
-option (gogoproto.protosizer_all) = true;
 
 // CommitRevision defines a range of commits, from a base to a head.
 message CommitRevision {
@@ -15,7 +14,6 @@ message CommitRevision {
     // Head of the revision.
     ReferencePointer head = 2 [(gogoproto.nullable) = false];
 }
-
 
 // ReferencePointer is the reference to a git refererence in a repository.
 message ReferencePointer {
@@ -39,12 +37,18 @@ message PushEvent {
     uint32 commits = 4;
     // Commits is the number of distinct commits in the push.
     uint32 distinct_commits = 5;
+    // Configuration contains any configuration related to specific analyzer
+    google.protobuf.Struct configuration = 6 [(gogoproto.nullable) = false];
 
     CommitRevision commit_revision = 7 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // ReviewEvent represents a Review (PullRequest in case of Github) being created or updated.
 message ReviewEvent {
+    // UAST uses protosizer instead of sizer, this is required for interoperability
+    // with the generated proto from bblfsh.
+    option (gogoproto.protosizer) = false;
+
     // Provider triggering this event.
     string provider = 1;
     // InternalId is the internal id for this event at the provider.
@@ -60,6 +64,8 @@ message ReviewEvent {
     ReferencePointer source = 8 [(gogoproto.nullable) = false];
     // Merge test branch where the PullRequest was merged.
     ReferencePointer merge = 9 [(gogoproto.nullable) = false];
+    // Configuration contains any configuration related to specific analyzer
+    google.protobuf.Struct configuration = 10 [(gogoproto.nullable) = false];
 
     CommitRevision commit_revision = 7 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
