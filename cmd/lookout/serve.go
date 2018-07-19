@@ -112,11 +112,12 @@ func (c *ServeCommand) startServer() error {
 	sync := git.NewSyncer(lib)
 	loader := git.NewLibraryCommitLoader(lib, sync)
 
+	gitService := git.NewService(loader)
+	bblfshService := bblfsh.NewService(gitService, gitService, bblfshConn)
+
 	srv := &lookout.DataServerHandler{
-		ChangeGetter: bblfsh.NewService(
-			git.NewService(loader),
-			bblfshConn,
-		),
+		ChangeGetter: bblfshService,
+		FileGetter:   bblfshService,
 	}
 	grpcSrv := grpc.NewServer()
 	lookout.RegisterDataServer(grpcSrv, srv)

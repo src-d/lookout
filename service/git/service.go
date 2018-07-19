@@ -11,18 +11,21 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 )
 
+// Service implements data service interface on top of go-git
 type Service struct {
 	loader CommitLoader
 }
 
 var _ lookout.ChangeGetter = &Service{}
 
+// NewService creates new git Service
 func NewService(loader CommitLoader) *Service {
 	return &Service{
 		loader: loader,
 	}
 }
 
+// GetChanges returns a ChangeScanner that scans all changes according to the request.
 func (r *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 	lookout.ChangeScanner, error) {
 
@@ -40,12 +43,36 @@ func (r *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 	}
 
 	if req.IncludePattern != "" || req.ExcludePattern != "" {
-		scanner = NewFilterScanner(scanner,
+		scanner = NewChangeFilterScanner(scanner,
 			req.IncludePattern, req.ExcludePattern)
 	}
 
 	if req.WantContents {
-		scanner = NewBlobScanner(scanner, base, head)
+		scanner = NewChangeBlobScanner(scanner, base, head)
+	}
+
+	return scanner, nil
+}
+
+// GetFiles returns a FilesScanner that scans all files according to the request.
+func (r *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (
+	lookout.FileScanner, error) {
+
+	_, tree, err := r.loadTrees(ctx, nil, req.Revision)
+	if err != nil {
+		return nil, err
+	}
+
+	var scanner lookout.FileScanner
+	scanner = NewTreeScanner(tree)
+
+	if req.IncludePattern != "" || req.ExcludePattern != "" {
+		scanner = NewFileFilterScanner(scanner,
+			req.IncludePattern, req.ExcludePattern)
+	}
+
+	if req.WantContents {
+		scanner = NewFileBlobScanner(scanner, tree)
 	}
 
 	return scanner, nil

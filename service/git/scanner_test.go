@@ -57,7 +57,7 @@ func (s *ScannerSuite) getCommit(h plumbing.Hash) *object.Commit {
 	return commit
 }
 
-func (s *ScannerSuite) TestTreeScanner() {
+func (s *ScannerSuite) TestTreeScannerChanges() {
 	require := s.Require()
 
 	head := s.getCommit(s.Basic.Head)
@@ -77,113 +77,158 @@ func (s *ScannerSuite) TestTreeScanner() {
 	require.Len(changes, 9)
 }
 
-func (s *ScannerSuite) TestFilterScannerIncludeAll() {
-	fixtures := []*lookout.ChangesRequest{
-		{},
-		{IncludePattern: ".*"},
-	}
-
-	for i, fixture := range fixtures {
-		s.T().Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			require := require.New(t)
-
-			head := s.getCommit(s.Basic.Head)
-			headTree, err := head.Tree()
-			require.NoError(err)
-
-			cs := NewFilterScanner(
-				NewTreeScanner(headTree),
-				fixture.IncludePattern, fixture.ExcludePattern,
-			)
-
-			var changes []*lookout.Change
-			for cs.Next() {
-				changes = append(changes, cs.Change())
-			}
-
-			require.False(cs.Next())
-			require.NoError(cs.Err())
-			require.NoError(cs.Close())
-
-			require.Len(changes, 9)
-		})
-	}
-}
-
-func (s *ScannerSuite) TestFilterIncludeSome() {
-	fixtures := []*lookout.ChangesRequest{
-		{IncludePattern: `.*\.go`},
-		{IncludePattern: `.*\.go`, ExcludePattern: `.*\.php`},
-	}
-
-	for i, fixture := range fixtures {
-		s.T().Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			require := require.New(t)
-
-			head := s.getCommit(s.Basic.Head)
-			headTree, err := head.Tree()
-			require.NoError(err)
-
-			cs := NewFilterScanner(
-				NewTreeScanner(headTree),
-				fixture.IncludePattern, fixture.ExcludePattern,
-			)
-
-			var changes []*lookout.Change
-			for cs.Next() {
-				changes = append(changes, cs.Change())
-			}
-
-			require.False(cs.Next())
-			require.NoError(cs.Err())
-			require.NoError(cs.Close())
-
-			require.Len(changes, 2)
-		})
-	}
-}
-
-func (s *ScannerSuite) TestFilterExcludeOne() {
-	fixtures := []*lookout.ChangesRequest{
-		{IncludePattern: "", ExcludePattern: `\.gitignore`},
-		{IncludePattern: ".*", ExcludePattern: `json/short\.json`},
-	}
-
-	for i, fixture := range fixtures {
-		s.T().Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			require := require.New(t)
-
-			head := s.getCommit(s.Basic.Head)
-			headTree, err := head.Tree()
-			require.NoError(err)
-
-			cs := NewFilterScanner(
-				NewTreeScanner(headTree),
-				fixture.IncludePattern, fixture.ExcludePattern,
-			)
-
-			var changes []*lookout.Change
-			for cs.Next() {
-				changes = append(changes, cs.Change())
-			}
-
-			require.False(cs.Next())
-			require.NoError(cs.Err())
-			require.NoError(cs.Close())
-
-			require.Len(changes, 8)
-		})
-	}
-}
-
-func (s *ScannerSuite) TestBlobScanner() {
+func (s *ScannerSuite) TestTreeScannerFiles() {
 	require := s.Require()
 
 	head := s.getCommit(s.Basic.Head)
 	headTree, err := head.Tree()
 	require.NoError(err)
 
-	cs := NewBlobScanner(
+	cs := NewTreeScanner(headTree)
+	var files []*lookout.File
+	for cs.Next() {
+		files = append(files, cs.File())
+	}
+
+	require.False(cs.Next())
+	require.NoError(cs.Err())
+	require.NoError(cs.Close())
+
+	require.Len(files, 9)
+}
+
+type filterScannerFixture struct {
+	IncludePattern string
+	ExcludePattern string
+}
+
+func (s *ScannerSuite) TestFilterScannerIncludeAll() {
+	fixtures := []filterScannerFixture{
+		{},
+		{IncludePattern: ".*"},
+	}
+
+	for i, fixture := range s.changeFixtures(fixtures) {
+		s.T().Run(fmt.Sprintf("change case %d", i), s.testChangeFilterScannerFixture(fixture, 9))
+	}
+
+	for i, fixture := range s.fileFixtures(fixtures) {
+		s.T().Run(fmt.Sprintf("file case %d", i), s.testFileFilterScannerFixture(fixture, 9))
+	}
+}
+
+func (s *ScannerSuite) TestFilterIncludeSome() {
+	fixtures := []filterScannerFixture{
+		{IncludePattern: `.*\.go`},
+		{IncludePattern: `.*\.go`, ExcludePattern: `.*\.php`},
+	}
+
+	for i, fixture := range s.changeFixtures(fixtures) {
+		s.T().Run(fmt.Sprintf("change case %d", i), s.testChangeFilterScannerFixture(fixture, 2))
+	}
+
+	for i, fixture := range s.fileFixtures(fixtures) {
+		s.T().Run(fmt.Sprintf("file case %d", i), s.testFileFilterScannerFixture(fixture, 2))
+	}
+}
+
+func (s *ScannerSuite) TestFilterExcludeOne() {
+	fixtures := []filterScannerFixture{
+		{IncludePattern: "", ExcludePattern: `\.gitignore`},
+		{IncludePattern: ".*", ExcludePattern: `json/short\.json`},
+	}
+
+	for i, fixture := range s.changeFixtures(fixtures) {
+		s.T().Run(fmt.Sprintf("change case %d", i), s.testChangeFilterScannerFixture(fixture, 8))
+	}
+
+	for i, fixture := range s.fileFixtures(fixtures) {
+		s.T().Run(fmt.Sprintf("file case %d", i), s.testFileFilterScannerFixture(fixture, 8))
+	}
+}
+
+func (s *ScannerSuite) changeFixtures(fs []filterScannerFixture) []*lookout.ChangesRequest {
+	res := make([]*lookout.ChangesRequest, len(fs), len(fs))
+	for i, f := range fs {
+		res[i] = &lookout.ChangesRequest{
+			IncludePattern: f.IncludePattern,
+			ExcludePattern: f.ExcludePattern,
+		}
+	}
+	return res
+}
+
+func (s *ScannerSuite) fileFixtures(fs []filterScannerFixture) []*lookout.FilesRequest {
+	res := make([]*lookout.FilesRequest, len(fs), len(fs))
+	for i, f := range fs {
+		res[i] = &lookout.FilesRequest{
+			IncludePattern: f.IncludePattern,
+			ExcludePattern: f.ExcludePattern,
+		}
+	}
+	return res
+}
+
+func (s *ScannerSuite) testChangeFilterScannerFixture(fixture *lookout.ChangesRequest, len int) func(t *testing.T) {
+	return func(t *testing.T) {
+		require := require.New(t)
+
+		head := s.getCommit(s.Basic.Head)
+		headTree, err := head.Tree()
+		require.NoError(err)
+
+		cs := NewChangeFilterScanner(
+			NewTreeScanner(headTree),
+			fixture.IncludePattern, fixture.ExcludePattern,
+		)
+
+		var changes []*lookout.Change
+		for cs.Next() {
+			changes = append(changes, cs.Change())
+		}
+
+		require.False(cs.Next())
+		require.NoError(cs.Err())
+		require.NoError(cs.Close())
+
+		require.Len(changes, len)
+	}
+}
+
+func (s *ScannerSuite) testFileFilterScannerFixture(fixture *lookout.FilesRequest, len int) func(t *testing.T) {
+	return func(t *testing.T) {
+		require := require.New(t)
+
+		head := s.getCommit(s.Basic.Head)
+		headTree, err := head.Tree()
+		require.NoError(err)
+
+		cs := NewFileFilterScanner(
+			NewTreeScanner(headTree),
+			fixture.IncludePattern, fixture.ExcludePattern,
+		)
+
+		var files []*lookout.File
+		for cs.Next() {
+			files = append(files, cs.File())
+		}
+
+		require.False(cs.Next())
+		require.NoError(cs.Err())
+		require.NoError(cs.Close())
+
+		require.Len(files, len)
+	}
+}
+
+func (s *ScannerSuite) TestChangeBlobScanner() {
+	require := s.Require()
+
+	head := s.getCommit(s.Basic.Head)
+	headTree, err := head.Tree()
+	require.NoError(err)
+
+	cs := NewChangeBlobScanner(
 		NewTreeScanner(headTree),
 		nil, headTree,
 	)
@@ -207,6 +252,39 @@ func main() {
 	fmt.Println("Hello, playground")
 }
 `, string(changes["vendor/foo.go"].Head.Content))
+}
+
+func (s *ScannerSuite) TestFileBlobScanner() {
+	require := s.Require()
+
+	head := s.getCommit(s.Basic.Head)
+	headTree, err := head.Tree()
+	require.NoError(err)
+
+	cs := NewFileBlobScanner(
+		NewTreeScanner(headTree),
+		headTree,
+	)
+
+	files := make(map[string]*lookout.File)
+	for cs.Next() {
+		f := cs.File()
+		files[f.Path] = f
+	}
+
+	require.False(cs.Next())
+	require.NoError(cs.Err())
+	require.NoError(cs.Close())
+
+	require.Len(files, 9)
+	require.Equal(`package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, playground")
+}
+`, string(files["vendor/foo.go"].Content))
 }
 
 func (s *ScannerSuite) TestDiffTreeScanner() {

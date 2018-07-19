@@ -15,6 +15,7 @@ option (gogoproto.goproto_getters_all) = false;
 // Data services exposes VCS repositories.
 service Data {
     rpc GetChanges (ChangesRequest) returns (stream Change);
+    rpc GetFiles (FilesRequest) returns (stream File);
 }
 
 message File {
@@ -36,11 +37,20 @@ message Change {
 }
 
 message ChangesRequest {
-    ReferencePointer base = 2;
-    ReferencePointer head = 3;
-    string include_pattern = 4;
-    string exclude_pattern = 5;
-    bool changed_only = 6;
-    bool want_contents = 7;
-    bool want_uast = 8 [(gogoproto.customname) = "WantUAST"];
+    ReferencePointer base = 1;
+    ReferencePointer head = 2;
+    string include_pattern = 3;
+    string exclude_pattern = 4;
+    bool exclude_vendored = 5;
+    bool want_contents = 6;
+    bool want_uast = 7 [(gogoproto.customname) = "WantUAST"];
+}
+
+message FilesRequest {
+    ReferencePointer revision = 1;
+    string include_pattern = 2;
+    string exclude_pattern = 3;
+    bool exclude_vendored = 4;
+    bool want_contents = 5;
+    bool want_uast = 6 [(gogoproto.customname) = "WantUAST"];
 }
