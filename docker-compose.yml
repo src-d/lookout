@@ -1,0 +1,25 @@
+version: '3.3'
+
+services:
+  bblfsh:
+    image: "bblfsh/bblfshd:v2.5.0"
+    privileged: true
+    ports:
+      - "9432:9432"
+    volumes:
+      - type: volume
+        source: drivers
+        target: /var/lib/bblfshd
+    entrypoint: ["/bin/sh"]
+    command:
+    - "-c"
+    - "bblfshd & sleep 1 && bblfshctl driver install --recommended && tail -f /dev/null"
+  postgres:
+    image: "postgres:alpine"
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: example
+volumes:
+  drivers:
