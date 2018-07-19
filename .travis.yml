@@ -28,8 +28,15 @@ jobs:
     - script:
         - make protogen
         - make no-changes-in-commit
+        # check that proto files are buildable by python
+        - sudo apt-get --no-install-recommends -y install python3-pip
+        - sudo pip3 install -U pip setuptools wheel
+        - pip3 install --user grpcio-tools
+        - export PY_OUT_DIR=py
+        - mkdir -p "$PY_OUT_DIR" && python3 -m grpc_tools.protoc -Isdk --python_out=$PY_OUT_DIR --grpc_python_out=$PY_OUT_DIR sdk/*.proto
       name: "Protobuf code generation"
 
 cache:
   directories:
     - $HOME/protoc
+    - $HOME/.cache/pip/wheels
