@@ -47,6 +47,10 @@ func (r *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 			req.IncludePattern, req.ExcludePattern)
 	}
 
+	if req.ExcludeVendored {
+		scanner = NewChangeExcludeVendorScanner(scanner)
+	}
+
 	if req.WantContents {
 		scanner = NewChangeBlobScanner(scanner, base, head)
 	}
@@ -69,6 +73,10 @@ func (r *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (
 	if req.IncludePattern != "" || req.ExcludePattern != "" {
 		scanner = NewFileFilterScanner(scanner,
 			req.IncludePattern, req.ExcludePattern)
+	}
+
+	if req.ExcludeVendored {
+		scanner = NewFileExcludeVendorScanner(scanner)
 	}
 
 	if req.WantContents {

@@ -311,3 +311,45 @@ func (s *ScannerSuite) TestDiffTreeScanner() {
 
 	require.Len(changes, 1)
 }
+
+func (s *ScannerSuite) TestFileChangeVendorScanner() {
+	require := s.Require()
+
+	head := s.getCommit(s.Basic.Head)
+	headTree, err := head.Tree()
+	require.NoError(err)
+
+	cs := NewChangeExcludeVendorScanner(NewTreeScanner(headTree))
+
+	var changes []*lookout.Change
+	for cs.Next() {
+		changes = append(changes, cs.Change())
+	}
+
+	require.False(cs.Next())
+	require.NoError(cs.Err())
+	require.NoError(cs.Close())
+
+	require.Len(changes, 7)
+}
+
+func (s *ScannerSuite) TestFileExcludeVendorScanner() {
+	require := s.Require()
+
+	head := s.getCommit(s.Basic.Head)
+	headTree, err := head.Tree()
+	require.NoError(err)
+
+	cs := NewFileExcludeVendorScanner(NewTreeScanner(headTree))
+
+	var files []*lookout.File
+	for cs.Next() {
+		files = append(files, cs.File())
+	}
+
+	require.False(cs.Next())
+	require.NoError(cs.Err())
+	require.NoError(cs.Close())
+
+	require.Len(files, 7)
+}
