@@ -11,18 +11,21 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 )
 
+// Service implements data service interface on top of go-git
 type Service struct {
 	loader CommitLoader
 }
 
 var _ lookout.ChangeGetter = &Service{}
 
+// NewService creates new git Service
 func NewService(loader CommitLoader) *Service {
 	return &Service{
 		loader: loader,
 	}
 }
 
+// GetChanges returns a ChangeScanner that scans all changes according to the request.
 func (r *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 	lookout.ChangeScanner, error) {
 
@@ -51,6 +54,7 @@ func (r *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 	return scanner, nil
 }
 
+// GetFiles returns a FilesScanner that scans all files according to the request.
 func (r *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (
 	lookout.FileScanner, error) {
 

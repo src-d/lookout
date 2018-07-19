@@ -10,6 +10,7 @@ import (
 	"gopkg.in/bblfsh/sdk.v1/uast"
 )
 
+// Service implements data service interface which adds UAST to the responses
 type Service struct {
 	changes lookout.ChangeGetter
 	files   lookout.FileGetter
@@ -18,6 +19,7 @@ type Service struct {
 
 var _ lookout.ChangeGetter = &Service{}
 
+// NewService creates new bblfsh Service
 func NewService(changes lookout.ChangeGetter, files lookout.FileGetter, conn *grpc.ClientConn) *Service {
 	return &Service{
 		changes: changes,
@@ -26,6 +28,7 @@ func NewService(changes lookout.ChangeGetter, files lookout.FileGetter, conn *gr
 	}
 }
 
+// GetChanges returns a ChangeScanner that scans all changes according to the request.
 func (s *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 	lookout.ChangeScanner, error) {
 
@@ -53,6 +56,7 @@ func (s *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 	}, nil
 }
 
+// GetFiles returns a FilesScanner that scans all files according to the request.
 func (s *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (
 	lookout.FileScanner, error) {
 	wantContents := req.WantContents
@@ -104,8 +108,7 @@ func (s *BaseScanner) processFile(f *lookout.File) error {
 	return nil
 }
 
-func (s *BaseScanner) parseFile(f *lookout.File) (
-	*uast.Node, error) {
+func (s *BaseScanner) parseFile(f *lookout.File) (*uast.Node, error) {
 	if f.Path == "" {
 		return nil, nil
 	}
@@ -127,6 +130,7 @@ func (s *BaseScanner) parseFile(f *lookout.File) (
 	return resp.UAST, nil
 }
 
+// ChangeScanner is a scanner for changes.
 type ChangeScanner struct {
 	BaseScanner
 	underlying lookout.ChangeScanner
@@ -173,6 +177,7 @@ func (s *ChangeScanner) Close() error {
 	return s.underlying.Close()
 }
 
+// FileScanner is a scanner for files.
 type FileScanner struct {
 	BaseScanner
 	underlying lookout.FileScanner

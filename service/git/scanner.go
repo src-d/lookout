@@ -12,6 +12,7 @@ import (
 	gitioutil "gopkg.in/src-d/go-git.v4/utils/ioutil"
 )
 
+// TreeScanner is a scanner for files of git tree
 type TreeScanner struct {
 	storer storer.EncodedObjectStorer
 	tree   *object.Tree
@@ -21,8 +22,8 @@ type TreeScanner struct {
 	done   bool
 }
 
+// NewTreeScanner creates new TreeScanner
 func NewTreeScanner(tree *object.Tree) *TreeScanner {
-
 	return &TreeScanner{
 		tree: tree,
 		tw:   object.NewTreeWalker(tree, true, nil),
@@ -80,6 +81,7 @@ func (s *TreeScanner) Close() error {
 	return nil
 }
 
+// DiffTreeScanner is a scanner for files of diff between git trees
 type DiffTreeScanner struct {
 	base, head *object.Tree
 	val        *object.Change
@@ -88,8 +90,8 @@ type DiffTreeScanner struct {
 	changes    object.Changes
 }
 
+// NewDiffTreeScanner creates new DiffTreeScanner
 func NewDiffTreeScanner(base, head *object.Tree) *DiffTreeScanner {
-
 	return &DiffTreeScanner{
 		base: base,
 		head: head,
@@ -208,12 +210,14 @@ func (s *BaseFilterScanner) matchExclude(p string) bool {
 	return s.excludePattern.MatchString(p)
 }
 
+// ChangeFilterScanner filters results of ChangeScanner based on regexp file name patterns
 type ChangeFilterScanner struct {
 	BaseFilterScanner
 	Scanner lookout.ChangeScanner
 	val     *lookout.Change
 }
 
+// NewChangeFilterScanner creates new ChangeFilterScanner
 func NewChangeFilterScanner(
 	scanner lookout.ChangeScanner,
 	include, exclude string) *ChangeFilterScanner {
@@ -264,12 +268,14 @@ func (s *ChangeFilterScanner) next() bool {
 	return false
 }
 
+// FileFilterScanner filters results of FileScanner based on regexp file name patterns
 type FileFilterScanner struct {
 	BaseFilterScanner
 	Scanner lookout.FileScanner
 	val     *lookout.File
 }
 
+// NewFileFilterScanner creates new FileFilterScanner
 func NewFileFilterScanner(
 	scanner lookout.FileScanner,
 	include, exclude string) *FileFilterScanner {
@@ -350,6 +356,7 @@ func (s *BaseBlobScanner) addBlob(t *object.Tree, f *lookout.File) (err error) {
 	return err
 }
 
+// ChangeBlobScanner adds blobs to results of ChangeScanner
 type ChangeBlobScanner struct {
 	BaseBlobScanner
 	Scanner    lookout.ChangeScanner
@@ -357,6 +364,7 @@ type ChangeBlobScanner struct {
 	val        *lookout.Change
 }
 
+// NewChangeBlobScanner creates new ChangeBlobScanner
 func NewChangeBlobScanner(
 	scanner lookout.ChangeScanner,
 	base, head *object.Tree) *ChangeBlobScanner {
@@ -410,6 +418,7 @@ func (s *ChangeBlobScanner) Close() error {
 	return s.Scanner.Close()
 }
 
+// FileBlobScanner adds blobs to results of FileScanner
 type FileBlobScanner struct {
 	BaseBlobScanner
 	Scanner lookout.FileScanner
@@ -417,6 +426,7 @@ type FileBlobScanner struct {
 	val     *lookout.File
 }
 
+// NewFileBlobScanner creates new FileBlobScanner
 func NewFileBlobScanner(scanner lookout.FileScanner, tree *object.Tree) *FileBlobScanner {
 	return &FileBlobScanner{
 		Scanner: scanner,
