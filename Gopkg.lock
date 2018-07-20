@@ -214,6 +214,12 @@
   version = "v1.2.2"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/toqueteos/trie"
+  packages = ["."]
+  revision = "56fed4a05683322f125e2d78ee269bb102280392"
+
+[[projects]]
   name = "github.com/x-cray/logrus-prefixed-formatter"
   packages = ["."]
   revision = "bb2702d423886830dee131692131d35648c382e2"
@@ -355,6 +361,16 @@
   version = "v1"
 
 [[projects]]
+  name = "gopkg.in/src-d/enry.v1"
+  packages = [
+    ".",
+    "data",
+    "internal/tokenizer"
+  ]
+  revision = "6712d4219fb747194f38d0fc72121ca0a46ebcea"
+  version = "v1.6.4"
+
+[[projects]]
   name = "gopkg.in/src-d/go-billy.v4"
   packages = [
     ".",
@@ -433,6 +449,12 @@
   version = "v1.0.1"
 
 [[projects]]
+  name = "gopkg.in/toqueteos/substring.v1"
+  packages = ["."]
+  revision = "c5f61671513240ddf5563635cc4a90e9f3ae4710"
+  version = "v1.0.2"
+
+[[projects]]
   name = "gopkg.in/warnings.v0"
   packages = ["."]
   revision = "ec4a0fea49c7b46c2aeb0b51aac55779c607e52b"
@@ -441,6 +463,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e6086ede6baf2db60faf5ead4bf0132798adad9c0c3a2d0f54c025bb09dbc034"
+  inputs-digest = "010c2dc0346176f4330421ccc3718df184b698e4b495dcb27c5aa6e17619d33e"
   solver-name = "gps-cdcl"
   solver-version = 1

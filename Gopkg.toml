@@ -68,3 +68,7 @@
     name = "github.com/gogo/protobuf"
     non-go = false
     unused-packages = false
+
+[[constraint]]
+  name = "gopkg.in/src-d/enry.v1"
+  version = "1.6.4"

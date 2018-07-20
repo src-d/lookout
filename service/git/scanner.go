@@ -7,6 +7,7 @@ import (
 
 	"github.com/src-d/lookout"
 
+	enry "gopkg.in/src-d/enry.v1"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 	gitioutil "gopkg.in/src-d/go-git.v4/utils/ioutil"
@@ -468,5 +469,103 @@ func (s *FileBlobScanner) File() *lookout.File {
 }
 
 func (s *FileBlobScanner) Close() error {
+	return s.Scanner.Close()
+}
+
+// ChangeExcludeVendorScanner filters vendored results of ChangeScanner
+type ChangeExcludeVendorScanner struct {
+	Scanner lookout.ChangeScanner
+	val     *lookout.Change
+	done    bool
+	err     error
+}
+
+// NewChangeExcludeVendorScanner creates new ChangeExcludeVendorScanner
+func NewChangeExcludeVendorScanner(scanner lookout.ChangeScanner) *ChangeExcludeVendorScanner {
+	return &ChangeExcludeVendorScanner{
+		Scanner: scanner,
+	}
+}
+
+func (s *ChangeExcludeVendorScanner) Next() bool {
+	if s.done {
+		return false
+	}
+
+	for s.Scanner.Next() {
+		ch := s.Scanner.Change()
+		if enry.IsVendor(ch.Head.Path) {
+			continue
+		}
+
+		s.val = ch
+		return true
+	}
+
+	s.done = true
+	return false
+}
+
+func (s *ChangeExcludeVendorScanner) Err() error {
+	if s.err != nil {
+		return s.err
+	}
+
+	return s.Scanner.Err()
+}
+func (s *ChangeExcludeVendorScanner) Change() *lookout.Change {
+	return s.val
+}
+
+func (s *ChangeExcludeVendorScanner) Close() error {
+	return s.Scanner.Close()
+}
+
+// FileExcludeVendorScanner filters vendored results of FileScanner
+type FileExcludeVendorScanner struct {
+	Scanner lookout.FileScanner
+	val     *lookout.File
+	done    bool
+	err     error
+}
+
+// NewFileExcludeVendorScanner creates new FileExcludeVendorScanner
+func NewFileExcludeVendorScanner(scanner lookout.FileScanner) *FileExcludeVendorScanner {
+	return &FileExcludeVendorScanner{
+		Scanner: scanner,
+	}
+}
+
+func (s *FileExcludeVendorScanner) Next() bool {
+	if s.done {
+		return false
+	}
+
+	for s.Scanner.Next() {
+		f := s.Scanner.File()
+		if enry.IsVendor(f.Path) {
+			continue
+		}
+
+		s.val = f
+		return true
+	}
+
+	s.done = true
+	return false
+}
+
+func (s *FileExcludeVendorScanner) Err() error {
+	if s.err != nil {
+		return s.err
+	}
+
+	return s.Scanner.Err()
+}
+func (s *FileExcludeVendorScanner) File() *lookout.File {
+	return s.val
+}
+
+func (s *FileExcludeVendorScanner) Close() error {
 	return s.Scanner.Close()
 }
