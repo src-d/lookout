@@ -17,3 +17,11 @@ before_install:
 
 script:
   - make test-coverage codecov
+
+jobs:
+  include:
+    - stage: "Tests"
+      name: "Unit Tests"
+      script: make test-coverage codecov
+    - script: make test-sdk
+      name: "Integration Tests"
