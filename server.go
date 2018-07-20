@@ -38,6 +38,7 @@ func (s *Server) handleEvent(ctx context.Context, e Event) error {
 	}
 }
 
+// HandlePR sends request to analyzers concurrently
 func (s *Server) HandlePR(ctx context.Context, e *ReviewEvent) error {
 	logger := log.DefaultLogger.With(log.Fields{
 		"provider":   e.Provider,
