@@ -64,7 +64,7 @@ test-sdk: clean-sdk build-sdk
 		kill $$PID; \
 		exit 1; \
 	fi; \
-	$(LOOKOUT_BIN) push ipv4://localhost:10302 | grep "dummy comment for push event"; \
+	$(LOOKOUT_BIN) push ipv4://localhost:10302 2>&1 | grep "dummy comment for push event"; \
 	if [ $$? != 0 ] ; then \
 		echo "push test failed"; \
 		kill $$PID; \

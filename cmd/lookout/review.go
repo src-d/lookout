@@ -48,7 +48,7 @@ func (c *ReviewCommand) Execute(args []string) error {
 		"test-analyzes": client,
 	})
 
-	err = srv.HandlePR(context.TODO(), &lookout.ReviewEvent{
+	err = srv.HandleReview(context.TODO(), &lookout.ReviewEvent{
 		IsMergeable: true,
 		Source:      *toRef,
 		Merge:       *toRef,
