@@ -13,3 +13,6 @@
 
 # ci files
 .ci
+
+# build results
+/build
