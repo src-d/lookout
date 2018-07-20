@@ -23,7 +23,7 @@ Generation:
 
 ```bash
 $ PY_OUT_DIR=<directory for generated files> mkdir -p $PY_OUT_DIR && \
-    python -m grpc_tools.protoc -Ipb \
+    python -m grpc_tools.protoc -Isdk \
     --python_out=$PY_OUT_DIR --grpc_python_out=$PY_OUT_DIR \
     sdk/*.proto
 ```
