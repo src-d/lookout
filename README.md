@@ -1,22 +1,19 @@
-# lookout [![Build Status](https://travis-ci.org/src-d/lookout.svg)](https://travis-ci.org/src-d/lookout) ![GoDoc](https://godoc.org/gopkg.in/src-d/lookout?status.svg)](https://godoc.org/github.com/src-d/lookout)
+# lookout [![Build Status](https://travis-ci.org/src-d/lookout.svg)](https://travis-ci.org/src-d/lookout) [![GoDoc](https://godoc.org/gopkg.in/src-d/lookout?status.svg)](https://godoc.org/github.com/src-d/lookout)
 
-A service for assisted code review, allows running custom code analysis on PRs.
+A service for assisted code review, that allows running custom code Analyzers on pull requests.
 
 # Installation
 
-```
-Short installation guide or link to longer installation instructions.
-This should include a pre-requisites subsection if needed.
+`go get github.com/src-d/lookout`
 
-Are there Docker images, packages managers (brew, apt, etc), installations scripts?
-```
+## Dependencies
 
-The included [Docker Compose](https://docs.docker.com/compose/) file starts [bblfshd](https://github.com/bblfsh/bblfshd) and [PostgreSQL](https://www.postgresql.org/) containers.
+The included [`./docker-compose.yml`](./docker-compose.yml) allows to start all dependencies using [Docker Compose](https://docs.docker.com/compose/) 
 
-* bblfsd listens on `localhost:9432`
-* PostgreSQL listens on `localhost:5432`, with the superuser password `example`.
+* [bblfshd](https://github.com/bblfsh/bblfshd), on `localhost:9432`
+* [PostgreSQL](https://www.postgresql.org/), on `localhost:5432` password `example`
 
-Clone the repository, or download `docker-compose.yml`, and run:
+Clone the repository, or download [`./docker-compose.yml`](./docker-compose.yml), and run:
 
 ```bash
 docker-compose up
@@ -28,30 +25,27 @@ docker-compose up
 ## SDK
 
 If you are developing an Analyzer, please check [SDK documentation](./sdk/README.md).
-It includes curl-style binary that allows to trigger Analysers directly, without launchin a full lookout server.
+
+It includes a curl-style binary that allows to trigger Analyzers directly, without launching a full lookout server.
 
 ## Server
 
-To run a lookout server with defatult, dummy analyzer.
-
-### Local
-
-To trigger the analysis on actual PR of your Github repository do:
+To trigger the analysis on an actual pull request of a GitHub repository do:
 
 1. Start an analyzer
-Any of the analysers, or a default dummy one, included in this repository
-  ```
-  go build -o analyzer ./cmd/dummy
-  ./dummy
-  ```
+Any of the analyzers or a default dummy one, included in this repository
+    ```
+    go build -o analyzer ./cmd/dummy
+    ./analyzer serve
+    ```
 1. Start a lookout server
-  `lookout serve <repository>`
-1. Create a new PR in repository
+    1. With posting analysis results on GitHub
+        - Obtain [GitHub access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
+        - Run `lookout serve --github-token <token> --github-user <user> <repository>`
+    1. Without posting analysis results (only printing)
+        - `lookout serve --dry-run <repository>`
+1. Create a new pull requires in the repository
 
-
-### Docker
-
-TBD
 
 # Contribute
 
@@ -63,4 +57,6 @@ our [Contributing Guidelines](CONTRIBUTING.md).
 All activities under source{d} projects are governed by the [source{d} code of conduct](https://github.com/src-d/guide/blob/master/.github/CODE_OF_CONDUCT.md).
 
 # License
-AGPL v3.0, see [LICENSE](LICENSE).
+Affero GPL v3.0, see [LICENSE](LICENSE).
+
+SDK package in `./sdk` is released under the terms of the [Apache License v2.0](./sdk/LICENSE)
