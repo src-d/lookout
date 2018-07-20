@@ -31,14 +31,14 @@ func (s *Server) Run(ctx context.Context) error {
 func (s *Server) handleEvent(ctx context.Context, e Event) error {
 	switch ev := e.(type) {
 	case *ReviewEvent:
-		return s.handlePR(ctx, ev)
+		return s.HandlePR(ctx, ev)
 	default:
 		log.Debugf("ignoring unsupported event: %s", ev)
 		return nil
 	}
 }
 
-func (s *Server) handlePR(ctx context.Context, e *ReviewEvent) error {
+func (s *Server) HandlePR(ctx context.Context, e *ReviewEvent) error {
 	logger := log.DefaultLogger.With(log.Fields{
 		"provider":   e.Provider,
 		"repository": e.Head.InternalRepositoryURL,

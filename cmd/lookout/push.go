@@ -29,18 +29,16 @@ func (c *PushCommand) Execute(args []string) error {
 		return err
 	}
 
-	grpcSrv, err := c.makeDataServer()
-	if err != nil {
-		return err
-	}
-
-	lis, err := lookout.Listen(c.DataServer)
+	dataSrv, err := c.makeDataServerHandler()
 	if err != nil {
 		return err
 	}
 
 	serveResult := make(chan error)
-	go func() { serveResult <- grpcSrv.Serve(lis) }()
+	grpcSrv, err := c.bindDataServer(dataSrv, serveResult)
+	if err != nil {
+		return err
+	}
 
 	client, err := c.analyzerClient()
 	if err != nil {
