@@ -25,3 +25,11 @@ jobs:
       script: make test-coverage codecov
     - script: make test-sdk
       name: "Integration Tests"
+    - script:
+        - make protogen
+        - make no-changes-in-commit
+      name: "Protobuf code generation"
+
+cache:
+  directories:
+    - $HOME/protoc
