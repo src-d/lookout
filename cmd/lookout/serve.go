@@ -62,6 +62,8 @@ func (c *ServeCommand) Execute(args []string) error {
 		return fmt.Errorf("Can't parse configuration file: %s", err)
 	}
 
+	setGrpcLogger()
+
 	if err := c.startServer(); err != nil {
 		return err
 	}

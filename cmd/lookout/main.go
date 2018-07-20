@@ -11,7 +11,6 @@ import (
 
 func init() {
 	log.DefaultLogger = log.New(log.Fields{"app": "lookout"})
-	grpclog.SetLogger(stdlog.New(os.Stdout, "", stdlog.LstdFlags))
 }
 
 var parser = flags.NewParser(nil, flags.Default)
@@ -28,4 +27,8 @@ func main() {
 
 		os.Exit(1)
 	}
+}
+
+func setGrpcLogger() {
+	grpclog.SetLogger(stdlog.New(os.Stdout, "", stdlog.LstdFlags))
 }
