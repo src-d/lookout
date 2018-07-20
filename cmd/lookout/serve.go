@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/provider/github"
@@ -168,6 +169,29 @@ func (c *ServeCommand) handleEvent(e lookout.Event) error {
 	}
 }
 
+type commentsList struct {
+	sync.Mutex
+	list []*lookout.Comment
+}
+
+func (l *commentsList) Add(cs ...*lookout.Comment) {
+	l.Lock()
+	l.list = append(l.list, cs...)
+	l.Unlock()
+}
+
+func (l *commentsList) Get() []*lookout.Comment {
+	return l.list
+}
+
+func (l *commentsList) Len() int {
+	return len(l.list)
+}
+
+func (l *commentsList) Empty() bool {
+	return len(l.list) == 0
+}
+
 func (c *ServeCommand) handlePR(e *lookout.ReviewEvent) error {
 	logger := log.DefaultLogger.With(log.Fields{
 		"provider":   e.Provider,
@@ -176,33 +200,39 @@ func (c *ServeCommand) handlePR(e *lookout.ReviewEvent) error {
 	})
 	logger.Infof("processing pull request")
 
-	var comments []*lookout.Comment
+	var comments commentsList
 
+	var wg sync.WaitGroup
 	for name, a := range c.analyzers {
-		aLogger := logger.With(log.Fields{
-			"analyzer": name,
-		})
+		wg.Add(1)
+		go func(name string, a lookout.AnalyzerClient) {
+			defer wg.Done()
 
-		resp, err := a.NotifyReviewEvent(context.TODO(), e)
-		if err != nil {
-			aLogger.Errorf(err, "analysis failed")
-			return nil
-		}
+			aLogger := logger.With(log.Fields{
+				"analyzer": name,
+			})
 
-		if len(resp.Comments) == 0 {
-			aLogger.Infof("no comments were produced")
-			continue
-		}
+			resp, err := a.NotifyReviewEvent(context.TODO(), e)
+			if err != nil {
+				aLogger.Errorf(err, "analysis failed")
+				return
+			}
 
-		comments = append(comments, resp.Comments...)
+			if len(resp.Comments) == 0 {
+				aLogger.Infof("no comments were produced")
+			}
+
+			comments.Add(resp.Comments...)
+		}(name, a)
 	}
+	wg.Wait()
 
-	if len(comments) == 0 {
+	if !comments.Empty() {
 		logger.With(log.Fields{
-			"comments": len(comments),
+			"comments": comments.Len(),
 		}).Infof("posting analysis")
 
-		if err := c.poster.Post(context.TODO(), e, comments); err != nil {
+		if err := c.poster.Post(context.TODO(), e, comments.Get()); err != nil {
 			logger.Errorf(err, "posting analysis failed")
 		}
 	}
