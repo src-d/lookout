@@ -14,13 +14,11 @@
 # ci files
 .ci
 
-<<<<<<< HEAD
 # build results
 /build
 
 # dependencies
 /protoc
-=======
+
 # Configuration
 /config.yml
->>>>>>> 88a0c8b... support multiple analyzers

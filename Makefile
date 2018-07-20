@@ -89,4 +89,4 @@ clean-sdk:
 dry-run: $(CONFIG_FILE)
 	go run cmd/lookout/*.go serve --dry-run github.com/src-d/lookout
 $(CONFIG_FILE):
-	cp "$(CONFIG_FILE).tpl" $(CONFIG_FILE);
+	cp "$(CONFIG_FILE).tpl" $(CONFIG_FILE)

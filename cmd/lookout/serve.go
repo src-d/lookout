@@ -37,7 +37,7 @@ type Config struct {
 }
 
 type ServeCommand struct {
-	ConfigFile  string `long:"config" short:"c" default:"config.yml" env:"CONFIG_FILE" description:"path to configuration file"`
+	ConfigFile  string `long:"config" short:"c" default:"config.yml" env:"LOOKOUT_CONFIG_FILE" description:"path to configuration file"`
 	GithubUser  string `long:"github-user" env:"GITHUB_USER" description:"user for the GitHub API"`
 	GithubToken string `long:"github-token" env:"GITHUB_TOKEN" description:"access token for the GitHub API"`
 	DataServer  string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
