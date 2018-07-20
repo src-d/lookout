@@ -13,6 +13,7 @@ $(MAKEFILE):
 
 # Environment
 OS := $(shell uname)
+CONFIG_FILE := config.yml
 
 # SDK binaries
 DUMMY_BIN := $(BIN_PATH)/dummy
@@ -83,3 +84,9 @@ $(DUMMY_BIN):
 clean-sdk:
 	rm -f $(DUMMY_BIN)
 	rm -f $(LOOKOUT_BIN)
+
+.PHONY: dry-run
+dry-run: $(CONFIG_FILE)
+	go run cmd/lookout/*.go serve --dry-run github.com/src-d/lookout
+$(CONFIG_FILE):
+	cp "$(CONFIG_FILE).tpl" $(CONFIG_FILE);
