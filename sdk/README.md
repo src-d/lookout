@@ -42,3 +42,6 @@ $ ./lookout review ipv4://localhost:10302
 
 By default it would trigger review event with changes from `HEAD^` to `HEAD`.
 You can change it using additional flags `--from` and `--to`. Both flags accept [git revision](https://git-scm.com/docs/gitrevisions#_specifying_revisions).
+
+# License
+Apache 2.0, see [LICENSE](LICENSE).
