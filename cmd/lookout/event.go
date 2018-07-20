@@ -22,6 +22,7 @@ type EventCommand struct {
 	GitDir     string `long:"git-dir" default:"." env:"GIT_DIR" description:"path to the .git directory to analyze"`
 	RevFrom    string `long:"from" default:"HEAD^" description:"name of the base revision for event"`
 	RevTo      string `long:"to" default:"HEAD" description:"name of the head revision for event"`
+	Verbose    bool   `long:"verbose" short:"v" description:"enable verbose logging"`
 	Args       struct {
 		Analyzer string `positional-arg-name:"analyzer" description:"gRPC URL of the analyzer to use"`
 	} `positional-args:"yes" required:"yes"`
@@ -76,6 +77,10 @@ type dataService interface {
 }
 
 func (c *EventCommand) makeDataServer() (*grpc.Server, error) {
+	if c.Verbose {
+		setGrpcLogger()
+	}
+
 	var err error
 
 	var dataService dataService
