@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
 	"net/http"
+	"sync"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/provider/github"
@@ -12,6 +15,7 @@ import (
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-billy.v4/osfs"
 	"gopkg.in/src-d/go-log.v1"
+	yaml "gopkg.in/yaml.v2"
 )
 
 func init() {
@@ -21,10 +25,21 @@ func init() {
 	}
 }
 
+// AnalyzerConfig is a configuration of analyzer
+type AnalyzerConfig struct {
+	Name string
+	Addr string
+}
+
+// Config is a server configuration
+type Config struct {
+	Analyzers []AnalyzerConfig
+}
+
 type ServeCommand struct {
+	ConfigFile  string `long:"config" short:"c" default:"config.yml" env:"LOOKOUT_CONFIG_FILE" description:"path to configuration file"`
 	GithubUser  string `long:"github-user" env:"GITHUB_USER" description:"user for the GitHub API"`
 	GithubToken string `long:"github-token" env:"GITHUB_TOKEN" description:"access token for the GitHub API"`
-	Analyzer    string `long:"analyzer" default:"ipv4://localhost:10302" env:"LOOKOUT_ANALYZER" description:"gRPC URL of the analyzer to use"`
 	DataServer  string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
 	Bblfshd     string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
 	DryRun      bool   `long:"dry-run" env:"LOOKOUT_DRY_RUN" description:"analyze repositories and log the result without posting code reviews to GitHub"`
@@ -33,17 +48,29 @@ type ServeCommand struct {
 		Repository string `positional-arg-name:"repository"`
 	} `positional-args:"yes" required:"yes"`
 
-	poster   lookout.Poster
-	analyzer lookout.AnalyzerClient
+	poster    lookout.Poster
+	analyzers map[string]lookout.AnalyzerClient
 }
 
 func (c *ServeCommand) Execute(args []string) error {
+	var conf Config
+	data, err := ioutil.ReadFile(c.ConfigFile)
+	if err != nil {
+		return fmt.Errorf("Can't open configuration file: %s", err)
+	}
+	if err := yaml.Unmarshal([]byte(data), &conf); err != nil {
+		return fmt.Errorf("Can't parse configuration file: %s", err)
+	}
+
 	if err := c.startServer(); err != nil {
 		return err
 	}
 
-	if err := c.initAnalyzer(); err != nil {
-		return err
+	c.analyzers = make(map[string]lookout.AnalyzerClient, len(conf.Analyzers))
+	for _, a := range conf.Analyzers {
+		if err := c.startAnalyzer(a); err != nil {
+			return err
+		}
 	}
 
 	if err := c.initPoster(); err != nil {
@@ -79,21 +106,19 @@ func (c *ServeCommand) initPoster() error {
 	return nil
 }
 
-func (c *ServeCommand) initAnalyzer() error {
-	var err error
-	c.Analyzer, err = lookout.ToGoGrpcAddress(c.Analyzer)
+func (c *ServeCommand) startAnalyzer(conf AnalyzerConfig) error {
+	addr, err := lookout.ToGoGrpcAddress(conf.Addr)
 	if err != nil {
 		return err
 	}
 
-	conn, err := grpc.Dial(c.Analyzer, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return err
 	}
 
-	c.analyzer = lookout.NewAnalyzerClient(conn)
+	c.analyzers[conf.Name] = lookout.NewAnalyzerClient(conn)
 	return nil
-
 }
 
 func (c *ServeCommand) startServer() error {
@@ -144,6 +169,29 @@ func (c *ServeCommand) handleEvent(e lookout.Event) error {
 	}
 }
 
+type commentsList struct {
+	sync.Mutex
+	list []*lookout.Comment
+}
+
+func (l *commentsList) Add(cs ...*lookout.Comment) {
+	l.Lock()
+	l.list = append(l.list, cs...)
+	l.Unlock()
+}
+
+func (l *commentsList) Get() []*lookout.Comment {
+	return l.list
+}
+
+func (l *commentsList) Len() int {
+	return len(l.list)
+}
+
+func (l *commentsList) Empty() bool {
+	return len(l.list) == 0
+}
+
 func (c *ServeCommand) handlePR(e *lookout.ReviewEvent) error {
 	logger := log.DefaultLogger.With(log.Fields{
 		"provider":   e.Provider,
@@ -151,22 +199,42 @@ func (c *ServeCommand) handlePR(e *lookout.ReviewEvent) error {
 		"head":       e.Head.ReferenceName,
 	})
 	logger.Infof("processing pull request")
-	resp, err := c.analyzer.NotifyReviewEvent(context.TODO(), e)
-	if err != nil {
-		logger.Errorf(err, "analysis failed")
-		return nil
-	}
 
-	if len(resp.Comments) == 0 {
-		logger.Infof("no comments were produced")
-		return nil
-	}
+	var comments commentsList
 
-	logger.With(log.Fields{
-		"comments": len(resp.Comments),
-	}).Infof("posting analysis")
-	if err := c.poster.Post(context.TODO(), e, resp.Comments); err != nil {
-		logger.Errorf(err, "posting analysis failed")
+	var wg sync.WaitGroup
+	for name, a := range c.analyzers {
+		wg.Add(1)
+		go func(name string, a lookout.AnalyzerClient) {
+			defer wg.Done()
+
+			aLogger := logger.With(log.Fields{
+				"analyzer": name,
+			})
+
+			resp, err := a.NotifyReviewEvent(context.TODO(), e)
+			if err != nil {
+				aLogger.Errorf(err, "analysis failed")
+				return
+			}
+
+			if len(resp.Comments) == 0 {
+				aLogger.Infof("no comments were produced")
+			}
+
+			comments.Add(resp.Comments...)
+		}(name, a)
+	}
+	wg.Wait()
+
+	if !comments.Empty() {
+		logger.With(log.Fields{
+			"comments": comments.Len(),
+		}).Infof("posting analysis")
+
+		if err := c.poster.Post(context.TODO(), e, comments.Get()); err != nil {
+			logger.Errorf(err, "posting analysis failed")
+		}
 	}
 
 	return nil

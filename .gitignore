@@ -19,3 +19,6 @@
 
 # dependencies
 /protoc
+
+# Configuration
+/config.yml
