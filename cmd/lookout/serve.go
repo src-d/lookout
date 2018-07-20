@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"sync"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/provider/github"
@@ -48,34 +47,41 @@ type ServeCommand struct {
 		Repository string `positional-arg-name:"repository"`
 	} `positional-args:"yes" required:"yes"`
 
-	poster    lookout.Poster
 	analyzers map[string]lookout.AnalyzerClient
 }
 
 func (c *ServeCommand) Execute(args []string) error {
 	var conf Config
-	data, err := ioutil.ReadFile(c.ConfigFile)
+	configData, err := ioutil.ReadFile(c.ConfigFile)
 	if err != nil {
 		return fmt.Errorf("Can't open configuration file: %s", err)
 	}
-	if err := yaml.Unmarshal([]byte(data), &conf); err != nil {
+	if err := yaml.Unmarshal([]byte(configData), &conf); err != nil {
 		return fmt.Errorf("Can't parse configuration file: %s", err)
 	}
 
 	setGrpcLogger()
 
-	if err := c.startServer(); err != nil {
+	dataHandler, err := c.initDataHadler()
+	if err != nil {
 		return err
 	}
 
-	c.analyzers = make(map[string]lookout.AnalyzerClient, len(conf.Analyzers))
-	for _, a := range conf.Analyzers {
-		if err := c.startAnalyzer(a); err != nil {
-			return err
-		}
+	if err := c.startServer(dataHandler); err != nil {
+		return err
 	}
 
-	if err := c.initPoster(); err != nil {
+	analyzers := make(map[string]lookout.AnalyzerClient, len(conf.Analyzers))
+	for _, aConf := range conf.Analyzers {
+		a, err := c.startAnalyzer(aConf)
+		if err != nil {
+			return err
+		}
+		analyzers[aConf.Name] = a
+	}
+
+	poster, err := c.initPoster()
+	if err != nil {
 		return err
 	}
 
@@ -91,48 +97,46 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
-	return watcher.Watch(context.Background(), c.handleEvent)
+	ctx := context.Background()
+	return lookout.NewServer(watcher, poster, dataHandler.FileGetter, analyzers).Run(ctx)
 }
 
-func (c *ServeCommand) initPoster() error {
+func (c *ServeCommand) initPoster() (lookout.Poster, error) {
 	if c.DryRun {
-		c.poster = &LogPoster{log.DefaultLogger}
-	} else {
-		c.poster = github.NewPoster(&roundTripper{
-			Log:      log.DefaultLogger,
-			User:     c.GithubUser,
-			Password: c.GithubToken,
-		})
+		return &LogPoster{log.DefaultLogger}, nil
 	}
 
-	return nil
+	return github.NewPoster(&roundTripper{
+		Log:      log.DefaultLogger,
+		User:     c.GithubUser,
+		Password: c.GithubToken,
+	}), nil
 }
 
-func (c *ServeCommand) startAnalyzer(conf AnalyzerConfig) error {
+func (c *ServeCommand) startAnalyzer(conf AnalyzerConfig) (lookout.AnalyzerClient, error) {
 	addr, err := lookout.ToGoGrpcAddress(conf.Addr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	conn, err := grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	c.analyzers[conf.Name] = lookout.NewAnalyzerClient(conn)
-	return nil
+	return lookout.NewAnalyzerClient(conn), nil
 }
 
-func (c *ServeCommand) startServer() error {
+func (c *ServeCommand) initDataHadler() (*lookout.DataServerHandler, error) {
 	var err error
 	c.Bblfshd, err = lookout.ToGoGrpcAddress(c.Bblfshd)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bblfshConn, err := grpc.Dial(c.Bblfshd, grpc.WithInsecure())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	lib := git.NewLibrary(osfs.New(c.Library))
@@ -146,6 +150,11 @@ func (c *ServeCommand) startServer() error {
 		ChangeGetter: bblfshService,
 		FileGetter:   bblfshService,
 	}
+
+	return srv, nil
+}
+
+func (c *ServeCommand) startServer(srv *lookout.DataServerHandler) error {
 	grpcSrv := grpc.NewServer()
 	lookout.RegisterDataServer(grpcSrv, srv)
 	lis, err := lookout.Listen(c.DataServer)
@@ -158,87 +167,6 @@ func (c *ServeCommand) startServer() error {
 			log.Errorf(err, "data server failed")
 		}
 	}()
-	return nil
-}
-
-func (c *ServeCommand) handleEvent(e lookout.Event) error {
-	switch ev := e.(type) {
-	case *lookout.ReviewEvent:
-		return c.handlePR(ev)
-	default:
-		log.Debugf("ignoring unsupported event: %s", ev)
-		return nil
-	}
-}
-
-type commentsList struct {
-	sync.Mutex
-	list []*lookout.Comment
-}
-
-func (l *commentsList) Add(cs ...*lookout.Comment) {
-	l.Lock()
-	l.list = append(l.list, cs...)
-	l.Unlock()
-}
-
-func (l *commentsList) Get() []*lookout.Comment {
-	return l.list
-}
-
-func (l *commentsList) Len() int {
-	return len(l.list)
-}
-
-func (l *commentsList) Empty() bool {
-	return len(l.list) == 0
-}
-
-func (c *ServeCommand) handlePR(e *lookout.ReviewEvent) error {
-	logger := log.DefaultLogger.With(log.Fields{
-		"provider":   e.Provider,
-		"repository": e.Head.InternalRepositoryURL,
-		"head":       e.Head.ReferenceName,
-	})
-	logger.Infof("processing pull request")
-
-	var comments commentsList
-
-	var wg sync.WaitGroup
-	for name, a := range c.analyzers {
-		wg.Add(1)
-		go func(name string, a lookout.AnalyzerClient) {
-			defer wg.Done()
-
-			aLogger := logger.With(log.Fields{
-				"analyzer": name,
-			})
-
-			resp, err := a.NotifyReviewEvent(context.TODO(), e)
-			if err != nil {
-				aLogger.Errorf(err, "analysis failed")
-				return
-			}
-
-			if len(resp.Comments) == 0 {
-				aLogger.Infof("no comments were produced")
-			}
-
-			comments.Add(resp.Comments...)
-		}(name, a)
-	}
-	wg.Wait()
-
-	if !comments.Empty() {
-		logger.With(log.Fields{
-			"comments": comments.Len(),
-		}).Infof("posting analysis")
-
-		if err := c.poster.Post(context.TODO(), e, comments.Get()); err != nil {
-			logger.Errorf(err, "posting analysis failed")
-		}
-	}
-
 	return nil
 }
 
