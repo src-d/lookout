@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/src-d/lookout"
-
-	"google.golang.org/grpc"
 )
 
 func init() {
@@ -42,17 +40,11 @@ func (c *ReviewCommand) Execute(args []string) error {
 	serveResult := make(chan error)
 	go func() { serveResult <- grpcSrv.Serve(lis) }()
 
-	c.Args.Analyzer, err = lookout.ToGoGrpcAddress(c.Args.Analyzer)
+	client, err := c.analyzerClient()
 	if err != nil {
 		return err
 	}
 
-	conn, err := grpc.Dial(c.Args.Analyzer, grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		return err
-	}
-
-	client := lookout.NewAnalyzerClient(conn)
 	resp, err := client.NotifyReviewEvent(context.TODO(),
 		&lookout.ReviewEvent{
 			IsMergeable: true,

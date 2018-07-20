@@ -17,6 +17,7 @@ type Service struct {
 }
 
 var _ lookout.ChangeGetter = &Service{}
+var _ lookout.FileGetter = &Service{}
 
 // NewService creates new git Service
 func NewService(loader CommitLoader) *Service {

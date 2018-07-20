@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/service/bblfsh"
@@ -11,6 +13,7 @@ import (
 
 	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-log.v1"
 )
 
 type EventCommand struct {
@@ -67,31 +70,58 @@ func (c *EventCommand) resolveRefs() (*lookout.ReferencePointer, *lookout.Refere
 	return &fromRef, &toRef, nil
 }
 
+type dataService interface {
+	lookout.ChangeGetter
+	lookout.FileGetter
+}
+
 func (c *EventCommand) makeDataServer() (*grpc.Server, error) {
 	var err error
+
+	var dataService dataService
+
+	loader := git.NewStorerCommitLoader(c.repo.Storer)
+	dataService = git.NewService(loader)
 
 	c.Bblfshd, err = lookout.ToGoGrpcAddress(c.Bblfshd)
 	if err != nil {
 		return nil, err
 	}
-
-	bblfshConn, err := grpc.Dial(c.Bblfshd, grpc.WithInsecure())
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	bblfshConn, err := grpc.DialContext(timeoutCtx, c.Bblfshd, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		return nil, err
+		log.Warningf("bblfsh service is unavailable. No UAST will be provided to analyzer. Error: %s", err)
+	} else {
+		dataService = bblfsh.NewService(dataService, dataService, bblfshConn)
 	}
 
-	loader := git.NewStorerCommitLoader(c.repo.Storer)
-	gitService := git.NewService(loader)
-	bblfshService := bblfsh.NewService(gitService, gitService, bblfshConn)
-
 	srv := &lookout.DataServerHandler{
-		ChangeGetter: bblfshService,
-		FileGetter:   bblfshService,
+		ChangeGetter: dataService,
+		FileGetter:   dataService,
 	}
 	grpcSrv := grpc.NewServer()
 	lookout.RegisterDataServer(grpcSrv, srv)
 
 	return grpcSrv, nil
+}
+
+func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
+	var err error
+
+	c.Args.Analyzer, err = lookout.ToGoGrpcAddress(c.Args.Analyzer)
+	if err != nil {
+		return nil, err
+	}
+
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	conn, err := grpc.DialContext(timeoutCtx, c.Args.Analyzer, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		return nil, err
+	}
+
+	return lookout.NewAnalyzerClient(conn), nil
 }
 
 func (c *EventCommand) printComments(cs []*lookout.Comment) {

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/src-d/lookout"
-	"google.golang.org/grpc"
 	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -43,17 +42,10 @@ func (c *PushCommand) Execute(args []string) error {
 	serveResult := make(chan error)
 	go func() { serveResult <- grpcSrv.Serve(lis) }()
 
-	c.Args.Analyzer, err = lookout.ToGoGrpcAddress(c.Args.Analyzer)
+	client, err := c.analyzerClient()
 	if err != nil {
 		return err
 	}
-
-	conn, err := grpc.Dial(c.Args.Analyzer, grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		return err
-	}
-
-	client := lookout.NewAnalyzerClient(conn)
 
 	log, err := c.repo.Log(&gogit.LogOptions{From: plumbing.NewHash(toRef.Hash)})
 	var commits uint32
