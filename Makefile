@@ -58,7 +58,7 @@ $(PROTOC):
 test-sdk: clean-sdk build-sdk
 	$(DUMMY_BIN) serve &>/dev/null & \
 	PID=$$!; \
-	$(LOOKOUT_BIN) review ipv4://localhost:10302 | grep "BEGIN RESULT"; \
+	$(LOOKOUT_BIN) review ipv4://localhost:10302 2>&1 | grep "posting analysis"; \
 	if [ $$? != 0 ] ; then \
 		echo "review test failed"; \
 		kill $$PID; \

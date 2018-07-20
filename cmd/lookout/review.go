@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/src-d/lookout"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 func init() {
@@ -27,38 +28,38 @@ func (c *ReviewCommand) Execute(args []string) error {
 		return err
 	}
 
-	grpcSrv, err := c.makeDataServer()
-	if err != nil {
-		return err
-	}
-
-	lis, err := lookout.Listen(c.DataServer)
+	dataSrv, err := c.makeDataServerHandler()
 	if err != nil {
 		return err
 	}
 
 	serveResult := make(chan error)
-	go func() { serveResult <- grpcSrv.Serve(lis) }()
+	grpcSrv, err := c.bindDataServer(dataSrv, serveResult)
+	if err != nil {
+		return err
+	}
 
 	client, err := c.analyzerClient()
 	if err != nil {
 		return err
 	}
 
-	resp, err := client.NotifyReviewEvent(context.TODO(),
-		&lookout.ReviewEvent{
-			IsMergeable: true,
-			Source:      *toRef,
-			Merge:       *toRef,
-			CommitRevision: lookout.CommitRevision{
-				Base: *fromRef,
-				Head: *toRef,
-			}})
+	srv := lookout.NewServer(nil, &LogPoster{log.DefaultLogger}, nil, map[string]lookout.AnalyzerClient{
+		"test-analyzes": client,
+	})
+
+	err = srv.HandlePR(context.TODO(), &lookout.ReviewEvent{
+		IsMergeable: true,
+		Source:      *toRef,
+		Merge:       *toRef,
+		CommitRevision: lookout.CommitRevision{
+			Base: *fromRef,
+			Head: *toRef,
+		}})
+
 	if err != nil {
 		return err
 	}
-
-	c.printComments(resp.Comments)
 
 	grpcSrv.GracefulStop()
 	return <-serveResult

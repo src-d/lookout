@@ -76,11 +76,7 @@ type dataService interface {
 	lookout.FileGetter
 }
 
-func (c *EventCommand) makeDataServer() (*grpc.Server, error) {
-	if c.Verbose {
-		setGrpcLogger()
-	}
-
+func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, error) {
 	var err error
 
 	var dataService dataService
@@ -105,8 +101,24 @@ func (c *EventCommand) makeDataServer() (*grpc.Server, error) {
 		ChangeGetter: dataService,
 		FileGetter:   dataService,
 	}
+
+	return srv, nil
+}
+
+func (c *EventCommand) bindDataServer(srv *lookout.DataServerHandler, serveResult chan error) (*grpc.Server, error) {
+	if c.Verbose {
+		setGrpcLogger()
+	}
+
 	grpcSrv := grpc.NewServer()
 	lookout.RegisterDataServer(grpcSrv, srv)
+
+	lis, err := lookout.Listen(c.DataServer)
+	if err != nil {
+		return nil, err
+	}
+
+	go func() { serveResult <- grpcSrv.Serve(lis) }()
 
 	return grpcSrv, nil
 }
