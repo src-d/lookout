@@ -13,7 +13,10 @@ import (
 
 const maxMsgSize = 1024 * 1024 * 100 // 100mb
 
-var parser = flags.NewParser(nil, flags.Default)
+var (
+	version = "local_build_1"
+	parser  = flags.NewParser(nil, flags.Default)
+)
 
 type ServeCommand struct {
 	Analyzer   string `long:"analyzer" default:"ipv4://localhost:10302" env:"LOOKOUT_ANALYZER" description:"gRPC URL to bind the analyzer to"`
@@ -36,6 +39,7 @@ func (c *ServeCommand) Execute(args []string) error {
 	}
 
 	a := &dummy.Analyzer{
+		Version:    version,
 		DataClient: lookout.NewDataClient(conn),
 	}
 

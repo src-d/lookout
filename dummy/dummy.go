@@ -11,6 +11,7 @@ import (
 )
 
 type Analyzer struct {
+	Version    string
 	DataClient *lookout.DataClient
 }
 
@@ -28,7 +29,7 @@ func (a *Analyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent
 		return nil, err
 	}
 
-	resp := &lookout.EventResponse{}
+	resp := &lookout.EventResponse{AnalyzerVersion: a.Version}
 	for changes.Next() {
 		change := changes.Change()
 		resp.Comments = append(resp.Comments, a.lineIncrease(change)...)
@@ -44,6 +45,7 @@ func (a *Analyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent
 
 func (a *Analyzer) NotifyPushEvent(ctx context.Context, e *lookout.PushEvent) (*lookout.EventResponse, error) {
 	return &lookout.EventResponse{
+		AnalyzerVersion: a.Version,
 		Comments: []*lookout.Comment{
 			{Text: fmt.Sprintf(
 				"dummy comment for push event: %s -> %s (%d commits)",
