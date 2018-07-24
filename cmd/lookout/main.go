@@ -11,11 +11,17 @@ import (
 
 const maxMsgSize = 1024 * 1024 * 100 // 100mb
 
-func init() {
-	log.DefaultLogger = log.New(log.Fields{"app": "lookout"})
-}
+var (
+	name    = "lookout"
+	version = "undefined"
+	build   = "undefined"
+)
 
 var parser = flags.NewParser(nil, flags.Default)
+
+func init() {
+	log.DefaultLogger = log.New(log.Fields{"app": name})
+}
 
 func main() {
 	if _, err := parser.Parse(); err != nil {
