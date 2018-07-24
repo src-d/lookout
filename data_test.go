@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"testing"
 
 	"github.com/src-d/lookout/pb"
@@ -467,4 +468,66 @@ func (s *SliceFileScanner) File() *File {
 
 func (s *SliceFileScanner) Close() error {
 	return nil
+}
+
+func TestFnFileScanner(t *testing.T) {
+	require := require.New(t)
+
+	files := generateFiles(3)
+
+	sliceScanner := &SliceFileScanner{Files: files}
+
+	fn := func(f *File) (bool, error) {
+		if strings.HasSuffix(f.Path, "2") {
+			return true, nil
+		}
+		return false, nil
+	}
+
+	s := FnFileScanner{
+		Scanner: sliceScanner,
+		Fn:      fn,
+	}
+
+	var scannedFiles []*File
+	for s.Next() {
+		scannedFiles = append(scannedFiles, s.File())
+	}
+
+	require.False(s.Next())
+	require.NoError(s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedFiles, 2)
+}
+
+func TestFnChangeScanner(t *testing.T) {
+	require := require.New(t)
+
+	changes := generateChanges(3)
+
+	sliceScanner := &SliceChangeScanner{Changes: changes}
+
+	fn := func(c *Change) (bool, error) {
+		if strings.HasSuffix(c.Head.Path, "2") {
+			return true, nil
+		}
+		return false, nil
+	}
+
+	s := FnChangeScanner{
+		Scanner: sliceScanner,
+		Fn:      fn,
+	}
+
+	var scannedChanges []*Change
+	for s.Next() {
+		scannedChanges = append(scannedChanges, s.Change())
+	}
+
+	require.False(s.Next())
+	require.NoError(s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedChanges, 2)
 }

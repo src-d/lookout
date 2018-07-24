@@ -254,3 +254,131 @@ func (s *ClientFileScanner) File() *File {
 func (s *ClientFileScanner) Close() error {
 	return nil
 }
+
+// FnChangeScanner implements ChangeScanner using functions
+type FnChangeScanner struct {
+	Scanner ChangeScanner
+	Fn      func(*Change) (bool, error)
+	OnStart func() error
+	val     *Change
+	started bool
+	done    bool
+	err     error
+}
+
+func (s *FnChangeScanner) Next() bool {
+	if s.done {
+		return false
+	}
+
+	if !s.started {
+		defer func() { s.started = true }()
+
+		if s.OnStart != nil {
+			s.err = s.OnStart()
+			if s.err != nil {
+				s.done = true
+				return false
+			}
+		}
+	}
+
+	for s.Scanner.Next() {
+		ch := s.Scanner.Change()
+		skip, err := s.Fn(ch)
+		if err != nil {
+			s.done = true
+			s.err = err
+			return false
+		}
+		if skip {
+			continue
+		}
+
+		s.val = ch
+		return true
+	}
+
+	s.done = true
+	return false
+}
+
+func (s *FnChangeScanner) Err() error {
+	if s.err != nil {
+		return s.err
+	}
+
+	return s.Scanner.Err()
+}
+
+func (s *FnChangeScanner) Change() *Change {
+	return s.val
+}
+
+func (s *FnChangeScanner) Close() error {
+	return s.Scanner.Close()
+}
+
+// FnFileScanner implements FileScanner using functions
+type FnFileScanner struct {
+	Scanner FileScanner
+	Fn      func(*File) (bool, error)
+	OnStart func() error
+	val     *File
+	started bool
+	done    bool
+	err     error
+}
+
+func (s *FnFileScanner) Next() bool {
+	if s.done {
+		return false
+	}
+
+	if !s.started {
+		defer func() { s.started = true }()
+
+		if s.OnStart != nil {
+			s.err = s.OnStart()
+			if s.err != nil {
+				s.done = true
+				return false
+			}
+		}
+	}
+
+	for s.Scanner.Next() {
+		f := s.Scanner.File()
+		skip, err := s.Fn(f)
+		if err != nil {
+			s.done = true
+			s.err = err
+			return false
+		}
+		if skip {
+			continue
+		}
+
+		s.val = f
+		return true
+	}
+
+	s.done = true
+	return false
+}
+
+func (s *FnFileScanner) Err() error {
+	if s.err != nil {
+		return s.err
+	}
+
+	return s.Scanner.Err()
+}
+
+func (s *FnFileScanner) File() *File {
+	return s.val
+}
+
+func (s *FnFileScanner) Close() error {
+	return s.Scanner.Close()
+}

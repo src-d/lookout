@@ -9,6 +9,8 @@ import (
 	"gopkg.in/src-d/go-log.v1"
 )
 
+const maxMsgSize = 1024 * 1024 * 100 // 100mb
+
 func init() {
 	log.DefaultLogger = log.New(log.Fields{"app": "lookout"})
 }

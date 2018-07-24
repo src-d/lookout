@@ -7,6 +7,7 @@ import (
 
 	"github.com/src-d/lookout"
 
+	enry "gopkg.in/src-d/enry.v1"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 	gitioutil "gopkg.in/src-d/go-git.v4/utils/ioutil"
@@ -147,46 +148,37 @@ func gitChangeEntryToApiFile(entry object.ChangeEntry) *lookout.File {
 	}
 }
 
-type BaseFilterScanner struct {
+type regexpFilter struct {
 	includePatternRaw string
 	excludePatternRaw string
 	includePattern    *regexp.Regexp
 	excludePattern    *regexp.Regexp
-	started           bool
-	done              bool
-	err               error
 }
 
-func (s *BaseFilterScanner) Next(fn func() bool) bool {
-	if s.done {
-		return false
+func (s *regexpFilter) OnStart() error {
+	var err error
+	s.includePattern, err = s.compile(s.includePatternRaw)
+	if err != nil {
+		return err
 	}
 
-	if !s.started {
-		defer func() { s.started = true }()
-
-		s.includePattern, s.err = s.compile(s.includePatternRaw)
-		if s.err != nil {
-			s.done = true
-			return false
-		}
-
-		s.excludePattern, s.err = s.compile(s.excludePatternRaw)
-		if s.err != nil {
-			s.done = true
-			return false
-		}
-	}
-
-	hasNext := fn()
-	if !hasNext {
-		s.done = true
-	}
-
-	return hasNext
+	s.excludePattern, err = s.compile(s.excludePatternRaw)
+	return err
 }
 
-func (s *BaseFilterScanner) compile(pat string) (*regexp.Regexp, error) {
+func (s *regexpFilter) Fn(f *lookout.File) (bool, error) {
+	if !s.matchInclude(f.Path) {
+		return true, nil
+	}
+
+	if s.matchExclude(f.Path) {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (s *regexpFilter) compile(pat string) (*regexp.Regexp, error) {
 	if pat == "" {
 		return nil, nil
 	}
@@ -194,7 +186,7 @@ func (s *BaseFilterScanner) compile(pat string) (*regexp.Regexp, error) {
 	return regexp.Compile(pat)
 }
 
-func (s *BaseFilterScanner) matchInclude(p string) bool {
+func (s *regexpFilter) matchInclude(p string) bool {
 	if s.includePattern == nil {
 		return true
 	}
@@ -202,7 +194,7 @@ func (s *BaseFilterScanner) matchInclude(p string) bool {
 	return s.includePattern.MatchString(p)
 }
 
-func (s *BaseFilterScanner) matchExclude(p string) bool {
+func (s *regexpFilter) matchExclude(p string) bool {
 	if s.excludePattern == nil {
 		return false
 	}
@@ -210,263 +202,118 @@ func (s *BaseFilterScanner) matchExclude(p string) bool {
 	return s.excludePattern.MatchString(p)
 }
 
-// ChangeFilterScanner filters results of ChangeScanner based on regexp file name patterns
-type ChangeFilterScanner struct {
-	BaseFilterScanner
-	Scanner lookout.ChangeScanner
-	val     *lookout.Change
-}
+// NewChangeFilterScanner creates new FnChangeScanner
+func NewChangeFilterScanner(scanner lookout.ChangeScanner, include, exclude string) *lookout.FnChangeScanner {
+	filter := regexpFilter{
+		includePatternRaw: include,
+		excludePatternRaw: exclude,
+	}
 
-// NewChangeFilterScanner creates new ChangeFilterScanner
-func NewChangeFilterScanner(
-	scanner lookout.ChangeScanner,
-	include, exclude string) *ChangeFilterScanner {
-	return &ChangeFilterScanner{
-		BaseFilterScanner: BaseFilterScanner{
-			includePatternRaw: include,
-			excludePatternRaw: exclude,
-		},
+	fn := func(ch *lookout.Change) (bool, error) {
+		return filter.Fn(ch.Head)
+	}
+
+	return &lookout.FnChangeScanner{
 		Scanner: scanner,
+		OnStart: filter.OnStart,
+		Fn:      fn,
 	}
 }
 
-func (s *ChangeFilterScanner) Next() bool {
-	return s.BaseFilterScanner.Next(s.next)
-}
-
-func (s *ChangeFilterScanner) Err() error {
-	if s.err != nil {
-		return s.err
+// NewFileFilterScanner creates new FnFileScanner
+func NewFileFilterScanner(scanner lookout.FileScanner, include, exclude string) *lookout.FnFileScanner {
+	filter := regexpFilter{
+		includePatternRaw: include,
+		excludePatternRaw: exclude,
 	}
-
-	return s.Scanner.Err()
-}
-
-func (s *ChangeFilterScanner) Change() *lookout.Change {
-	return s.val
-}
-
-func (s *ChangeFilterScanner) Close() error {
-	return s.Scanner.Close()
-}
-
-func (s *ChangeFilterScanner) next() bool {
-	for s.Scanner.Next() {
-		ch := s.Scanner.Change()
-
-		if !s.matchInclude(ch.Head.Path) {
-			continue
-		}
-
-		if s.matchExclude(ch.Head.Path) {
-			continue
-		}
-
-		s.val = ch
-		return true
-	}
-	return false
-}
-
-// FileFilterScanner filters results of FileScanner based on regexp file name patterns
-type FileFilterScanner struct {
-	BaseFilterScanner
-	Scanner lookout.FileScanner
-	val     *lookout.File
-}
-
-// NewFileFilterScanner creates new FileFilterScanner
-func NewFileFilterScanner(
-	scanner lookout.FileScanner,
-	include, exclude string) *FileFilterScanner {
-	return &FileFilterScanner{
-		BaseFilterScanner: BaseFilterScanner{
-			includePatternRaw: include,
-			excludePatternRaw: exclude,
-		},
+	return &lookout.FnFileScanner{
 		Scanner: scanner,
+		OnStart: filter.OnStart,
+		Fn:      filter.Fn,
 	}
 }
 
-func (s *FileFilterScanner) Next() bool {
-	return s.BaseFilterScanner.Next(s.next)
+type blobAdder struct {
+	tree *object.Tree
 }
 
-func (s *FileFilterScanner) Err() error {
-	if s.err != nil {
-		return s.err
-	}
-
-	return s.Scanner.Err()
-}
-
-func (s *FileFilterScanner) File() *lookout.File {
-	return s.val
-}
-
-func (s *FileFilterScanner) Close() error {
-	return s.Scanner.Close()
-}
-
-func (s *FileFilterScanner) next() bool {
-	for s.Scanner.Next() {
-		f := s.Scanner.File()
-
-		if !s.matchInclude(f.Path) {
-			continue
-		}
-
-		if s.matchExclude(f.Path) {
-			continue
-		}
-
-		s.val = f
-		return true
-	}
-	return false
-}
-
-type BaseBlobScanner struct {
-	done bool
-	err  error
-}
-
-func (s *BaseBlobScanner) addBlob(t *object.Tree, f *lookout.File) (err error) {
+func (b *blobAdder) Fn(f *lookout.File) (bool, error) {
 	if f == nil {
-		return nil
+		return false, nil
 	}
 
 	if f.Hash == "" {
-		return nil
+		return false, nil
 	}
 
-	of, err := t.File(f.Path)
+	of, err := b.tree.File(f.Path)
 	if err != nil {
-		return err
+		return true, err
 	}
 
 	r, err := of.Blob.Reader()
 	if err != nil {
-		return err
+		return true, err
 	}
 
 	defer gitioutil.CheckClose(r, &err)
 
 	f.Content, err = ioutil.ReadAll(r)
-	return err
+	if err != nil {
+		return true, err
+	}
+
+	return false, nil
 }
 
-// ChangeBlobScanner adds blobs to results of ChangeScanner
-type ChangeBlobScanner struct {
-	BaseBlobScanner
-	Scanner    lookout.ChangeScanner
-	Base, Head *object.Tree
-	val        *lookout.Change
-}
-
-// NewChangeBlobScanner creates new ChangeBlobScanner
-func NewChangeBlobScanner(
-	scanner lookout.ChangeScanner,
-	base, head *object.Tree) *ChangeBlobScanner {
-	return &ChangeBlobScanner{
+// NewFileBlobScanner creates new FnFileScanner
+func NewFileBlobScanner(scanner lookout.FileScanner, tree *object.Tree) *lookout.FnFileScanner {
+	adder := blobAdder{tree}
+	return &lookout.FnFileScanner{
 		Scanner: scanner,
-		Base:    base,
-		Head:    head,
+		Fn:      adder.Fn,
 	}
 }
 
-func (s *ChangeBlobScanner) Next() bool {
-	if s.done {
-		return false
-	}
+// NewChangeBlobScanner creates new FnChangeScanner
+func NewChangeBlobScanner(scanner lookout.ChangeScanner, base, head *object.Tree) *lookout.FnChangeScanner {
+	baseAdder := blobAdder{base}
+	headAdder := blobAdder{head}
 
-	for s.Scanner.Next() {
-		ch := s.Scanner.Change()
-		if err := s.addBlob(s.Base, ch.Base); err != nil {
-			s.done = true
-			s.err = err
-			return false
+	fn := func(ch *lookout.Change) (bool, error) {
+		skip, err := baseAdder.Fn(ch.Base)
+		if err != nil || skip == true {
+			return skip, err
 		}
 
-		if err := s.addBlob(s.Head, ch.Head); err != nil {
-			s.done = true
-			s.err = err
-			return false
-		}
-
-		s.val = ch
-		return true
+		return headAdder.Fn(ch.Head)
 	}
 
-	s.done = true
-	return false
-}
-
-func (s *ChangeBlobScanner) Err() error {
-	if s.err != nil {
-		return s.err
-	}
-
-	return s.Scanner.Err()
-}
-
-func (s *ChangeBlobScanner) Change() *lookout.Change {
-	return s.val
-}
-
-func (s *ChangeBlobScanner) Close() error {
-	return s.Scanner.Close()
-}
-
-// FileBlobScanner adds blobs to results of FileScanner
-type FileBlobScanner struct {
-	BaseBlobScanner
-	Scanner lookout.FileScanner
-	Tree    *object.Tree
-	val     *lookout.File
-}
-
-// NewFileBlobScanner creates new FileBlobScanner
-func NewFileBlobScanner(scanner lookout.FileScanner, tree *object.Tree) *FileBlobScanner {
-	return &FileBlobScanner{
+	return &lookout.FnChangeScanner{
 		Scanner: scanner,
-		Tree:    tree,
+		Fn:      fn,
 	}
 }
 
-func (s *FileBlobScanner) Next() bool {
-	if s.done {
-		return false
-	}
-
-	for s.Scanner.Next() {
-		f := s.Scanner.File()
-		if err := s.addBlob(s.Tree, f); err != nil {
-			s.done = true
-			s.err = err
-			return false
-		}
-
-		s.val = f
-		return true
-	}
-
-	s.done = true
-	return false
+func filterVendor(f *lookout.File) (bool, error) {
+	return enry.IsVendor(f.Path), nil
 }
 
-func (s *FileBlobScanner) Err() error {
-	if s.err != nil {
-		return s.err
+// NewChangeExcludeVendorScanner creates new FnChangeScanner
+func NewChangeExcludeVendorScanner(scanner lookout.ChangeScanner) *lookout.FnChangeScanner {
+	fn := func(ch *lookout.Change) (bool, error) {
+		return filterVendor(ch.Head)
 	}
-
-	return s.Scanner.Err()
+	return &lookout.FnChangeScanner{
+		Scanner: scanner,
+		Fn:      fn,
+	}
 }
 
-func (s *FileBlobScanner) File() *lookout.File {
-	return s.val
-}
-
-func (s *FileBlobScanner) Close() error {
-	return s.Scanner.Close()
+// NewFileExcludeVendorScanner creates new FnFileScanner
+func NewFileExcludeVendorScanner(scanner lookout.FileScanner) *lookout.FnFileScanner {
+	return &lookout.FnFileScanner{
+		Scanner: scanner,
+		Fn:      filterVendor,
+	}
 }

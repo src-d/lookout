@@ -133,7 +133,13 @@ func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
 
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	conn, err := grpc.DialContext(timeoutCtx, c.Args.Analyzer, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.DialContext(
+		timeoutCtx,
+		c.Args.Analyzer,
+		grpc.WithInsecure(),
+		grpc.WithBlock(),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)),
+	)
 	if err != nil {
 		return nil, err
 	}

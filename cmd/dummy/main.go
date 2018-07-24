@@ -11,6 +11,8 @@ import (
 	_ "google.golang.org/grpc/grpclog/glogger"
 )
 
+const maxMsgSize = 1024 * 1024 * 100 // 100mb
+
 var parser = flags.NewParser(nil, flags.Default)
 
 type ServeCommand struct {
@@ -27,7 +29,7 @@ func (c *ServeCommand) Execute(args []string) error {
 
 	conn, err := grpc.Dial(c.DataServer,
 		grpc.WithInsecure(),
-		grpc.WithDefaultCallOptions(grpc.FailFast(false)),
+		grpc.WithDefaultCallOptions(grpc.FailFast(false), grpc.MaxCallRecvMsgSize(maxMsgSize)),
 	)
 	if err != nil {
 		return err

@@ -72,3 +72,7 @@
 [[constraint]]
   name = "gopkg.in/yaml.v2"
   version = "2.2.1"
+
+[[constraint]]
+  name = "gopkg.in/src-d/enry.v1"
+  version = "1.6.4"
