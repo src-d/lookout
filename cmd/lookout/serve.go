@@ -24,17 +24,6 @@ func init() {
 	}
 }
 
-// AnalyzerConfig is a configuration of analyzer
-type AnalyzerConfig struct {
-	Name string
-	Addr string
-}
-
-// Config is a server configuration
-type Config struct {
-	Analyzers []AnalyzerConfig
-}
-
 type ServeCommand struct {
 	ConfigFile  string `long:"config" short:"c" default:"config.yml" env:"LOOKOUT_CONFIG_FILE" description:"path to configuration file"`
 	GithubUser  string `long:"github-user" env:"GITHUB_USER" description:"user for the GitHub API"`
@@ -51,7 +40,7 @@ type ServeCommand struct {
 }
 
 func (c *ServeCommand) Execute(args []string) error {
-	var conf Config
+	var conf lookout.Config
 	configData, err := ioutil.ReadFile(c.ConfigFile)
 	if err != nil {
 		return fmt.Errorf("Can't open configuration file: %s", err)
@@ -71,13 +60,16 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
-	analyzers := make(map[string]lookout.AnalyzerClient, len(conf.Analyzers))
+	analyzers := make(map[string]lookout.Analyzer, len(conf.Analyzers))
 	for _, aConf := range conf.Analyzers {
-		a, err := c.startAnalyzer(aConf)
+		client, err := c.startAnalyzer(aConf)
 		if err != nil {
 			return err
 		}
-		analyzers[aConf.Name] = a
+		analyzers[aConf.Name] = lookout.Analyzer{
+			Client: client,
+			Config: aConf,
+		}
 	}
 
 	poster, err := c.initPoster()
@@ -113,7 +105,7 @@ func (c *ServeCommand) initPoster() (lookout.Poster, error) {
 	}), nil
 }
 
-func (c *ServeCommand) startAnalyzer(conf AnalyzerConfig) (lookout.AnalyzerClient, error) {
+func (c *ServeCommand) startAnalyzer(conf lookout.AnalyzerConfig) (lookout.AnalyzerClient, error) {
 	addr, err := lookout.ToGoGrpcAddress(conf.Addr)
 	if err != nil {
 		return nil, err
