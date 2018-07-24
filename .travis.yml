@@ -15,8 +15,9 @@ before_install:
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
   - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 90
 
-script:
-  - make test-coverage codecov
+stages:
+  - name: release to github
+    if: tag IS present
 
 jobs:
   include:
@@ -24,7 +25,12 @@ jobs:
       name: "Unit Tests"
       script: make test-coverage codecov
     - script: make test-sdk
-      name: "Integration Tests"
+      name: "SDK Integration Tests Linux"
+    - script: make test-sdk
+      name: "SDK Integration Tests macOS"
+      os: osx
+      osx_image: xcode9.4
+      before_install: skip
     - script:
         - make protogen
         - make no-changes-in-commit
@@ -35,6 +41,24 @@ jobs:
         - export PY_OUT_DIR=py
         - mkdir -p "$PY_OUT_DIR" && python3 -m grpc_tools.protoc -Isdk --python_out=$PY_OUT_DIR --grpc_python_out=$PY_OUT_DIR sdk/*.proto
       name: "Protobuf code generation"
+    - stage: release to github
+      name: "linux packages"
+      script: PKG_OS="linux" make packages-sdk
+      deploy: &deploy_anchor
+        provider: releases
+        api_key: $GITHUB_TOKEN
+        file_glob: true
+        file: build/*.tar.gz
+        skip_cleanup: true
+        on:
+          all_branches: true
+    - stage: release to github
+      name: "macOS packages"
+      os: osx
+      osx_image: xcode9.4
+      before_install: skip
+      script: PKG_OS="darwin" make packages-sdk
+      deploy: *deploy_anchor
 
 cache:
   directories:

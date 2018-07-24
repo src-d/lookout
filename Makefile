@@ -90,3 +90,20 @@ dry-run: $(CONFIG_FILE)
 	go run cmd/lookout/*.go serve --dry-run github.com/src-d/lookout
 $(CONFIG_FILE):
 	cp "$(CONFIG_FILE).tpl" $(CONFIG_FILE)
+
+# Builds build/lookout_sdk_*.tar.gz with the lookout bin and sdk dir
+.PHONY: packages-sdk
+packages-sdk: PROJECT = lookout_sdk
+packages-sdk: build
+	@for os in $(PKG_OS); do \
+		for arch in $(PKG_ARCH); do \
+			cp -r sdk $(BUILD_PATH)/$(PROJECT)_$${os}_$${arch}/; \
+		done; \
+	done; \
+	cd $(BUILD_PATH); \
+	for os in $(PKG_OS); do \
+		for arch in $(PKG_ARCH); do \
+			TAR_VERSION=`echo $(VERSION) | tr "/" "-"`; \
+			tar -cvzf $(PROJECT)_$${TAR_VERSION}_$${os}_$${arch}.tar.gz $(PROJECT)_$${os}_$${arch}/; \
+		done; \
+	done
