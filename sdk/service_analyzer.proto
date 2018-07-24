@@ -33,8 +33,9 @@ service Analyzer {
 }
 
 message EventResponse {
-    repeated Comment comments = 1;
-    // repeated Patch patches = 2;
+    string analyzer_version = 1;
+    repeated Comment comments = 2;
+    // repeated Patch patches = 3;
 }
 
 // Comment is a comment on a commit or changeset.
