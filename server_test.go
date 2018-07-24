@@ -18,8 +18,11 @@ func TestServerReview(t *testing.T) {
 	watcher := &WatcherMock{}
 	poster := &PosterMock{}
 	fileGetter := &FileGetterMock{}
-	analyzers := map[string]AnalyzerClient{
-		"mock": &AnalyzerClientMock{},
+	analyzers := map[string]Analyzer{
+		"mock": Analyzer{
+			Client: &AnalyzerClientMock{},
+			Config: AnalyzerConfig{},
+		},
 	}
 
 	srv := NewServer(watcher, poster, fileGetter, analyzers)
@@ -93,7 +96,7 @@ type FileGetterMock struct {
 }
 
 func (g *FileGetterMock) GetFiles(_ context.Context, req *FilesRequest) (FileScanner, error) {
-	return nil, nil
+	return &NoopFileScanner{}, nil
 }
 
 type AnalyzerClientMock struct {
@@ -115,4 +118,23 @@ func makeComment(from, to ReferencePointer) *Comment {
 	return &Comment{
 		Text: fmt.Sprintf("%s > %s", from.Hash, to.Hash),
 	}
+}
+
+type NoopFileScanner struct {
+}
+
+func (s *NoopFileScanner) Next() bool {
+	return false
+}
+
+func (s *NoopFileScanner) Err() error {
+	return nil
+}
+
+func (s *NoopFileScanner) File() *File {
+	return nil
+}
+
+func (s *NoopFileScanner) Close() error {
+	return nil
 }
