@@ -14,7 +14,7 @@ import (
 const maxMsgSize = 1024 * 1024 * 100 // 100mb
 
 var (
-	varsion = "local_build_1"
+	version = "local_build_1"
 	parser  = flags.NewParser(nil, flags.Default)
 )
 
@@ -39,7 +39,7 @@ func (c *ServeCommand) Execute(args []string) error {
 	}
 
 	a := &dummy.Analyzer{
-		Version:    varsion,
+		Version:    version,
 		DataClient: lookout.NewDataClient(conn),
 	}
 
