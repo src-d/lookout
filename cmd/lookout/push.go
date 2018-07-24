@@ -6,6 +6,7 @@ import (
 	"github.com/src-d/lookout"
 	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 func init() {
@@ -45,6 +46,10 @@ func (c *PushCommand) Execute(args []string) error {
 		return err
 	}
 
+	srv := lookout.NewServer(nil, &LogPoster{log.DefaultLogger}, nil, map[string]lookout.AnalyzerClient{
+		"test-analyzes": client,
+	})
+
 	log, err := c.repo.Log(&gogit.LogOptions{From: plumbing.NewHash(toRef.Hash)})
 	var commits uint32
 	for {
@@ -58,18 +63,16 @@ func (c *PushCommand) Execute(args []string) error {
 		commits++
 	}
 
-	resp, err := client.NotifyPushEvent(context.TODO(),
-		&lookout.PushEvent{
-			Commits: commits,
-			CommitRevision: lookout.CommitRevision{
-				Base: *fromRef,
-				Head: *toRef,
-			}})
+	err = srv.HandlePush(context.TODO(), &lookout.PushEvent{
+		Commits: commits,
+		CommitRevision: lookout.CommitRevision{
+			Base: *fromRef,
+			Head: *toRef,
+		}})
+
 	if err != nil {
 		return err
 	}
-
-	c.printComments(resp.Comments)
 
 	grpcSrv.GracefulStop()
 	return <-serveResult

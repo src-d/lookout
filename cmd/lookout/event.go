@@ -141,25 +141,6 @@ func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
 	return lookout.NewAnalyzerClient(conn), nil
 }
 
-func (c *EventCommand) printComments(cs []*lookout.Comment) {
-	fmt.Println("BEGIN RESULT")
-	for _, comment := range cs {
-		if comment.File == "" {
-			fmt.Printf("GLOBAL: %s\n", comment.Text)
-			continue
-		}
-
-		if comment.Line == 0 {
-			fmt.Printf("%s: %s\n", comment.File, comment.Text)
-			continue
-		}
-
-		fmt.Printf("%s:%d: %s\n", comment.File, comment.Line, comment.Text)
-	}
-
-	fmt.Println("END RESULT")
-}
-
 func getCommitHashByRev(r *gogit.Repository, revName string) (string, error) {
 	h, err := r.ResolveRevision(plumbing.Revision(revName))
 	if err != nil {

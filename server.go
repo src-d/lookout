@@ -7,6 +7,8 @@ import (
 	log "gopkg.in/src-d/go-log.v1"
 )
 
+type reqSent func(AnalyzerClient) ([]*Comment, error)
+
 // Server implements glue between providers / data-server / analyzers
 type Server struct {
 	watcher    Watcher
@@ -31,15 +33,17 @@ func (s *Server) Run(ctx context.Context) error {
 func (s *Server) handleEvent(ctx context.Context, e Event) error {
 	switch ev := e.(type) {
 	case *ReviewEvent:
-		return s.HandlePR(ctx, ev)
+		return s.HandleReview(ctx, ev)
+	case *PushEvent:
+		return s.HandlePush(ctx, ev)
 	default:
 		log.Debugf("ignoring unsupported event: %s", ev)
 		return nil
 	}
 }
 
-// HandlePR sends request to analyzers concurrently
-func (s *Server) HandlePR(ctx context.Context, e *ReviewEvent) error {
+// HandleReview sends request to analyzers concurrently
+func (s *Server) HandleReview(ctx context.Context, e *ReviewEvent) error {
 	logger := log.DefaultLogger.With(log.Fields{
 		"provider":   e.Provider,
 		"repository": e.Head.InternalRepositoryURL,
@@ -47,6 +51,43 @@ func (s *Server) HandlePR(ctx context.Context, e *ReviewEvent) error {
 	})
 	logger.Infof("processing pull request")
 
+	send := func(a AnalyzerClient) ([]*Comment, error) {
+		resp, err := a.NotifyReviewEvent(ctx, e)
+		if err != nil {
+			return nil, err
+		}
+		return resp.Comments, nil
+	}
+	comments := s.concurrentRequest(ctx, logger, send)
+
+	s.post(ctx, logger, e, comments.Get())
+	return nil
+}
+
+// HandlePush sends request to analyzers concurrently
+func (s *Server) HandlePush(ctx context.Context, e *PushEvent) error {
+	logger := log.DefaultLogger.With(log.Fields{
+		"provider":   e.Provider,
+		"repository": e.Head.InternalRepositoryURL,
+		"head":       e.Head.ReferenceName,
+	})
+	logger.Infof("processing push")
+
+	send := func(a AnalyzerClient) ([]*Comment, error) {
+		resp, err := a.NotifyPushEvent(ctx, e)
+		if err != nil {
+			return nil, err
+		}
+		return resp.Comments, nil
+	}
+	comments := s.concurrentRequest(ctx, logger, send)
+
+	s.post(ctx, logger, e, comments.Get())
+	return nil
+}
+
+// FIXME(max): it's better to hold logger inside context
+func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, send reqSent) commentsList {
 	var comments commentsList
 
 	var wg sync.WaitGroup
@@ -59,32 +100,35 @@ func (s *Server) HandlePR(ctx context.Context, e *ReviewEvent) error {
 				"analyzer": name,
 			})
 
-			resp, err := a.NotifyReviewEvent(context.TODO(), e)
+			cs, err := send(a)
 			if err != nil {
 				aLogger.Errorf(err, "analysis failed")
 				return
 			}
 
-			if len(resp.Comments) == 0 {
+			if len(cs) == 0 {
 				aLogger.Infof("no comments were produced")
 			}
 
-			comments.Add(resp.Comments...)
+			comments.Add(cs...)
 		}(name, a)
 	}
 	wg.Wait()
 
-	if !comments.Empty() {
-		logger.With(log.Fields{
-			"comments": comments.Len(),
-		}).Infof("posting analysis")
+	return comments
+}
 
-		if err := s.poster.Post(ctx, e, comments.Get()); err != nil {
-			logger.Errorf(err, "posting analysis failed")
-		}
+func (s *Server) post(ctx context.Context, logger log.Logger, e Event, comments []*Comment) {
+	if len(comments) == 0 {
+		return
 	}
+	logger.With(log.Fields{
+		"comments": len(comments),
+	}).Infof("posting analysis")
 
-	return nil
+	if err := s.poster.Post(ctx, e, comments); err != nil {
+		logger.Errorf(err, "posting analysis failed")
+	}
 }
 
 type commentsList struct {
@@ -100,12 +144,4 @@ func (l *commentsList) Add(cs ...*Comment) {
 
 func (l *commentsList) Get() []*Comment {
 	return l.list
-}
-
-func (l *commentsList) Len() int {
-	return len(l.list)
-}
-
-func (l *commentsList) Empty() bool {
-	return len(l.list) == 0
 }
