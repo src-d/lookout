@@ -9,6 +9,7 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/service/bblfsh"
 	"github.com/src-d/lookout/service/git"
+	"github.com/src-d/lookout/util/flags"
 	"github.com/src-d/lookout/util/grpchelper"
 	"google.golang.org/grpc"
 
@@ -18,6 +19,7 @@ import (
 )
 
 type EventCommand struct {
+	flags.CommonOptions
 	DataServer string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
 	Bblfshd    string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
 	GitDir     string `long:"git-dir" default:"." env:"GIT_DIR" description:"path to the .git directory to analyze"`

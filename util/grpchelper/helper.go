@@ -5,12 +5,25 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
 
 	"google.golang.org/grpc"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
-// MaxMessageSize overrides default grpc max. message size to send/receive to/from clients
-var MaxMessageSize = 100 * 1024 * 1024 // 100mb
+var maxMessageSize = 100 * 1024 * 1024 // 100mb
+
+// SetMaxMessageSize overrides default grpc max. message size to send/receive to/from clients
+func SetMaxMessageSize(size int) {
+	if size >= 2048 {
+		// Setting the hard limit of message size to less than 2GB since
+		// it may overflow an int value, and it should be big enough
+		log.Errorf(fmt.Errorf("max-message-size too big (limit is 2047MB): %d", size), "SetMaxMessageSize")
+		os.Exit(1)
+	}
+
+	maxMessageSize = size * 1024 * 1024
+}
 
 //TODO: https://github.com/grpc/grpc-go/issues/1911
 
@@ -74,7 +87,7 @@ func Listen(address string) (net.Listener, error) {
 
 // NewGrpcServer creates new grpc.Server with custom message size
 func NewServer(opts ...grpc.ServerOption) *grpc.Server {
-	opts = append(opts, grpc.MaxRecvMsgSize(MaxMessageSize), grpc.MaxSendMsgSize(MaxMessageSize))
+	opts = append(opts, grpc.MaxRecvMsgSize(maxMessageSize), grpc.MaxSendMsgSize(maxMessageSize))
 
 	return grpc.NewServer(opts...)
 }
@@ -82,8 +95,8 @@ func NewServer(opts ...grpc.ServerOption) *grpc.Server {
 // GrpcDialContext creates a client connection to the given target with custom message size
 func DialContext(ctx context.Context, target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	opts = append(opts, grpc.WithDefaultCallOptions(
-		grpc.MaxCallRecvMsgSize(MaxMessageSize),
-		grpc.MaxCallSendMsgSize(MaxMessageSize),
+		grpc.MaxCallRecvMsgSize(maxMessageSize),
+		grpc.MaxCallSendMsgSize(maxMessageSize),
 	))
 
 	return grpc.DialContext(ctx, target, opts...)

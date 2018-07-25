@@ -10,6 +10,7 @@ import (
 	"github.com/src-d/lookout/provider/github"
 	"github.com/src-d/lookout/service/bblfsh"
 	"github.com/src-d/lookout/service/git"
+	"github.com/src-d/lookout/util/flags"
 	"github.com/src-d/lookout/util/grpchelper"
 
 	"google.golang.org/grpc"
@@ -26,6 +27,7 @@ func init() {
 }
 
 type ServeCommand struct {
+	flags.CommonOptions
 	ConfigFile  string `long:"config" short:"c" default:"config.yml" env:"LOOKOUT_CONFIG_FILE" description:"path to configuration file"`
 	GithubUser  string `long:"github-user" env:"GITHUB_USER" description:"user for the GitHub API"`
 	GithubToken string `long:"github-token" env:"GITHUB_TOKEN" description:"access token for the GitHub API"`
