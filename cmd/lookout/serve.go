@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/provider/console"
 	"github.com/src-d/lookout/provider/github"
 	"github.com/src-d/lookout/service/bblfsh"
 	"github.com/src-d/lookout/service/git"
@@ -35,6 +37,7 @@ type ServeCommand struct {
 	Bblfshd     string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
 	DryRun      bool   `long:"dry-run" env:"LOOKOUT_DRY_RUN" description:"analyze repositories and log the result without posting code reviews to GitHub"`
 	Library     string `long:"library" default:"/tmp/lookout" env:"LOOKOUT_LIBRARY" description:"path to the lookout library"`
+	Provider    string `long:"provider" default:"github" env:"LOOKOUT_PROVIDER" description:"provider name: github, console"`
 	Positional  struct {
 		Repository string `positional-arg-name:"repository"`
 	} `positional-args:"yes" required:"yes"`
@@ -80,14 +83,7 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
-	t := &roundTripper{
-		Log:      log.DefaultLogger,
-		User:     c.GithubUser,
-		Password: c.GithubToken,
-	}
-	watcher, err := github.NewWatcher(t, &lookout.WatchOptions{
-		URL: c.Positional.Repository,
-	})
+	watcher, err := c.initWatcher()
 	if err != nil {
 		return err
 	}
@@ -101,11 +97,44 @@ func (c *ServeCommand) initPoster() (lookout.Poster, error) {
 		return &LogPoster{log.DefaultLogger}, nil
 	}
 
-	return github.NewPoster(&roundTripper{
-		Log:      log.DefaultLogger,
-		User:     c.GithubUser,
-		Password: c.GithubToken,
-	}), nil
+	switch c.Provider {
+	case github.Provider:
+		return github.NewPoster(&roundTripper{
+			Log:      log.DefaultLogger,
+			User:     c.GithubUser,
+			Password: c.GithubToken,
+		}), nil
+	case console.Provider:
+		return console.NewPoster(os.Stdout), nil
+	default:
+		return nil, fmt.Errorf("provider %s not supported", c.Provider)
+	}
+}
+
+func (c *ServeCommand) initWatcher() (lookout.Watcher, error) {
+	switch c.Provider {
+	case github.Provider:
+		t := &roundTripper{
+			Log:      log.DefaultLogger,
+			User:     c.GithubUser,
+			Password: c.GithubToken,
+		}
+
+		watcher, err := github.NewWatcher(t, &lookout.WatchOptions{
+			URL: c.Positional.Repository,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return watcher, nil
+	case console.Provider:
+		return console.NewWatcher(&console.WatchOptions{
+			Reader: os.Stdin,
+		})
+	default:
+		return nil, fmt.Errorf("provider %s not supported", c.Provider)
+	}
 }
 
 func (c *ServeCommand) startAnalyzer(conf lookout.AnalyzerConfig) (lookout.AnalyzerClient, error) {
