@@ -7,6 +7,7 @@ import (
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/service/git"
+	"github.com/src-d/lookout/util/grpchelper"
 
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -45,7 +46,7 @@ func (s *DummySuite) SetupSuite() {
 	}
 	lookout.RegisterDataServer(s.apiServer, server)
 
-	lis, err := lookout.Listen("ipv4://0.0.0.0:9991")
+	lis, err := grpchelper.Listen("ipv4://0.0.0.0:9991")
 	require.NoError(err)
 
 	go s.apiServer.Serve(lis)
@@ -86,7 +87,7 @@ func (s *DummySuite) Test() {
 	s.analyzerServer = grpc.NewServer()
 	lookout.RegisterAnalyzerServer(s.analyzerServer, a)
 
-	lis, err := lookout.Listen("ipv4://0.0.0.0:9995")
+	lis, err := grpchelper.Listen("ipv4://0.0.0.0:9995")
 	require.NoError(err)
 
 	done := make(chan error)

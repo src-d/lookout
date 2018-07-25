@@ -1,17 +1,17 @@
 package main
 
 import (
+	"context"
 	"os"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/dummy"
+	"github.com/src-d/lookout/util/grpchelper"
 
 	"github.com/jessevdk/go-flags"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/grpclog/glogger"
 )
-
-const maxMsgSize = 1024 * 1024 * 100 // 100mb
 
 var (
 	version = "local_build_1"
@@ -25,14 +25,16 @@ type ServeCommand struct {
 
 func (c *ServeCommand) Execute(args []string) error {
 	var err error
-	c.DataServer, err = lookout.ToGoGrpcAddress(c.DataServer)
+	c.DataServer, err = grpchelper.ToGoGrpcAddress(c.DataServer)
 	if err != nil {
 		return err
 	}
 
-	conn, err := grpc.Dial(c.DataServer,
+	conn, err := grpchelper.DialContext(
+		context.Background(),
+		c.DataServer,
 		grpc.WithInsecure(),
-		grpc.WithDefaultCallOptions(grpc.FailFast(false), grpc.MaxCallRecvMsgSize(maxMsgSize)),
+		grpc.WithDefaultCallOptions(grpc.FailFast(false)),
 	)
 	if err != nil {
 		return err
@@ -43,10 +45,10 @@ func (c *ServeCommand) Execute(args []string) error {
 		DataClient: lookout.NewDataClient(conn),
 	}
 
-	server := grpc.NewServer()
+	server := grpchelper.NewServer()
 	lookout.RegisterAnalyzerServer(server, a)
 
-	lis, err := lookout.Listen(c.Analyzer)
+	lis, err := grpchelper.Listen(c.Analyzer)
 	if err != nil {
 		return err
 	}

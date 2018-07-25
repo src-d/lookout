@@ -10,6 +10,7 @@ import (
 	"github.com/src-d/lookout/provider/github"
 	"github.com/src-d/lookout/service/bblfsh"
 	"github.com/src-d/lookout/service/git"
+	"github.com/src-d/lookout/util/grpchelper"
 
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-billy.v4/osfs"
@@ -106,12 +107,12 @@ func (c *ServeCommand) initPoster() (lookout.Poster, error) {
 }
 
 func (c *ServeCommand) startAnalyzer(conf lookout.AnalyzerConfig) (lookout.AnalyzerClient, error) {
-	addr, err := lookout.ToGoGrpcAddress(conf.Addr)
+	addr, err := grpchelper.ToGoGrpcAddress(conf.Addr)
 	if err != nil {
 		return nil, err
 	}
 
-	conn, err := grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpchelper.DialContext(context.Background(), addr, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return nil, err
 	}
@@ -121,12 +122,12 @@ func (c *ServeCommand) startAnalyzer(conf lookout.AnalyzerConfig) (lookout.Analy
 
 func (c *ServeCommand) initDataHadler() (*lookout.DataServerHandler, error) {
 	var err error
-	c.Bblfshd, err = lookout.ToGoGrpcAddress(c.Bblfshd)
+	c.Bblfshd, err = grpchelper.ToGoGrpcAddress(c.Bblfshd)
 	if err != nil {
 		return nil, err
 	}
 
-	bblfshConn, err := grpc.Dial(c.Bblfshd, grpc.WithInsecure())
+	bblfshConn, err := grpchelper.DialContext(context.Background(), c.Bblfshd, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
@@ -147,9 +148,9 @@ func (c *ServeCommand) initDataHadler() (*lookout.DataServerHandler, error) {
 }
 
 func (c *ServeCommand) startServer(srv *lookout.DataServerHandler) error {
-	grpcSrv := grpc.NewServer()
+	grpcSrv := grpchelper.NewServer()
 	lookout.RegisterDataServer(grpcSrv, srv)
-	lis, err := lookout.Listen(c.DataServer)
+	lis, err := grpchelper.Listen(c.DataServer)
 	if err != nil {
 		return err
 	}
