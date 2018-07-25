@@ -94,11 +94,18 @@ func (c *ServeCommand) initPoster() (lookout.Poster, error) {
 		return &LogPoster{log.DefaultLogger}, nil
 	}
 
-	return github.NewPoster(&roundTripper{
-		Log:      log.DefaultLogger,
-		User:     c.GithubUser,
-		Password: c.GithubToken,
-	}), nil
+	switch c.Provider {
+	case github.Provider:
+		return github.NewPoster(&roundTripper{
+			Log:      log.DefaultLogger,
+			User:     c.GithubUser,
+			Password: c.GithubToken,
+		}), nil
+	case console.Provider:
+		return console.NewPoster(os.Stdout), nil
+	default:
+		return nil, fmt.Errorf("provider %s not supported", c.Provider)
+	}
 }
 
 func (c *ServeCommand) initWatcher() (lookout.Watcher, error) {
