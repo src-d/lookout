@@ -13,20 +13,7 @@ import (
 func TestServerReview(t *testing.T) {
 	require := require.New(t)
 
-	log.DefaultLogger = log.New(log.Fields{"app": "lookout"})
-
-	watcher := &WatcherMock{}
-	poster := &PosterMock{}
-	fileGetter := &FileGetterMock{}
-	analyzers := map[string]Analyzer{
-		"mock": Analyzer{
-			Client: &AnalyzerClientMock{},
-			Config: AnalyzerConfig{},
-		},
-	}
-
-	srv := NewServer(watcher, poster, fileGetter, analyzers)
-	srv.Run(context.TODO())
+	watcher, poster := setupMockedServer()
 
 	reviewEvent := &ReviewEvent{
 		Provider:    "Mock",
@@ -62,6 +49,55 @@ func TestServerReview(t *testing.T) {
 	comments := poster.PopComments()
 	require.Len(comments, 1)
 	require.Equal(makeComment(reviewEvent.CommitRevision.Base, reviewEvent.CommitRevision.Head), comments[0])
+}
+
+func TestServerPush(t *testing.T) {
+	require := require.New(t)
+
+	watcher, poster := setupMockedServer()
+
+	pushEvent := &PushEvent{
+		Provider:   "Mock",
+		InternalID: "internal-id",
+		CommitRevision: CommitRevision{
+			Base: ReferencePointer{
+				InternalRepositoryURL: "file:///test",
+				ReferenceName:         "master",
+				Hash:                  "base-hash",
+			},
+			Head: ReferencePointer{
+				InternalRepositoryURL: "file:///test",
+				ReferenceName:         "master",
+				Hash:                  "head-hash",
+			},
+		},
+	}
+
+	err := watcher.Send(pushEvent)
+	require.Nil(err)
+
+	comments := poster.PopComments()
+	require.Len(comments, 1)
+	require.Equal(makeComment(pushEvent.CommitRevision.Base, pushEvent.CommitRevision.Head), comments[0])
+}
+
+func setupMockedServer() (*WatcherMock, *PosterMock) {
+	log.DefaultLogger = log.New(log.Fields{"app": "lookout"})
+
+	watcher := &WatcherMock{}
+	poster := &PosterMock{}
+	fileGetter := &FileGetterMock{}
+	analyzers := map[string]Analyzer{
+		"mock": Analyzer{
+			Client: &AnalyzerClientMock{},
+			Config: AnalyzerConfig{},
+		},
+	}
+
+	srv := NewServer(watcher, poster, fileGetter, analyzers)
+	srv.Run(context.TODO())
+
+	return watcher, poster
 }
 
 type WatcherMock struct {
@@ -111,7 +147,11 @@ func (a *AnalyzerClientMock) NotifyReviewEvent(ctx context.Context, in *ReviewEv
 }
 
 func (a *AnalyzerClientMock) NotifyPushEvent(ctx context.Context, in *PushEvent, opts ...grpc.CallOption) (*EventResponse, error) {
-	return nil, nil
+	return &EventResponse{
+		Comments: []*Comment{
+			makeComment(in.CommitRevision.Base, in.CommitRevision.Head),
+		},
+	}, nil
 }
 
 func makeComment(from, to ReferencePointer) *Comment {
