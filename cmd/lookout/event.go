@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -93,6 +94,10 @@ func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, erro
 	bblfshConn, err := grpc.DialContext(timeoutCtx, c.Bblfshd, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Warningf("bblfsh service is unavailable. No UAST will be provided to analyzer. Error: %s", err)
+		dataService = &noBblfshService{
+			changes: dataService,
+			files:   dataService,
+		}
 	} else {
 		dataService = bblfsh.NewService(dataService, dataService, bblfshConn)
 	}
@@ -154,4 +159,30 @@ func getCommitHashByRev(r *gogit.Repository, revName string) (string, error) {
 	}
 
 	return h.String(), nil
+}
+
+type noBblfshService struct {
+	changes lookout.ChangeGetter
+	files   lookout.FileGetter
+}
+
+var _ lookout.ChangeGetter = &noBblfshService{}
+var _ lookout.FileGetter = &noBblfshService{}
+
+var errNoBblfsh = errors.New("Data server was started without bbflsh. WantUAST isn't allowed")
+
+func (s *noBblfshService) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (lookout.ChangeScanner, error) {
+	if req.WantUAST {
+		return nil, errNoBblfsh
+	}
+
+	return s.changes.GetChanges(ctx, req)
+}
+
+func (s *noBblfshService) GetFiles(ctx context.Context, req *lookout.FilesRequest) (lookout.FileScanner, error) {
+	if req.WantUAST {
+		return nil, errNoBblfsh
+	}
+
+	return s.files.GetFiles(ctx, req)
 }
