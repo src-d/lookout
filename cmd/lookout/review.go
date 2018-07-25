@@ -44,8 +44,10 @@ func (c *ReviewCommand) Execute(args []string) error {
 		return err
 	}
 
-	srv := lookout.NewServer(nil, &LogPoster{log.DefaultLogger}, nil, map[string]lookout.AnalyzerClient{
-		"test-analyzes": client,
+	srv := lookout.NewServer(nil, &LogPoster{log.DefaultLogger}, dataSrv.FileGetter, map[string]lookout.Analyzer{
+		"test-analyzes": lookout.Analyzer{
+			Client: client,
+		},
 	})
 
 	err = srv.HandleReview(context.TODO(), &lookout.ReviewEvent{

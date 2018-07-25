@@ -2,23 +2,47 @@ package lookout
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
+	"github.com/src-d/lookout/pb"
 	log "gopkg.in/src-d/go-log.v1"
+	yaml "gopkg.in/yaml.v2"
 )
 
-type reqSent func(AnalyzerClient) ([]*Comment, error)
+// AnalyzerConfig is a configuration of analyzer
+type AnalyzerConfig struct {
+	Name string
+	// Addr is gRPC URL.
+	// can be defined only in global config, repository-scoped configuration is ignored
+	Addr string
+	// Settings any configuration for an analyzer
+	Settings map[string]interface{}
+}
+
+// ServerConfig is a server configuration
+type ServerConfig struct {
+	Analyzers []AnalyzerConfig
+}
+
+// Analyzer is a struct of analyzer client and config
+type Analyzer struct {
+	Client AnalyzerClient
+	Config AnalyzerConfig
+}
+
+type reqSent func(client AnalyzerClient, settings map[string]interface{}) ([]*Comment, error)
 
 // Server implements glue between providers / data-server / analyzers
 type Server struct {
 	watcher    Watcher
 	poster     Poster
 	fileGetter FileGetter
-	analyzers  map[string]AnalyzerClient
+	analyzers  map[string]Analyzer
 }
 
 // NewServer creates new Server
-func NewServer(w Watcher, p Poster, fileGetter FileGetter, analyzers map[string]AnalyzerClient) *Server {
+func NewServer(w Watcher, p Poster, fileGetter FileGetter, analyzers map[string]Analyzer) *Server {
 	return &Server{w, p, fileGetter, analyzers}
 }
 
@@ -51,16 +75,25 @@ func (s *Server) HandleReview(ctx context.Context, e *ReviewEvent) error {
 	})
 	logger.Infof("processing pull request")
 
-	send := func(a AnalyzerClient) ([]*Comment, error) {
+	conf, err := s.getConfig(ctx, logger, e)
+	if err != nil {
+		return err
+	}
+
+	send := func(a AnalyzerClient, settings map[string]interface{}) ([]*Comment, error) {
+		st := pb.ToStruct(settings)
+		if st != nil {
+			e.Configuration = *st
+		}
 		resp, err := a.NotifyReviewEvent(ctx, e)
 		if err != nil {
 			return nil, err
 		}
 		return resp.Comments, nil
 	}
-	comments := s.concurrentRequest(ctx, logger, send)
+	comments := s.concurrentRequest(ctx, logger, conf, send)
 
-	s.post(ctx, logger, e, comments.Get())
+	s.post(ctx, logger, e, comments)
 	return nil
 }
 
@@ -73,21 +106,75 @@ func (s *Server) HandlePush(ctx context.Context, e *PushEvent) error {
 	})
 	logger.Infof("processing push")
 
-	send := func(a AnalyzerClient) ([]*Comment, error) {
+	conf, err := s.getConfig(ctx, logger, e)
+	if err != nil {
+		return err
+	}
+
+	send := func(a AnalyzerClient, settings map[string]interface{}) ([]*Comment, error) {
+		st := pb.ToStruct(settings)
+		if st != nil {
+			e.Configuration = *st
+		}
 		resp, err := a.NotifyPushEvent(ctx, e)
 		if err != nil {
 			return nil, err
 		}
 		return resp.Comments, nil
 	}
-	comments := s.concurrentRequest(ctx, logger, send)
+	comments := s.concurrentRequest(ctx, logger, conf, send)
 
-	s.post(ctx, logger, e, comments.Get())
+	s.post(ctx, logger, e, comments)
 	return nil
 }
 
 // FIXME(max): it's better to hold logger inside context
-func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, send reqSent) commentsList {
+func (s *Server) getConfig(ctx context.Context, logger log.Logger, e Event) (map[string]AnalyzerConfig, error) {
+	rev := e.Revision()
+	scanner, err := s.fileGetter.GetFiles(ctx, &FilesRequest{
+		Revision:       &rev.Head,
+		IncludePattern: `^\.lookout\.yml$`,
+		WantContents:   true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var configContent []byte
+	if scanner.Next() {
+		configContent = scanner.File().Content
+	}
+	scanner.Close()
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	if len(configContent) == 0 {
+		logger.Infof("repository config is not found")
+		return nil, nil
+	}
+
+	var conf ServerConfig
+	if err := yaml.Unmarshal(configContent, &conf); err != nil {
+		return nil, fmt.Errorf("Can't parse configuration file: %s", err)
+	}
+
+	res := make(map[string]AnalyzerConfig, len(s.analyzers))
+	for name, a := range s.analyzers {
+		res[name] = a.Config
+	}
+	for _, aConf := range conf.Analyzers {
+		if _, ok := s.analyzers[aConf.Name]; !ok {
+			logger.Warningf("analyzer '%s' required by local config isn't enabled on server", aConf.Name)
+			continue
+		}
+		res[aConf.Name] = aConf
+	}
+
+	return res, nil
+}
+
+// FIXME(max): it's better to hold logger inside context
+func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, conf map[string]AnalyzerConfig, send reqSent) []*Comment {
 	var comments commentsList
 
 	var wg sync.WaitGroup
@@ -100,7 +187,7 @@ func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, send 
 				"analyzer": name,
 			})
 
-			cs, err := send(a)
+			cs, err := send(a, conf[name].Settings)
 			if err != nil {
 				aLogger.Errorf(err, "analysis failed")
 				return
@@ -111,11 +198,11 @@ func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, send 
 			}
 
 			comments.Add(cs...)
-		}(name, a)
+		}(name, a.Client)
 	}
 	wg.Wait()
 
-	return comments
+	return comments.Get()
 }
 
 func (s *Server) post(ctx context.Context, logger log.Logger, e Event, comments []*Comment) {
