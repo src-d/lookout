@@ -4,12 +4,10 @@ import (
 	stdlog "log"
 	"os"
 
-	"github.com/jessevdk/go-flags"
+	"github.com/src-d/lookout/util/flags"
 	"google.golang.org/grpc/grpclog"
 	"gopkg.in/src-d/go-log.v1"
 )
-
-const maxMsgSize = 1024 * 1024 * 100 // 100mb
 
 var (
 	name    = "lookout"
@@ -17,24 +15,14 @@ var (
 	build   = "undefined"
 )
 
-var parser = flags.NewParser(nil, flags.Default)
+var parser = flags.NewParser()
 
 func init() {
 	log.DefaultLogger = log.New(log.Fields{"app": name})
 }
 
 func main() {
-	if _, err := parser.Parse(); err != nil {
-		if err, ok := err.(*flags.Error); ok {
-			if err.Type == flags.ErrHelp {
-				os.Exit(0)
-			}
-
-			parser.WriteHelp(os.Stdout)
-		}
-
-		os.Exit(1)
-	}
+	flags.RunMain(parser)
 }
 
 func setGrpcLogger() {

@@ -9,6 +9,8 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/service/bblfsh"
 	"github.com/src-d/lookout/service/git"
+	"github.com/src-d/lookout/util/flags"
+	"github.com/src-d/lookout/util/grpchelper"
 	"google.golang.org/grpc"
 
 	gogit "gopkg.in/src-d/go-git.v4"
@@ -17,6 +19,7 @@ import (
 )
 
 type EventCommand struct {
+	flags.CommonOptions
 	DataServer string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
 	Bblfshd    string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
 	GitDir     string `long:"git-dir" default:"." env:"GIT_DIR" description:"path to the .git directory to analyze"`
@@ -84,13 +87,13 @@ func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, erro
 	loader := git.NewStorerCommitLoader(c.repo.Storer)
 	dataService = git.NewService(loader)
 
-	c.Bblfshd, err = lookout.ToGoGrpcAddress(c.Bblfshd)
+	c.Bblfshd, err = grpchelper.ToGoGrpcAddress(c.Bblfshd)
 	if err != nil {
 		return nil, err
 	}
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	bblfshConn, err := grpc.DialContext(timeoutCtx, c.Bblfshd, grpc.WithInsecure(), grpc.WithBlock())
+	bblfshConn, err := grpchelper.DialContext(timeoutCtx, c.Bblfshd, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Warningf("bblfsh service is unavailable. No UAST will be provided to analyzer. Error: %s", err)
 	} else {
@@ -110,10 +113,10 @@ func (c *EventCommand) bindDataServer(srv *lookout.DataServerHandler, serveResul
 		setGrpcLogger()
 	}
 
-	grpcSrv := grpc.NewServer()
+	grpcSrv := grpchelper.NewServer()
 	lookout.RegisterDataServer(grpcSrv, srv)
 
-	lis, err := lookout.Listen(c.DataServer)
+	lis, err := grpchelper.Listen(c.DataServer)
 	if err != nil {
 		return nil, err
 	}
@@ -126,19 +129,18 @@ func (c *EventCommand) bindDataServer(srv *lookout.DataServerHandler, serveResul
 func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
 	var err error
 
-	c.Args.Analyzer, err = lookout.ToGoGrpcAddress(c.Args.Analyzer)
+	c.Args.Analyzer, err = grpchelper.ToGoGrpcAddress(c.Args.Analyzer)
 	if err != nil {
 		return nil, err
 	}
 
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	conn, err := grpc.DialContext(
+	conn, err := grpchelper.DialContext(
 		timeoutCtx,
 		c.Args.Analyzer,
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)),
 	)
 	if err != nil {
 		return nil, err
