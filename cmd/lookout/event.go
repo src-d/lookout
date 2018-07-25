@@ -93,7 +93,7 @@ func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, erro
 	defer cancel()
 	bblfshConn, err := grpc.DialContext(timeoutCtx, c.Bblfshd, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		log.Warningf("bblfsh service is unavailable. No UAST will be provided to analyzer. Error: %s", err)
+		log.Warningf("bblfshd instance could not be found at %s. No UASTs will be available to analyzers. Error: %s", c.Bblfshd, err)
 		dataService = &noBblfshService{
 			changes: dataService,
 			files:   dataService,
