@@ -16,12 +16,13 @@ before_install:
   - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 90
 
 stages:
+  - name: tests
   - name: release to github
     if: tag IS present
 
 jobs:
   include:
-    - stage: "Tests"
+    - stage: tests
       name: "Unit Tests"
       script: make test-coverage codecov
     - script: make test-sdk
