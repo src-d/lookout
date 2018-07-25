@@ -40,7 +40,7 @@ type ServeCommand struct {
 }
 
 func (c *ServeCommand) Execute(args []string) error {
-	var conf lookout.Config
+	var conf lookout.ServerConfig
 	configData, err := ioutil.ReadFile(c.ConfigFile)
 	if err != nil {
 		return fmt.Errorf("Can't open configuration file: %s", err)

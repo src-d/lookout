@@ -20,8 +20,8 @@ type AnalyzerConfig struct {
 	Settings map[string]interface{}
 }
 
-// Config is a server configuration
-type Config struct {
+// ServerConfig is a server configuration
+type ServerConfig struct {
 	Analyzers []AnalyzerConfig
 }
 
@@ -153,7 +153,7 @@ func (s *Server) getConfig(ctx context.Context, logger log.Logger, e Event) (map
 		return nil, nil
 	}
 
-	var conf Config
+	var conf ServerConfig
 	if err := yaml.Unmarshal(configContent, &conf); err != nil {
 		return nil, fmt.Errorf("Can't parse configuration file: %s", err)
 	}
