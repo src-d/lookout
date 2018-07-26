@@ -196,14 +196,15 @@ func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, conf 
 		}
 
 		wg.Add(1)
-		go func(name string, a AnalyzerClient) {
+		go func(name string, a Analyzer) {
 			defer wg.Done()
 
 			aLogger := logger.With(log.Fields{
 				"analyzer": name,
 			})
 
-			cs, err := send(a, conf[name].Settings)
+			settings := mergeSettings(a.Config.Settings, conf[name].Settings)
+			cs, err := send(a.Client, settings)
 			if err != nil {
 				aLogger.Errorf(err, "analysis failed")
 				return
@@ -214,11 +215,44 @@ func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, conf 
 			}
 
 			comments.Add(cs...)
-		}(name, a.Client)
+		}(name, a)
 	}
 	wg.Wait()
 
 	return comments.Get()
+}
+
+func mergeSettings(global, local map[string]interface{}) map[string]interface{} {
+	if local == nil {
+		return global
+	}
+
+	if global == nil {
+		return local
+	}
+
+	return mergeMaps(global, local)
+}
+
+func mergeMaps(global, local map[string]interface{}) map[string]interface{} {
+	merged := make(map[string]interface{})
+	for k, v := range global {
+		merged[k] = v
+	}
+	for k, v := range local {
+		if subMap, ok := v.(map[string]interface{}); ok {
+			gv, ok := merged[k]
+			if ok {
+				if gvMap, ok := gv.(map[string]interface{}); ok {
+					merged[k] = mergeMaps(gvMap, subMap)
+					continue
+				}
+			}
+		}
+		merged[k] = v
+	}
+
+	return merged
 }
 
 func (s *Server) post(ctx context.Context, logger log.Logger, e Event, comments []*Comment) {
