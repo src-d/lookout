@@ -13,7 +13,7 @@ type VersionCommand struct {
 }
 
 func init() {
-	if _, err := parser.AddCommand("version", "show version information", "",
+	if _, err := app.AddCommand("version", "show version information", "",
 		&VersionCommand{
 			Name:    name,
 			Version: version,

@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	if _, err := parser.AddCommand("review", "provides simple data server and triggers analyzer", "",
+	if _, err := app.AddCommand("review", "provides simple data server and triggers analyzer", "",
 		&ReviewCommand{}); err != nil {
 		panic(err)
 	}

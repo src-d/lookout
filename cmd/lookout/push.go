@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	if _, err := parser.AddCommand("push", "provides simple data server and triggers analyzer", "",
+	if _, err := app.AddCommand("push", "provides simple data server and triggers analyzer", "",
 		&PushCommand{}); err != nil {
 		panic(err)
 	}
