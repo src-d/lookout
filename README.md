@@ -47,6 +47,37 @@ Any of the analyzers or a default dummy one, included in this repository
 1. Create a new pull requires in the repository
 
 
+# Configuration file
+
+Server configuration `config.yml`:
+
+```yml
+analyzers:
+  - name: Example name # required, unique name of the analyzer
+    addr: ipv4://localhost:10302 # required, gRPC address
+    disabled: false # optional, false by default
+    settings: # optional, this field is sent to analyzer "as is"
+        threshold: 0.8
+```
+
+It's possible to override configuration for a repository.
+To do that `.lookout.yml` must be present.
+
+Example:
+```yml
+analyzers:
+  - name: Example name # must be the same as in server configuration, unknown names will be ignored
+    disabled: true # local configuration can only disable analyzer, not enable
+    settings: # settings for an analyzer will be merged with a global one
+        threshold: 0.9
+        mode: confident
+```
+
+Merging rules:
+- Objects are deep merged
+- Arrays are replaced
+- Null value replaces object
+
 # Contribute
 
 [Contributions](https://github.com/src-d/lookout/issues) are more than welcome, if you are interested please take a look to
