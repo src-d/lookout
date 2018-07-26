@@ -5,20 +5,20 @@ import (
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/dummy"
-	"github.com/src-d/lookout/util/flags"
+	"github.com/src-d/lookout/util/cli"
 	"github.com/src-d/lookout/util/grpchelper"
 
 	"google.golang.org/grpc"
-	_ "google.golang.org/grpc/grpclog/glogger"
+	"gopkg.in/src-d/go-log.v1"
 )
 
 var (
 	version = "local_build_1"
-	parser  = flags.NewParser()
+	app     = cli.New("dummy")
 )
 
 type ServeCommand struct {
-	flags.CommonOptions
+	cli.CommonOptions
 	Analyzer   string `long:"analyzer" default:"ipv4://localhost:10302" env:"LOOKOUT_ANALYZER" description:"gRPC URL to bind the analyzer to"`
 	DataServer string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"grPC URL of the data server"`
 }
@@ -53,14 +53,15 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
+	log.Infof("server has started on '%s'", c.Analyzer)
 	return server.Serve(lis)
 }
 
 func main() {
-	if _, err := parser.AddCommand("serve", "", "",
+	if _, err := app.AddCommand("serve", "", "",
 		&ServeCommand{}); err != nil {
 		panic(err)
 	}
 
-	flags.RunMain(parser)
+	app.RunMain()
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/src-d/lookout/provider/json"
 	"github.com/src-d/lookout/service/bblfsh"
 	"github.com/src-d/lookout/service/git"
-	"github.com/src-d/lookout/util/flags"
+	"github.com/src-d/lookout/util/cli"
 	"github.com/src-d/lookout/util/grpchelper"
 
 	"google.golang.org/grpc"
@@ -22,14 +22,14 @@ import (
 )
 
 func init() {
-	if _, err := parser.AddCommand("serve", "run server", "",
+	if _, err := app.AddCommand("serve", "run server", "",
 		&ServeCommand{}); err != nil {
 		panic(err)
 	}
 }
 
 type ServeCommand struct {
-	flags.CommonOptions
+	cli.CommonOptions
 	ConfigFile  string `long:"config" short:"c" default:"config.yml" env:"LOOKOUT_CONFIG_FILE" description:"path to configuration file"`
 	GithubUser  string `long:"github-user" env:"GITHUB_USER" description:"user for the GitHub API"`
 	GithubToken string `long:"github-token" env:"GITHUB_TOKEN" description:"access token for the GitHub API"`
@@ -54,8 +54,6 @@ func (c *ServeCommand) Execute(args []string) error {
 	if err := yaml.Unmarshal([]byte(configData), &conf); err != nil {
 		return fmt.Errorf("Can't parse configuration file: %s", err)
 	}
-
-	setGrpcLogger()
 
 	dataHandler, err := c.initDataHadler()
 	if err != nil {

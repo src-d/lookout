@@ -1,13 +1,6 @@
 package main
 
-import (
-	stdlog "log"
-	"os"
-
-	"github.com/src-d/lookout/util/flags"
-	"google.golang.org/grpc/grpclog"
-	"gopkg.in/src-d/go-log.v1"
-)
+import "github.com/src-d/lookout/util/cli"
 
 var (
 	name    = "lookout"
@@ -15,16 +8,8 @@ var (
 	build   = "undefined"
 )
 
-var parser = flags.NewParser()
-
-func init() {
-	log.DefaultLogger = log.New(log.Fields{"app": name})
-}
+var app = cli.New(name)
 
 func main() {
-	flags.RunMain(parser)
-}
-
-func setGrpcLogger() {
-	grpclog.SetLogger(stdlog.New(os.Stdout, "", stdlog.LstdFlags))
+	app.RunMain()
 }
