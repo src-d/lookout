@@ -16,8 +16,8 @@ type AnalyzerConfig struct {
 	// Addr is gRPC URL.
 	// can be defined only in global config, repository-scoped configuration is ignored
 	Addr string
-	// Enabled repository-scoped configuration can accept only false value, true value is ignored
-	Enabled bool
+	// Disabled repository-scoped configuration can accept only true value, false value is ignored
+	Disabled bool
 	// Settings any configuration for an analyzer
 	Settings map[string]interface{}
 }
@@ -191,7 +191,7 @@ func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, conf 
 
 	var wg sync.WaitGroup
 	for name, a := range s.analyzers {
-		if !a.Config.Enabled {
+		if a.Config.Disabled {
 			continue
 		}
 

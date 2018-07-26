@@ -97,7 +97,9 @@ func TestAnalyzerConfigDisabled(t *testing.T) {
 	analyzers := map[string]Analyzer{
 		"mock": Analyzer{
 			Client: &AnalyzerClientMock{},
-			Config: AnalyzerConfig{},
+			Config: AnalyzerConfig{
+				Disabled: true,
+			},
 		},
 	}
 
@@ -112,8 +114,7 @@ func TestAnalyzerConfigDisabled(t *testing.T) {
 }
 
 var globalConfig = AnalyzerConfig{
-	Name:    "test",
-	Enabled: true,
+	Name: "test",
 	Settings: map[string]interface{}{
 		"key_from_global": 1,
 	},
@@ -153,7 +154,6 @@ func TestMergeConfigWithLocal(t *testing.T) {
 	fileGetter := &FileGetterMockWithConfig{
 		content: `analyzers:
  - name: mock
-   enabled: true
    settings:
      some: value
 `,
@@ -242,9 +242,6 @@ func setupMockedServer() (*WatcherMock, *PosterMock) {
 	analyzers := map[string]Analyzer{
 		"mock": Analyzer{
 			Client: &AnalyzerClientMock{},
-			Config: AnalyzerConfig{
-				Enabled: true,
-			},
 		},
 	}
 
