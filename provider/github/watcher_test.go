@@ -41,21 +41,27 @@ func (s *WatcherTestSuite) SetupTest() {
 }
 
 func (s *WatcherTestSuite) TestWatch() {
-	var calls, events int
-	s.mux.HandleFunc("/repos/mock/test/events", func(w http.ResponseWriter, r *http.Request) {
-		calls++
-		etag := "124567"
-		if r.Header.Get("if-none-match") == etag {
-			w.WriteHeader(http.StatusNotModified)
-			return
-		}
+	var callsA, callsB, events int
 
-		w.Header().Set("etag", etag)
-		fmt.Fprint(w, `[{"id":"1", "type":"PushEvent", "payload":{"push_id": 1}}]`)
-	})
+	handler := func(calls *int) func(w http.ResponseWriter, r *http.Request) {
+		return func(w http.ResponseWriter, r *http.Request) {
+			*calls++
+			etag := "124567"
+			if r.Header.Get("if-none-match") == etag {
+				w.WriteHeader(http.StatusNotModified)
+				return
+			}
+
+			w.Header().Set("etag", etag)
+			fmt.Fprint(w, `[{"id":"1", "type":"PushEvent", "payload":{"push_id": 1}}]`)
+		}
+	}
+
+	s.mux.HandleFunc("/repos/mock/test-a/events", handler(&callsA))
+	s.mux.HandleFunc("/repos/mock/test-b/events", handler(&callsB))
 
 	w, err := NewWatcher(nil, &lookout.WatchOptions{
-		URL: "github.com/mock/test",
+		URLs: []string{"github.com/mock/test-a", "github.com/mock/test-b"},
 	})
 
 	w.c = s.client
@@ -74,8 +80,9 @@ func (s *WatcherTestSuite) TestWatch() {
 		return nil
 	})
 
-	s.True(calls > 1)
-	s.Equal(1, events)
+	s.True(callsA > 1)
+	s.True(callsB > 1)
+	s.Equal(2, events)
 	s.Error(err, "context deadline exceeded")
 }
 
@@ -85,7 +92,7 @@ func (s *WatcherTestSuite) TestWatch_WithError() {
 	})
 
 	w, err := NewWatcher(nil, &lookout.WatchOptions{
-		URL: "github.com/mock/test",
+		URLs: []string{"github.com/mock/test"},
 	})
 
 	w.c = s.client
