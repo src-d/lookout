@@ -33,6 +33,17 @@ jobs:
       osx_image: xcode9.4
       before_install: skip
     - script:
+      - cp config.yml.tpl config.yml
+      - make test-json
+      name: "Lookout serve Integration Tests Linux"
+    - script:
+      - cp config.yml.tpl config.yml
+      - make test-json
+      name: "Lookout serve Integration Tests macOS"
+      os: osx
+      osx_image: xcode9.4
+      before_install: skip
+    - script:
         - make protogen
         - make no-changes-in-commit
         # check that proto files are buildable by python

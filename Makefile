@@ -72,6 +72,31 @@ test-sdk: clean-sdk build-sdk
 	fi; \
 	kill $$PID || true ; \
 
+# Integration test for lookout serve
+.PHONY: test-json
+test-json: build-sdk
+	$(DUMMY_BIN) serve &>/dev/null & \
+	DUMMY_PID=$$!; \
+	cat fixtures/events.jsonl | $(LOOKOUT_BIN) serve --provider json dummy-repo-url > serve.txt 2> serve-err.txt & \
+	LOOKOUT_PID=$$!; \
+	for i in `seq 0 120`; do \
+		sleep 1; \
+		grep '{"file":"provider/common.go","text":"The file has increased in 5 lines."}' serve.txt; \
+		if [ $$? = 0 ] ; then \
+			kill $$LOOKOUT_PID; \
+			kill $$DUMMY_PID; \
+			exit 0; \
+		fi; \
+	done; \
+	echo "timeout reached, inspect serve.txt and serve-err.txt for details"; \
+	echo -e "\nserve.txt:"; \
+	cat serve.txt; \
+	echo -e "\nserve-err.txt:"; \
+	cat serve-err.txt; \
+	kill $$LOOKOUT_PID; \
+	kill $$DUMMY_PID; \
+	exit 1; \
+
 # Build sdk client and dummy analyzer
 .PHONY: build-sdk
 build-sdk: $(DUMMY_BIN) $(LOOKOUT_BIN)
