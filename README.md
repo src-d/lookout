@@ -49,7 +49,7 @@ Any of the analyzers or a default dummy one, included in this repository
 
 # Configuration file
 
-Server configuration `config.yml`:
+Global server configuration is stored in `config.yml`:
 
 ```yml
 analyzers:
@@ -60,8 +60,8 @@ analyzers:
         threshold: 0.8
 ```
 
-It's possible to override configuration for a repository.
-To do that `.lookout.yml` must be present.
+It's possible to override Analyzers configuration for a particular repository.
+To do that `.lookout.yml` must be present in the root of that repository.
 
 Example:
 ```yml
