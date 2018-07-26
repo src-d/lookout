@@ -14,6 +14,8 @@ type Event interface {
 	// Revision returns a commit revision, containing the head and the base of
 	// the changes.
 	Revision() *CommitRevision
+	// Validate returns an error if the event is malformed
+	Validate() error
 }
 
 type EventID = pb.EventID

@@ -3,7 +3,9 @@ package pb
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"reflect"
 
 	"gopkg.in/sourcegraph/go-vcsurl.v1"
 )
@@ -53,6 +55,16 @@ func (e *ReviewEvent) Revision() *CommitRevision {
 	return &e.CommitRevision
 }
 
+// Validate honors the Event interface.
+func (e *ReviewEvent) Validate() error {
+	var zeroVal ReviewEvent
+	if reflect.DeepEqual(*e, zeroVal) {
+		return errors.New("this ReviewEvent event is empty")
+	}
+
+	return nil
+}
+
 // ID honors the Event interface.
 func (e *PushEvent) ID() EventID {
 	return ComputeEventID(e.Provider, e.InternalID)
@@ -66,6 +78,16 @@ func (e *PushEvent) Type() EventType {
 // Revision honors the Event interface.
 func (e *PushEvent) Revision() *CommitRevision {
 	return &e.CommitRevision
+}
+
+// Validate honors the Event interface.
+func (e *PushEvent) Validate() error {
+	var zeroVal PushEvent
+	if reflect.DeepEqual(*e, zeroVal) {
+		return errors.New("this PushEvent event is empty")
+	}
+
+	return nil
 }
 
 type RepositoryInfo = vcsurl.RepoInfo //TODO(mcuadros): improve repository references
