@@ -88,13 +88,13 @@ func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, erro
 	loader := git.NewStorerCommitLoader(c.repo.Storer)
 	dataService = git.NewService(loader)
 
-	c.Bblfshd, err = grpchelper.ToGoGrpcAddress(c.Bblfshd)
+	grpcAddr, err := grpchelper.ToGoGrpcAddress(c.Bblfshd)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Can't resolve bblfsh address '%s': %s", c.Bblfshd, err)
 	}
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	bblfshConn, err := grpchelper.DialContext(timeoutCtx, c.Bblfshd, grpc.WithInsecure(), grpc.WithBlock())
+	bblfshConn, err := grpchelper.DialContext(timeoutCtx, grpcAddr, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Warningf("bblfshd instance could not be found at %s. No UASTs will be available to analyzers. Error: %s", c.Bblfshd, err)
 		dataService = &noBblfshService{
@@ -123,7 +123,7 @@ func (c *EventCommand) bindDataServer(srv *lookout.DataServerHandler, serveResul
 
 	lis, err := grpchelper.Listen(c.DataServer)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Can't start data server at '%s': %s", c.DataServer, err)
 	}
 
 	go func() { serveResult <- grpcSrv.Serve(lis) }()
@@ -134,21 +134,21 @@ func (c *EventCommand) bindDataServer(srv *lookout.DataServerHandler, serveResul
 func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
 	var err error
 
-	c.Args.Analyzer, err = grpchelper.ToGoGrpcAddress(c.Args.Analyzer)
+	grpcAddr, err := grpchelper.ToGoGrpcAddress(c.Args.Analyzer)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Can't resolve address of analyzer '%s': %s", c.Args.Analyzer, err)
 	}
 
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	conn, err := grpchelper.DialContext(
 		timeoutCtx,
-		c.Args.Analyzer,
+		grpcAddr,
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Can't connect to analyzer '%s': %s", grpcAddr, err)
 	}
 
 	return lookout.NewAnalyzerClient(conn), nil
