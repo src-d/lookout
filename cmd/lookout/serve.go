@@ -66,8 +66,11 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
-	analyzers := make(map[string]lookout.Analyzer, len(conf.Analyzers))
+	analyzers := make(map[string]lookout.Analyzer)
 	for _, aConf := range conf.Analyzers {
+		if !aConf.Enabled {
+			continue
+		}
 		client, err := c.startAnalyzer(aConf)
 		if err != nil {
 			return err

@@ -10,38 +10,40 @@ import (
 	log "gopkg.in/src-d/go-log.v1"
 )
 
+var correctReviewEvent = ReviewEvent{
+	Provider:    "Mock",
+	InternalID:  "internal-id",
+	IsMergeable: true,
+	Source: ReferencePointer{
+		InternalRepositoryURL: "file:///test",
+		ReferenceName:         "feature",
+		Hash:                  "source-hash",
+	},
+	Merge: ReferencePointer{
+		InternalRepositoryURL: "file:///test",
+		ReferenceName:         "merge-branch",
+		Hash:                  "merge-hash",
+	},
+	CommitRevision: CommitRevision{
+		Base: ReferencePointer{
+			InternalRepositoryURL: "file:///test",
+			ReferenceName:         "master",
+			Hash:                  "base-hash",
+		},
+		Head: ReferencePointer{
+			InternalRepositoryURL: "file:///test",
+			ReferenceName:         "master",
+			Hash:                  "head-hash",
+		},
+	},
+}
+
 func TestServerReview(t *testing.T) {
 	require := require.New(t)
 
 	watcher, poster := setupMockedServer()
 
-	reviewEvent := &ReviewEvent{
-		Provider:    "Mock",
-		InternalID:  "internal-id",
-		IsMergeable: true,
-		Source: ReferencePointer{
-			InternalRepositoryURL: "file:///test",
-			ReferenceName:         "feature",
-			Hash:                  "source-hash",
-		},
-		Merge: ReferencePointer{
-			InternalRepositoryURL: "file:///test",
-			ReferenceName:         "merge-branch",
-			Hash:                  "merge-hash",
-		},
-		CommitRevision: CommitRevision{
-			Base: ReferencePointer{
-				InternalRepositoryURL: "file:///test",
-				ReferenceName:         "master",
-				Hash:                  "base-hash",
-			},
-			Head: ReferencePointer{
-				InternalRepositoryURL: "file:///test",
-				ReferenceName:         "master",
-				Hash:                  "head-hash",
-			},
-		},
-	}
+	reviewEvent := &correctReviewEvent
 
 	err := watcher.Send(reviewEvent)
 	require.Nil(err)
@@ -81,7 +83,9 @@ func TestServerPush(t *testing.T) {
 	require.Equal(makeComment(pushEvent.CommitRevision.Base, pushEvent.CommitRevision.Head), comments[0])
 }
 
-func setupMockedServer() (*WatcherMock, *PosterMock) {
+func TestAnalyzerConfigDisabled(t *testing.T) {
+	require := require.New(t)
+
 	log.DefaultLogger = log.New(log.Fields{"app": "lookout"})
 
 	watcher := &WatcherMock{}
@@ -91,6 +95,31 @@ func setupMockedServer() (*WatcherMock, *PosterMock) {
 		"mock": Analyzer{
 			Client: &AnalyzerClientMock{},
 			Config: AnalyzerConfig{},
+		},
+	}
+
+	srv := NewServer(watcher, poster, fileGetter, analyzers)
+	srv.Run(context.TODO())
+
+	err := watcher.Send(&correctReviewEvent)
+	require.Nil(err)
+
+	comments := poster.PopComments()
+	require.Len(comments, 0)
+}
+
+func setupMockedServer() (*WatcherMock, *PosterMock) {
+	log.DefaultLogger = log.New(log.Fields{"app": "lookout"})
+
+	watcher := &WatcherMock{}
+	poster := &PosterMock{}
+	fileGetter := &FileGetterMock{}
+	analyzers := map[string]Analyzer{
+		"mock": Analyzer{
+			Client: &AnalyzerClientMock{},
+			Config: AnalyzerConfig{
+				Enabled: true,
+			},
 		},
 	}
 
