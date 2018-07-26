@@ -11,8 +11,9 @@ import (
 )
 
 type Analyzer struct {
-	Version    string
-	DataClient *lookout.DataClient
+	Version     string
+	DataClient  *lookout.DataClient
+	RequestUAST bool
 }
 
 var _ lookout.AnalyzerServer = &Analyzer{}
@@ -24,6 +25,7 @@ func (a *Analyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent
 		Base:         &e.CommitRevision.Base,
 		Head:         &e.CommitRevision.Head,
 		WantContents: true,
+		WantUAST:     a.RequestUAST,
 	})
 	if err != nil {
 		return nil, err
@@ -34,6 +36,9 @@ func (a *Analyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent
 		change := changes.Change()
 		resp.Comments = append(resp.Comments, a.lineIncrease(change)...)
 		resp.Comments = append(resp.Comments, a.maxLineWidth(change)...)
+		if a.RequestUAST {
+			resp.Comments = append(resp.Comments, a.noUAST(change)...)
+		}
 	}
 
 	if err := changes.Err(); err != nil {
@@ -92,6 +97,22 @@ func (a *Analyzer) maxLineWidth(ch *lookout.Change) []*lookout.Comment {
 	}
 
 	return comments
+}
+
+func (a *Analyzer) noUAST(ch *lookout.Change) []*lookout.Comment {
+	if ch.Head == nil {
+		return nil
+	}
+
+	if ch.Head.UAST == nil {
+		return []*lookout.Comment{{
+			File: ch.Head.Path,
+			Line: 0,
+			Text: fmt.Sprintf("The file doesn't have UAST."),
+		}}
+	}
+
+	return nil
 }
 
 func (a *Analyzer) isBinary(f *lookout.File) bool {

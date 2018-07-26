@@ -19,8 +19,9 @@ var (
 
 type ServeCommand struct {
 	cli.CommonOptions
-	Analyzer   string `long:"analyzer" default:"ipv4://localhost:10302" env:"LOOKOUT_ANALYZER" description:"gRPC URL to bind the analyzer to"`
-	DataServer string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"grPC URL of the data server"`
+	Analyzer    string `long:"analyzer" default:"ipv4://localhost:10302" env:"LOOKOUT_ANALYZER" description:"gRPC URL to bind the analyzer to"`
+	DataServer  string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL of the data server"`
+	RequestUAST bool   `long:"uast" env:"LOOKOUT_REQUEST_UAST" description:"analyzer will request UAST from the data server"`
 }
 
 func (c *ServeCommand) Execute(args []string) error {
@@ -41,8 +42,9 @@ func (c *ServeCommand) Execute(args []string) error {
 	}
 
 	a := &dummy.Analyzer{
-		Version:    version,
-		DataClient: lookout.NewDataClient(conn),
+		Version:     version,
+		DataClient:  lookout.NewDataClient(conn),
+		RequestUAST: c.RequestUAST,
 	}
 
 	server := grpchelper.NewServer()
