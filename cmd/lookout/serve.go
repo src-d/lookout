@@ -37,7 +37,7 @@ type ServeCommand struct {
 	Bblfshd     string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
 	DryRun      bool   `long:"dry-run" env:"LOOKOUT_DRY_RUN" description:"analyze repositories and log the result without posting code reviews to GitHub"`
 	Library     string `long:"library" default:"/tmp/lookout" env:"LOOKOUT_LIBRARY" description:"path to the lookout library"`
-	Provider    string `long:"provider" default:"github" env:"LOOKOUT_PROVIDER" description:"provider name: github, console"`
+	Provider    string `long:"provider" default:"github" env:"LOOKOUT_PROVIDER" description:"provider name: github, json"`
 	Positional  struct {
 		Repository string `positional-arg-name:"repository"`
 	} `positional-args:"yes" required:"yes"`
@@ -139,10 +139,16 @@ func (c *ServeCommand) startAnalyzer(conf lookout.AnalyzerConfig) (lookout.Analy
 		return nil, err
 	}
 
-	conn, err := grpchelper.DialContext(context.Background(), addr, grpc.WithInsecure(), grpc.WithBlock())
+	ctx := context.Background()
+	conn, err := grpchelper.DialContext(ctx, addr, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
+
+	go grpchelper.LogConnStatusChanges(ctx, log.With(log.Fields{
+		"analyzer": conf.Name,
+		"addr":     conf.Addr,
+	}), conn)
 
 	return lookout.NewAnalyzerClient(conn), nil
 }

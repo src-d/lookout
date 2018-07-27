@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc/grpclog"
 	"gopkg.in/src-d/go-log.v1"
 )
 
@@ -18,6 +16,10 @@ type LogOptions struct {
 
 // Init initializes the default logger factory.
 func (c *LogOptions) init(app *App) error {
+	if c.Verbose {
+		c.LogLevel = "debug"
+	}
+
 	log.DefaultFactory = &log.LoggerFactory{
 		Level:       c.LogLevel,
 		Format:      c.LogFormat,
@@ -28,21 +30,5 @@ func (c *LogOptions) init(app *App) error {
 
 	log.DefaultLogger = log.New(log.Fields{"app": app.Name})
 
-	// copy current behavior, verbose flag doesn't change level but enables grpc logging
-	if c.Verbose {
-		grpclog.SetLoggerV2(GrpcLogrus{logrus.StandardLogger()})
-	}
 	return nil
-}
-
-// GrpcLogrus implements grpclog.LoggerV2 interface using logrus logger
-type GrpcLogrus struct {
-	*logrus.Logger
-}
-
-// V reports whether verbosity level l is at least the requested verbose level.
-func (lw GrpcLogrus) V(l int) bool {
-	// logrus & grpc levels are inverted
-	logrusLevel := 4 - l
-	return int(lw.Logger.Level) <= logrusLevel
 }

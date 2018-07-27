@@ -147,7 +147,7 @@ func (s *Server) getConfig(ctx context.Context, logger log.Logger, e Event) (map
 		WantContents:   true,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Can't get .lookout.yml in revision %s: %s", rev.Head, err)
 	}
 	var configContent []byte
 	if scanner.Next() {

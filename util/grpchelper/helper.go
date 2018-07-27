@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	log "gopkg.in/src-d/go-log.v1"
 )
 
@@ -100,4 +101,22 @@ func DialContext(ctx context.Context, target string, opts ...grpc.DialOption) (*
 	))
 
 	return grpc.DialContext(ctx, target, opts...)
+}
+
+// LogConnStatusChanges logs gRPC connection status changes
+func LogConnStatusChanges(ctx context.Context, l log.Logger, conn *grpc.ClientConn) {
+	state := conn.GetState()
+	for {
+		if conn.WaitForStateChange(ctx, state) {
+			state = conn.GetState()
+			if state == connectivity.TransientFailure {
+				l.Warningf("connection failed")
+			} else {
+				l.Infof("connection state changed to '%s'", state)
+			}
+		} else {
+			// ctx expired / canceled, stop listing
+			return
+		}
+	}
 }
