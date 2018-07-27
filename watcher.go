@@ -25,5 +25,5 @@ type EventHandler func(Event) error
 
 // WatchOptions options to use in the Watcher constructors.
 type WatchOptions struct {
-	URL string
+	URLs []string
 }

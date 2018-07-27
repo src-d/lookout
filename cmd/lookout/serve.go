@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/provider/github"
@@ -119,7 +120,7 @@ func (c *ServeCommand) initWatcher() (lookout.Watcher, error) {
 		}
 
 		watcher, err := github.NewWatcher(t, &lookout.WatchOptions{
-			URL: c.Positional.Repository,
+			URLs: strings.Split(c.Positional.Repository, ","),
 		})
 		if err != nil {
 			return nil, err

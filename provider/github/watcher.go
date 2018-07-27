@@ -29,7 +29,7 @@ var (
 )
 
 type Watcher struct {
-	r *lookout.RepositoryInfo
+	r []*lookout.RepositoryInfo
 	o *lookout.WatchOptions
 	c *github.Client
 
@@ -41,9 +41,15 @@ type Watcher struct {
 
 // NewWatcher returns a new
 func NewWatcher(transport http.RoundTripper, o *lookout.WatchOptions) (*Watcher, error) {
-	r, err := vcsurl.Parse(o.URL)
-	if err != nil {
-		return nil, err
+	repos := make([]*lookout.RepositoryInfo, len(o.URLs))
+
+	for i, url := range o.URLs {
+		repo, err := vcsurl.Parse(url)
+		if err != nil {
+			return nil, err
+		}
+
+		repos[i] = repo
 	}
 
 	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
@@ -53,7 +59,7 @@ func NewWatcher(transport http.RoundTripper, o *lookout.WatchOptions) (*Watcher,
 	t.Transport = transport
 
 	return &Watcher{
-		r: r,
+		r: repos,
 		o: o,
 		c: github.NewClient(&http.Client{
 			Transport: t,
@@ -65,15 +71,20 @@ func NewWatcher(transport http.RoundTripper, o *lookout.WatchOptions) (*Watcher,
 
 // Watch start to make request to the GitHub API and return the new events.
 func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
-	log.With(log.Fields{"url": w.o.URL}).Infof("Starting watcher")
+	log.With(log.Fields{"urls": w.o.URLs}).Infof("Starting watcher")
+
+	repoIndex := 0
 
 	for {
-		resp, events, err := w.doEventRequest(ctx, w.r.Username, w.r.Name)
+		repo := w.r[repoIndex]
+		repoIndex = (repoIndex + 1) % len(w.r)
+
+		resp, events, err := w.doEventRequest(ctx, repo.Username, repo.Name)
 		if err != nil && !NoErrNotModified.Is(err) {
 			return err
 		}
 
-		if err := w.handleEvents(cb, resp, events); err != nil {
+		if err := w.handleEvents(cb, repo, resp, events); err != nil {
 			if lookout.NoErrStopWatcher.Is(err) {
 				return nil
 			}
@@ -90,13 +101,15 @@ func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
 	}
 }
 
-func (w *Watcher) handleEvents(cb lookout.EventHandler, resp *github.Response, events []*github.Event) error {
+func (w *Watcher) handleEvents(cb lookout.EventHandler, r *lookout.RepositoryInfo,
+	resp *github.Response, events []*github.Event) error {
+
 	if len(events) == 0 {
 		return nil
 	}
 
 	for _, e := range events {
-		event, err := w.handleEvent(e)
+		event, err := w.handleEvent(r, e)
 		if err != nil {
 			log.Errorf(err, "error handling event")
 			continue
@@ -115,8 +128,8 @@ func (w *Watcher) handleEvents(cb lookout.EventHandler, resp *github.Response, e
 	return w.cache.Validate(resp.Request.URL.String())
 }
 
-func (w *Watcher) handleEvent(e *github.Event) (lookout.Event, error) {
-	return castEvent(w.r, e)
+func (w *Watcher) handleEvent(r *lookout.RepositoryInfo, e *github.Event) (lookout.Event, error) {
+	return castEvent(r, e)
 }
 
 func (w *Watcher) doEventRequest(ctx context.Context, username, repository string) (
@@ -145,7 +158,7 @@ func (w *Watcher) doEventRequest(ctx context.Context, username, repository strin
 		"reset-at":           resp.Rate.Reset,
 		"poll-interval":      w.pollInterval,
 		"events":             len(events),
-	}).Debugf("Requested to events endpoint done.")
+	}).Debugf("Request to events endpoint done.")
 
 	return resp, events, err
 }
