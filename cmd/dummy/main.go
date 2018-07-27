@@ -7,7 +7,6 @@ import (
 	"github.com/src-d/lookout/dummy"
 	"github.com/src-d/lookout/util/cli"
 	"github.com/src-d/lookout/util/grpchelper"
-
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-log.v1"
 )
