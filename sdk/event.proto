@@ -36,9 +36,9 @@ message ReferencePointer {
     // InternalRepositoryURL is the origina; clone URL not canonized.
     string internal_repository_url = 1 [(gogoproto.customname) = "InternalRepositoryURL"];
     // ReferenceName is the name of the reference pointing.
-    string ReferenceName = 2 [(gogoproto.casttype) = "gopkg.in/src-d/go-git.v4/plumbing.ReferenceName"];
+    string reference_name = 2 [(gogoproto.casttype) = "gopkg.in/src-d/go-git.v4/plumbing.ReferenceName"];
     // Hash is the hash of the reference pointing.
-    string Hash = 3;
+    string hash = 3;
 }
 
 // PushEvent represents a Push to a git repository.
