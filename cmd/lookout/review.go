@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"time"
+
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/src-d/lookout"
 	log "gopkg.in/src-d/go-log.v1"
@@ -51,6 +54,9 @@ func (c *ReviewCommand) Execute(args []string) error {
 	})
 
 	err = srv.HandleReview(context.TODO(), &lookout.ReviewEvent{
+		InternalID:  uuid.NewV4().String(),
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 		IsMergeable: true,
 		Source:      *toRef,
 		Merge:       *toRef,

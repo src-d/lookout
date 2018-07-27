@@ -55,14 +55,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:e2b86e41f3d669fc36b50d31d32d22c8ac656c75aa5ea89717ce7177e134ff2a"
-  name = "github.com/golang/glog"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
-
-[[projects]]
   digest = "1:713cc7628304d027a7e9edcb52da888a8912d6405250a8d9c8eff6f41dd54398"
   name = "github.com/golang/protobuf"
   packages = [
@@ -214,6 +206,14 @@
   pruneopts = "NUT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:6bc0652ea6e39e22ccd522458b8bdd8665bf23bdc5a20eec90056e4dc7e273ca"
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:d917313f309bda80d27274d53985bc65651f81a5b66b820749ac7f8ef061fd04"
@@ -382,7 +382,7 @@
   revision = "80063a038e333bbe006c878e4c5ce4c74d055498"
 
 [[projects]]
-  digest = "1:6c21ac09a7af1b03ffaa5fbed4f9546c65be265df1a7dc4f2acc8e3caad2f363"
+  digest = "1:f778941d5c2e46da5e0f5d553d3e80bf70eb40d2e80bb4c649b625b9133f3d5f"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -395,7 +395,6 @@
     "encoding",
     "encoding/proto",
     "grpclog",
-    "grpclog/glogger",
     "internal",
     "internal/backoff",
     "internal/channelz",
@@ -579,13 +578,14 @@
     "github.com/gregjones/httpcache",
     "github.com/gregjones/httpcache/diskcache",
     "github.com/jessevdk/go-flags",
+    "github.com/satori/go.uuid",
+    "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
     "golang.org/x/net/context",
     "google.golang.org/grpc",
     "google.golang.org/grpc/grpclog",
-    "google.golang.org/grpc/grpclog/glogger",
     "gopkg.in/bblfsh/sdk.v1/protocol",
     "gopkg.in/bblfsh/sdk.v1/uast",
     "gopkg.in/sourcegraph/go-vcsurl.v1",

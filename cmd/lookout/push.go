@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"time"
 
+	uuid "github.com/satori/go.uuid"
 	"github.com/src-d/lookout"
 	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -66,7 +68,9 @@ func (c *PushCommand) Execute(args []string) error {
 	}
 
 	err = srv.HandlePush(context.TODO(), &lookout.PushEvent{
-		Commits: commits,
+		InternalID: uuid.NewV4().String(),
+		CreatedAt:  time.Now(),
+		Commits:    commits,
 		CommitRevision: lookout.CommitRevision{
 			Base: *fromRef,
 			Head: *toRef,
