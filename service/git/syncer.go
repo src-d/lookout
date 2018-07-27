@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/src-d/lookout"
 
@@ -12,17 +13,20 @@ import (
 
 // Syncer syncs the local copy of git repository for a given CommitRevision.
 type Syncer struct {
+	sync.Mutex
 	l *Library
 }
 
 // NewSyncer returns a Syncer for the given Library.
 func NewSyncer(l *Library) *Syncer {
-	return &Syncer{l}
+	return &Syncer{l: l}
 }
 
 // Sync syncs the local git repository to the given reference pointers.
 func (s *Syncer) Sync(ctx context.Context,
 	rps ...lookout.ReferencePointer) error {
+	s.Lock()
+	defer s.Unlock()
 
 	if len(rps) == 0 {
 		return fmt.Errorf("at least one reference pointer is required")

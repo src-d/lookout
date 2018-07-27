@@ -3,6 +3,7 @@ package git
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/src-d/lookout"
 
@@ -21,6 +22,7 @@ var (
 
 // Library controls the persistence of multiple git repositories.
 type Library struct {
+	m  sync.Mutex
 	fs billy.Filesystem
 }
 
@@ -47,6 +49,13 @@ func (l *Library) GetOrInit(url *lookout.RepositoryInfo) (
 
 // Init inits a new repository for the given URL.
 func (l *Library) Init(url *lookout.RepositoryInfo) (*git.Repository, error) {
+	l.m.Lock()
+	defer l.m.Unlock()
+
+	return l.init(url)
+}
+
+func (l *Library) init(url *lookout.RepositoryInfo) (*git.Repository, error) {
 	has, err := l.Has(url)
 	if err != nil {
 		return nil, err
@@ -94,6 +103,17 @@ func (l *Library) Has(url *lookout.RepositoryInfo) (bool, error) {
 
 // Get get the requested repository based on the given URL.
 func (l *Library) Get(url *lookout.RepositoryInfo) (*git.Repository, error) {
+	r, err := l.get(url)
+
+	// it can happen if the repository in a broken state
+	if err == git.ErrRepositoryNotExists {
+		return l.recreate(url)
+	}
+
+	return r, nil
+}
+
+func (l *Library) get(url *lookout.RepositoryInfo) (*git.Repository, error) {
 	has, err := l.Has(url)
 	if err != nil {
 		return nil, err
@@ -123,4 +143,21 @@ func (l *Library) repositoryStorer(url *lookout.RepositoryInfo) (
 
 func (l *Library) repositoryPath(url *lookout.RepositoryInfo) string {
 	return fmt.Sprintf("%s/%s", url.RepoHost, url.FullName)
+}
+
+func (l *Library) recreate(url *lookout.RepositoryInfo) (*git.Repository, error) {
+	l.m.Lock()
+	defer l.m.Unlock()
+
+	// in case it was recreated already by another goroutine
+	r, err := l.get(url)
+	if err != git.ErrRepositoryNotExists {
+		return r, err
+	}
+
+	if err := l.fs.Remove(l.repositoryPath(url)); err != nil {
+		return nil, err
+	}
+
+	return l.init(url)
 }
