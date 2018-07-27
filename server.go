@@ -84,7 +84,8 @@ func (s *Server) HandleReview(ctx context.Context, e *ReviewEvent) error {
 
 	conf, err := s.getConfig(ctx, logger, e)
 	if err != nil {
-		return err
+		logger.Errorf(err, "processing pull request failed")
+		return nil
 	}
 
 	send := func(a AnalyzerClient, settings map[string]interface{}) ([]*Comment, error) {
