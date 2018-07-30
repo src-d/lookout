@@ -296,6 +296,10 @@ func NewChangeBlobScanner(scanner lookout.ChangeScanner, base, head *object.Tree
 }
 
 func filterVendor(f *lookout.File) (bool, error) {
+	if f == nil {
+		return false, nil
+	}
+
 	return enry.IsVendor(f.Path), nil
 }
 
