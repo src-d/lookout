@@ -61,6 +61,32 @@ func (s *ServiceSuite) TestTreeChanges() {
 	require.NotNil(resp)
 }
 
+func (s *ServiceSuite) TestTreeChangesDeleteFile() {
+	require := s.Require()
+
+	fixture := fixtures.ByURL("https://github.com/src-d/go-git.git").One()
+	fs := fixture.DotGit()
+	sto, err := filesystem.NewStorage(fs)
+	require.NoError(err)
+
+	dr := NewService(&StorerCommitLoader{sto})
+	resp, err := dr.GetChanges(context.TODO(), &lookout.ChangesRequest{
+		Base: &lookout.ReferencePointer{
+			InternalRepositoryURL: "file:///myrepo",
+			Hash: "2275fa7d0c75d20103f90b0e1616937d5a9fc5e6",
+		},
+		Head: &lookout.ReferencePointer{
+			InternalRepositoryURL: "file:///myrepo",
+			Hash: "e1d8866ffa78fa16d2f39b0ba5344a7269ee5371",
+		},
+		WantContents:    true,
+		ExcludeVendored: true,
+	})
+
+	require.NoError(err)
+	require.NotNil(resp)
+}
+
 func (s *ServiceSuite) TestTreeFiles() {
 	require := s.Require()
 
