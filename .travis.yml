@@ -1,5 +1,9 @@
 language: go
 
+sudo: required
+services:
+  - docker
+
 addons:
   apt:
     sources:
@@ -25,9 +29,13 @@ jobs:
     - stage: tests
       name: "Unit Tests"
       script: make test-coverage codecov
-    - script: make test-sdk
+    - script:
+        - docker run -d --privileged -v $HOME/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd
+        - make test-sdk
       name: "SDK Integration Tests Linux"
-    - script: make test-sdk
+    - script: 
+        - docker run -d --privileged -v $HOME/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd
+        - make test-sdk
       name: "SDK Integration Tests macOS"
       os: osx
       osx_image: xcode9.4
@@ -72,7 +80,12 @@ jobs:
       script: PKG_OS="darwin" make packages-sdk
       deploy: *deploy_anchor
 
+before_cache:
+  # make bblfsh images readable
+  - sudo chmod -R 777 $HOME/bblfshd/images
+
 cache:
   directories:
     - $HOME/protoc
     - $HOME/.cache/pip/wheels
+    - $HOME/bblfshd/images
