@@ -30,7 +30,8 @@ jobs:
       name: "Unit Tests"
       script: make test-coverage codecov
     - script:
-        - docker run -d --privileged -v $HOME/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd
+        - docker run -d --name bblfshd --privileged -v $HOME/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd
+        - docker exec -it bblfshd bblfshctl driver install go bblfsh/go-driver:v2.0.3
         - make test-sdk
       name: "SDK Integration Tests Linux"
     - script:
