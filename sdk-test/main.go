@@ -33,12 +33,12 @@ func main() {
 
 	fmt.Print("testing review...")
 	out := runCli(ctx, "review", "ipv4://localhost:10302")
-	grepFailedExit(out.String(), "posting analysis")
+	grepFailedExit(out.String(), "posting analysis", 1)
 	fmt.Println("OK!")
 
 	fmt.Print("testing push...")
 	out = runCli(ctx, "push", "ipv4://localhost:10302")
-	grepFailedExit(out.String(), "dummy comment for push event")
+	grepFailedExit(out.String(), "dummy comment for push event", 1)
 	fmt.Println("OK!")
 
 	// next tests require analyzier started with UAST, restart analyzer
@@ -49,14 +49,14 @@ func main() {
 
 	fmt.Print("should return error without bblfsh...")
 	out = runCli(ctx, "review", "ipv4://localhost:10302", "--bblfshd=ipv4://localhost:0000")
-	grepFailedExit(out.String(), "WantUAST isn't allowed")
+	grepFailedExit(out.String(), "WantUAST isn't allowed", 1)
 	fmt.Println("OK!")
 
 	fmt.Print("should notify about lack of uast...")
 	out = runCli(ctx, "review", "ipv4://localhost:10302",
 		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
 		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
-	grepFailedExit(out.String(), "The file doesn't have UAST")
+	grepFailedExit(out.String(), "The file doesn't have UAST", 1)
 	fmt.Println("OK!")
 
 	stop()
@@ -120,8 +120,8 @@ func handleErr(err error, desc string, out bytes.Buffer) {
 	failExit()
 }
 
-func grepFailedExit(content, msg string) {
-	if !strings.Contains(content, msg) {
+func grepFailedExit(content, msg string, times int) {
+	if strings.Count(content, msg) != times {
 		fmt.Printf("'%s' not found in:\n%s", msg, content)
 		fmt.Printf("analyzer output\n %s", analyzerOut.String())
 		failExit()
