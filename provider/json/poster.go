@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/src-d/lookout"
+	"gopkg.in/src-d/go-log.v1"
 )
 
 // Poster prints json comments to stdout
@@ -34,5 +35,13 @@ func (p *Poster) Post(ctx context.Context, e lookout.Event,
 		}
 	}
 
+	return nil
+}
+
+// Status prints the new status to the log
+func (p *Poster) Status(ctx context.Context, e lookout.Event,
+	status lookout.AnalysisStatus) error {
+
+	log.With(log.Fields{"status": status}).Infof("New status")
 	return nil
 }

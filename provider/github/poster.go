@@ -20,10 +20,16 @@ var (
 	ErrEventNotSupported = errors.NewKind("event not supported")
 )
 
+const (
+	statusTargetURL = "https://github.com/src-d/lookout"
+	statusContext   = "lookout"
+)
+
 // Poster posts comments as Pull Request Reviews.
 type Poster struct {
 	rc ReviewCreator
 	cc CommitsComparator
+	sc StatusCreator
 }
 
 var _ lookout.Poster = &Poster{}
@@ -38,6 +44,7 @@ func NewPoster(t http.RoundTripper) *Poster {
 	return &Poster{
 		rc: ghClient.PullRequests,
 		cc: ghClient.Repositories,
+		sc: ghClient.Repositories,
 	}
 }
 
@@ -191,4 +198,69 @@ func createReviewRequest(
 	req.Body = &body
 
 	return req, nil
+}
+
+// Status sets the Pull Request global status, visible from the GitHub UI
+func (p *Poster) Status(ctx context.Context, e lookout.Event, status lookout.AnalysisStatus) error {
+	switch ev := e.(type) {
+	case *lookout.ReviewEvent:
+		if ev.Provider != Provider {
+			return ErrEventNotSupported.Wrap(
+				fmt.Errorf("unsupported provider: %s", ev.Provider))
+		}
+
+		return p.statusPR(ctx, ev, status)
+	default:
+		return ErrEventNotSupported.Wrap(fmt.Errorf("unsupported event type"))
+	}
+}
+
+// StatusCreator creates statuses on GitHub. *github.RepositoriesService
+// fulfills this interface.
+type StatusCreator interface {
+	// CreateStatus creates a new status for a repository at the specified
+	// reference. Ref can be a SHA, a branch name, or a tag name.
+	CreateStatus(ctx context.Context, owner, repo, ref string, status *github.RepoStatus) (
+		*github.RepoStatus, *github.Response, error)
+}
+
+var _ StatusCreator = &github.RepositoriesService{}
+
+func statusStrings(s lookout.AnalysisStatus) (string, string, error) {
+	switch s {
+	case lookout.ErrorAnalysisStatus:
+		return "error", "There was an error during the analysis", nil
+	case lookout.FailureAnalysisStatus:
+		return "failure", "The analysis result was negative", nil
+	case lookout.PendingAnalysisStatus:
+		return "pending", "The analysis is in progress", nil
+	case lookout.SuccessAnalysisStatus:
+		return "success", "The analysis was performed", nil
+	default:
+		return "", "", fmt.Errorf("unsupported AnalysisStatus %s", s)
+	}
+}
+
+func (p *Poster) statusPR(ctx context.Context, e *lookout.ReviewEvent, status lookout.AnalysisStatus) error {
+	owner, repo, _, err := p.validatePR(e)
+	if err != nil {
+		return err
+	}
+
+	statusStr, description, err := statusStrings(status)
+	if err != nil {
+		return err
+	}
+	targetURL := statusTargetURL
+	context := statusContext
+
+	repoStatus := &github.RepoStatus{
+		State:       &statusStr,
+		TargetURL:   &targetURL,
+		Description: &description,
+		Context:     &context,
+	}
+
+	_, _, err = p.sc.CreateStatus(ctx, owner, repo, e.CommitRevision.Head.Hash, repoStatus)
+	return err
 }
