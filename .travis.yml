@@ -33,13 +33,6 @@ jobs:
         - docker run -d --privileged -v $HOME/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd
         - make test-sdk
       name: "SDK Integration Tests Linux"
-    - script: 
-        - docker run -d --privileged -v $HOME/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd
-        - make test-sdk
-      name: "SDK Integration Tests macOS"
-      os: osx
-      osx_image: xcode9.4
-      before_install: skip
     - script:
       - cp config.yml.tpl config.yml
       - make test-json
