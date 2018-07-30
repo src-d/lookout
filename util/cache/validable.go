@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"sync"
+
 	"github.com/gregjones/httpcache"
 	"gopkg.in/src-d/go-errors.v1"
 )
@@ -12,31 +14,35 @@ var ErrNotFoundKey = errors.NewKind("Unable to find the given key, %s")
 type ValidableCache struct {
 	httpcache.Cache
 
-	temporary struct {
-		key     string
-		content []byte // TODO(mcuadros): optimize memory usage
-	}
+	// use regular mutex instead of sync.Map
+	// because our case is different from what sync.Map is optimized for
+	m     sync.Mutex
+	inMem map[string][]byte // TODO(mcuadros): optimize memory usage
 }
 
 // NewValidableCache returns a new ValidableCache based on the given cache.
 func NewValidableCache(cache httpcache.Cache) *ValidableCache {
-	return &ValidableCache{Cache: cache}
+	return &ValidableCache{Cache: cache, inMem: make(map[string][]byte)}
 }
 
 // Set stores the []byte representation of a response against a key. This
 // data is stored in a temporal space, if isn't validate before `Set` is called
 // again, the information get lost.
 func (c *ValidableCache) Set(key string, responseBytes []byte) {
-	c.temporary.key = key
-	c.temporary.content = responseBytes
+	c.m.Lock()
+	defer c.m.Unlock()
+
+	c.inMem[key] = responseBytes
 }
 
 // Validate validates the given key as a valid cache entry,
 func (c *ValidableCache) Validate(key string) error {
-	if c.temporary.key != key {
+	content, ok := c.inMem[key]
+	if !ok {
 		return ErrNotFoundKey.New(key)
 	}
 
-	c.Cache.Set(key, c.temporary.content)
+	c.Cache.Set(key, content)
+
 	return nil
 }

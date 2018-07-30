@@ -19,6 +19,9 @@ import (
 
 const Provider = "github"
 
+// don't call github more often than
+var minInterval = time.Second
+
 var (
 	NoErrNotModified       = errors.NewKind("Not modified")
 	ErrParsingEventPayload = errors.NewKind("Parse error in event")
@@ -35,8 +38,10 @@ type Watcher struct {
 
 	cache *cache.ValidableCache
 
-	// delay is time in seconds to wait between requests
-	pollInterval time.Duration
+	// delay for pull requests
+	prPullInterval time.Duration
+	// delay is time in seconds to wait between requests for events
+	eventsPollInterval time.Duration
 }
 
 // NewWatcher returns a new
@@ -65,6 +70,9 @@ func NewWatcher(transport http.RoundTripper, o *lookout.WatchOptions) (*Watcher,
 			Transport: t,
 		}),
 
+		prPullInterval:     minInterval,
+		eventsPollInterval: minInterval,
+
 		cache: cache,
 	}, nil
 }
@@ -73,32 +81,92 @@ func NewWatcher(transport http.RoundTripper, o *lookout.WatchOptions) (*Watcher,
 func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
 	log.With(log.Fields{"urls": w.o.URLs}).Infof("Starting watcher")
 
-	repoIndex := 0
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
+	errCh := make(chan error)
+
+	for _, repo := range w.r {
+		go w.watchPrs(ctx, repo, cb, errCh)
+		go w.watchEvents(ctx, repo, cb, errCh)
+	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-errCh:
+		return err
+	}
+}
+
+func (w *Watcher) watchPrs(ctx context.Context, repo *lookout.RepositoryInfo, cb lookout.EventHandler, errCh chan error) {
 	for {
-		repo := w.r[repoIndex]
-		repoIndex = (repoIndex + 1) % len(w.r)
+		resp, prs, err := w.doPRListRequest(ctx, repo.Username, repo.Name)
+		if err != nil && !NoErrNotModified.Is(err) {
+			errCh <- err
+			return
+		}
 
+		if err := w.handlePrs(cb, repo, resp, prs); err != nil {
+			if lookout.NoErrStopWatcher.Is(err) {
+				return
+			}
+
+			errCh <- err
+			return
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(w.prPullInterval):
+			continue
+		}
+	}
+}
+
+func (w *Watcher) watchEvents(ctx context.Context, repo *lookout.RepositoryInfo, cb lookout.EventHandler, errCh chan error) {
+	for {
 		resp, events, err := w.doEventRequest(ctx, repo.Username, repo.Name)
 		if err != nil && !NoErrNotModified.Is(err) {
-			return err
+			errCh <- err
+			return
 		}
 
 		if err := w.handleEvents(cb, repo, resp, events); err != nil {
 			if lookout.NoErrStopWatcher.Is(err) {
-				return nil
+				return
 			}
 
-			return err
+			errCh <- err
+			return
 		}
 
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(w.pollInterval):
+			return
+		case <-time.After(w.eventsPollInterval):
 			continue
 		}
 	}
+}
+
+func (w *Watcher) handlePrs(cb lookout.EventHandler, r *lookout.RepositoryInfo,
+	resp *github.Response, prs []*github.PullRequest) error {
+
+	if len(prs) == 0 {
+		return nil
+	}
+
+	for _, e := range prs {
+		event := castPullRequestEvent(r, e)
+
+		if err := cb(event); err != nil {
+			return err
+		}
+	}
+
+	log.Debugf("request to %s cached", resp.Request.URL)
+	return w.cache.Validate(resp.Request.URL.String())
 }
 
 func (w *Watcher) handleEvents(cb lookout.EventHandler, r *lookout.RepositoryInfo,
@@ -132,6 +200,29 @@ func (w *Watcher) handleEvent(r *lookout.RepositoryInfo, e *github.Event) (looko
 	return castEvent(r, e)
 }
 
+func (w *Watcher) doPRListRequest(ctx context.Context, username, repository string) (
+	*github.Response, []*github.PullRequest, error,
+) {
+	ctx, cancel := context.WithTimeout(ctx, RequestTimeout)
+	defer cancel()
+
+	prs, resp, err := w.c.PullRequests.List(ctx, username, repository, &github.PullRequestListOptions{})
+	if err != nil {
+		return resp, nil, err
+	}
+
+	w.newInterval(resp)
+
+	if isStatusNotModified(resp.Response) {
+		return nil, nil, NoErrNotModified.New()
+	}
+
+	w.responseLogger(resp).With(log.Fields{"poll-interval": w.prPullInterval}).
+		Debugf("Request to pull requests endpoint done with %d prs.", len(prs))
+
+	return resp, prs, err
+}
+
 func (w *Watcher) doEventRequest(ctx context.Context, username, repository string) (
 	*github.Response, []*github.Event, error,
 ) {
@@ -146,21 +237,43 @@ func (w *Watcher) doEventRequest(ctx context.Context, username, repository strin
 		return resp, nil, err
 	}
 
+	interval := w.newInterval(resp)
+	// obey poll interval
 	secs, _ := strconv.Atoi(resp.Response.Header.Get("X-Poll-Interval"))
-	w.pollInterval = time.Duration(secs) * time.Second
+	pollLimit := time.Duration(secs) * time.Second
+	if pollLimit > interval {
+		interval = pollLimit
+	}
+	w.eventsPollInterval = interval
 
 	if isStatusNotModified(resp.Response) {
 		return nil, nil, NoErrNotModified.New()
 	}
 
-	log.With(log.Fields{
-		"remaining-requests": resp.Rate.Remaining,
-		"reset-at":           resp.Rate.Reset,
-		"poll-interval":      w.pollInterval,
-		"events":             len(events),
-	}).Debugf("Request to events endpoint done.")
+	w.responseLogger(resp).With(log.Fields{"poll-interval": w.eventsPollInterval}).
+		Debugf("Request to events endpoint done with %d events.", len(events))
 
 	return resp, events, err
+}
+
+func (w *Watcher) newInterval(resp *github.Response) time.Duration {
+	concurrentReqs := len(w.r) * 2 // for each repo we call 2 endpoints
+	remaining := resp.Rate.Remaining / concurrentReqs
+	secs := int(resp.Rate.Reset.Sub(time.Now()).Seconds() / float64(remaining))
+	interval := time.Duration(secs) * time.Second
+	if interval < minInterval {
+		interval = minInterval
+	}
+	// update pr interval on any call
+	w.prPullInterval = interval
+	return interval
+}
+
+func (w *Watcher) responseLogger(resp *github.Response) log.Logger {
+	return log.With(log.Fields{
+		"remaining-requests": resp.Rate.Remaining,
+		"reset-at":           resp.Rate.Reset,
+	})
 }
 
 func isStatusNotModified(resp *http.Response) bool {

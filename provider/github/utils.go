@@ -20,13 +20,6 @@ func castEvent(r *lookout.RepositoryInfo, e *github.Event) (lookout.Event, error
 		}
 
 		return castPushEvent(r, e, payload.(*github.PushEvent)), nil
-	case "PullRequestEvent":
-		payload, err := e.ParsePayload()
-		if err != nil {
-			return nil, ErrParsingEventPayload.New(err)
-		}
-
-		return castPullRequestEvent(r, e, payload.(*github.PullRequestEvent)), nil
 	}
 
 	return nil, nil
@@ -71,36 +64,27 @@ func castHash(sha1 *string) plumbing.Hash {
 	return plumbing.NewHash(*sha1)
 }
 
-func castPullRequestEvent(
-	r *lookout.RepositoryInfo,
-	e *github.Event, pr *github.PullRequestEvent,
-) *lookout.ReviewEvent {
-
-	if pr.PullRequest == nil && pr.PullRequest.GetID() != 0 {
-		log.Warningf("missing pull request information in pull request event")
-		return nil
-	}
-
+func castPullRequestEvent(r *lookout.RepositoryInfo, pr *github.PullRequest) *lookout.ReviewEvent {
 	pre := &lookout.ReviewEvent{}
 	pre.Provider = Provider
-	pre.InternalID = e.GetID()
-	pre.Source = castPullRequestBranch(pr.PullRequest.GetHead())
+	pre.InternalID = string(pr.GetID())
+	pre.Source = castPullRequestBranch(pr.GetHead())
 	pre.Merge = lookout.ReferencePointer{
 		InternalRepositoryURL: r.CloneURL,
-		ReferenceName:         plumbing.ReferenceName(fmt.Sprintf("refs/pull/%d/merge", pr.PullRequest.GetNumber())),
-		Hash:                  pr.PullRequest.GetMergeCommitSHA(),
+		ReferenceName:         plumbing.ReferenceName(fmt.Sprintf("refs/pull/%d/merge", pr.GetNumber())),
+		Hash:                  pr.GetMergeCommitSHA(),
 	}
 
-	pre.Base = castPullRequestBranch(pr.PullRequest.GetBase())
+	pre.Base = castPullRequestBranch(pr.GetBase())
 	pre.Head = lookout.ReferencePointer{
 		InternalRepositoryURL: r.CloneURL,
-		ReferenceName:         plumbing.ReferenceName(fmt.Sprintf("refs/pull/%d/head", pr.PullRequest.GetNumber())),
-		Hash:                  pr.PullRequest.GetHead().GetSHA(),
+		ReferenceName:         plumbing.ReferenceName(fmt.Sprintf("refs/pull/%d/head", pr.GetNumber())),
+		Hash:                  pr.GetHead().GetSHA(),
 	}
 
-	pre.IsMergeable = pr.PullRequest.GetMergeable()
+	pre.IsMergeable = pr.GetMergeable()
 
-	pr.PullRequest.GetHead().GetRepo().GetURL()
+	pr.GetHead().GetRepo().GetURL()
 
 	return pre
 }
