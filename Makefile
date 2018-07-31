@@ -56,21 +56,7 @@ $(PROTOC):
 # Integration test for sdk client
 .PHONY: test-sdk
 test-sdk: clean-sdk build-sdk
-	$(DUMMY_BIN) serve &>/dev/null & \
-	PID=$$!; \
-	$(LOOKOUT_BIN) review ipv4://localhost:10302 2>&1 | grep "posting analysis"; \
-	if [ $$? != 0 ] ; then \
-		echo "review test failed"; \
-		kill $$PID; \
-		exit 1; \
-	fi; \
-	$(LOOKOUT_BIN) push ipv4://localhost:10302 2>&1 | grep "dummy comment for push event"; \
-	if [ $$? != 0 ] ; then \
-		echo "push test failed"; \
-		kill $$PID; \
-		exit 1; \
-	fi; \
-	kill $$PID || true ; \
+	DUMMY_BIN=$(DUMMY_BIN) LOOKOUT_BIN=$(LOOKOUT_BIN) $(GOCMD) run sdk-test/main.go
 
 # Integration test for lookout serve
 .PHONY: test-json
