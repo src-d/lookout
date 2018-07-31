@@ -1,6 +1,10 @@
 # Package configuration
 PROJECT = lookout
 COMMANDS = cmd/lookout
+DEPENDENCIES = gopkg.in/src-d/go-kallax.v1
+
+# Backend services
+POSTGRESQL_VERSION = 9.6
 
 # Including ci Makefile
 CI_REPOSITORY ?= https://github.com/src-d/ci.git
