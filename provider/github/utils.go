@@ -64,7 +64,7 @@ func castHash(sha1 *string) plumbing.Hash {
 	return plumbing.NewHash(*sha1)
 }
 
-func castPullRequestEvent(r *lookout.RepositoryInfo, pr *github.PullRequest) *lookout.ReviewEvent {
+func castPullRequest(r *lookout.RepositoryInfo, pr *github.PullRequest) *lookout.ReviewEvent {
 	pre := &lookout.ReviewEvent{}
 	pre.Provider = Provider
 	pre.InternalID = string(pr.GetID())

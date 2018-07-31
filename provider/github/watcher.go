@@ -39,7 +39,7 @@ type Watcher struct {
 	cache *cache.ValidableCache
 
 	// delay for pull requests
-	prPullInterval time.Duration
+	prPollInterval time.Duration
 	// delay is time in seconds to wait between requests for events
 	eventsPollInterval time.Duration
 }
@@ -70,7 +70,7 @@ func NewWatcher(transport http.RoundTripper, o *lookout.WatchOptions) (*Watcher,
 			Transport: t,
 		}),
 
-		prPullInterval:     minInterval,
+		prPollInterval:     minInterval,
 		eventsPollInterval: minInterval,
 
 		cache: cache,
@@ -86,66 +86,63 @@ func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
 
 	errCh := make(chan error)
 
-	for _, repo := range w.r {
-		go w.watchPrs(ctx, repo, cb, errCh)
-		go w.watchEvents(ctx, repo, cb, errCh)
-	}
+	go w.watchPrs(ctx, cb, errCh)
+	go w.watchEvents(ctx, cb, errCh)
 
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	case err := <-errCh:
+		if lookout.NoErrStopWatcher.Is(err) {
+			return nil
+		}
 		return err
 	}
 }
 
-func (w *Watcher) watchPrs(ctx context.Context, repo *lookout.RepositoryInfo, cb lookout.EventHandler, errCh chan error) {
+func (w *Watcher) watchPrs(ctx context.Context, cb lookout.EventHandler, errCh chan error) {
 	for {
-		resp, prs, err := w.doPRListRequest(ctx, repo.Username, repo.Name)
-		if err != nil && !NoErrNotModified.Is(err) {
-			errCh <- err
-			return
-		}
-
-		if err := w.handlePrs(cb, repo, resp, prs); err != nil {
-			if lookout.NoErrStopWatcher.Is(err) {
+		for _, repo := range w.r {
+			resp, prs, err := w.doPRListRequest(ctx, repo.Username, repo.Name)
+			if err != nil && !NoErrNotModified.Is(err) {
+				errCh <- err
 				return
 			}
 
-			errCh <- err
-			return
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(w.prPullInterval):
-			continue
+			if err := w.handlePrs(cb, repo, resp, prs); err != nil {
+				errCh <- err
+				return
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(w.prPollInterval):
+				continue
+			}
 		}
 	}
 }
 
-func (w *Watcher) watchEvents(ctx context.Context, repo *lookout.RepositoryInfo, cb lookout.EventHandler, errCh chan error) {
+func (w *Watcher) watchEvents(ctx context.Context, cb lookout.EventHandler, errCh chan error) {
 	for {
-		resp, events, err := w.doEventRequest(ctx, repo.Username, repo.Name)
-		if err != nil && !NoErrNotModified.Is(err) {
-			errCh <- err
-			return
-		}
-
-		if err := w.handleEvents(cb, repo, resp, events); err != nil {
-			if lookout.NoErrStopWatcher.Is(err) {
+		for _, repo := range w.r {
+			resp, events, err := w.doEventRequest(ctx, repo.Username, repo.Name)
+			if err != nil && !NoErrNotModified.Is(err) {
+				errCh <- err
 				return
 			}
 
-			errCh <- err
-			return
-		}
+			if err := w.handleEvents(cb, repo, resp, events); err != nil {
+				errCh <- err
+				return
+			}
 
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(w.eventsPollInterval):
-			continue
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(w.eventsPollInterval):
+				continue
+			}
 		}
 	}
 }
@@ -158,7 +155,7 @@ func (w *Watcher) handlePrs(cb lookout.EventHandler, r *lookout.RepositoryInfo,
 	}
 
 	for _, e := range prs {
-		event := castPullRequestEvent(r, e)
+		event := castPullRequest(r, e)
 
 		if err := cb(event); err != nil {
 			return err
@@ -217,7 +214,7 @@ func (w *Watcher) doPRListRequest(ctx context.Context, username, repository stri
 		return nil, nil, NoErrNotModified.New()
 	}
 
-	w.responseLogger(resp).With(log.Fields{"poll-interval": w.prPullInterval}).
+	w.responseLogger(resp).With(log.Fields{"poll-interval": w.prPollInterval}).
 		Debugf("Request to pull requests endpoint done with %d prs.", len(prs))
 
 	return resp, prs, err
@@ -257,15 +254,14 @@ func (w *Watcher) doEventRequest(ctx context.Context, username, repository strin
 }
 
 func (w *Watcher) newInterval(resp *github.Response) time.Duration {
-	concurrentReqs := len(w.r) * 2 // for each repo we call 2 endpoints
-	remaining := resp.Rate.Remaining / concurrentReqs
+	remaining := resp.Rate.Remaining / 2 // we call 2 endpoints for each repo
 	secs := int(resp.Rate.Reset.Sub(time.Now()).Seconds() / float64(remaining))
 	interval := time.Duration(secs) * time.Second
 	if interval < minInterval {
 		interval = minInterval
 	}
 	// update pr interval on any call
-	w.prPullInterval = interval
+	w.prPollInterval = interval
 	return interval
 }
 
