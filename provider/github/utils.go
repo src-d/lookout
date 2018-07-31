@@ -84,8 +84,6 @@ func castPullRequestEvent(r *lookout.RepositoryInfo, pr *github.PullRequest) *lo
 
 	pre.IsMergeable = pr.GetMergeable()
 
-	pr.GetHead().GetRepo().GetURL()
-
 	return pre
 }
 
