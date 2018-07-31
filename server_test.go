@@ -56,6 +56,9 @@ func TestServerReview(t *testing.T) {
 	comments := poster.PopComments()
 	require.Len(comments, 1)
 	require.Equal(makeComment(reviewEvent.CommitRevision.Base, reviewEvent.CommitRevision.Head), comments[0])
+
+	status := poster.PopStatus()
+	require.Equal(SuccessAnalysisStatus, status)
 }
 
 func TestServerPush(t *testing.T) {
@@ -86,6 +89,9 @@ func TestServerPush(t *testing.T) {
 	comments := poster.PopComments()
 	require.Len(comments, 1)
 	require.Equal(makeComment(pushEvent.CommitRevision.Base, pushEvent.CommitRevision.Head), comments[0])
+
+	status := poster.PopStatus()
+	require.Equal(SuccessAnalysisStatus, status)
 }
 
 func TestAnalyzerConfigDisabled(t *testing.T) {
@@ -111,6 +117,9 @@ func TestAnalyzerConfigDisabled(t *testing.T) {
 
 	comments := poster.PopComments()
 	require.Len(comments, 0)
+
+	status := poster.PopStatus()
+	require.Equal(SuccessAnalysisStatus, status)
 }
 
 var globalConfig = AnalyzerConfig{
@@ -266,6 +275,7 @@ func (w *WatcherMock) Send(e Event) error {
 
 type PosterMock struct {
 	comments []*Comment
+	status   AnalysisStatus
 }
 
 func (p *PosterMock) Post(_ context.Context, e Event, cs []*Comment) error {
@@ -277,6 +287,17 @@ func (p *PosterMock) PopComments() []*Comment {
 	cs := p.comments[:]
 	p.comments = []*Comment{}
 	return cs
+}
+
+func (p *PosterMock) Status(_ context.Context, e Event, st AnalysisStatus) error {
+	p.status = st
+	return nil
+}
+
+func (p *PosterMock) PopStatus() AnalysisStatus {
+	st := p.status
+	p.status = 0
+	return st
 }
 
 type FileGetterMock struct {

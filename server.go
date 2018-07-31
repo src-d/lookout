@@ -88,6 +88,8 @@ func (s *Server) HandleReview(ctx context.Context, e *ReviewEvent) error {
 		return nil
 	}
 
+	s.status(ctx, logger, e, PendingAnalysisStatus)
+
 	send := func(a AnalyzerClient, settings map[string]interface{}) ([]*Comment, error) {
 		st := pb.ToStruct(settings)
 		if st != nil {
@@ -102,6 +104,8 @@ func (s *Server) HandleReview(ctx context.Context, e *ReviewEvent) error {
 	comments := s.concurrentRequest(ctx, logger, conf, send)
 
 	s.post(ctx, logger, e, comments)
+	s.status(ctx, logger, e, SuccessAnalysisStatus)
+
 	return nil
 }
 
@@ -124,6 +128,8 @@ func (s *Server) HandlePush(ctx context.Context, e *PushEvent) error {
 		return err
 	}
 
+	s.status(ctx, logger, e, PendingAnalysisStatus)
+
 	send := func(a AnalyzerClient, settings map[string]interface{}) ([]*Comment, error) {
 		st := pb.ToStruct(settings)
 		if st != nil {
@@ -138,6 +144,8 @@ func (s *Server) HandlePush(ctx context.Context, e *PushEvent) error {
 	comments := s.concurrentRequest(ctx, logger, conf, send)
 
 	s.post(ctx, logger, e, comments)
+	s.status(ctx, logger, e, SuccessAnalysisStatus)
+
 	return nil
 }
 
@@ -266,6 +274,12 @@ func (s *Server) post(ctx context.Context, logger log.Logger, e Event, comments 
 
 	if err := s.poster.Post(ctx, e, comments); err != nil {
 		logger.Errorf(err, "posting analysis failed")
+	}
+}
+
+func (s *Server) status(ctx context.Context, logger log.Logger, e Event, st AnalysisStatus) {
+	if err := s.poster.Status(ctx, e, st); err != nil {
+		logger.With(log.Fields{"status": st}).Errorf(err, "posting status failed")
 	}
 }
 

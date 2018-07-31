@@ -221,6 +221,12 @@ func (p *LogPoster) Post(ctx context.Context, e lookout.Event,
 	return nil
 }
 
+func (p *LogPoster) Status(ctx context.Context, e lookout.Event,
+	status lookout.AnalysisStatus) error {
+	p.Log.Infof("status: %s", status)
+	return nil
+}
+
 type roundTripper struct {
 	Log      log.Logger
 	Base     http.RoundTripper
