@@ -10,6 +10,14 @@
   version = "v0.3.0"
 
 [[projects]]
+  digest = "1:2d3b918a38b7a2daf5a9209043b422c8f97803e5d5ea6f8a9d41fd3045ef38db"
+  name = "github.com/Masterminds/squirrel"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "a6b93000bd219143c56c16e6cb1c4b91da3f224b"
+  version = "v1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:c3e9dc7218d3339c0f7a8abfadfa34077a28b953cb09df3231ec70da93a1e33f"
   name = "github.com/alcortesm/tgz"
@@ -139,6 +147,33 @@
   version = "0.4"
 
 [[projects]]
+  branch = "master"
+  digest = "1:edc2689ab4f5b3ce111f504b42e76160a0192df86bbe8ce8c0abab749fccd538"
+  name = "github.com/lann/builder"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "1b87b36280d04fe7882d1512bf038ea2967ad534"
+
+[[projects]]
+  branch = "master"
+  digest = "1:1a5446024e4eb6d3a2edba01be7f0d360023d4c84efb9e0be1a73de1d1c840c5"
+  name = "github.com/lann/ps"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "62de8c46ede02a7675c4c79c84883eb164cb71e3"
+
+[[projects]]
+  branch = "master"
+  digest = "1:2c52c3bfa3e106abd7df09126db04bd385aa0f3c250508d8568896253e80cb10"
+  name = "github.com/lib/pq"
+  packages = [
+    ".",
+    "oid",
+  ]
+  pruneopts = "NUT"
+  revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
+
+[[projects]]
   digest = "1:08c231ec84231a7e23d67e4b58f975e1423695a32467a362ee55a803f9de8061"
   name = "github.com/mattn/go-colorable"
   packages = ["."]
@@ -177,6 +212,14 @@
   packages = ["."]
   pruneopts = "NUT"
   revision = "3864e76763d94a6df2f9960b16a20a33da9f9a66"
+
+[[projects]]
+  digest = "1:592fd1b8b9c8189db56dd6f1fd73f89825c25b6b636032350d4b2b639964520b"
+  name = "github.com/oklog/ulid"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "8356aea91ceecc7d00ef87508040d1031adb2953"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:cf254277d898b713195cc6b4a3fac8bf738b9f1121625df27843b52b267eec6c"
@@ -547,6 +590,17 @@
   version = "v4.4.1"
 
 [[projects]]
+  digest = "1:c1d9b0ec7eca0c5f1b82abe29ec426a94f43b0f1a4641f99ac80af921fe123fe"
+  name = "gopkg.in/src-d/go-kallax.v1"
+  packages = [
+    ".",
+    "types",
+  ]
+  pruneopts = "NUT"
+  revision = "54324d6a2cb11186536d8f30e409742fa0c26272"
+  version = "v1.3.5"
+
+[[projects]]
   digest = "1:0d4af6fbf8a26e281ba21b1075844804a6509fbd170369a6f466a8b2fcdbb0b2"
   name = "gopkg.in/src-d/go-log.v1"
   packages = ["."]
@@ -591,6 +645,7 @@
     "github.com/grpc-ecosystem/go-grpc-middleware",
     "github.com/grpc-ecosystem/go-grpc-middleware/logging",
     "github.com/jessevdk/go-flags",
+    "github.com/lib/pq",
     "github.com/satori/go.uuid",
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
@@ -616,6 +671,8 @@
     "gopkg.in/src-d/go-git.v4/storage/filesystem",
     "gopkg.in/src-d/go-git.v4/utils/binary",
     "gopkg.in/src-d/go-git.v4/utils/ioutil",
+    "gopkg.in/src-d/go-kallax.v1",
+    "gopkg.in/src-d/go-kallax.v1/types",
     "gopkg.in/src-d/go-log.v1",
     "gopkg.in/yaml.v2",
   ]

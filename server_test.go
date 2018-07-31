@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/src-d/lookout/pb"
+	"github.com/src-d/lookout/store"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	log "gopkg.in/src-d/go-log.v1"
@@ -109,7 +110,7 @@ func TestAnalyzerConfigDisabled(t *testing.T) {
 		},
 	}
 
-	srv := NewServer(watcher, poster, fileGetter, analyzers)
+	srv := NewServer(watcher, poster, fileGetter, analyzers, &store.NoopEventOperator{})
 	srv.Run(context.TODO())
 
 	err := watcher.Send(&correctReviewEvent)
@@ -143,7 +144,7 @@ func TestMergeConfigWithoutLocal(t *testing.T) {
 		},
 	}
 
-	srv := NewServer(watcher, poster, fileGetter, analyzers)
+	srv := NewServer(watcher, poster, fileGetter, analyzers, &store.NoopEventOperator{})
 	srv.Run(context.TODO())
 
 	err := watcher.Send(&correctReviewEvent)
@@ -175,7 +176,7 @@ func TestMergeConfigWithLocal(t *testing.T) {
 		},
 	}
 
-	srv := NewServer(watcher, poster, fileGetter, analyzers)
+	srv := NewServer(watcher, poster, fileGetter, analyzers, &store.NoopEventOperator{})
 	srv.Run(context.TODO())
 
 	err := watcher.Send(&correctReviewEvent)
@@ -254,7 +255,7 @@ func setupMockedServer() (*WatcherMock, *PosterMock) {
 		},
 	}
 
-	srv := NewServer(watcher, poster, fileGetter, analyzers)
+	srv := NewServer(watcher, poster, fileGetter, analyzers, &store.NoopEventOperator{})
 	srv.Run(context.TODO())
 
 	return watcher, poster
