@@ -8,6 +8,7 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/pb"
 	"github.com/src-d/lookout/store"
+	"github.com/src-d/lookout/store/models"
 	log "gopkg.in/src-d/go-log.v1"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -56,8 +57,9 @@ type Server struct {
 }
 
 // NewServer creates new Server
-func NewServer(w lookout.Watcher, p lookout.Poster, fileGetter lookout.FileGetter, analyzers map[string]Analyzer) *Server {
-	return &Server{w, p, fileGetter, analyzers, &store.NoopEventOperator{}}
+func NewServer(w lookout.Watcher, p lookout.Poster, fileGetter lookout.FileGetter,
+	analyzers map[string]Analyzer, eventOp store.EventOperator) *Server {
+	return &Server{w, p, fileGetter, analyzers, eventOp}
 }
 
 // Run starts server
@@ -79,17 +81,19 @@ func (s *Server) handleEvent(ctx context.Context, e lookout.Event) (err error) {
 		logger.Errorf(err, "can't save event to database")
 		return
 	}
-	if status == store.EventStatusProcessed {
+
+	if status == models.EventStatusProcessed {
 		logger.Infof("event successfully processed, skipping...")
 		return
 	}
 
 	defer func() {
 		if err == nil {
-			status = store.EventStatusProcessed
+			status = models.EventStatusProcessed
 		} else {
-			status = store.EventStatusFailed
+			status = models.EventStatusFailed
 		}
+		log.Debugf("DEFER status %s, err %s", status, err)
 		if updateErr := s.eventOp.UpdateStatus(ctx, e, status); updateErr != nil {
 			logger.Errorf(err, "can't update status in database")
 		}

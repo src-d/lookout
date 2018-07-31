@@ -8,6 +8,7 @@ import (
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/server"
+	"github.com/src-d/lookout/store"
 	log "gopkg.in/src-d/go-log.v1"
 )
 
@@ -52,7 +53,7 @@ func (c *ReviewCommand) Execute(args []string) error {
 		"test-analyzes": server.Analyzer{
 			Client: client,
 		},
-	})
+	}, &store.NoopEventOperator{})
 
 	err = srv.HandleReview(context.TODO(), &lookout.ReviewEvent{
 		InternalID:  uuid.NewV4().String(),
