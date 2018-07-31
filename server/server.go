@@ -7,6 +7,7 @@ import (
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/pb"
+	"github.com/src-d/lookout/store"
 	log "gopkg.in/src-d/go-log.v1"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -51,11 +52,12 @@ type Server struct {
 	poster     lookout.Poster
 	fileGetter lookout.FileGetter
 	analyzers  map[string]Analyzer
+	eventOp    store.EventOperator
 }
 
 // NewServer creates new Server
 func NewServer(w lookout.Watcher, p lookout.Poster, fileGetter lookout.FileGetter, analyzers map[string]Analyzer) *Server {
-	return &Server{w, p, fileGetter, analyzers}
+	return &Server{w, p, fileGetter, analyzers, &store.NoopEventOperator{}}
 }
 
 // Run starts server
@@ -66,16 +68,43 @@ func (s *Server) Run(ctx context.Context) error {
 	})
 }
 
-func (s *Server) handleEvent(ctx context.Context, e lookout.Event) error {
+func (s *Server) handleEvent(ctx context.Context, e lookout.Event) (err error) {
+	logger := log.With(log.Fields{
+		"event-type": e.Type(),
+		"event-id":   e.ID(),
+	})
+
+	status, err := s.eventOp.Save(ctx, e)
+	if err != nil {
+		logger.Errorf(err, "can't save event to database")
+		return
+	}
+	if status == store.EventStatusProcessed {
+		logger.Infof("event successfully processed, skipping...")
+		return
+	}
+
+	defer func() {
+		if err == nil {
+			status = store.EventStatusProcessed
+		} else {
+			status = store.EventStatusFailed
+		}
+		if updateErr := s.eventOp.UpdateStatus(ctx, e, status); updateErr != nil {
+			logger.Errorf(err, "can't update status in database")
+		}
+	}()
+
 	switch ev := e.(type) {
 	case *lookout.ReviewEvent:
-		return s.HandleReview(ctx, ev)
+		err = s.HandleReview(ctx, ev)
 	case *lookout.PushEvent:
-		return s.HandlePush(ctx, ev)
+		err = s.HandlePush(ctx, ev)
 	default:
 		log.Debugf("ignoring unsupported event: %s", ev)
-		return nil
 	}
+
+	return
 }
 
 // HandleReview sends request to analyzers concurrently
