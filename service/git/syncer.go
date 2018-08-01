@@ -13,7 +13,8 @@ import (
 
 // Syncer syncs the local copy of git repository for a given CommitRevision.
 type Syncer struct {
-	sync.Mutex
+	m sync.Map // holds mutexes per repository
+
 	l *Library
 }
 
@@ -25,9 +26,6 @@ func NewSyncer(l *Library) *Syncer {
 // Sync syncs the local git repository to the given reference pointers.
 func (s *Syncer) Sync(ctx context.Context,
 	rps ...lookout.ReferencePointer) error {
-	s.Lock()
-	defer s.Unlock()
-
 	if len(rps) == 0 {
 		return fmt.Errorf("at least one reference pointer is required")
 	}
@@ -51,13 +49,22 @@ func (s *Syncer) Sync(ctx context.Context,
 		refspecs = append(refspecs, rs)
 	}
 
+	return s.fetch(ctx, frp.InternalRepositoryURL, r, refspecs)
+}
+
+func (s *Syncer) fetch(ctx context.Context, repoURL string, r *git.Repository, refspecs []config.RefSpec) error {
 	opts := &git.FetchOptions{
 		RemoteName: "origin",
 		RefSpecs:   refspecs,
 		Force:      true,
 	}
 
-	err = r.FetchContext(ctx, opts)
+	mi, _ := s.m.LoadOrStore(repoURL, &sync.Mutex{})
+	mutex := mi.(*sync.Mutex)
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	err := r.FetchContext(ctx, opts)
 	if err == git.NoErrAlreadyUpToDate {
 		return nil
 	}
