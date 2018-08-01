@@ -147,6 +147,16 @@ func (o *DBCommentOperator) Save(ctx context.Context, e lookout.Event, c *lookou
 	return o.save(ctx, ev, c)
 }
 
+// Posted implements EventOperator interface
+func (o *DBCommentOperator) Posted(ctx context.Context, e lookout.Event, c *lookout.Comment) (bool, error) {
+	ev, ok := e.(*lookout.ReviewEvent)
+	if !ok {
+		return false, fmt.Errorf("comments can belong only to review event but %v is given", e.Type())
+	}
+
+	return o.posted(ctx, ev, c)
+}
+
 func (o *DBCommentOperator) save(ctx context.Context, e *lookout.ReviewEvent, c *lookout.Comment) error {
 	q := models.NewReviewEventQuery().
 		FindByProvider(e.Provider).
@@ -160,4 +170,36 @@ func (o *DBCommentOperator) save(ctx context.Context, e *lookout.ReviewEvent, c 
 	m := models.NewComment(r, c)
 	_, err = o.store.Save(m)
 	return err
+}
+
+func (o *DBCommentOperator) posted(ctx context.Context, e *lookout.ReviewEvent, c *lookout.Comment) (bool, error) {
+	// FIXME(@max): maybe we should use joins here, not sure how to do it with kallax
+
+	reviewIdsQ := models.NewReviewEventQuery().
+		FindByProvider(e.Provider).
+		FindByNumber(kallax.Eq, e.Number).
+		Select(models.Schema.ReviewEvent.ID)
+
+	reviews, err := o.reviewsStore.FindAll(reviewIdsQ)
+	if err != nil {
+		return false, err
+	}
+
+	reviewIds := make([]interface{}, len(reviews))
+	for i, r := range reviews {
+		reviewIds[i] = r.ID
+	}
+
+	q := models.NewCommentQuery().
+		Where(kallax.In(models.Schema.Comment.ReviewEventFK, reviewIds...)).
+		FindByFile(c.File).
+		FindByLine(kallax.Eq, c.Line).
+		FindByText(c.Text)
+
+	count, err := o.store.Count(q)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
 }

@@ -225,6 +225,14 @@
           "Unique": false
         },
         {
+          "Name": "number",
+          "Type": "bigint",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
           "Name": "base",
           "Type": "jsonb",
           "PrimaryKey": false,
