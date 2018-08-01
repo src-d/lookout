@@ -14,12 +14,14 @@ type DBEventOperator struct {
 	reviewsStore *models.ReviewEventStore
 }
 
+// NewDBEventOperator creates new DBEventOperator using kallax as storage
 func NewDBEventOperator(s *models.ReviewEventStore) *DBEventOperator {
 	return &DBEventOperator{s}
 }
 
 var _ EventOperator = &DBEventOperator{}
 
+// Save implements EventOperator interface
 func (o *DBEventOperator) Save(ctx context.Context, e lookout.Event) (models.EventStatus, error) {
 	switch ev := e.(type) {
 	case *lookout.ReviewEvent:
@@ -31,6 +33,7 @@ func (o *DBEventOperator) Save(ctx context.Context, e lookout.Event) (models.Eve
 	return models.EventStatusNew, nil
 }
 
+// UpdateStatus implements EventOperator interface
 func (o *DBEventOperator) UpdateStatus(ctx context.Context, e lookout.Event, status models.EventStatus) error {
 	switch ev := e.(type) {
 	case *lookout.ReviewEvent:
