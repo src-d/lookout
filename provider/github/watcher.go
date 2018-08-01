@@ -254,12 +254,19 @@ func (w *Watcher) doEventRequest(ctx context.Context, username, repository strin
 }
 
 func (w *Watcher) newInterval(resp *github.Response) time.Duration {
+	interval := minInterval
 	remaining := resp.Rate.Remaining / 2 // we call 2 endpoints for each repo
-	secs := int(resp.Rate.Reset.Sub(time.Now()).Seconds() / float64(remaining))
-	interval := time.Duration(secs) * time.Second
+	if remaining > 0 {
+		secs := int(resp.Rate.Reset.Sub(time.Now()).Seconds() / float64(remaining))
+		interval = time.Duration(secs) * time.Second
+	} else {
+		interval = resp.Rate.Reset.Sub(time.Now())
+	}
+
 	if interval < minInterval {
 		interval = minInterval
 	}
+
 	// update pr interval on any call
 	w.prPollInterval = interval
 	return interval
