@@ -49,7 +49,7 @@ func main() {
 
 	fmt.Print("should return error without bblfsh...")
 	out = runCli(ctx, "review", "ipv4://localhost:10302", "--bblfshd=ipv4://localhost:0000")
-	grepFailedExit(out.String(), "WantUAST isn't allowed", 1)
+	grepFailedExit(out.String(), "WantUAST isn't allowed", 3)
 	fmt.Println("OK!")
 
 	fmt.Print("should notify about lack of uast...")
@@ -121,8 +121,9 @@ func handleErr(err error, desc string, out bytes.Buffer) {
 }
 
 func grepFailedExit(content, msg string, times int) {
-	if strings.Count(content, msg) != times {
-		fmt.Printf("'%s' not found in:\n%s", msg, content)
+	found := strings.Count(content, msg)
+	if found != times {
+		fmt.Printf("'%s' found %d times but should %d times in:\n%s", msg, found, times, content)
 		fmt.Printf("analyzer output\n %s", analyzerOut.String())
 		failExit()
 	}
