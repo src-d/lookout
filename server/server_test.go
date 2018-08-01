@@ -97,6 +97,38 @@ func TestServerPush(t *testing.T) {
 	require.Equal(lookout.SuccessAnalysisStatus, status)
 }
 
+func TestServerPersistedReview(t *testing.T) {
+	require := require.New(t)
+
+	watcher := &WatcherMock{}
+	poster := &PosterMock{}
+	fileGetter := &FileGetterMock{}
+	analyzers := map[string]Analyzer{
+		"mock": Analyzer{
+			Client: &AnalyzerClientMock{},
+		},
+	}
+
+	srv := NewServer(watcher, poster, fileGetter, analyzers, store.NewMemEventOperator())
+	srv.Run(context.TODO())
+
+	reviewEvent := &correctReviewEvent
+
+	err := watcher.Send(reviewEvent)
+	require.Nil(err)
+
+	comments := poster.PopComments()
+	require.Len(comments, 1)
+
+	// send the same event once again
+	err = watcher.Send(reviewEvent)
+	require.Nil(err)
+
+	// shouldn't comment anything
+	comments = poster.PopComments()
+	require.Len(comments, 0)
+}
+
 func TestAnalyzerConfigDisabled(t *testing.T) {
 	require := require.New(t)
 
