@@ -467,6 +467,490 @@ func (rs *CommentResultSet) Close() error {
 	return rs.ResultSet.Close()
 }
 
+// NewPushEvent returns a new instance of PushEvent.
+func NewPushEvent(e *pb.PushEvent) (record *PushEvent) {
+	return newPushEvent(e)
+}
+
+// GetID returns the primary key of the model.
+func (r *PushEvent) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
+func (r *PushEvent) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return (*kallax.ULID)(&r.ID), nil
+	case "status":
+		return (*string)(&r.Status), nil
+	case "provider":
+		return &r.PushEvent.Provider, nil
+	case "internal_id":
+		return &r.PushEvent.InternalID, nil
+	case "created_at":
+		return &r.PushEvent.CreatedAt, nil
+	case "commits":
+		return &r.PushEvent.Commits, nil
+	case "distinct_commits":
+		return &r.PushEvent.DistinctCommits, nil
+	case "configuration":
+		return types.JSON(&r.PushEvent.Configuration), nil
+	case "base":
+		return types.JSON(&r.PushEvent.CommitRevision.Base), nil
+	case "head":
+		return types.JSON(&r.PushEvent.CommitRevision.Head), nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in PushEvent: %s", col)
+	}
+}
+
+// Value returns the value of the given column.
+func (r *PushEvent) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return r.ID, nil
+	case "status":
+		return (string)(r.Status), nil
+	case "provider":
+		return r.PushEvent.Provider, nil
+	case "internal_id":
+		return r.PushEvent.InternalID, nil
+	case "created_at":
+		return r.PushEvent.CreatedAt, nil
+	case "commits":
+		return r.PushEvent.Commits, nil
+	case "distinct_commits":
+		return r.PushEvent.DistinctCommits, nil
+	case "configuration":
+		return types.JSON(r.PushEvent.Configuration), nil
+	case "base":
+		return types.JSON(r.PushEvent.CommitRevision.Base), nil
+	case "head":
+		return types.JSON(r.PushEvent.CommitRevision.Head), nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in PushEvent: %s", col)
+	}
+}
+
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
+func (r *PushEvent) NewRelationshipRecord(field string) (kallax.Record, error) {
+	return nil, fmt.Errorf("kallax: model PushEvent has no relationships")
+}
+
+// SetRelationship sets the given relationship in the given field.
+func (r *PushEvent) SetRelationship(field string, rel interface{}) error {
+	return fmt.Errorf("kallax: model PushEvent has no relationships")
+}
+
+// PushEventStore is the entity to access the records of the type PushEvent
+// in the database.
+type PushEventStore struct {
+	*kallax.Store
+}
+
+// NewPushEventStore creates a new instance of PushEventStore
+// using a SQL database.
+func NewPushEventStore(db *sql.DB) *PushEventStore {
+	return &PushEventStore{kallax.NewStore(db)}
+}
+
+// GenericStore returns the generic store of this store.
+func (s *PushEventStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *PushEventStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *PushEventStore) Debug() *PushEventStore {
+	return &PushEventStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *PushEventStore) DebugWith(logger kallax.LoggerFunc) *PushEventStore {
+	return &PushEventStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *PushEventStore) DisableCacher() *PushEventStore {
+	return &PushEventStore{s.Store.DisableCacher()}
+}
+
+// Insert inserts a PushEvent in the database. A non-persisted object is
+// required for this operation.
+func (s *PushEventStore) Insert(record *PushEvent) error {
+	record.SetSaving(true)
+	defer record.SetSaving(false)
+
+	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
+
+	return s.Store.Insert(Schema.PushEvent.BaseSchema, record)
+}
+
+// Update updates the given record on the database. If the columns are given,
+// only these columns will be updated. Otherwise all of them will be.
+// Be very careful with this, as you will have a potentially different object
+// in memory but not on the database.
+// Only writable records can be updated. Writable objects are those that have
+// been just inserted or retrieved using a query with no custom select fields.
+func (s *PushEventStore) Update(record *PushEvent, cols ...kallax.SchemaField) (updated int64, err error) {
+	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
+
+	record.SetSaving(true)
+	defer record.SetSaving(false)
+
+	return s.Store.Update(Schema.PushEvent.BaseSchema, record, cols...)
+}
+
+// Save inserts the object if the record is not persisted, otherwise it updates
+// it. Same rules of Update and Insert apply depending on the case.
+func (s *PushEventStore) Save(record *PushEvent) (updated bool, err error) {
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
+}
+
+// Delete removes the given record from the database.
+func (s *PushEventStore) Delete(record *PushEvent) error {
+	return s.Store.Delete(Schema.PushEvent.BaseSchema, record)
+}
+
+// Find returns the set of results for the given query.
+func (s *PushEventStore) Find(q *PushEventQuery) (*PushEventResultSet, error) {
+	rs, err := s.Store.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewPushEventResultSet(rs), nil
+}
+
+// MustFind returns the set of results for the given query, but panics if there
+// is any error.
+func (s *PushEventStore) MustFind(q *PushEventQuery) *PushEventResultSet {
+	return NewPushEventResultSet(s.Store.MustFind(q))
+}
+
+// Count returns the number of rows that would be retrieved with the given
+// query.
+func (s *PushEventStore) Count(q *PushEventQuery) (int64, error) {
+	return s.Store.Count(q)
+}
+
+// MustCount returns the number of rows that would be retrieved with the given
+// query, but panics if there is an error.
+func (s *PushEventStore) MustCount(q *PushEventQuery) int64 {
+	return s.Store.MustCount(q)
+}
+
+// FindOne returns the first row returned by the given query.
+// `ErrNotFound` is returned if there are no results.
+func (s *PushEventStore) FindOne(q *PushEventQuery) (*PushEvent, error) {
+	q.Limit(1)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *PushEventStore) FindAll(q *PushEventQuery) ([]*PushEvent, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
+}
+
+// MustFindOne returns the first row retrieved by the given query. It panics
+// if there is an error or if there are no rows.
+func (s *PushEventStore) MustFindOne(q *PushEventQuery) *PushEvent {
+	record, err := s.FindOne(q)
+	if err != nil {
+		panic(err)
+	}
+	return record
+}
+
+// Reload refreshes the PushEvent with the data in the database and
+// makes it writable.
+func (s *PushEventStore) Reload(record *PushEvent) error {
+	return s.Store.Reload(Schema.PushEvent.BaseSchema, record)
+}
+
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *PushEventStore) Transaction(callback func(*PushEventStore) error) error {
+	if callback == nil {
+		return kallax.ErrInvalidTxCallback
+	}
+
+	return s.Store.Transaction(func(store *kallax.Store) error {
+		return callback(&PushEventStore{store})
+	})
+}
+
+// PushEventQuery is the object used to create queries for the PushEvent
+// entity.
+type PushEventQuery struct {
+	*kallax.BaseQuery
+}
+
+// NewPushEventQuery returns a new instance of PushEventQuery.
+func NewPushEventQuery() *PushEventQuery {
+	return &PushEventQuery{
+		BaseQuery: kallax.NewBaseQuery(Schema.PushEvent.BaseSchema),
+	}
+}
+
+// Select adds columns to select in the query.
+func (q *PushEventQuery) Select(columns ...kallax.SchemaField) *PushEventQuery {
+	if len(columns) == 0 {
+		return q
+	}
+	q.BaseQuery.Select(columns...)
+	return q
+}
+
+// SelectNot excludes columns from being selected in the query.
+func (q *PushEventQuery) SelectNot(columns ...kallax.SchemaField) *PushEventQuery {
+	q.BaseQuery.SelectNot(columns...)
+	return q
+}
+
+// Copy returns a new identical copy of the query. Remember queries are mutable
+// so make a copy any time you need to reuse them.
+func (q *PushEventQuery) Copy() *PushEventQuery {
+	return &PushEventQuery{
+		BaseQuery: q.BaseQuery.Copy(),
+	}
+}
+
+// Order adds order clauses to the query for the given columns.
+func (q *PushEventQuery) Order(cols ...kallax.ColumnOrder) *PushEventQuery {
+	q.BaseQuery.Order(cols...)
+	return q
+}
+
+// BatchSize sets the number of items to fetch per batch when there are 1:N
+// relationships selected in the query.
+func (q *PushEventQuery) BatchSize(size uint64) *PushEventQuery {
+	q.BaseQuery.BatchSize(size)
+	return q
+}
+
+// Limit sets the max number of items to retrieve.
+func (q *PushEventQuery) Limit(n uint64) *PushEventQuery {
+	q.BaseQuery.Limit(n)
+	return q
+}
+
+// Offset sets the number of items to skip from the result set of items.
+func (q *PushEventQuery) Offset(n uint64) *PushEventQuery {
+	q.BaseQuery.Offset(n)
+	return q
+}
+
+// Where adds a condition to the query. All conditions added are concatenated
+// using a logical AND.
+func (q *PushEventQuery) Where(cond kallax.Condition) *PushEventQuery {
+	q.BaseQuery.Where(cond)
+	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
+func (q *PushEventQuery) FindByID(v ...kallax.ULID) *PushEventQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.PushEvent.ID, values...))
+}
+
+// FindByStatus adds a new filter to the query that will require that
+// the Status property is equal to the passed value.
+func (q *PushEventQuery) FindByStatus(v EventStatus) *PushEventQuery {
+	return q.Where(kallax.Eq(Schema.PushEvent.Status, v))
+}
+
+// FindByProvider adds a new filter to the query that will require that
+// the Provider property is equal to the passed value.
+func (q *PushEventQuery) FindByProvider(v string) *PushEventQuery {
+	return q.Where(kallax.Eq(Schema.PushEvent.Provider, v))
+}
+
+// FindByInternalID adds a new filter to the query that will require that
+// the InternalID property is equal to the passed value.
+func (q *PushEventQuery) FindByInternalID(v string) *PushEventQuery {
+	return q.Where(kallax.Eq(Schema.PushEvent.InternalID, v))
+}
+
+// FindByCreatedAt adds a new filter to the query that will require that
+// the CreatedAt property is equal to the passed value.
+func (q *PushEventQuery) FindByCreatedAt(cond kallax.ScalarCond, v time.Time) *PushEventQuery {
+	return q.Where(cond(Schema.PushEvent.CreatedAt, v))
+}
+
+// FindByCommits adds a new filter to the query that will require that
+// the Commits property is equal to the passed value.
+func (q *PushEventQuery) FindByCommits(cond kallax.ScalarCond, v uint32) *PushEventQuery {
+	return q.Where(cond(Schema.PushEvent.Commits, v))
+}
+
+// FindByDistinctCommits adds a new filter to the query that will require that
+// the DistinctCommits property is equal to the passed value.
+func (q *PushEventQuery) FindByDistinctCommits(cond kallax.ScalarCond, v uint32) *PushEventQuery {
+	return q.Where(cond(Schema.PushEvent.DistinctCommits, v))
+}
+
+// PushEventResultSet is the set of results returned by a query to the
+// database.
+type PushEventResultSet struct {
+	ResultSet kallax.ResultSet
+	last      *PushEvent
+	lastErr   error
+}
+
+// NewPushEventResultSet creates a new result set for rows of the type
+// PushEvent.
+func NewPushEventResultSet(rs kallax.ResultSet) *PushEventResultSet {
+	return &PushEventResultSet{ResultSet: rs}
+}
+
+// Next fetches the next item in the result set and returns true if there is
+// a next item.
+// The result set is closed automatically when there are no more items.
+func (rs *PushEventResultSet) Next() bool {
+	if !rs.ResultSet.Next() {
+		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
+		return false
+	}
+
+	var record kallax.Record
+	record, rs.lastErr = rs.ResultSet.Get(Schema.PushEvent.BaseSchema)
+	if rs.lastErr != nil {
+		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*PushEvent)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *PushEvent")
+			rs.last = nil
+		}
+	}
+
+	return true
+}
+
+// Get retrieves the last fetched item from the result set and the last error.
+func (rs *PushEventResultSet) Get() (*PushEvent, error) {
+	return rs.last, rs.lastErr
+}
+
+// ForEach iterates over the complete result set passing every record found to
+// the given callback. It is possible to stop the iteration by returning
+// `kallax.ErrStop` in the callback.
+// Result set is always closed at the end.
+func (rs *PushEventResultSet) ForEach(fn func(*PushEvent) error) error {
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return err
+		}
+
+		if err := fn(record); err != nil {
+			if err == kallax.ErrStop {
+				return rs.Close()
+			}
+
+			return err
+		}
+	}
+	return nil
+}
+
+// All returns all records on the result set and closes the result set.
+func (rs *PushEventResultSet) All() ([]*PushEvent, error) {
+	var result []*PushEvent
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, nil
+}
+
+// One returns the first record on the result set and closes the result set.
+func (rs *PushEventResultSet) One() (*PushEvent, error) {
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// Err returns the last error occurred.
+func (rs *PushEventResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *PushEventResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 // NewReviewEvent returns a new instance of ReviewEvent.
 func NewReviewEvent(e *pb.ReviewEvent) (record *ReviewEvent) {
 	return newReviewEvent(e)
@@ -963,6 +1447,7 @@ func (rs *ReviewEventResultSet) Close() error {
 
 type schema struct {
 	Comment     *schemaComment
+	PushEvent   *schemaPushEvent
 	ReviewEvent *schemaReviewEvent
 }
 
@@ -973,6 +1458,20 @@ type schemaComment struct {
 	Line       kallax.SchemaField
 	Text       kallax.SchemaField
 	Confidence kallax.SchemaField
+}
+
+type schemaPushEvent struct {
+	*kallax.BaseSchema
+	ID              kallax.SchemaField
+	Status          kallax.SchemaField
+	Provider        kallax.SchemaField
+	InternalID      kallax.SchemaField
+	CreatedAt       kallax.SchemaField
+	Commits         kallax.SchemaField
+	DistinctCommits kallax.SchemaField
+	Configuration   *schemaPushEventConfiguration
+	Base            *schemaPushEventBase
+	Head            *schemaPushEventHead
 }
 
 type schemaReviewEvent struct {
@@ -989,6 +1488,25 @@ type schemaReviewEvent struct {
 	Configuration *schemaReviewEventConfiguration
 	Base          *schemaReviewEventBase
 	Head          *schemaReviewEventHead
+}
+
+type schemaPushEventBase struct {
+	*kallax.BaseSchemaField
+	InternalRepositoryURL kallax.SchemaField
+	ReferenceName         kallax.SchemaField
+	Hash                  kallax.SchemaField
+}
+
+type schemaPushEventConfiguration struct {
+	*kallax.BaseSchemaField
+	Fields kallax.SchemaField
+}
+
+type schemaPushEventHead struct {
+	*kallax.BaseSchemaField
+	InternalRepositoryURL kallax.SchemaField
+	ReferenceName         kallax.SchemaField
+	Hash                  kallax.SchemaField
 }
 
 type schemaReviewEventBase struct {
@@ -1046,6 +1564,51 @@ var Schema = &schema{
 		Line:       kallax.NewSchemaField("line"),
 		Text:       kallax.NewSchemaField("text"),
 		Confidence: kallax.NewSchemaField("confidence"),
+	},
+	PushEvent: &schemaPushEvent{
+		BaseSchema: kallax.NewBaseSchema(
+			"push_event",
+			"__pushevent",
+			kallax.NewSchemaField("id"),
+			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(PushEvent)
+			},
+			false,
+			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("status"),
+			kallax.NewSchemaField("provider"),
+			kallax.NewSchemaField("internal_id"),
+			kallax.NewSchemaField("created_at"),
+			kallax.NewSchemaField("commits"),
+			kallax.NewSchemaField("distinct_commits"),
+			kallax.NewSchemaField("configuration"),
+			kallax.NewSchemaField("base"),
+			kallax.NewSchemaField("head"),
+		),
+		ID:              kallax.NewSchemaField("id"),
+		Status:          kallax.NewSchemaField("status"),
+		Provider:        kallax.NewSchemaField("provider"),
+		InternalID:      kallax.NewSchemaField("internal_id"),
+		CreatedAt:       kallax.NewSchemaField("created_at"),
+		Commits:         kallax.NewSchemaField("commits"),
+		DistinctCommits: kallax.NewSchemaField("distinct_commits"),
+		Configuration: &schemaPushEventConfiguration{
+			BaseSchemaField: kallax.NewSchemaField("configuration").(*kallax.BaseSchemaField),
+			Fields:          kallax.NewJSONSchemaKey(kallax.JSONAny, "push_event", "configuration", "fields"),
+		},
+		Base: &schemaPushEventBase{
+			BaseSchemaField:       kallax.NewSchemaField("base").(*kallax.BaseSchemaField),
+			InternalRepositoryURL: kallax.NewJSONSchemaKey(kallax.JSONText, "push_event", "base", "internal_repository_url"),
+			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "push_event", "base", "reference_name"),
+			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "push_event", "base", "hash"),
+		},
+		Head: &schemaPushEventHead{
+			BaseSchemaField:       kallax.NewSchemaField("head").(*kallax.BaseSchemaField),
+			InternalRepositoryURL: kallax.NewJSONSchemaKey(kallax.JSONText, "push_event", "head", "internal_repository_url"),
+			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "push_event", "head", "reference_name"),
+			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "push_event", "head", "hash"),
+		},
 	},
 	ReviewEvent: &schemaReviewEvent{
 		BaseSchema: kallax.NewBaseSchema(

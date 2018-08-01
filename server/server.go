@@ -93,7 +93,6 @@ func (s *Server) handleEvent(ctx context.Context, e lookout.Event) (err error) {
 		} else {
 			status = models.EventStatusFailed
 		}
-		log.Debugf("DEFER status %s, err %s", status, err)
 		if updateErr := s.eventOp.UpdateStatus(ctx, e, status); updateErr != nil {
 			logger.Errorf(err, "can't update status in database")
 		}

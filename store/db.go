@@ -12,11 +12,12 @@ import (
 // DBEventOperator operates on event database store
 type DBEventOperator struct {
 	reviewsStore *models.ReviewEventStore
+	pushStore    *models.PushEventStore
 }
 
 // NewDBEventOperator creates new DBEventOperator using kallax as storage
-func NewDBEventOperator(s *models.ReviewEventStore) *DBEventOperator {
-	return &DBEventOperator{s}
+func NewDBEventOperator(r *models.ReviewEventStore, p *models.PushEventStore) *DBEventOperator {
+	return &DBEventOperator{r, p}
 }
 
 var _ EventOperator = &DBEventOperator{}
@@ -26,6 +27,8 @@ func (o *DBEventOperator) Save(ctx context.Context, e lookout.Event) (models.Eve
 	switch ev := e.(type) {
 	case *lookout.ReviewEvent:
 		return o.saveReview(ctx, ev)
+	case *lookout.PushEvent:
+		return o.savePush(ctx, ev)
 	default:
 		log.Debugf("ignoring unsupported event: %s", ev)
 	}
@@ -38,6 +41,8 @@ func (o *DBEventOperator) UpdateStatus(ctx context.Context, e lookout.Event, sta
 	switch ev := e.(type) {
 	case *lookout.ReviewEvent:
 		return o.updateReviewStatus(ctx, ev, status)
+	case *lookout.PushEvent:
+		return o.updatePushStatus(ctx, ev, status)
 	default:
 		log.Debugf("ignoring unsupported event: %s", ev)
 		return nil
@@ -79,4 +84,41 @@ func (o *DBEventOperator) getReview(ctx context.Context, e *lookout.ReviewEvent)
 		FindByInternalID(e.InternalID)
 
 	return o.reviewsStore.FindOne(q)
+}
+
+func (o *DBEventOperator) savePush(ctx context.Context, e *lookout.PushEvent) (models.EventStatus, error) {
+	m, err := o.getPush(ctx, e)
+	if err == kallax.ErrNotFound {
+		return models.EventStatusNew, o.pushStore.Insert(models.NewPushEvent(e))
+	}
+	if err != nil {
+		return models.EventStatusNew, err
+	}
+
+	status := models.EventStatusNew
+	if m.Status != "" {
+		status = m.Status
+	}
+	return status, nil
+}
+
+func (o *DBEventOperator) updatePushStatus(ctx context.Context, e *lookout.PushEvent, s models.EventStatus) error {
+	m, err := o.getPush(ctx, e)
+	if err != nil {
+		return err
+	}
+
+	m.Status = s
+
+	_, err = o.pushStore.Update(m, models.Schema.PushEvent.Status)
+
+	return err
+}
+
+func (o *DBEventOperator) getPush(ctx context.Context, e *lookout.PushEvent) (*models.PushEvent, error) {
+	q := models.NewPushEventQuery().
+		FindByProvider(e.Provider).
+		FindByInternalID(e.InternalID)
+
+	return o.pushStore.FindOne(q)
 }

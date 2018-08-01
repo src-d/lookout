@@ -108,7 +108,10 @@ func (c *ServeCommand) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	eventOp := store.NewDBEventOperator(models.NewReviewEventStore(db))
+	eventOp := store.NewDBEventOperator(
+		models.NewReviewEventStore(db),
+		models.NewPushEventStore(db),
+	)
 
 	ctx := context.Background()
 	return server.NewServer(watcher, poster, dataHandler.FileGetter, analyzers, eventOp).Run(ctx)
