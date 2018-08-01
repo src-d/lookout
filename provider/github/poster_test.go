@@ -72,6 +72,14 @@ var mockComments = []*lookout.Comment{
 		Text: "Another global comment",
 	}}
 
+var mockAnalyzerComments = []lookout.AnalyzerComments{
+	lookout.AnalyzerComments{
+		Config: lookout.AnalyzerConfig{
+			Name: "mock",
+		},
+		Comments: mockComments,
+	}}
+
 func TestPoster_Post_OK(t *testing.T) {
 	require := require.New(t)
 
@@ -109,7 +117,60 @@ func TestPoster_Post_OK(t *testing.T) {
 		nil)
 
 	p := &Poster{rc: mrc, cc: mcc}
-	err := p.Post(context.Background(), mockEvent, mockComments)
+	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments)
+	require.NoError(err)
+
+	mcc.AssertExpectations(t)
+	mrc.AssertExpectations(t)
+}
+
+func TestPoster_Post_Footer(t *testing.T) {
+	require := require.New(t)
+
+	mcc := &commitsComparator{}
+	mcc.On(
+		"CompareCommits",
+		mock.Anything, "foo", "bar", hash1, hash2).Once().Return(
+		&github.CommitsComparison{
+			Files: []github.CommitFile{github.CommitFile{
+				Filename: strptr("main.go"),
+				Patch:    strptr("@@ -3,10 +3,10 @@"),
+			}}},
+		&github.Response{Response: &http.Response{StatusCode: 200}},
+		nil)
+
+	mrc := &reviewCreator{}
+	mrc.On(
+		"CreateReview",
+		mock.Anything, "foo", "bar", 42,
+		&github.PullRequestReviewRequest{
+			Body:  strptr("Global comment\n\nTo post feedback go to https://foo.bar/feedback\n\nAnother global comment\n\nTo post feedback go to https://foo.bar/feedback"),
+			Event: strptr("APPROVE"),
+			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
+				Path:     strptr("main.go"),
+				Body:     strptr("File comment\n\nTo post feedback go to https://foo.bar/feedback"),
+				Position: intptr(1),
+			}, &github.DraftReviewComment{
+				Path:     strptr("main.go"),
+				Position: intptr(3),
+				Body:     strptr("Line comment\n\nTo post feedback go to https://foo.bar/feedback"),
+			}}},
+	).Once().Return(
+		nil,
+		&github.Response{Response: &http.Response{StatusCode: 200}},
+		nil)
+
+	p := &Poster{
+		rc: mrc,
+		cc: mcc,
+		conf: ProviderConfig{
+			CommentFooter: "To post feedback go to %s",
+		}}
+
+	aComments := mockAnalyzerComments
+	aComments[0].Config.Feedback = "https://foo.bar/feedback"
+
+	err := p.Post(context.Background(), mockEvent, aComments)
 	require.NoError(err)
 
 	mcc.AssertExpectations(t)
@@ -123,7 +184,7 @@ func TestPoster_Post_BadProvider(t *testing.T) {
 	mrc := &reviewCreator{}
 	p := &Poster{rc: mrc, cc: mcc}
 
-	err := p.Post(context.Background(), badProviderEvent, mockComments)
+	err := p.Post(context.Background(), badProviderEvent, mockAnalyzerComments)
 	require.True(ErrEventNotSupported.Is(err))
 	require.Equal(
 		"event not supported: unsupported provider: badprovider", err.Error())
@@ -139,7 +200,7 @@ func TestPoster_Post_BadReferenceNoRepository(t *testing.T) {
 	mrc := &reviewCreator{}
 	p := &Poster{rc: mrc, cc: mcc}
 
-	err := p.Post(context.Background(), noRepoEvent, mockComments)
+	err := p.Post(context.Background(), noRepoEvent, mockAnalyzerComments)
 	require.True(ErrEventNotSupported.Is(err))
 	require.Equal(
 		"event not supported: nil repository", err.Error())
@@ -155,7 +216,7 @@ func TestPoster_Post_BadReference(t *testing.T) {
 	mrc := &reviewCreator{}
 	p := &Poster{rc: mrc, cc: mcc}
 
-	err := p.Post(context.Background(), badReferenceEvent, mockComments)
+	err := p.Post(context.Background(), badReferenceEvent, mockAnalyzerComments)
 	require.True(ErrEventNotSupported.Is(err))
 	require.Equal(
 		"event not supported: bad PR: BAD", err.Error())

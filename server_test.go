@@ -273,12 +273,18 @@ func (w *WatcherMock) Send(e Event) error {
 	return w.handler(e)
 }
 
+var _ Poster = &PosterMock{}
+
 type PosterMock struct {
 	comments []*Comment
 	status   AnalysisStatus
 }
 
-func (p *PosterMock) Post(_ context.Context, e Event, cs []*Comment) error {
+func (p *PosterMock) Post(_ context.Context, e Event, aCommentsList []AnalyzerComments) error {
+	cs := make([]*Comment, 0)
+	for _, aComments := range aCommentsList {
+		cs = append(cs, aComments.Comments...)
+	}
 	p.comments = cs
 	return nil
 }

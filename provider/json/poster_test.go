@@ -50,7 +50,14 @@ func TestPoster_Post_OK(t *testing.T) {
 		Text: "This is a another global comment",
 	}}
 
-	err := p.Post(context.Background(), ev, cs)
+	aCommentsList := []lookout.AnalyzerComments{lookout.AnalyzerComments{
+		Config: lookout.AnalyzerConfig{
+			Name: "mock",
+		},
+		Comments: cs,
+	}}
+
+	err := p.Post(context.Background(), ev, aCommentsList)
 	require.NoError(err)
 
 	expected := `{"text":"This is a global comment"}
