@@ -11,6 +11,9 @@ $(MAKEFILE):
 	git clone --quiet --depth 1 -b $(CI_BRANCH) $(CI_REPOSITORY) $(CI_PATH);
 -include $(MAKEFILE)
 
+# Main dockerfile
+DOCKERFILES=./docker/Dockerfile:$(PROJECT)
+
 # Environment
 OS := $(shell uname)
 CONFIG_FILE := config.yml
