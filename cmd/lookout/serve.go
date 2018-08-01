@@ -108,13 +108,18 @@ func (c *ServeCommand) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
+	reviewStore := models.NewReviewEventStore(db)
 	eventOp := store.NewDBEventOperator(
-		models.NewReviewEventStore(db),
+		reviewStore,
 		models.NewPushEventStore(db),
+	)
+	commentsOp := store.NewDBCommentOperator(
+		models.NewCommentStore(db),
+		reviewStore,
 	)
 
 	ctx := context.Background()
-	return server.NewServer(watcher, poster, dataHandler.FileGetter, analyzers, eventOp).Run(ctx)
+	return server.NewServer(watcher, poster, dataHandler.FileGetter, analyzers, eventOp, commentsOp).Run(ctx)
 }
 
 func (c *ServeCommand) initPoster(conf Config) (lookout.Poster, error) {

@@ -54,12 +54,13 @@ type Server struct {
 	fileGetter lookout.FileGetter
 	analyzers  map[string]Analyzer
 	eventOp    store.EventOperator
+	commentOp  store.CommentOperator
 }
 
 // NewServer creates new Server
 func NewServer(w lookout.Watcher, p lookout.Poster, fileGetter lookout.FileGetter,
-	analyzers map[string]Analyzer, eventOp store.EventOperator) *Server {
-	return &Server{w, p, fileGetter, analyzers, eventOp}
+	analyzers map[string]Analyzer, eventOp store.EventOperator, commentOp store.CommentOperator) *Server {
+	return &Server{w, p, fileGetter, analyzers, eventOp, commentOp}
 }
 
 // Run starts server
@@ -319,7 +320,17 @@ func (s *Server) post(ctx context.Context, logger log.Logger, e Event, comments 
 		"comments": len(comments),
 	}).Infof("posting analysis")
 
-	return s.poster.Post(ctx, e, comments)
+	if err := s.poster.Post(ctx, e, comments); err != nil {
+		return err
+	}
+
+	for _, c := range comments {
+		if err := s.commentOp.Save(ctx, e, c); err != nil {
+			log.Errorf(err, "can't save comment")
+		}
+	}
+
+	return nil
 }
 
 func (s *Server) status(ctx context.Context, logger log.Logger, e lookout.Event, st lookout.AnalysisStatus) {

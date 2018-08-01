@@ -37,11 +37,13 @@ func newPushEvent(e *lookout.PushEvent) *PushEvent {
 
 // Comment is a persisted model for comment
 type Comment struct {
-	kallax.Model    `pk:"id"`
-	ID              kallax.ULID
+	kallax.Model `pk:"id"`
+	ID           kallax.ULID
+	ReviewEvent  *ReviewEvent `fk:",inverse"`
+
 	lookout.Comment `kallax:",inline"`
 }
 
-func newComment(c lookout.Comment) *Comment {
-	return &Comment{ID: kallax.NewULID(), Comment: c}
+func newComment(r *ReviewEvent, c *lookout.Comment) *Comment {
+	return &Comment{ID: kallax.NewULID(), ReviewEvent: r, Comment: *c}
 }

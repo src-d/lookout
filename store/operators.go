@@ -15,6 +15,12 @@ type EventOperator interface {
 	UpdateStatus(context.Context, lookout.Event, models.EventStatus) error
 }
 
+// CommentOperator manages persistence of Comments
+type CommentOperator interface {
+	// Save persists Comment in a store
+	Save(context.Context, lookout.Event, *lookout.Comment) error
+}
+
 // NoopEventOperator satisfies EventOperator interface but does nothing
 type NoopEventOperator struct{}
 
@@ -27,5 +33,15 @@ func (o *NoopEventOperator) Save(context.Context, lookout.Event) (models.EventSt
 
 // UpdateStatus implements EventOperator interface and does nothing
 func (o *NoopEventOperator) UpdateStatus(context.Context, lookout.Event, models.EventStatus) error {
+	return nil
+}
+
+// NoopCommentOperator satisfies CommentOperator interface but does nothing
+type NoopCommentOperator struct{}
+
+var _ CommentOperator = &NoopCommentOperator{}
+
+// Save implements EventOperator interface and does nothing
+func (o *NoopCommentOperator) Save(context.Context, lookout.Event, *lookout.Comment) error {
 	return nil
 }

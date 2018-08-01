@@ -54,7 +54,7 @@ func (c *PushCommand) Execute(args []string) error {
 		"test-analyzes": server.Analyzer{
 			Client: client,
 		},
-	}, &store.NoopEventOperator{})
+	}, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
 
 	log, err := c.repo.Log(&gogit.LogOptions{From: plumbing.NewHash(toRef.Hash)})
 	var commits uint32

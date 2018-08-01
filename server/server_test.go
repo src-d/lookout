@@ -109,7 +109,7 @@ func TestServerPersistedReview(t *testing.T) {
 		},
 	}
 
-	srv := NewServer(watcher, poster, fileGetter, analyzers, store.NewMemEventOperator())
+	srv := NewServer(watcher, poster, fileGetter, analyzers, store.NewMemEventOperator(), &store.NoopCommentOperator{})
 	srv.Run(context.TODO())
 
 	reviewEvent := &correctReviewEvent
@@ -144,7 +144,7 @@ func TestAnalyzerConfigDisabled(t *testing.T) {
 		},
 	}
 
-	srv := NewServer(watcher, poster, fileGetter, analyzers, &store.NoopEventOperator{})
+	srv := NewServer(watcher, poster, fileGetter, analyzers, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
 	srv.Run(context.TODO())
 
 	err := watcher.Send(&correctReviewEvent)
@@ -178,7 +178,7 @@ func TestMergeConfigWithoutLocal(t *testing.T) {
 		},
 	}
 
-	srv := NewServer(watcher, poster, fileGetter, analyzers, &store.NoopEventOperator{})
+	srv := NewServer(watcher, poster, fileGetter, analyzers, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
 	srv.Run(context.TODO())
 
 	err := watcher.Send(&correctReviewEvent)
@@ -210,7 +210,7 @@ func TestMergeConfigWithLocal(t *testing.T) {
 		},
 	}
 
-	srv := NewServer(watcher, poster, fileGetter, analyzers, &store.NoopEventOperator{})
+	srv := NewServer(watcher, poster, fileGetter, analyzers, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
 	srv.Run(context.TODO())
 
 	err := watcher.Send(&correctReviewEvent)
@@ -289,7 +289,7 @@ func setupMockedServer() (*WatcherMock, *PosterMock) {
 		},
 	}
 
-	srv := NewServer(watcher, poster, fileGetter, analyzers, &store.NoopEventOperator{})
+	srv := NewServer(watcher, poster, fileGetter, analyzers, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
 	srv.Run(context.TODO())
 
 	return watcher, poster

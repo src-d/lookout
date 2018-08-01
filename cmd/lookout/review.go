@@ -53,7 +53,7 @@ func (c *ReviewCommand) Execute(args []string) error {
 		"test-analyzes": server.Analyzer{
 			Client: client,
 		},
-	}, &store.NoopEventOperator{})
+	}, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
 
 	err = srv.HandleReview(context.TODO(), &lookout.ReviewEvent{
 		InternalID:  uuid.NewV4().String(),

@@ -20,8 +20,8 @@ var _ fmt.Formatter
 type modelSaveFunc func(*kallax.Store) error
 
 // NewComment returns a new instance of Comment.
-func NewComment(c pb.Comment) (record *Comment) {
-	return newComment(c)
+func NewComment(r *ReviewEvent, c *pb.Comment) (record *Comment) {
+	return newComment(r, c)
 }
 
 // GetID returns the primary key of the model.
@@ -34,6 +34,8 @@ func (r *Comment) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return (*kallax.ULID)(&r.ID), nil
+	case "review_event_id":
+		return types.Nullable(kallax.VirtualColumn("review_event_id", r, new(kallax.ULID))), nil
 	case "file":
 		return &r.Comment.File, nil
 	case "line":
@@ -53,6 +55,12 @@ func (r *Comment) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return r.ID, nil
+	case "review_event_id":
+		v := r.Model.VirtualColumn(col)
+		if v == nil {
+			return nil, kallax.ErrEmptyVirtualColumn
+		}
+		return v, nil
 	case "file":
 		return r.Comment.File, nil
 	case "line":
@@ -70,12 +78,30 @@ func (r *Comment) Value(col string) (interface{}, error) {
 // NewRelationshipRecord returns a new record for the relatiobship in the given
 // field.
 func (r *Comment) NewRelationshipRecord(field string) (kallax.Record, error) {
-	return nil, fmt.Errorf("kallax: model Comment has no relationships")
+	switch field {
+	case "ReviewEvent":
+		return new(ReviewEvent), nil
+
+	}
+	return nil, fmt.Errorf("kallax: model Comment has no relationship %s", field)
 }
 
 // SetRelationship sets the given relationship in the given field.
 func (r *Comment) SetRelationship(field string, rel interface{}) error {
-	return fmt.Errorf("kallax: model Comment has no relationships")
+	switch field {
+	case "ReviewEvent":
+		val, ok := rel.(*ReviewEvent)
+		if !ok {
+			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship ReviewEvent", rel)
+		}
+		if !val.GetID().IsEmpty() {
+			r.ReviewEvent = val
+		}
+
+		return nil
+
+	}
+	return fmt.Errorf("kallax: model Comment has no relationship %s", field)
 }
 
 // CommentStore is the entity to access the records of the type Comment
@@ -117,11 +143,43 @@ func (s *CommentStore) DisableCacher() *CommentStore {
 	return &CommentStore{s.Store.DisableCacher()}
 }
 
+func (s *CommentStore) inverseRecords(record *Comment) []modelSaveFunc {
+	var result []modelSaveFunc
+
+	if record.ReviewEvent != nil && !record.ReviewEvent.IsSaving() {
+		record.AddVirtualColumn("review_event_id", record.ReviewEvent.GetID())
+		result = append(result, func(store *kallax.Store) error {
+			_, err := (&ReviewEventStore{store}).Save(record.ReviewEvent)
+			return err
+		})
+	}
+
+	return result
+}
+
 // Insert inserts a Comment in the database. A non-persisted object is
 // required for this operation.
 func (s *CommentStore) Insert(record *Comment) error {
 	record.SetSaving(true)
 	defer record.SetSaving(false)
+
+	inverseRecords := s.inverseRecords(record)
+
+	if len(inverseRecords) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+			for _, r := range inverseRecords {
+				if err := r(s); err != nil {
+					return err
+				}
+			}
+
+			if err := s.Insert(Schema.Comment.BaseSchema, record); err != nil {
+				return err
+			}
+
+			return nil
+		})
+	}
 
 	return s.Store.Insert(Schema.Comment.BaseSchema, record)
 }
@@ -135,6 +193,30 @@ func (s *CommentStore) Insert(record *Comment) error {
 func (s *CommentStore) Update(record *Comment, cols ...kallax.SchemaField) (updated int64, err error) {
 	record.SetSaving(true)
 	defer record.SetSaving(false)
+
+	inverseRecords := s.inverseRecords(record)
+
+	if len(inverseRecords) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			for _, r := range inverseRecords {
+				if err := r(s); err != nil {
+					return err
+				}
+			}
+
+			updated, err = s.Update(Schema.Comment.BaseSchema, record, cols...)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+		if err != nil {
+			return 0, err
+		}
+
+		return updated, nil
+	}
 
 	return s.Store.Update(Schema.Comment.BaseSchema, record, cols...)
 }
@@ -321,6 +403,11 @@ func (q *CommentQuery) Where(cond kallax.Condition) *CommentQuery {
 	return q
 }
 
+func (q *CommentQuery) WithReviewEvent() *CommentQuery {
+	q.AddRelation(Schema.ReviewEvent.BaseSchema, "ReviewEvent", kallax.OneToOne, nil)
+	return q
+}
+
 // FindByID adds a new filter to the query that will require that
 // the ID property is equal to one of the passed values; if no passed values,
 // it will do nothing.
@@ -333,6 +420,12 @@ func (q *CommentQuery) FindByID(v ...kallax.ULID) *CommentQuery {
 		values[i] = val
 	}
 	return q.Where(kallax.In(Schema.Comment.ID, values...))
+}
+
+// FindByReviewEvent adds a new filter to the query that will require that
+// the foreign key of ReviewEvent is equal to the passed value.
+func (q *CommentQuery) FindByReviewEvent(v kallax.ULID) *CommentQuery {
+	return q.Where(kallax.Eq(Schema.Comment.ReviewEventFK, v))
 }
 
 // FindByFile adds a new filter to the query that will require that
@@ -1453,11 +1546,12 @@ type schema struct {
 
 type schemaComment struct {
 	*kallax.BaseSchema
-	ID         kallax.SchemaField
-	File       kallax.SchemaField
-	Line       kallax.SchemaField
-	Text       kallax.SchemaField
-	Confidence kallax.SchemaField
+	ID            kallax.SchemaField
+	ReviewEventFK kallax.SchemaField
+	File          kallax.SchemaField
+	Line          kallax.SchemaField
+	Text          kallax.SchemaField
+	Confidence    kallax.SchemaField
 }
 
 type schemaPushEvent struct {
@@ -1548,22 +1642,26 @@ var Schema = &schema{
 			"comment",
 			"__comment",
 			kallax.NewSchemaField("id"),
-			kallax.ForeignKeys{},
+			kallax.ForeignKeys{
+				"ReviewEvent": kallax.NewForeignKey("review_event_id", true),
+			},
 			func() kallax.Record {
 				return new(Comment)
 			},
 			false,
 			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("review_event_id"),
 			kallax.NewSchemaField("file"),
 			kallax.NewSchemaField("line"),
 			kallax.NewSchemaField("text"),
 			kallax.NewSchemaField("confidence"),
 		),
-		ID:         kallax.NewSchemaField("id"),
-		File:       kallax.NewSchemaField("file"),
-		Line:       kallax.NewSchemaField("line"),
-		Text:       kallax.NewSchemaField("text"),
-		Confidence: kallax.NewSchemaField("confidence"),
+		ID:            kallax.NewSchemaField("id"),
+		ReviewEventFK: kallax.NewSchemaField("review_event_id"),
+		File:          kallax.NewSchemaField("file"),
+		Line:          kallax.NewSchemaField("line"),
+		Text:          kallax.NewSchemaField("text"),
+		Confidence:    kallax.NewSchemaField("confidence"),
 	},
 	PushEvent: &schemaPushEvent{
 		BaseSchema: kallax.NewBaseSchema(

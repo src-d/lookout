@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/store/models"
@@ -121,4 +122,42 @@ func (o *DBEventOperator) getPush(ctx context.Context, e *lookout.PushEvent) (*m
 		FindByInternalID(e.InternalID)
 
 	return o.pushStore.FindOne(q)
+}
+
+// DBCommentOperator operates on comments database store
+type DBCommentOperator struct {
+	store        *models.CommentStore
+	reviewsStore *models.ReviewEventStore
+}
+
+// NewDBCommentOperator creates new DBCommentOperator using kallax as storage
+func NewDBCommentOperator(c *models.CommentStore, r *models.ReviewEventStore) *DBCommentOperator {
+	return &DBCommentOperator{c, r}
+}
+
+var _ CommentOperator = &DBCommentOperator{}
+
+// Save implements EventOperator interface
+func (o *DBCommentOperator) Save(ctx context.Context, e lookout.Event, c *lookout.Comment) error {
+	ev, ok := e.(*lookout.ReviewEvent)
+	if !ok {
+		return fmt.Errorf("comments can belong only to review event but %v is given", e.Type())
+	}
+
+	return o.save(ctx, ev, c)
+}
+
+func (o *DBCommentOperator) save(ctx context.Context, e *lookout.ReviewEvent, c *lookout.Comment) error {
+	q := models.NewReviewEventQuery().
+		FindByProvider(e.Provider).
+		FindByInternalID(e.InternalID)
+
+	r, err := o.reviewsStore.FindOne(q)
+	if err != nil {
+		return err
+	}
+
+	m := models.NewComment(r, c)
+	_, err = o.store.Save(m)
+	return err
 }
