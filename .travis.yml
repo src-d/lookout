@@ -37,14 +37,14 @@ jobs:
     - script:
       - make ci-install
       - psql -c 'create database lookout;' -U postgres
-      - kallax migrate up -d ./store/migrations --dsn 'postgres:example@localhost:5432/lookout?sslmode=disable' --all
+      - make migrate
       - cp config.yml.tpl config.yml
       - make test-json
       name: "Lookout serve Integration Tests Linux"
     - script:
       - make ci-install
       - psql -c 'create database lookout;' -U postgres
-      - kallax migrate up -d ./store/migrations --dsn 'postgres:example@localhost:5432/lookout?sslmode=disable' --all
+      - make migrate
       - cp config.yml.tpl config.yml
       - make test-json
       name: "Lookout serve Integration Tests macOS"
