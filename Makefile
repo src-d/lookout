@@ -1,6 +1,11 @@
 # Package configuration
 PROJECT = lookout
 COMMANDS = cmd/lookout
+DEPENDENCIES = gopkg.in/src-d/go-kallax.v1
+
+# Backend services
+POSTGRESQL_VERSION = 9.6
+DSN = postgres:example@localhost:5432/lookout?sslmode=disable
 
 # Including ci Makefile
 CI_REPOSITORY ?= https://github.com/src-d/ci.git
@@ -121,3 +126,7 @@ packages-sdk: build
 			tar -cvzf $(PROJECT)_$${TAR_VERSION}_$${os}_$${arch}.tar.gz $(PROJECT)_$${os}_$${arch}/; \
 		done; \
 	done
+
+.PHONY: migrate
+migrate: $(DEPENDENCIES)
+	kallax migrate up -d ./store/migrations --dsn '$(DSN)' --all

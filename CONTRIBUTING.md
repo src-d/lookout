@@ -5,6 +5,12 @@ This document outlines some of the
 conventions on development workflow, commit message formatting, contact points,
 and other resources to make it easier to get your contribution accepted.
 
+## Code generation
+
+* Go code from proto files: `make protogen`
+* Go code from models: `go generate ./...`
+* Migrations: `kallax migrate --input ./store/models/ --out ./store/migrations --name <name>`
+
 ## Certificate of Origin
 
 By contributing to this project you agree to the [Developer Certificate of

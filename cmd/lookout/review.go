@@ -7,6 +7,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/server"
+	"github.com/src-d/lookout/store"
 	log "gopkg.in/src-d/go-log.v1"
 )
 
@@ -47,11 +49,11 @@ func (c *ReviewCommand) Execute(args []string) error {
 		return err
 	}
 
-	srv := lookout.NewServer(nil, &LogPoster{log.DefaultLogger}, dataSrv.FileGetter, map[string]lookout.Analyzer{
+	srv := server.NewServer(nil, &LogPoster{log.DefaultLogger}, dataSrv.FileGetter, map[string]lookout.Analyzer{
 		"test-analyzes": lookout.Analyzer{
 			Client: client,
 		},
-	})
+	}, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
 
 	err = srv.HandleReview(context.TODO(), &lookout.ReviewEvent{
 		InternalID:  uuid.NewV4().String(),

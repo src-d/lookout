@@ -35,10 +35,16 @@ jobs:
         - make test-sdk
       name: "SDK Integration Tests Linux"
     - script:
+      - make ci-install
+      - psql -c 'create database lookout;' -U postgres
+      - make migrate
       - cp config.yml.tpl config.yml
       - make test-json
       name: "Lookout serve Integration Tests Linux"
     - script:
+      - make ci-install
+      - psql -c 'create database lookout;' -U postgres
+      - make migrate
       - cp config.yml.tpl config.yml
       - make test-json
       name: "Lookout serve Integration Tests macOS"

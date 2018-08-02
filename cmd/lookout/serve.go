@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,11 +12,15 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/provider/github"
 	"github.com/src-d/lookout/provider/json"
+	"github.com/src-d/lookout/server"
 	"github.com/src-d/lookout/service/bblfsh"
 	"github.com/src-d/lookout/service/git"
+	"github.com/src-d/lookout/store"
+	"github.com/src-d/lookout/store/models"
 	"github.com/src-d/lookout/util/cli"
 	"github.com/src-d/lookout/util/grpchelper"
 
+	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-billy.v4/osfs"
 	"gopkg.in/src-d/go-log.v1"
@@ -36,6 +41,7 @@ type ServeCommand struct {
 	GithubToken string `long:"github-token" env:"GITHUB_TOKEN" description:"access token for the GitHub API"`
 	DataServer  string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
 	Bblfshd     string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
+	DB          string `long:"db" default:"postgres://postgres:example@localhost:5432/lookout?sslmode=disable" env:"LOOKOUT_DB" description:"connection string to postgres database"`
 	DryRun      bool   `long:"dry-run" env:"LOOKOUT_DRY_RUN" description:"analyze repositories and log the result without posting code reviews to GitHub"`
 	Library     string `long:"library" default:"/tmp/lookout" env:"LOOKOUT_LIBRARY" description:"path to the lookout library"`
 	Provider    string `long:"provider" default:"github" env:"LOOKOUT_PROVIDER" description:"provider name: github, json"`
@@ -48,8 +54,8 @@ type ServeCommand struct {
 
 // Config holds the main configuration
 type Config struct {
-	lookout.ServerConfig `yaml:",inline"`
-	Providers            struct {
+	server.Config `yaml:",inline"`
+	Providers     struct {
 		Github github.ProviderConfig
 	}
 }
@@ -98,8 +104,22 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
+	db, err := sql.Open("postgres", c.DB)
+	if err != nil {
+		return err
+	}
+	reviewStore := models.NewReviewEventStore(db)
+	eventOp := store.NewDBEventOperator(
+		reviewStore,
+		models.NewPushEventStore(db),
+	)
+	commentsOp := store.NewDBCommentOperator(
+		models.NewCommentStore(db),
+		reviewStore,
+	)
+
 	ctx := context.Background()
-	return lookout.NewServer(watcher, poster, dataHandler.FileGetter, analyzers).Run(ctx)
+	return server.NewServer(watcher, poster, dataHandler.FileGetter, analyzers, eventOp, commentsOp).Run(ctx)
 }
 
 func (c *ServeCommand) initPoster(conf Config) (lookout.Poster, error) {
