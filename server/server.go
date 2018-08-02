@@ -91,10 +91,13 @@ func (s *Server) handleEvent(ctx context.Context, e lookout.Event) (err error) {
 		if err == nil {
 			status = models.EventStatusProcessed
 		} else {
+			logger.Errorf(err, "event processing failed")
+			// don't fail on event processing error, just skip it
+			err = nil
 			status = models.EventStatusFailed
 		}
 		if updateErr := s.eventOp.UpdateStatus(ctx, e, status); updateErr != nil {
-			logger.Errorf(err, "can't update status in database")
+			logger.Errorf(updateErr, "can't update status in database")
 		}
 	}()
 
@@ -120,14 +123,12 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent) error
 	logger.Infof("processing pull request")
 
 	if err := e.Validate(); err != nil {
-		logger.Errorf(err, "processing pull request failed")
-		return nil
+		return err
 	}
 
 	conf, err := s.getConfig(ctx, logger, e)
 	if err != nil {
-		logger.Errorf(err, "processing pull request failed")
-		return nil
+		return err
 	}
 
 	s.status(ctx, logger, e, lookout.PendingAnalysisStatus)
@@ -145,8 +146,10 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent) error
 	}
 	comments := s.concurrentRequest(ctx, logger, conf, send)
 
-	// fixme make them return errors and catch in handleEvent
-	s.post(ctx, logger, e, comments)
+	if err := s.post(ctx, logger, e, comments); err != nil {
+		return fmt.Errorf("posting analysis failed: %s", err)
+	}
+
 	s.status(ctx, logger, e, lookout.SuccessAnalysisStatus)
 
 	return nil
@@ -162,8 +165,7 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
 	logger.Infof("processing push")
 
 	if err := e.Validate(); err != nil {
-		logger.Errorf(err, "processing push failed")
-		return nil
+		return err
 	}
 
 	conf, err := s.getConfig(ctx, logger, e)
@@ -186,7 +188,9 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
 	}
 	comments := s.concurrentRequest(ctx, logger, conf, send)
 
-	s.post(ctx, logger, e, comments)
+	if err := s.post(ctx, logger, e, comments); err != nil {
+		return fmt.Errorf("posting analysis failed: %s", err)
+	}
 	s.status(ctx, logger, e, lookout.SuccessAnalysisStatus)
 
 	return nil
@@ -307,17 +311,15 @@ func mergeMaps(global, local map[string]interface{}) map[string]interface{} {
 	return merged
 }
 
-func (s *Server) post(ctx context.Context, logger log.Logger, e Event, comments []AnalyzerComments) {
+func (s *Server) post(ctx context.Context, logger log.Logger, e Event, comments []AnalyzerComments) error {
 	if len(comments) == 0 {
-		return
+		return nil
 	}
 	logger.With(log.Fields{
 		"comments": len(comments),
 	}).Infof("posting analysis")
 
-	if err := s.poster.Post(ctx, e, comments); err != nil {
-		logger.Errorf(err, "posting analysis failed")
-	}
+	return s.poster.Post(ctx, e, comments)
 }
 
 func (s *Server) status(ctx context.Context, logger log.Logger, e lookout.Event, st lookout.AnalysisStatus) {
