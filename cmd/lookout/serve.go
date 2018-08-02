@@ -46,8 +46,16 @@ type ServeCommand struct {
 	analyzers map[string]lookout.AnalyzerClient
 }
 
+// Config holds the main configuration
+type Config struct {
+	lookout.ServerConfig `yaml:",inline"`
+	Providers            struct {
+		Github github.ProviderConfig
+	}
+}
+
 func (c *ServeCommand) Execute(args []string) error {
-	var conf lookout.ServerConfig
+	var conf Config
 	configData, err := ioutil.ReadFile(c.ConfigFile)
 	if err != nil {
 		return fmt.Errorf("Can't open configuration file: %s", err)
@@ -80,12 +88,12 @@ func (c *ServeCommand) Execute(args []string) error {
 		}
 	}
 
-	poster, err := c.initPoster()
+	poster, err := c.initPoster(conf)
 	if err != nil {
 		return err
 	}
 
-	watcher, err := c.initWatcher()
+	watcher, err := c.initWatcher(conf)
 	if err != nil {
 		return err
 	}
@@ -94,18 +102,20 @@ func (c *ServeCommand) Execute(args []string) error {
 	return lookout.NewServer(watcher, poster, dataHandler.FileGetter, analyzers).Run(ctx)
 }
 
-func (c *ServeCommand) initPoster() (lookout.Poster, error) {
+func (c *ServeCommand) initPoster(conf Config) (lookout.Poster, error) {
 	if c.DryRun {
 		return &LogPoster{log.DefaultLogger}, nil
 	}
 
 	switch c.Provider {
 	case github.Provider:
-		return github.NewPoster(&roundTripper{
-			Log:      log.DefaultLogger,
-			User:     c.GithubUser,
-			Password: c.GithubToken,
-		}), nil
+		return github.NewPoster(
+			&roundTripper{
+				Log:      log.DefaultLogger,
+				User:     c.GithubUser,
+				Password: c.GithubToken,
+			},
+			conf.Providers.Github), nil
 	case json.Provider:
 		return json.NewPoster(os.Stdout), nil
 	default:
@@ -113,7 +123,7 @@ func (c *ServeCommand) initPoster() (lookout.Poster, error) {
 	}
 }
 
-func (c *ServeCommand) initWatcher() (lookout.Watcher, error) {
+func (c *ServeCommand) initWatcher(conf Config) (lookout.Watcher, error) {
 	switch c.Provider {
 	case github.Provider:
 		t := &roundTripper{
@@ -205,23 +215,25 @@ type LogPoster struct {
 }
 
 func (p *LogPoster) Post(ctx context.Context, e lookout.Event,
-	comments []*lookout.Comment) error {
-	for _, c := range comments {
-		logger := p.Log.With(log.Fields{
-			"text": c.Text,
-		})
-		if c.File == "" {
-			logger.Infof("global comment")
-			continue
-		}
+	aCommentsList []lookout.AnalyzerComments) error {
+	for _, aComments := range aCommentsList {
+		for _, c := range aComments.Comments {
+			logger := p.Log.With(log.Fields{
+				"text": c.Text,
+			})
+			if c.File == "" {
+				logger.Infof("global comment")
+				continue
+			}
 
-		logger = logger.With(log.Fields{"file": c.File})
-		if c.Line == 0 {
-			logger.Infof("file comment")
-			continue
-		}
+			logger = logger.With(log.Fields{"file": c.File})
+			if c.Line == 0 {
+				logger.Infof("file comment")
+				continue
+			}
 
-		logger.With(log.Fields{"line": c.Line}).Infof("line comment")
+			logger.With(log.Fields{"line": c.Line}).Infof("line comment")
+		}
 	}
 
 	return nil

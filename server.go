@@ -18,6 +18,8 @@ type AnalyzerConfig struct {
 	Addr string
 	// Disabled repository-scoped configuration can accept only true value, false value is ignored
 	Disabled bool
+	// Feedback is a url to be linked after each comment
+	Feedback string
 	// Settings any configuration for an analyzer
 	Settings map[string]interface{}
 }
@@ -31,6 +33,13 @@ type ServerConfig struct {
 type Analyzer struct {
 	Client AnalyzerClient
 	Config AnalyzerConfig
+}
+
+// AnalyzerComments contains a group of comments and the config for the
+// analyzer that created them
+type AnalyzerComments struct {
+	Config   AnalyzerConfig
+	Comments []*Comment
 }
 
 type reqSent func(client AnalyzerClient, settings map[string]interface{}) ([]*Comment, error)
@@ -195,7 +204,7 @@ func (s *Server) getConfig(ctx context.Context, logger log.Logger, e Event) (map
 }
 
 // FIXME(max): it's better to hold logger inside context
-func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, conf map[string]AnalyzerConfig, send reqSent) []*Comment {
+func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, conf map[string]AnalyzerConfig, send reqSent) []AnalyzerComments {
 	var comments commentsList
 
 	var wg sync.WaitGroup
@@ -223,7 +232,7 @@ func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, conf 
 				aLogger.Infof("no comments were produced")
 			}
 
-			comments.Add(cs...)
+			comments.Add(a.Config, cs...)
 		}(name, a)
 	}
 	wg.Wait()
@@ -264,7 +273,7 @@ func mergeMaps(global, local map[string]interface{}) map[string]interface{} {
 	return merged
 }
 
-func (s *Server) post(ctx context.Context, logger log.Logger, e Event, comments []*Comment) {
+func (s *Server) post(ctx context.Context, logger log.Logger, e Event, comments []AnalyzerComments) {
 	if len(comments) == 0 {
 		return
 	}
@@ -285,15 +294,15 @@ func (s *Server) status(ctx context.Context, logger log.Logger, e Event, st Anal
 
 type commentsList struct {
 	sync.Mutex
-	list []*Comment
+	list []AnalyzerComments
 }
 
-func (l *commentsList) Add(cs ...*Comment) {
+func (l *commentsList) Add(conf AnalyzerConfig, cs ...*Comment) {
 	l.Lock()
-	l.list = append(l.list, cs...)
+	l.list = append(l.list, AnalyzerComments{conf, cs})
 	l.Unlock()
 }
 
-func (l *commentsList) Get() []*Comment {
+func (l *commentsList) Get() []AnalyzerComments {
 	return l.list
 }

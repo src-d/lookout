@@ -27,24 +27,26 @@ const (
 
 // Poster posts comments as Pull Request Reviews.
 type Poster struct {
-	rc ReviewCreator
-	cc CommitsComparator
-	sc StatusCreator
+	rc   ReviewCreator
+	cc   CommitsComparator
+	sc   StatusCreator
+	conf ProviderConfig
 }
 
 var _ lookout.Poster = &Poster{}
 
 // NewPoster creates a new poster for the GitHub API.
-func NewPoster(t http.RoundTripper) *Poster {
+func NewPoster(t http.RoundTripper, conf ProviderConfig) *Poster {
 	client := &http.Client{
 		Transport: t,
 	}
 
 	ghClient := github.NewClient(client)
 	return &Poster{
-		rc: ghClient.PullRequests,
-		cc: ghClient.Repositories,
-		sc: ghClient.Repositories,
+		rc:   ghClient.PullRequests,
+		cc:   ghClient.Repositories,
+		sc:   ghClient.Repositories,
+		conf: conf,
 	}
 }
 
@@ -52,7 +54,7 @@ func NewPoster(t http.RoundTripper) *Poster {
 // If the event is not a GitHub Pull Request, ErrEventNotSupported is returned.
 // If a GitHub API request fails, ErrGitHubAPI is returned.
 func (p *Poster) Post(ctx context.Context, e lookout.Event,
-	cs []*lookout.Comment) error {
+	aCommentsList []lookout.AnalyzerComments) error {
 	switch ev := e.(type) {
 	case *lookout.ReviewEvent:
 		if ev.Provider != Provider {
@@ -60,14 +62,14 @@ func (p *Poster) Post(ctx context.Context, e lookout.Event,
 				fmt.Errorf("unsupported provider: %s", ev.Provider))
 		}
 
-		return p.postPR(ctx, ev, cs)
+		return p.postPR(ctx, ev, aCommentsList)
 	default:
 		return ErrEventNotSupported.Wrap(fmt.Errorf("unsupported event type"))
 	}
 }
 
 func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
-	cs []*lookout.Comment) error {
+	aCommentsList []lookout.AnalyzerComments) error {
 
 	owner, repo, pr, err := p.validatePR(e)
 	if err != nil {
@@ -84,7 +86,7 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 	}
 
 	dl := newDiffLines(cc)
-	review, err := createReviewRequest(cs, dl)
+	review, err := p.createReviewRequest(aCommentsList, dl)
 	if err != nil {
 		return err
 	}
@@ -155,10 +157,21 @@ type CommitsComparator interface {
 
 var _ CommitsComparator = &github.RepositoriesService{}
 
+func (p *Poster) addFootnote(aConf lookout.AnalyzerConfig, c *lookout.Comment) string {
+	tmpl := p.conf.CommentFooter
+	url := aConf.Feedback
+
+	if tmpl == "" || url == "" {
+		return c.Text
+	}
+
+	return fmt.Sprintf("%s\n\n%s", c.Text, fmt.Sprintf(tmpl, url))
+}
+
 var approveEvent = "APPROVE"
 
-func createReviewRequest(
-	cs []*lookout.Comment,
+func (p *Poster) createReviewRequest(
+	aCommentsList []lookout.AnalyzerComments,
 	dl *diffLines) (*github.PullRequestReviewRequest, error) {
 	req := &github.PullRequestReviewRequest{
 		// TODO: Add CommitID of HEAD to ensure that comments are attached to
@@ -168,29 +181,33 @@ func createReviewRequest(
 
 	var bodyComments []string
 
-	for _, c := range cs {
-		if c.File == "" {
-			bodyComments = append(bodyComments, c.Text)
-		} else if c.Line < 1 {
-			line := 1
-			comment := &github.DraftReviewComment{
-				Path:     &c.File,
-				Position: &line,
-				Body:     &c.Text,
-			}
-			req.Comments = append(req.Comments, comment)
-		} else {
-			line, err := dl.ConvertLine(c.File, int(c.Line))
-			if err != nil {
-				return nil, err
-			}
+	for _, aComments := range aCommentsList {
+		for _, c := range aComments.Comments {
+			text := p.addFootnote(aComments.Config, c)
 
-			comment := &github.DraftReviewComment{
-				Path:     &c.File,
-				Position: &line,
-				Body:     &c.Text,
+			if c.File == "" {
+				bodyComments = append(bodyComments, text)
+			} else if c.Line < 1 {
+				line := 1
+				comment := &github.DraftReviewComment{
+					Path:     &c.File,
+					Position: &line,
+					Body:     &text,
+				}
+				req.Comments = append(req.Comments, comment)
+			} else {
+				line, err := dl.ConvertLine(c.File, int(c.Line))
+				if err != nil {
+					return nil, err
+				}
+
+				comment := &github.DraftReviewComment{
+					Path:     &c.File,
+					Position: &line,
+					Body:     &text,
+				}
+				req.Comments = append(req.Comments, comment)
 			}
-			req.Comments = append(req.Comments, comment)
 		}
 	}
 
