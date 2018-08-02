@@ -71,7 +71,7 @@ func (s *Server) Run(ctx context.Context) error {
 	})
 }
 
-func (s *Server) handleEvent(ctx context.Context, e lookout.Event) (err error) {
+func (s *Server) handleEvent(ctx context.Context, e lookout.Event) error {
 	logger := log.With(log.Fields{
 		"event-type": e.Type(),
 		"event-id":   e.ID(),
@@ -80,27 +80,13 @@ func (s *Server) handleEvent(ctx context.Context, e lookout.Event) (err error) {
 	status, err := s.eventOp.Save(ctx, e)
 	if err != nil {
 		logger.Errorf(err, "can't save event to database")
-		return
+		return err
 	}
 
 	if status == models.EventStatusProcessed {
 		logger.Infof("event successfully processed, skipping...")
-		return
+		return nil
 	}
-
-	defer func() {
-		if err == nil {
-			status = models.EventStatusProcessed
-		} else {
-			logger.Errorf(err, "event processing failed")
-			// don't fail on event processing error, just skip it
-			err = nil
-			status = models.EventStatusFailed
-		}
-		if updateErr := s.eventOp.UpdateStatus(ctx, e, status); updateErr != nil {
-			logger.Errorf(updateErr, "can't update status in database")
-		}
-	}()
 
 	switch ev := e.(type) {
 	case *lookout.ReviewEvent:
@@ -111,7 +97,19 @@ func (s *Server) handleEvent(ctx context.Context, e lookout.Event) (err error) {
 		log.Debugf("ignoring unsupported event: %s", ev)
 	}
 
-	return
+	if err == nil {
+		status = models.EventStatusProcessed
+	} else {
+		logger.Errorf(err, "event processing failed")
+		status = models.EventStatusFailed
+	}
+
+	if updateErr := s.eventOp.UpdateStatus(ctx, e, status); updateErr != nil {
+		logger.Errorf(updateErr, "can't update status in database")
+	}
+
+	// don't fail on event processing error, just skip it
+	return nil
 }
 
 // HandleReview sends request to analyzers concurrently
@@ -148,6 +146,7 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent) error
 	comments := s.concurrentRequest(ctx, logger, conf, send)
 
 	if err := s.post(ctx, logger, e, comments); err != nil {
+		s.status(ctx, logger, e, lookout.ErrorAnalysisStatus)
 		return fmt.Errorf("posting analysis failed: %s", err)
 	}
 
@@ -190,6 +189,7 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
 	comments := s.concurrentRequest(ctx, logger, conf, send)
 
 	if err := s.post(ctx, logger, e, comments); err != nil {
+		s.status(ctx, logger, e, lookout.ErrorAnalysisStatus)
 		return fmt.Errorf("posting analysis failed: %s", err)
 	}
 	s.status(ctx, logger, e, lookout.SuccessAnalysisStatus)
