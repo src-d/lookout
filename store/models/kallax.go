@@ -1077,6 +1077,8 @@ func (r *ReviewEvent) ColumnAddress(col string) (interface{}, error) {
 		return types.JSON(&r.ReviewEvent.Merge), nil
 	case "configuration":
 		return types.JSON(&r.ReviewEvent.Configuration), nil
+	case "number":
+		return &r.ReviewEvent.Number, nil
 	case "base":
 		return types.JSON(&r.ReviewEvent.CommitRevision.Base), nil
 	case "head":
@@ -1110,6 +1112,8 @@ func (r *ReviewEvent) Value(col string) (interface{}, error) {
 		return types.JSON(r.ReviewEvent.Merge), nil
 	case "configuration":
 		return types.JSON(r.ReviewEvent.Configuration), nil
+	case "number":
+		return r.ReviewEvent.Number, nil
 	case "base":
 		return types.JSON(r.ReviewEvent.CommitRevision.Base), nil
 	case "head":
@@ -1430,6 +1434,12 @@ func (q *ReviewEventQuery) FindByIsMergeable(v bool) *ReviewEventQuery {
 	return q.Where(kallax.Eq(Schema.ReviewEvent.IsMergeable, v))
 }
 
+// FindByNumber adds a new filter to the query that will require that
+// the Number property is equal to the passed value.
+func (q *ReviewEventQuery) FindByNumber(cond kallax.ScalarCond, v uint32) *ReviewEventQuery {
+	return q.Where(cond(Schema.ReviewEvent.Number, v))
+}
+
 // ReviewEventResultSet is the set of results returned by a query to the
 // database.
 type ReviewEventResultSet struct {
@@ -1580,6 +1590,7 @@ type schemaReviewEvent struct {
 	Source        *schemaReviewEventSource
 	Merge         *schemaReviewEventMerge
 	Configuration *schemaReviewEventConfiguration
+	Number        kallax.SchemaField
 	Base          *schemaReviewEventBase
 	Head          *schemaReviewEventHead
 }
@@ -1728,6 +1739,7 @@ var Schema = &schema{
 			kallax.NewSchemaField("source"),
 			kallax.NewSchemaField("merge"),
 			kallax.NewSchemaField("configuration"),
+			kallax.NewSchemaField("number"),
 			kallax.NewSchemaField("base"),
 			kallax.NewSchemaField("head"),
 		),
@@ -1754,6 +1766,7 @@ var Schema = &schema{
 			BaseSchemaField: kallax.NewSchemaField("configuration").(*kallax.BaseSchemaField),
 			Fields:          kallax.NewJSONSchemaKey(kallax.JSONAny, "review_event", "configuration", "fields"),
 		},
+		Number: kallax.NewSchemaField("number"),
 		Base: &schemaReviewEventBase{
 			BaseSchemaField:       kallax.NewSchemaField("base").(*kallax.BaseSchemaField),
 			InternalRepositoryURL: kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "base", "internal_repository_url"),

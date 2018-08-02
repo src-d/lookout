@@ -286,9 +286,31 @@ func mergeMaps(global, local map[string]interface{}) map[string]interface{} {
 }
 
 func (s *Server) post(ctx context.Context, logger log.Logger, e lookout.Event, comments []lookout.AnalyzerComments) error {
-	if len(comments) == 0 {
+	var filtered []lookout.AnalyzerComments
+	for _, cg := range comments {
+		var filteredComments []*lookout.Comment
+		for _, c := range cg.Comments {
+			yes, err := s.commentOp.Posted(ctx, e, c)
+			if err != nil {
+				logger.Errorf(err, "comment posted check failed")
+			}
+			if yes {
+				continue
+			}
+			filteredComments = append(filteredComments, c)
+		}
+		if len(filteredComments) > 0 {
+			filtered = append(filtered, lookout.AnalyzerComments{
+				Config:   cg.Config,
+				Comments: filteredComments,
+			})
+		}
+	}
+
+	if len(filtered) == 0 {
 		return nil
 	}
+
 	logger.With(log.Fields{
 		"comments": len(comments),
 	}).Infof("posting analysis")

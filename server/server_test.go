@@ -103,9 +103,10 @@ func TestServerPersistedReview(t *testing.T) {
 	watcher := &WatcherMock{}
 	poster := &PosterMock{}
 	fileGetter := &FileGetterMock{}
+	client := &AnalyzerClientMock{}
 	analyzers := map[string]lookout.Analyzer{
 		"mock": lookout.Analyzer{
-			Client: &AnalyzerClientMock{},
+			Client: client,
 		},
 	}
 
@@ -120,9 +121,56 @@ func TestServerPersistedReview(t *testing.T) {
 	comments := poster.PopComments()
 	require.Len(comments, 1)
 
+	// reset client
+	client.PopReviewEvents()
+
 	// send the same event once again
 	err = watcher.Send(reviewEvent)
 	require.Nil(err)
+
+	// shouldn't call analyzer
+	require.Len(client.PopReviewEvents(), 0)
+
+	// shouldn't comment anything
+	comments = poster.PopComments()
+	require.Len(comments, 0)
+}
+
+func TestServerPersistedComment(t *testing.T) {
+	require := require.New(t)
+
+	watcher := &WatcherMock{}
+	poster := &PosterMock{}
+	fileGetter := &FileGetterMock{}
+	client := &AnalyzerClientMock{}
+	analyzers := map[string]Analyzer{
+		"mock": Analyzer{
+			Client: client,
+		},
+	}
+
+	srv := NewServer(watcher, poster, fileGetter, analyzers, store.NewMemEventOperator(), store.NewMemCommentOperator())
+	srv.Run(context.TODO())
+
+	reviewEvent := &correctReviewEvent
+
+	err := watcher.Send(reviewEvent)
+	require.Nil(err)
+
+	comments := poster.PopComments()
+	require.Len(comments, 1)
+
+	// reset client
+	client.PopReviewEvents()
+
+	// send new event once again but with the same number
+	newEvent := correctReviewEvent
+	newEvent.InternalID = "new-id"
+	err = watcher.Send(&newEvent)
+	require.Nil(err)
+
+	// should call analyzer
+	require.Len(client.PopReviewEvents(), 1)
 
 	// shouldn't comment anything
 	comments = poster.PopComments()
