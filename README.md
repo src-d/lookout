@@ -32,6 +32,10 @@ It includes a curl-style binary that allows to trigger Analyzers directly, witho
 
 To trigger the analysis on an actual pull request of a GitHub repository do:
 
+1. Setup database
+    ```
+    make migrate
+    ```
 1. Start an analyzer
 Any of the analyzers or a default dummy one, included in this repository
     ```
