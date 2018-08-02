@@ -19,6 +19,11 @@ import (
 
 const Provider = "github"
 
+// ProviderConfig represents the yml config
+type ProviderConfig struct {
+	CommentFooter string `yaml:"comment_footer"`
+}
+
 // don't call github more often than
 var minInterval = 2 * time.Second
 

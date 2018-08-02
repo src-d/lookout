@@ -27,11 +27,13 @@ func NewPoster(w io.Writer) *Poster {
 
 // Post prints json comments to sdtout
 func (p *Poster) Post(ctx context.Context, e lookout.Event,
-	comments []*lookout.Comment) error {
+	aCommentsList []lookout.AnalyzerComments) error {
 
-	for _, c := range comments {
-		if err := p.enc.Encode(c); err != nil {
-			return err
+	for _, a := range aCommentsList {
+		for _, c := range a.Comments {
+			if err := p.enc.Encode(c); err != nil {
+				return err
+			}
 		}
 	}
 
