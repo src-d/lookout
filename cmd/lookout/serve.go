@@ -11,6 +11,7 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/provider/github"
 	"github.com/src-d/lookout/provider/json"
+	"github.com/src-d/lookout/server"
 	"github.com/src-d/lookout/service/bblfsh"
 	"github.com/src-d/lookout/service/git"
 	"github.com/src-d/lookout/util/cli"
@@ -73,7 +74,7 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
-	analyzers := make(map[string]lookout.Analyzer)
+	analyzers := make(map[string]server.Analyzer)
 	for _, aConf := range conf.Analyzers {
 		if aConf.Disabled {
 			continue
@@ -82,7 +83,7 @@ func (c *ServeCommand) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
-		analyzers[aConf.Name] = lookout.Analyzer{
+		analyzers[aConf.Name] = server.Analyzer{
 			Client: client,
 			Config: aConf,
 		}
@@ -99,7 +100,7 @@ func (c *ServeCommand) Execute(args []string) error {
 	}
 
 	ctx := context.Background()
-	return lookout.NewServer(watcher, poster, dataHandler.FileGetter, analyzers).Run(ctx)
+	return server.NewServer(watcher, poster, dataHandler.FileGetter, analyzers).Run(ctx)
 }
 
 func (c *ServeCommand) initPoster(conf Config) (lookout.Poster, error) {
@@ -147,7 +148,7 @@ func (c *ServeCommand) initWatcher(conf Config) (lookout.Watcher, error) {
 	}
 }
 
-func (c *ServeCommand) startAnalyzer(conf lookout.AnalyzerConfig) (lookout.AnalyzerClient, error) {
+func (c *ServeCommand) startAnalyzer(conf server.AnalyzerConfig) (lookout.AnalyzerClient, error) {
 	addr, err := grpchelper.ToGoGrpcAddress(conf.Addr)
 	if err != nil {
 		return nil, err

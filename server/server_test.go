@@ -1,10 +1,12 @@
-package lookout
+package server
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
+	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/mock"
 	"github.com/src-d/lookout/pb"
 	"github.com/src-d/lookout/store"
 	"github.com/stretchr/testify/require"
@@ -12,27 +14,27 @@ import (
 	log "gopkg.in/src-d/go-log.v1"
 )
 
-var correctReviewEvent = ReviewEvent{
+var correctReviewEvent = lookout.ReviewEvent{
 	Provider:    "Mock",
 	InternalID:  "internal-id",
 	IsMergeable: true,
-	Source: ReferencePointer{
+	Source: lookout.ReferencePointer{
 		InternalRepositoryURL: "file:///test",
 		ReferenceName:         "feature",
 		Hash:                  "source-hash",
 	},
-	Merge: ReferencePointer{
+	Merge: lookout.ReferencePointer{
 		InternalRepositoryURL: "file:///test",
 		ReferenceName:         "merge-branch",
 		Hash:                  "merge-hash",
 	},
-	CommitRevision: CommitRevision{
-		Base: ReferencePointer{
+	CommitRevision: lookout.CommitRevision{
+		Base: lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///test",
 			ReferenceName:         "master",
 			Hash:                  "base-hash",
 		},
-		Head: ReferencePointer{
+		Head: lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///test",
 			ReferenceName:         "master",
 			Hash:                  "head-hash",
@@ -59,7 +61,7 @@ func TestServerReview(t *testing.T) {
 	require.Equal(makeComment(reviewEvent.CommitRevision.Base, reviewEvent.CommitRevision.Head), comments[0])
 
 	status := poster.PopStatus()
-	require.Equal(SuccessAnalysisStatus, status)
+	require.Equal(lookout.SuccessAnalysisStatus, status)
 }
 
 func TestServerPush(t *testing.T) {
@@ -67,16 +69,16 @@ func TestServerPush(t *testing.T) {
 
 	watcher, poster := setupMockedServer()
 
-	pushEvent := &PushEvent{
+	pushEvent := &lookout.PushEvent{
 		Provider:   "Mock",
 		InternalID: "internal-id",
-		CommitRevision: CommitRevision{
-			Base: ReferencePointer{
+		CommitRevision: lookout.CommitRevision{
+			Base: lookout.ReferencePointer{
 				InternalRepositoryURL: "file:///test",
 				ReferenceName:         "master",
 				Hash:                  "base-hash",
 			},
-			Head: ReferencePointer{
+			Head: lookout.ReferencePointer{
 				InternalRepositoryURL: "file:///test",
 				ReferenceName:         "master",
 				Hash:                  "head-hash",
@@ -92,7 +94,7 @@ func TestServerPush(t *testing.T) {
 	require.Equal(makeComment(pushEvent.CommitRevision.Base, pushEvent.CommitRevision.Head), comments[0])
 
 	status := poster.PopStatus()
-	require.Equal(SuccessAnalysisStatus, status)
+	require.Equal(lookout.SuccessAnalysisStatus, status)
 }
 
 func TestAnalyzerConfigDisabled(t *testing.T) {
@@ -120,7 +122,7 @@ func TestAnalyzerConfigDisabled(t *testing.T) {
 	require.Len(comments, 0)
 
 	status := poster.PopStatus()
-	require.Equal(SuccessAnalysisStatus, status)
+	require.Equal(lookout.SuccessAnalysisStatus, status)
 }
 
 var globalConfig = AnalyzerConfig{
@@ -262,27 +264,27 @@ func setupMockedServer() (*WatcherMock, *PosterMock) {
 }
 
 type WatcherMock struct {
-	handler EventHandler
+	handler lookout.EventHandler
 }
 
-func (w *WatcherMock) Watch(ctx context.Context, e EventHandler) error {
+func (w *WatcherMock) Watch(ctx context.Context, e lookout.EventHandler) error {
 	w.handler = e
 	return nil
 }
 
-func (w *WatcherMock) Send(e Event) error {
+func (w *WatcherMock) Send(e lookout.Event) error {
 	return w.handler(e)
 }
 
 var _ Poster = &PosterMock{}
 
 type PosterMock struct {
-	comments []*Comment
-	status   AnalysisStatus
+	comments []*lookout.Comment
+	status   lookout.AnalysisStatus
 }
 
 func (p *PosterMock) Post(_ context.Context, e Event, aCommentsList []AnalyzerComments) error {
-	cs := make([]*Comment, 0)
+	cs := make([]*lookout.Comment, 0)
 	for _, aComments := range aCommentsList {
 		cs = append(cs, aComments.Comments...)
 	}
@@ -290,18 +292,18 @@ func (p *PosterMock) Post(_ context.Context, e Event, aCommentsList []AnalyzerCo
 	return nil
 }
 
-func (p *PosterMock) PopComments() []*Comment {
+func (p *PosterMock) PopComments() []*lookout.Comment {
 	cs := p.comments[:]
-	p.comments = []*Comment{}
+	p.comments = []*lookout.Comment{}
 	return cs
 }
 
-func (p *PosterMock) Status(_ context.Context, e Event, st AnalysisStatus) error {
+func (p *PosterMock) Status(_ context.Context, e lookout.Event, st lookout.AnalysisStatus) error {
 	p.status = st
 	return nil
 }
 
-func (p *PosterMock) PopStatus() AnalysisStatus {
+func (p *PosterMock) PopStatus() lookout.AnalysisStatus {
 	st := p.status
 	p.status = 0
 	return st
@@ -310,7 +312,7 @@ func (p *PosterMock) PopStatus() AnalysisStatus {
 type FileGetterMock struct {
 }
 
-func (g *FileGetterMock) GetFiles(_ context.Context, req *FilesRequest) (FileScanner, error) {
+func (g *FileGetterMock) GetFiles(_ context.Context, req *lookout.FilesRequest) (lookout.FileScanner, error) {
 	return &NoopFileScanner{}, nil
 }
 
@@ -318,9 +320,9 @@ type FileGetterMockWithConfig struct {
 	content string
 }
 
-func (g *FileGetterMockWithConfig) GetFiles(_ context.Context, req *FilesRequest) (FileScanner, error) {
+func (g *FileGetterMockWithConfig) GetFiles(_ context.Context, req *lookout.FilesRequest) (lookout.FileScanner, error) {
 	if req.IncludePattern == `^\.lookout\.yml$` {
-		return &SliceFileScanner{Files: []*File{{
+		return &mock.SliceFileScanner{Files: []*lookout.File{{
 			Path:    ".lookout.yml",
 			Content: []byte(g.content),
 		}}}, nil
@@ -329,34 +331,34 @@ func (g *FileGetterMockWithConfig) GetFiles(_ context.Context, req *FilesRequest
 }
 
 type AnalyzerClientMock struct {
-	reviewEvents []*ReviewEvent
+	reviewEvents []*lookout.ReviewEvent
 }
 
-func (a *AnalyzerClientMock) NotifyReviewEvent(ctx context.Context, in *ReviewEvent, opts ...grpc.CallOption) (*EventResponse, error) {
+func (a *AnalyzerClientMock) NotifyReviewEvent(ctx context.Context, in *lookout.ReviewEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
 	a.reviewEvents = append(a.reviewEvents, in)
-	return &EventResponse{
-		Comments: []*Comment{
+	return &lookout.EventResponse{
+		Comments: []*lookout.Comment{
 			makeComment(in.CommitRevision.Base, in.CommitRevision.Head),
 		},
 	}, nil
 }
 
-func (a *AnalyzerClientMock) NotifyPushEvent(ctx context.Context, in *PushEvent, opts ...grpc.CallOption) (*EventResponse, error) {
-	return &EventResponse{
-		Comments: []*Comment{
+func (a *AnalyzerClientMock) NotifyPushEvent(ctx context.Context, in *lookout.PushEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
+	return &lookout.EventResponse{
+		Comments: []*lookout.Comment{
 			makeComment(in.CommitRevision.Base, in.CommitRevision.Head),
 		},
 	}, nil
 }
 
-func (a *AnalyzerClientMock) PopReviewEvents() []*ReviewEvent {
+func (a *AnalyzerClientMock) PopReviewEvents() []*lookout.ReviewEvent {
 	res := a.reviewEvents[:]
-	a.reviewEvents = []*ReviewEvent{}
+	a.reviewEvents = []*lookout.ReviewEvent{}
 	return res
 }
 
-func makeComment(from, to ReferencePointer) *Comment {
-	return &Comment{
+func makeComment(from, to lookout.ReferencePointer) *lookout.Comment {
+	return &lookout.Comment{
 		Text: fmt.Sprintf("%s > %s", from.Hash, to.Hash),
 	}
 }
@@ -372,7 +374,7 @@ func (s *NoopFileScanner) Err() error {
 	return nil
 }
 
-func (s *NoopFileScanner) File() *File {
+func (s *NoopFileScanner) File() *lookout.File {
 	return nil
 }
 

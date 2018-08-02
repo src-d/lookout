@@ -1,10 +1,11 @@
-package lookout
+package server
 
 import (
 	"context"
 	"fmt"
 	"sync"
 
+	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/pb"
 	log "gopkg.in/src-d/go-log.v1"
 	yaml "gopkg.in/yaml.v2"
@@ -31,7 +32,7 @@ type ServerConfig struct {
 
 // Analyzer is a struct of analyzer client and config
 type Analyzer struct {
-	Client AnalyzerClient
+	Client lookout.AnalyzerClient
 	Config AnalyzerConfig
 }
 
@@ -39,37 +40,37 @@ type Analyzer struct {
 // analyzer that created them
 type AnalyzerComments struct {
 	Config   AnalyzerConfig
-	Comments []*Comment
+	Comments []*lookout.Comment
 }
 
-type reqSent func(client AnalyzerClient, settings map[string]interface{}) ([]*Comment, error)
+type reqSent func(client lookout.AnalyzerClient, settings map[string]interface{}) ([]*lookout.Comment, error)
 
 // Server implements glue between providers / data-server / analyzers
 type Server struct {
-	watcher    Watcher
-	poster     Poster
-	fileGetter FileGetter
+	watcher    lookout.Watcher
+	poster     lookout.Poster
+	fileGetter lookout.FileGetter
 	analyzers  map[string]Analyzer
 }
 
 // NewServer creates new Server
-func NewServer(w Watcher, p Poster, fileGetter FileGetter, analyzers map[string]Analyzer) *Server {
+func NewServer(w lookout.Watcher, p lookout.Poster, fileGetter lookout.FileGetter, analyzers map[string]Analyzer) *Server {
 	return &Server{w, p, fileGetter, analyzers}
 }
 
 // Run starts server
 func (s *Server) Run(ctx context.Context) error {
 	// FIXME(max): we most probably want to change interface of EventHandler instead of it
-	return s.watcher.Watch(ctx, func(e Event) error {
+	return s.watcher.Watch(ctx, func(e lookout.Event) error {
 		return s.handleEvent(ctx, e)
 	})
 }
 
-func (s *Server) handleEvent(ctx context.Context, e Event) error {
+func (s *Server) handleEvent(ctx context.Context, e lookout.Event) error {
 	switch ev := e.(type) {
-	case *ReviewEvent:
+	case *lookout.ReviewEvent:
 		return s.HandleReview(ctx, ev)
-	case *PushEvent:
+	case *lookout.PushEvent:
 		return s.HandlePush(ctx, ev)
 	default:
 		log.Debugf("ignoring unsupported event: %s", ev)
@@ -78,7 +79,7 @@ func (s *Server) handleEvent(ctx context.Context, e Event) error {
 }
 
 // HandleReview sends request to analyzers concurrently
-func (s *Server) HandleReview(ctx context.Context, e *ReviewEvent) error {
+func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent) error {
 	logger := log.DefaultLogger.With(log.Fields{
 		"provider":   e.Provider,
 		"repository": e.Head.InternalRepositoryURL,
@@ -97,9 +98,9 @@ func (s *Server) HandleReview(ctx context.Context, e *ReviewEvent) error {
 		return nil
 	}
 
-	s.status(ctx, logger, e, PendingAnalysisStatus)
+	s.status(ctx, logger, e, lookout.PendingAnalysisStatus)
 
-	send := func(a AnalyzerClient, settings map[string]interface{}) ([]*Comment, error) {
+	send := func(a lookout.AnalyzerClient, settings map[string]interface{}) ([]*lookout.Comment, error) {
 		st := pb.ToStruct(settings)
 		if st != nil {
 			e.Configuration = *st
@@ -112,14 +113,15 @@ func (s *Server) HandleReview(ctx context.Context, e *ReviewEvent) error {
 	}
 	comments := s.concurrentRequest(ctx, logger, conf, send)
 
+	// fixme make them return errors and catch in handleEvent
 	s.post(ctx, logger, e, comments)
-	s.status(ctx, logger, e, SuccessAnalysisStatus)
+	s.status(ctx, logger, e, lookout.SuccessAnalysisStatus)
 
 	return nil
 }
 
 // HandlePush sends request to analyzers concurrently
-func (s *Server) HandlePush(ctx context.Context, e *PushEvent) error {
+func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
 	logger := log.DefaultLogger.With(log.Fields{
 		"provider":   e.Provider,
 		"repository": e.Head.InternalRepositoryURL,
@@ -137,9 +139,9 @@ func (s *Server) HandlePush(ctx context.Context, e *PushEvent) error {
 		return err
 	}
 
-	s.status(ctx, logger, e, PendingAnalysisStatus)
+	s.status(ctx, logger, e, lookout.PendingAnalysisStatus)
 
-	send := func(a AnalyzerClient, settings map[string]interface{}) ([]*Comment, error) {
+	send := func(a lookout.AnalyzerClient, settings map[string]interface{}) ([]*lookout.Comment, error) {
 		st := pb.ToStruct(settings)
 		if st != nil {
 			e.Configuration = *st
@@ -153,15 +155,15 @@ func (s *Server) HandlePush(ctx context.Context, e *PushEvent) error {
 	comments := s.concurrentRequest(ctx, logger, conf, send)
 
 	s.post(ctx, logger, e, comments)
-	s.status(ctx, logger, e, SuccessAnalysisStatus)
+	s.status(ctx, logger, e, lookout.SuccessAnalysisStatus)
 
 	return nil
 }
 
 // FIXME(max): it's better to hold logger inside context
-func (s *Server) getConfig(ctx context.Context, logger log.Logger, e Event) (map[string]AnalyzerConfig, error) {
+func (s *Server) getConfig(ctx context.Context, logger log.Logger, e lookout.Event) (map[string]AnalyzerConfig, error) {
 	rev := e.Revision()
-	scanner, err := s.fileGetter.GetFiles(ctx, &FilesRequest{
+	scanner, err := s.fileGetter.GetFiles(ctx, &lookout.FilesRequest{
 		Revision:       &rev.Head,
 		IncludePattern: `^\.lookout\.yml$`,
 		WantContents:   true,
@@ -286,7 +288,7 @@ func (s *Server) post(ctx context.Context, logger log.Logger, e Event, comments 
 	}
 }
 
-func (s *Server) status(ctx context.Context, logger log.Logger, e Event, st AnalysisStatus) {
+func (s *Server) status(ctx context.Context, logger log.Logger, e lookout.Event, st lookout.AnalysisStatus) {
 	if err := s.poster.Status(ctx, e, st); err != nil {
 		logger.With(log.Fields{"status": st}).Errorf(err, "posting status failed")
 	}
@@ -297,7 +299,7 @@ type commentsList struct {
 	list []AnalyzerComments
 }
 
-func (l *commentsList) Add(conf AnalyzerConfig, cs ...*Comment) {
+func (l *commentsList) Add(conf AnalyzerConfig, cs ...*lookout.Comment) {
 	l.Lock()
 	l.list = append(l.list, AnalyzerComments{conf, cs})
 	l.Unlock()

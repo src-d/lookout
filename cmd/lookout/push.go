@@ -6,6 +6,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/server"
 	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	log "gopkg.in/src-d/go-log.v1"
@@ -48,8 +49,8 @@ func (c *PushCommand) Execute(args []string) error {
 		return err
 	}
 
-	srv := lookout.NewServer(nil, &LogPoster{log.DefaultLogger}, dataSrv.FileGetter, map[string]lookout.Analyzer{
-		"test-analyzes": lookout.Analyzer{
+	srv := server.NewServer(nil, &LogPoster{log.DefaultLogger}, dataSrv.FileGetter, map[string]server.Analyzer{
+		"test-analyzes": server.Analyzer{
 			Client: client,
 		},
 	})

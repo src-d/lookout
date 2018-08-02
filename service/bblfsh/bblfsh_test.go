@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/mock"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -94,7 +95,7 @@ func (s *ServiceSuite) TestChanges() {
 	}
 
 	underlying.ExpectedRequest = req
-	underlying.ChangeScanner = &SliceChangeScanner{Changes: expectedChanges}
+	underlying.ChangeScanner = &mock.SliceChangeScanner{Changes: expectedChanges}
 
 	s.Mock.Nodes = make(map[string]*uast.Node)
 	s.Mock.Nodes["f1new"] = &uast.Node{InternalType: "f1 new"}
@@ -154,7 +155,7 @@ func (s *ServiceSuite) TestFiles() {
 	}
 
 	underlying.ExpectedRequest = req
-	underlying.FileScanner = &SliceFileScanner{Files: expectedFiles}
+	underlying.FileScanner = &mock.SliceFileScanner{Files: expectedFiles}
 
 	s.Mock.Nodes = make(map[string]*uast.Node)
 	s.Mock.Nodes["f1new"] = &uast.Node{InternalType: "f1 new"}
@@ -237,78 +238,4 @@ func (r *MockFilesService) GetFiles(ctx context.Context,
 	require := require.New(r.T)
 	require.Equal(r.ExpectedRequest, req)
 	return r.FileScanner, r.Error
-}
-
-type SliceChangeScanner struct {
-	Changes    []*lookout.Change
-	Error      error
-	ChangeTick chan struct{}
-	val        *lookout.Change
-}
-
-func (s *SliceChangeScanner) Next() bool {
-	if s.Error != nil {
-		return false
-	}
-
-	if len(s.Changes) == 0 {
-		s.val = nil
-		return false
-	}
-
-	s.val, s.Changes = s.Changes[0], s.Changes[1:]
-	return true
-}
-
-func (s *SliceChangeScanner) Err() error {
-	return s.Error
-}
-
-func (s *SliceChangeScanner) Change() *lookout.Change {
-	if s.ChangeTick != nil {
-		<-s.ChangeTick
-	}
-
-	return s.val
-}
-
-func (s *SliceChangeScanner) Close() error {
-	return nil
-}
-
-type SliceFileScanner struct {
-	Files    []*lookout.File
-	Error    error
-	FileTick chan struct{}
-	val      *lookout.File
-}
-
-func (s *SliceFileScanner) Next() bool {
-	if s.Error != nil {
-		return false
-	}
-
-	if len(s.Files) == 0 {
-		s.val = nil
-		return false
-	}
-
-	s.val, s.Files = s.Files[0], s.Files[1:]
-	return true
-}
-
-func (s *SliceFileScanner) Err() error {
-	return s.Error
-}
-
-func (s *SliceFileScanner) File() *lookout.File {
-	if s.FileTick != nil {
-		<-s.FileTick
-	}
-
-	return s.val
-}
-
-func (s *SliceFileScanner) Close() error {
-	return nil
 }
