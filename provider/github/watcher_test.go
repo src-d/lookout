@@ -18,6 +18,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+func init() {
+	// make everything faster for tests
+	minInterval = time.Millisecond
+}
+
 type WatcherTestSuite struct {
 	suite.Suite
 	mux    *http.ServeMux
@@ -41,9 +46,23 @@ func (s *WatcherTestSuite) SetupTest() {
 }
 
 func (s *WatcherTestSuite) TestWatch() {
-	var callsA, callsB, events int
+	var callsA, callsB, events, prEvents, pushEvents int
 
-	handler := func(calls *int) func(w http.ResponseWriter, r *http.Request) {
+	pullsHandler := func(calls *int) func(w http.ResponseWriter, r *http.Request) {
+		return func(w http.ResponseWriter, r *http.Request) {
+			*calls++
+			etag := "124567"
+			if r.Header.Get("if-none-match") == etag {
+				w.WriteHeader(http.StatusNotModified)
+				return
+			}
+
+			w.Header().Set("etag", etag)
+			fmt.Fprint(w, `[{"id":5}]`)
+		}
+	}
+
+	eventsHandler := func(calls *int) func(w http.ResponseWriter, r *http.Request) {
 		return func(w http.ResponseWriter, r *http.Request) {
 			*calls++
 			etag := "124567"
@@ -57,8 +76,10 @@ func (s *WatcherTestSuite) TestWatch() {
 		}
 	}
 
-	s.mux.HandleFunc("/repos/mock/test-a/events", handler(&callsA))
-	s.mux.HandleFunc("/repos/mock/test-b/events", handler(&callsB))
+	s.mux.HandleFunc("/repos/mock/test-a/pulls", pullsHandler(&callsA))
+	s.mux.HandleFunc("/repos/mock/test-a/events", eventsHandler(&callsA))
+	s.mux.HandleFunc("/repos/mock/test-b/pulls", pullsHandler(&callsB))
+	s.mux.HandleFunc("/repos/mock/test-b/events", eventsHandler(&callsB))
 
 	w, err := NewWatcher(nil, &lookout.WatchOptions{
 		URLs: []string{"github.com/mock/test-a", "github.com/mock/test-b"},
@@ -75,18 +96,30 @@ func (s *WatcherTestSuite) TestWatch() {
 	err = w.Watch(ctx, func(e lookout.Event) error {
 		events++
 
-		s.Equal(pb.PushEventType, e.Type())
-		s.Equal("d1f57cc4e520766576c5f1d9e7655aeea5fbccfa", e.ID().String())
+		switch e.Type() {
+		case pb.ReviewEventType:
+			prEvents++
+			s.Equal("02b508226b9c2f38be7d589fe765a119ddf4452b", e.ID().String())
+		case pb.PushEventType:
+			pushEvents++
+			s.Equal("d1f57cc4e520766576c5f1d9e7655aeea5fbccfa", e.ID().String())
+		}
+
 		return nil
 	})
 
-	s.True(callsA > 1)
-	s.True(callsB > 1)
-	s.Equal(2, events)
-	s.Error(err, "context deadline exceeded")
+	s.True(callsA > 2)
+	s.True(callsB > 2)
+	s.Equal(4, events)
+	s.Equal(2, prEvents)
+	s.Equal(2, pushEvents)
+	s.EqualError(err, "context deadline exceeded")
 }
 
 func (s *WatcherTestSuite) TestWatch_WithError() {
+	s.mux.HandleFunc("/repos/mock/test/pulls", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `[{"id":1}]`)
+	})
 	s.mux.HandleFunc("/repos/mock/test/events", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `[{"id":"1", "type":"PushEvent", "payload":{"push_id": 1}}]`)
 	})
@@ -101,14 +134,12 @@ func (s *WatcherTestSuite) TestWatch_WithError() {
 	s.NoError(err)
 
 	err = w.Watch(context.TODO(), func(e lookout.Event) error {
-		s.Equal("d1f57cc4e520766576c5f1d9e7655aeea5fbccfa", e.ID().String())
-		return fmt.Errorf("foo")
-	})
-
-	s.Error(err, "foo")
-
-	err = w.Watch(context.TODO(), func(e lookout.Event) error {
-		s.Equal("d1f57cc4e520766576c5f1d9e7655aeea5fbccfa", e.ID().String())
+		switch e.Type() {
+		case pb.ReviewEventType:
+			s.Equal("96de6d9d321aa94faa0f053c72e2684a44961e5b", e.ID().String())
+		case pb.PushEventType:
+			s.Equal("d1f57cc4e520766576c5f1d9e7655aeea5fbccfa", e.ID().String())
+		}
 		return fmt.Errorf("foo")
 	})
 
