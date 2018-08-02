@@ -54,8 +54,8 @@ type ServeCommand struct {
 
 // Config holds the main configuration
 type Config struct {
-	lookout.ServerConfig `yaml:",inline"`
-	Providers            struct {
+	server.Config `yaml:",inline"`
+	Providers     struct {
 		Github github.ProviderConfig
 	}
 }
@@ -79,7 +79,7 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
-	analyzers := make(map[string]server.Analyzer)
+	analyzers := make(map[string]lookout.Analyzer)
 	for _, aConf := range conf.Analyzers {
 		if aConf.Disabled {
 			continue
@@ -88,7 +88,7 @@ func (c *ServeCommand) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
-		analyzers[aConf.Name] = server.Analyzer{
+		analyzers[aConf.Name] = lookout.Analyzer{
 			Client: client,
 			Config: aConf,
 		}
@@ -167,7 +167,7 @@ func (c *ServeCommand) initWatcher(conf Config) (lookout.Watcher, error) {
 	}
 }
 
-func (c *ServeCommand) startAnalyzer(conf server.AnalyzerConfig) (lookout.AnalyzerClient, error) {
+func (c *ServeCommand) startAnalyzer(conf lookout.AnalyzerConfig) (lookout.AnalyzerClient, error) {
 	addr, err := grpchelper.ToGoGrpcAddress(conf.Addr)
 	if err != nil {
 		return nil, err

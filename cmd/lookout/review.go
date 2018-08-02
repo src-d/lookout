@@ -49,8 +49,8 @@ func (c *ReviewCommand) Execute(args []string) error {
 		return err
 	}
 
-	srv := server.NewServer(nil, &LogPoster{log.DefaultLogger}, dataSrv.FileGetter, map[string]server.Analyzer{
-		"test-analyzes": server.Analyzer{
+	srv := server.NewServer(nil, &LogPoster{log.DefaultLogger}, dataSrv.FileGetter, map[string]lookout.Analyzer{
+		"test-analyzes": lookout.Analyzer{
 			Client: client,
 		},
 	}, &store.NoopEventOperator{}, &store.NoopCommentOperator{})

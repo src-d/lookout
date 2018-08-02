@@ -103,8 +103,8 @@ func TestServerPersistedReview(t *testing.T) {
 	watcher := &WatcherMock{}
 	poster := &PosterMock{}
 	fileGetter := &FileGetterMock{}
-	analyzers := map[string]Analyzer{
-		"mock": Analyzer{
+	analyzers := map[string]lookout.Analyzer{
+		"mock": lookout.Analyzer{
 			Client: &AnalyzerClientMock{},
 		},
 	}
@@ -135,10 +135,10 @@ func TestAnalyzerConfigDisabled(t *testing.T) {
 	watcher := &WatcherMock{}
 	poster := &PosterMock{}
 	fileGetter := &FileGetterMock{}
-	analyzers := map[string]Analyzer{
-		"mock": Analyzer{
+	analyzers := map[string]lookout.Analyzer{
+		"mock": lookout.Analyzer{
 			Client: &AnalyzerClientMock{},
-			Config: AnalyzerConfig{
+			Config: lookout.AnalyzerConfig{
 				Disabled: true,
 			},
 		},
@@ -157,7 +157,7 @@ func TestAnalyzerConfigDisabled(t *testing.T) {
 	require.Equal(lookout.SuccessAnalysisStatus, status)
 }
 
-var globalConfig = AnalyzerConfig{
+var globalConfig = lookout.AnalyzerConfig{
 	Name: "test",
 	Settings: map[string]interface{}{
 		"key_from_global": 1,
@@ -171,8 +171,8 @@ func TestMergeConfigWithoutLocal(t *testing.T) {
 	poster := &PosterMock{}
 	fileGetter := &FileGetterMock{}
 	analyzerClient := &AnalyzerClientMock{}
-	analyzers := map[string]Analyzer{
-		"mock": Analyzer{
+	analyzers := map[string]lookout.Analyzer{
+		"mock": lookout.Analyzer{
 			Client: analyzerClient,
 			Config: globalConfig,
 		},
@@ -203,8 +203,8 @@ func TestMergeConfigWithLocal(t *testing.T) {
 `,
 	}
 	analyzerClient := &AnalyzerClientMock{}
-	analyzers := map[string]Analyzer{
-		"mock": Analyzer{
+	analyzers := map[string]lookout.Analyzer{
+		"mock": lookout.Analyzer{
 			Client: analyzerClient,
 			Config: globalConfig,
 		},
@@ -283,8 +283,8 @@ func setupMockedServer() (*WatcherMock, *PosterMock) {
 	watcher := &WatcherMock{}
 	poster := &PosterMock{}
 	fileGetter := &FileGetterMock{}
-	analyzers := map[string]Analyzer{
-		"mock": Analyzer{
+	analyzers := map[string]lookout.Analyzer{
+		"mock": lookout.Analyzer{
 			Client: &AnalyzerClientMock{},
 		},
 	}
@@ -308,14 +308,14 @@ func (w *WatcherMock) Send(e lookout.Event) error {
 	return w.handler(e)
 }
 
-var _ Poster = &PosterMock{}
+var _ lookout.Poster = &PosterMock{}
 
 type PosterMock struct {
 	comments []*lookout.Comment
 	status   lookout.AnalysisStatus
 }
 
-func (p *PosterMock) Post(_ context.Context, e Event, aCommentsList []AnalyzerComments) error {
+func (p *PosterMock) Post(_ context.Context, e lookout.Event, aCommentsList []lookout.AnalyzerComments) error {
 	cs := make([]*lookout.Comment, 0)
 	for _, aComments := range aCommentsList {
 		cs = append(cs, aComments.Comments...)

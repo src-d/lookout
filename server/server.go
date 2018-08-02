@@ -13,36 +13,9 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// AnalyzerConfig is a configuration of analyzer
-type AnalyzerConfig struct {
-	Name string
-	// Addr is gRPC URL.
-	// can be defined only in global config, repository-scoped configuration is ignored
-	Addr string
-	// Disabled repository-scoped configuration can accept only true value, false value is ignored
-	Disabled bool
-	// Feedback is a url to be linked after each comment
-	Feedback string
-	// Settings any configuration for an analyzer
-	Settings map[string]interface{}
-}
-
-// ServerConfig is a server configuration
-type ServerConfig struct {
-	Analyzers []AnalyzerConfig
-}
-
-// Analyzer is a struct of analyzer client and config
-type Analyzer struct {
-	Client lookout.AnalyzerClient
-	Config AnalyzerConfig
-}
-
-// AnalyzerComments contains a group of comments and the config for the
-// analyzer that created them
-type AnalyzerComments struct {
-	Config   AnalyzerConfig
-	Comments []*lookout.Comment
+// Config is a server configuration
+type Config struct {
+	Analyzers []lookout.AnalyzerConfig
 }
 
 type reqSent func(client lookout.AnalyzerClient, settings map[string]interface{}) ([]*lookout.Comment, error)
@@ -52,14 +25,14 @@ type Server struct {
 	watcher    lookout.Watcher
 	poster     lookout.Poster
 	fileGetter lookout.FileGetter
-	analyzers  map[string]Analyzer
+	analyzers  map[string]lookout.Analyzer
 	eventOp    store.EventOperator
 	commentOp  store.CommentOperator
 }
 
 // NewServer creates new Server
 func NewServer(w lookout.Watcher, p lookout.Poster, fileGetter lookout.FileGetter,
-	analyzers map[string]Analyzer, eventOp store.EventOperator, commentOp store.CommentOperator) *Server {
+	analyzers map[string]lookout.Analyzer, eventOp store.EventOperator, commentOp store.CommentOperator) *Server {
 	return &Server{w, p, fileGetter, analyzers, eventOp, commentOp}
 }
 
@@ -198,7 +171,7 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
 }
 
 // FIXME(max): it's better to hold logger inside context
-func (s *Server) getConfig(ctx context.Context, logger log.Logger, e lookout.Event) (map[string]AnalyzerConfig, error) {
+func (s *Server) getConfig(ctx context.Context, logger log.Logger, e lookout.Event) (map[string]lookout.AnalyzerConfig, error) {
 	rev := e.Revision()
 	scanner, err := s.fileGetter.GetFiles(ctx, &lookout.FilesRequest{
 		Revision:       &rev.Head,
@@ -222,12 +195,12 @@ func (s *Server) getConfig(ctx context.Context, logger log.Logger, e lookout.Eve
 		return nil, nil
 	}
 
-	var conf ServerConfig
+	var conf Config
 	if err := yaml.Unmarshal(configContent, &conf); err != nil {
 		return nil, fmt.Errorf("Can't parse configuration file: %s", err)
 	}
 
-	res := make(map[string]AnalyzerConfig, len(s.analyzers))
+	res := make(map[string]lookout.AnalyzerConfig, len(s.analyzers))
 	for name, a := range s.analyzers {
 		res[name] = a.Config
 	}
@@ -243,7 +216,7 @@ func (s *Server) getConfig(ctx context.Context, logger log.Logger, e lookout.Eve
 }
 
 // FIXME(max): it's better to hold logger inside context
-func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, conf map[string]AnalyzerConfig, send reqSent) []AnalyzerComments {
+func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, conf map[string]lookout.AnalyzerConfig, send reqSent) []lookout.AnalyzerComments {
 	var comments commentsList
 
 	var wg sync.WaitGroup
@@ -253,7 +226,7 @@ func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, conf 
 		}
 
 		wg.Add(1)
-		go func(name string, a Analyzer) {
+		go func(name string, a lookout.Analyzer) {
 			defer wg.Done()
 
 			aLogger := logger.With(log.Fields{
@@ -312,7 +285,7 @@ func mergeMaps(global, local map[string]interface{}) map[string]interface{} {
 	return merged
 }
 
-func (s *Server) post(ctx context.Context, logger log.Logger, e Event, comments []AnalyzerComments) error {
+func (s *Server) post(ctx context.Context, logger log.Logger, e lookout.Event, comments []lookout.AnalyzerComments) error {
 	if len(comments) == 0 {
 		return nil
 	}
@@ -324,9 +297,11 @@ func (s *Server) post(ctx context.Context, logger log.Logger, e Event, comments 
 		return err
 	}
 
-	for _, c := range comments {
-		if err := s.commentOp.Save(ctx, e, c); err != nil {
-			log.Errorf(err, "can't save comment")
+	for _, cg := range comments {
+		for _, c := range cg.Comments {
+			if err := s.commentOp.Save(ctx, e, c); err != nil {
+				log.Errorf(err, "can't save comment")
+			}
 		}
 	}
 
@@ -341,15 +316,15 @@ func (s *Server) status(ctx context.Context, logger log.Logger, e lookout.Event,
 
 type commentsList struct {
 	sync.Mutex
-	list []AnalyzerComments
+	list []lookout.AnalyzerComments
 }
 
-func (l *commentsList) Add(conf AnalyzerConfig, cs ...*lookout.Comment) {
+func (l *commentsList) Add(conf lookout.AnalyzerConfig, cs ...*lookout.Comment) {
 	l.Lock()
-	l.list = append(l.list, AnalyzerComments{conf, cs})
+	l.list = append(l.list, lookout.AnalyzerComments{conf, cs})
 	l.Unlock()
 }
 
-func (l *commentsList) Get() []AnalyzerComments {
+func (l *commentsList) Get() []lookout.AnalyzerComments {
 	return l.list
 }
