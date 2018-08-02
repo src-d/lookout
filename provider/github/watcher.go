@@ -20,7 +20,7 @@ import (
 const Provider = "github"
 
 // don't call github more often than
-var minInterval = time.Second
+var minInterval = 2 * time.Second
 
 var (
 	NoErrNotModified       = errors.NewKind("Not modified")
