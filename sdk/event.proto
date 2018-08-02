@@ -82,8 +82,10 @@ message ReviewEvent {
     ReferencePointer merge = 9 [(gogoproto.nullable) = false];
     // Configuration contains any configuration related to specific analyzer
     google.protobuf.Struct configuration = 10 [(gogoproto.nullable) = false];
+    // RepositoryId is internal provider repository id
+    uint32 repository_id = 11 [(gogoproto.customname) = "RepositoryID"];
     // Number is internal provider id of review scoped by repository
-    uint32 number = 11;
+    uint32 number = 12;
 
     CommitRevision commit_revision = 7 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }

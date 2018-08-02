@@ -177,6 +177,7 @@ func (o *DBCommentOperator) posted(ctx context.Context, e *lookout.ReviewEvent, 
 
 	reviewIdsQ := models.NewReviewEventQuery().
 		FindByProvider(e.Provider).
+		FindByRepositoryID(kallax.Eq, e.RepositoryID).
 		FindByNumber(kallax.Eq, e.Number).
 		Select(models.Schema.ReviewEvent.ID)
 

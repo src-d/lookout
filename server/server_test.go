@@ -143,8 +143,8 @@ func TestServerPersistedComment(t *testing.T) {
 	poster := &PosterMock{}
 	fileGetter := &FileGetterMock{}
 	client := &AnalyzerClientMock{}
-	analyzers := map[string]Analyzer{
-		"mock": Analyzer{
+	analyzers := map[string]lookout.Analyzer{
+		"mock": lookout.Analyzer{
 			Client: client,
 		},
 	}

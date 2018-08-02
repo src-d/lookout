@@ -69,6 +69,7 @@ func castPullRequest(r *lookout.RepositoryInfo, pr *github.PullRequest) *lookout
 	pre.Provider = Provider
 	pre.InternalID = string(pr.GetID())
 	pre.Number = uint32(pr.GetNumber())
+	pre.RepositoryID = uint32(pr.GetHead().GetRepo().GetID())
 	pre.Source = castPullRequestBranch(pr.GetHead())
 	pre.Merge = lookout.ReferencePointer{
 		InternalRepositoryURL: r.CloneURL,
