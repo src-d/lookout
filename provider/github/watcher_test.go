@@ -81,11 +81,12 @@ func (s *WatcherTestSuite) TestWatch() {
 	s.mux.HandleFunc("/repos/mock/test-b/pulls", pullsHandler(&callsB))
 	s.mux.HandleFunc("/repos/mock/test-b/events", eventsHandler(&callsB))
 
-	w, err := NewWatcher(nil, &lookout.WatchOptions{
+	w, err := NewWatcher(&NoopTransport{}, &lookout.WatchOptions{
 		URLs: []string{"github.com/mock/test-a", "github.com/mock/test-b"},
 	})
 
-	w.c = s.client
+	w.clients["mock/test-a"] = s.client
+	w.clients["mock/test-b"] = s.client
 	w.cache = s.cache
 
 	s.NoError(err)
@@ -124,11 +125,11 @@ func (s *WatcherTestSuite) TestWatch_WithError() {
 		fmt.Fprint(w, `[{"id":"1", "type":"PushEvent", "payload":{"push_id": 1}}]`)
 	})
 
-	w, err := NewWatcher(nil, &lookout.WatchOptions{
+	w, err := NewWatcher(&NoopTransport{}, &lookout.WatchOptions{
 		URLs: []string{"github.com/mock/test"},
 	})
 
-	w.c = s.client
+	w.clients["mock/test"] = s.client
 	w.cache = s.cache
 
 	s.NoError(err)
@@ -152,4 +153,10 @@ func (s *WatcherTestSuite) TearDownSuite() {
 
 func TestWatcherTestSuite(t *testing.T) {
 	suite.Run(t, new(WatcherTestSuite))
+}
+
+type NoopTransport struct{}
+
+func (t *NoopTransport) Get(repo string) http.RoundTripper {
+	return nil
 }

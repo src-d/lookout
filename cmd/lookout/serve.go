@@ -146,11 +146,7 @@ func (c *ServeCommand) initPoster(conf Config) (lookout.Poster, error) {
 func (c *ServeCommand) initWatcher(conf Config) (lookout.Watcher, error) {
 	switch c.Provider {
 	case github.Provider:
-		t := &roundTripper{
-			Log:      log.DefaultLogger,
-			User:     c.GithubUser,
-			Password: c.GithubToken,
-		}
+		t := github.NewTokenTransport(c.GithubUser, c.GithubToken, nil)
 
 		watcher, err := github.NewWatcher(t, &lookout.WatchOptions{
 			URLs: strings.Split(c.Positional.Repository, ","),

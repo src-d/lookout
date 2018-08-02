@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -36,10 +37,21 @@ var (
 	RequestTimeout = time.Second * 5
 )
 
+type clients map[string]*github.Client
+
+func (cs clients) get(username, repository string) (*github.Client, bool) {
+	c, ok := cs[username+"/"+repository]
+	return c, ok
+}
+
+func (cs clients) set(username, repository string, c *github.Client) {
+	cs[username+"/"+repository] = c
+}
+
 type Watcher struct {
-	r []*lookout.RepositoryInfo
-	o *lookout.WatchOptions
-	c *github.Client
+	r       []*lookout.RepositoryInfo
+	o       *lookout.WatchOptions
+	clients clients
 
 	cache *cache.ValidableCache
 
@@ -50,8 +62,11 @@ type Watcher struct {
 }
 
 // NewWatcher returns a new
-func NewWatcher(transport http.RoundTripper, o *lookout.WatchOptions) (*Watcher, error) {
+func NewWatcher(transport Transport, o *lookout.WatchOptions) (*Watcher, error) {
 	repos := make([]*lookout.RepositoryInfo, len(o.URLs))
+	clients := make(clients, len(o.URLs))
+
+	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
 
 	for i, url := range o.URLs {
 		repo, err := vcsurl.Parse(url)
@@ -60,20 +75,21 @@ func NewWatcher(transport http.RoundTripper, o *lookout.WatchOptions) (*Watcher,
 		}
 
 		repos[i] = repo
+
+		t := httpcache.NewTransport(cache)
+		t.MarkCachedResponses = true
+		t.Transport = transport.Get(url)
+
+		c := github.NewClient(&http.Client{
+			Transport: t,
+		})
+		clients.set(repo.Username, repo.FullName, c)
 	}
 
-	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
-
-	t := httpcache.NewTransport(cache)
-	t.MarkCachedResponses = true
-	t.Transport = transport
-
 	return &Watcher{
-		r: repos,
-		o: o,
-		c: github.NewClient(&http.Client{
-			Transport: t,
-		}),
+		r:       repos,
+		o:       o,
+		clients: clients,
 
 		prPollInterval:     minInterval,
 		eventsPollInterval: minInterval,
@@ -208,7 +224,11 @@ func (w *Watcher) doPRListRequest(ctx context.Context, username, repository stri
 	ctx, cancel := context.WithTimeout(ctx, RequestTimeout)
 	defer cancel()
 
-	prs, resp, err := w.c.PullRequests.List(ctx, username, repository, &github.PullRequestListOptions{})
+	client, ok := w.clients.get(username, repository)
+	if !ok {
+		return nil, nil, fmt.Errorf("client for %s/%s doesn't exists", username, repository)
+	}
+	prs, resp, err := client.PullRequests.List(ctx, username, repository, &github.PullRequestListOptions{})
 	if err != nil {
 		return resp, nil, err
 	}
@@ -231,7 +251,11 @@ func (w *Watcher) doEventRequest(ctx context.Context, username, repository strin
 	ctx, cancel := context.WithTimeout(ctx, RequestTimeout)
 	defer cancel()
 
-	events, resp, err := w.c.Activity.ListRepositoryEvents(
+	client, ok := w.clients.get(username, repository)
+	if !ok {
+		return nil, nil, fmt.Errorf("client for %s/%s doesn't exists", username, repository)
+	}
+	events, resp, err := client.Activity.ListRepositoryEvents(
 		ctx, username, repository, &github.ListOptions{},
 	)
 
