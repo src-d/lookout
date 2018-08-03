@@ -26,33 +26,41 @@ stages:
 
 jobs:
   include:
-    - stage: tests
-      name: "Unit Tests"
+    - name: "Unit Tests"
+      stage: tests
       script: make test-coverage codecov
-    - script:
+    - name: "SDK Integration Tests Linux"
+      script:
         - docker run -d --name bblfshd --privileged -v $HOME/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd
         - docker exec -it bblfshd bblfshctl driver install go bblfsh/go-driver:v2.0.3
         - make test-sdk
-      name: "SDK Integration Tests Linux"
-    - script:
+    - name: "Lookout serve Integration Tests Linux"
+      script:
       - make ci-install
       - psql -c 'create database lookout;' -U postgres
       - make migrate
       - cp config.yml.tpl config.yml
       - make test-json
-      name: "Lookout serve Integration Tests Linux"
-    - script:
+    - name: "Lookout serve Integration Tests macOS"
+      script:
       - make ci-install
       - psql -c 'create database lookout;' -U postgres
       - make migrate
       - cp config.yml.tpl config.yml
       - make test-json
-      name: "Lookout serve Integration Tests macOS"
       os: osx
       osx_image: xcode9.4
       before_install: skip
-    - script:
+    - name: "Generated code"
+      script:
+        - make dependencies
+        - kallax migrate --input ./store/models/ --out ./store/migrations --name test-changes
+        - make no-changes-in-commit
+        - make bindata
+        - make no-changes-in-commit
         - make protogen
+        - make no-changes-in-commit
+        - make build
         - make no-changes-in-commit
         # check that proto files are buildable by python
         - sudo apt-get --no-install-recommends -y install python3-pip
@@ -60,14 +68,8 @@ jobs:
         - pip3 install --user grpcio-tools
         - export PY_OUT_DIR=py
         - mkdir -p "$PY_OUT_DIR" && python3 -m grpc_tools.protoc -Isdk --python_out=$PY_OUT_DIR --grpc_python_out=$PY_OUT_DIR sdk/*.proto
-      name: "Protobuf code generation"
-    - script:
-        - make dependencies
-        - make build
-        - make no-changes-in-commit
-      name: "Build"
-    - stage: release
-      name: "linux packages"
+    - name: "linux packages"
+      stage: release
       script: PKG_OS="linux" make packages-sdk
       deploy: &deploy_anchor
         provider: releases
@@ -77,15 +79,15 @@ jobs:
         skip_cleanup: true
         on:
           all_branches: true
-    - stage: release
-      name: "macOS packages"
+    - name: "macOS packages"
+      stage: release
       os: osx
       osx_image: xcode9.4
       before_install: skip
       script: PKG_OS="darwin" make packages-sdk
       deploy: *deploy_anchor
-    - stage: release
-      name: "push image to Docker Hub"
+    - name: "push image to Docker Hub"
+      stage: release
       script:
         - PKG_OS=linux make build
         - DOCKER_PUSH_LATEST=true make docker-push
