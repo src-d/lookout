@@ -42,7 +42,7 @@ bindata:
 	$(BINDATA) \
 		-o store/bindata.go \
 		-pkg store \
-		-prefix 'store/' \
+		-prefix 'store/migrations/' \
 		-modtime 1533216138 \
 		store/migrations/...
 
