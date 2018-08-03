@@ -1,7 +1,9 @@
 # Package configuration
 PROJECT = lookout
 COMMANDS = cmd/lookout
-DEPENDENCIES = gopkg.in/src-d/go-kallax.v1
+DEPENDENCIES = \
+	gopkg.in/src-d/go-kallax.v1 \
+	github.com/jteeuwen/go-bindata
 
 # Backend services
 POSTGRESQL_VERSION = 9.6
@@ -26,6 +28,23 @@ CONFIG_FILE := config.yml
 # SDK binaries
 DUMMY_BIN := $(BIN_PATH)/dummy
 LOOKOUT_BIN := $(BIN_PATH)/lookout
+
+# Tools
+BINDATA := go-bindata
+
+# this::build -> Makefile.main::build -> Makefile.main::$(COMMANDS)
+# The @echo forces this prerequisites to be run before `Makefile.main::build` ones.
+build: bindata
+	@echo
+
+.PHONY: bindata
+bindata:
+	$(BINDATA) \
+		-o store/bindata.go \
+		-pkg store \
+		-prefix 'store/' \
+		-modtime 1533216138 \
+		store/migrations/...
 
 # Protoc
 PROTOC_DIR ?= ./protoc

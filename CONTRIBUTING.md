@@ -9,7 +9,14 @@ and other resources to make it easier to get your contribution accepted.
 
 * Go code from proto files: `make protogen`
 * Go code from models: `go generate ./...`
-* Migrations: `kallax migrate --input ./store/models/ --out ./store/migrations --name <name>`
+* Migrations:
+  * `kallax migrate --input ./store/models/ --out ./store/migrations --name <name>`
+  * To update [go-bindata](https://github.com/jteeuwen/go-bindata) with the new migration files:
+
+    ```bash
+    make dependencies
+    make bindata
+    ```
 
 ## Certificate of Origin
 
