@@ -5,8 +5,6 @@ import (
 	"github.com/src-d/lookout/util/cli"
 
 	"github.com/golang-migrate/migrate"
-	_ "github.com/golang-migrate/migrate/database/postgres"
-	bindata "github.com/golang-migrate/migrate/source/go-bindata"
 	log "gopkg.in/src-d/go-log.v1"
 )
 
@@ -23,17 +21,7 @@ type MigrateCommand struct {
 }
 
 func (c *MigrateCommand) Execute(args []string) error {
-	s := bindata.Resource(store.AssetNames(),
-		func(name string) ([]byte, error) {
-			return store.Asset(name)
-		})
-
-	d, err := bindata.WithInstance(s)
-	if err != nil {
-		return err
-	}
-
-	m, err := migrate.NewWithSourceInstance("go-bindata", d, c.DB)
+	m, err := store.NewMigrateDSN(c.DB)
 	if err != nil {
 		return err
 	}
