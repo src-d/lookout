@@ -61,6 +61,13 @@ type Config struct {
 	Providers     struct {
 		Github github.ProviderConfig
 	}
+	Repositories []RepoConfig
+}
+
+// RepoConfig holds configuration for repository, support only github provider
+type RepoConfig struct {
+	URL  string
+	Auth github.UserToken
 }
 
 func (c *ServeCommand) Execute(args []string) error {
@@ -97,7 +104,7 @@ func (c *ServeCommand) Execute(args []string) error {
 		}
 	}
 
-	err = c.initProvider()
+	err = c.initProvider(conf)
 	if err != nil {
 		return err
 	}
@@ -131,14 +138,26 @@ func (c *ServeCommand) Execute(args []string) error {
 	return server.NewServer(watcher, poster, dataHandler.FileGetter, analyzers, eventOp, commentsOp).Run(ctx)
 }
 
-func (c *ServeCommand) initProvider() error {
+func (c *ServeCommand) initProvider(conf Config) error {
 	switch c.Provider {
 	case github.Provider:
+		var emptyToken github.UserToken
+
 		urls := strings.Split(c.Positional.Repository, ",")
 		urlTokens := make(map[string]github.UserToken, len(urls))
+		configURLTokens := make(map[string]github.UserToken, len(conf.Repositories))
+		for _, repo := range conf.Repositories {
+			if repo.Auth != emptyToken {
+				configURLTokens[repo.URL] = repo.Auth
+			}
+		}
+
 		for _, url := range urls {
-			// TODO(max): read from yml
-			urlTokens[url] = github.UserToken{}
+			token, ok := configURLTokens[url]
+			if !ok {
+				log.Infof("use default token for repository %s", url)
+			}
+			urlTokens[url] = token
 		}
 
 		cache := cache.NewValidableCache(diskcache.New("/tmp/github"))

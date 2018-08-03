@@ -9,6 +9,6 @@ providers:
 
 repositories:
   - url: github.com/src-d/lookout
-    provider:
+    auth:
       user:
       token:
