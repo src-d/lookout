@@ -46,7 +46,7 @@ jobs:
       - make ci-install
       - psql -c 'create database lookout;' -U postgres
       - make build
-      - ./build/bin/lookout migrate
+      - ./build/lookout_darwin_amd64/lookout migrate
       - cp config.yml.tpl config.yml
       - make test-json
       name: "Lookout serve Integration Tests macOS"
