@@ -6,7 +6,6 @@ DEPENDENCIES = \
 
 # Backend services
 POSTGRESQL_VERSION = 9.6
-DSN = postgres:example@localhost:5432/lookout?sslmode=disable
 
 # Including ci Makefile
 CI_REPOSITORY ?= https://github.com/src-d/ci.git
