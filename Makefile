@@ -2,7 +2,6 @@
 PROJECT = lookout
 COMMANDS = cmd/lookout
 DEPENDENCIES = \
-	gopkg.in/src-d/go-kallax.v1 \
 	github.com/jteeuwen/go-bindata
 
 # Backend services
@@ -145,7 +144,3 @@ packages-sdk: build
 			tar -cvzf $(PROJECT)_$${TAR_VERSION}_$${os}_$${arch}.tar.gz $(PROJECT)_$${os}_$${arch}/; \
 		done; \
 	done
-
-.PHONY: migrate
-migrate: $(DEPENDENCIES)
-	kallax migrate up -d ./store/migrations --dsn '$(DSN)' --all
