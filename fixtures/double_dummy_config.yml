@@ -1,0 +1,5 @@
+analyzers:
+  - name: Dummy1
+    addr: ipv4://localhost:10302
+  - name: Dummy2
+    addr: ipv4://localhost:10303

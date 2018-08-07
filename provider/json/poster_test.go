@@ -60,10 +60,10 @@ func TestPoster_Post_OK(t *testing.T) {
 	err := p.Post(context.Background(), ev, aCommentsList)
 	require.NoError(err)
 
-	expected := `{"text":"This is a global comment"}
-{"file":"main.go","text":"This is a file comment"}
-{"file":"main.go","line":5,"text":"This is a line comment"}
-{"text":"This is a another global comment"}
+	expected := `{"analyzer-name":"mock","text":"This is a global comment"}
+{"analyzer-name":"mock","file":"main.go","text":"This is a file comment"}
+{"analyzer-name":"mock","file":"main.go","line":5,"text":"This is a line comment"}
+{"analyzer-name":"mock","text":"This is a another global comment"}
 `
 
 	require.Equal(expected, b.String())

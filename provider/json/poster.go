@@ -26,13 +26,13 @@ func NewPoster(w io.Writer) *Poster {
 	}
 }
 
-// Post prints json comments to sdtout
+// Post prints json comments to stdout
 func (p *Poster) Post(ctx context.Context, e lookout.Event,
 	aCommentsList []lookout.AnalyzerComments) error {
 
 	for _, a := range aCommentsList {
 		for _, c := range a.Comments {
-			if err := p.enc.Encode(c); err != nil {
+			if err := p.enc.Encode(commentToPrint{AnalyzerName: a.Config.Name, Comment: c}); err != nil {
 				return err
 			}
 		}
@@ -47,4 +47,9 @@ func (p *Poster) Status(ctx context.Context, e lookout.Event,
 
 	ctxlog.Get(ctx).With(log.Fields{"status": status}).Infof("New status")
 	return nil
+}
+
+type commentToPrint struct {
+	AnalyzerName string `json:"analyzer-name"`
+	*lookout.Comment
 }
