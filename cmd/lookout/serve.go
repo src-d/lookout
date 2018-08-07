@@ -20,6 +20,7 @@ import (
 	"github.com/src-d/lookout/util/cli"
 	"github.com/src-d/lookout/util/grpchelper"
 
+	"github.com/golang-migrate/migrate"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-billy.v4/osfs"
@@ -36,12 +37,12 @@ func init() {
 
 type ServeCommand struct {
 	cli.CommonOptions
+	cli.DBOptions
 	ConfigFile  string `long:"config" short:"c" default:"config.yml" env:"LOOKOUT_CONFIG_FILE" description:"path to configuration file"`
 	GithubUser  string `long:"github-user" env:"GITHUB_USER" description:"user for the GitHub API"`
 	GithubToken string `long:"github-token" env:"GITHUB_TOKEN" description:"access token for the GitHub API"`
 	DataServer  string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
 	Bblfshd     string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
-	DB          string `long:"db" default:"postgres://postgres:example@localhost:5432/lookout?sslmode=disable" env:"LOOKOUT_DB" description:"connection string to postgres database"`
 	DryRun      bool   `long:"dry-run" env:"LOOKOUT_DRY_RUN" description:"analyze repositories and log the result without posting code reviews to GitHub"`
 	Library     string `long:"library" default:"/tmp/lookout" env:"LOOKOUT_LIBRARY" description:"path to the lookout library"`
 	Provider    string `long:"provider" default:"github" env:"LOOKOUT_PROVIDER" description:"provider name: github, json"`
@@ -104,10 +105,11 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
-	db, err := sql.Open("postgres", c.DB)
+	db, err := c.initDB()
 	if err != nil {
 		return err
 	}
+
 	reviewStore := models.NewReviewEventStore(db)
 	eventOp := store.NewDBEventOperator(
 		reviewStore,
@@ -228,6 +230,53 @@ func (c *ServeCommand) startServer(srv *lookout.DataServerHandler) error {
 		}
 	}()
 	return nil
+}
+
+func (c *ServeCommand) initDB() (*sql.DB, error) {
+	db, err := sql.Open("postgres", c.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+
+	m, err := store.NewMigrateInstance(db)
+	if err != nil {
+		return nil, err
+	}
+
+	dbVersion, _, err := m.Version()
+
+	// Perform a migration only if the DB is not initialized
+	if err == migrate.ErrNilVersion {
+		log.Debugf("the DB is empty, it will be initialized")
+		if err = m.Up(); err != nil {
+			return nil, err
+		}
+
+		return db, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	maxVersion, err := store.MaxMigrateVersion()
+	if err != nil {
+		return nil, err
+	}
+
+	if dbVersion != maxVersion {
+		return nil, fmt.Errorf(
+			"database version mismatch. Current version is %v, but this binary needs version %v. "+
+				"Use 'lookout migrate' to upgrade your database", dbVersion, maxVersion)
+	}
+
+	log.Debugf("the DB version is up to date, %v", dbVersion)
+	log.Infof("connection with the DB established")
+	return db, nil
 }
 
 type LogPoster struct {

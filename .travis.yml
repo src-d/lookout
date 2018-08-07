@@ -38,14 +38,12 @@ jobs:
       script:
       - make ci-install
       - psql -c 'create database lookout;' -U postgres
-      - make migrate
       - cp config.yml.tpl config.yml
       - make test-json
     - name: "Lookout serve Integration Tests macOS"
       script:
       - make ci-install
       - psql -c 'create database lookout;' -U postgres
-      - make migrate
       - cp config.yml.tpl config.yml
       - make test-json
       os: osx
