@@ -63,6 +63,20 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:b4f1d27c67482380e411d295fe7c709625983dad605f0a25c634291c43f902cf"
+  name = "github.com/golang-migrate/migrate"
+  packages = [
+    ".",
+    "database",
+    "database/postgres",
+    "source",
+    "source/go-bindata",
+  ]
+  pruneopts = "NUT"
+  revision = "22f249514de9aa3f8a720a7cabbdd45d294f83a1"
+  version = "v3.2.0"
+
+[[projects]]
   branch = "master"
   digest = "1:b5958a38532996608dc41071a5807c065a86be9bf70f6d3b1746da6cd8be0d53"
   name = "github.com/golang/protobuf"
@@ -639,6 +653,9 @@
     "github.com/gogo/protobuf/gogoproto",
     "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/types",
+    "github.com/golang-migrate/migrate",
+    "github.com/golang-migrate/migrate/database/postgres",
+    "github.com/golang-migrate/migrate/source/go-bindata",
     "github.com/google/go-github/github",
     "github.com/gregjones/httpcache",
     "github.com/gregjones/httpcache/diskcache",

@@ -36,12 +36,12 @@ func init() {
 
 type ServeCommand struct {
 	cli.CommonOptions
+	cli.DBOptions
 	ConfigFile  string `long:"config" short:"c" default:"config.yml" env:"LOOKOUT_CONFIG_FILE" description:"path to configuration file"`
 	GithubUser  string `long:"github-user" env:"GITHUB_USER" description:"user for the GitHub API"`
 	GithubToken string `long:"github-token" env:"GITHUB_TOKEN" description:"access token for the GitHub API"`
 	DataServer  string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
 	Bblfshd     string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
-	DB          string `long:"db" default:"postgres://postgres:example@localhost:5432/lookout?sslmode=disable" env:"LOOKOUT_DB" description:"connection string to postgres database"`
 	DryRun      bool   `long:"dry-run" env:"LOOKOUT_DRY_RUN" description:"analyze repositories and log the result without posting code reviews to GitHub"`
 	Library     string `long:"library" default:"/tmp/lookout" env:"LOOKOUT_LIBRARY" description:"path to the lookout library"`
 	Provider    string `long:"provider" default:"github" env:"LOOKOUT_PROVIDER" description:"provider name: github, json"`

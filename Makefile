@@ -7,7 +7,6 @@ DEPENDENCIES = \
 
 # Backend services
 POSTGRESQL_VERSION = 9.6
-DSN = postgres:example@localhost:5432/lookout?sslmode=disable
 
 # Including ci Makefile
 CI_REPOSITORY ?= https://github.com/src-d/ci.git
@@ -37,7 +36,7 @@ bindata:
 	$(BINDATA) \
 		-o store/bindata.go \
 		-pkg store \
-		-prefix 'store/' \
+		-prefix 'store/migrations/' \
 		-modtime 1533216138 \
 		store/migrations/...
 
@@ -140,7 +139,3 @@ packages-sdk: build
 			tar -cvzf $(PROJECT)_$${TAR_VERSION}_$${os}_$${arch}.tar.gz $(PROJECT)_$${os}_$${arch}/; \
 		done; \
 	done
-
-.PHONY: migrate
-migrate: $(DEPENDENCIES)
-	kallax migrate up -d ./store/migrations --dsn '$(DSN)' --all
