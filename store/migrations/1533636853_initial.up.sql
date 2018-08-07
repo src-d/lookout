@@ -11,6 +11,8 @@ CREATE TABLE review_event (
 	source jsonb NOT NULL,
 	merge jsonb NOT NULL,
 	configuration jsonb NOT NULL,
+	repository_id bigint NOT NULL,
+	number bigint NOT NULL,
 	base jsonb NOT NULL,
 	head jsonb NOT NULL
 );

@@ -7,6 +7,7 @@ DEPENDENCIES = \
 
 # Backend services
 POSTGRESQL_VERSION = 9.6
+MIGRATIONS_PATH = store/migrations
 
 # Including ci Makefile
 CI_REPOSITORY ?= https://github.com/src-d/ci.git
@@ -33,12 +34,13 @@ BINDATA := go-bindata
 
 .PHONY: bindata
 bindata:
+	chmod -R go=r $(MIGRATIONS_PATH); \
 	$(BINDATA) \
 		-o store/bindata.go \
 		-pkg store \
-		-prefix 'store/migrations/' \
-		-modtime 1533216138 \
-		store/migrations/...
+		-prefix '$(MIGRATIONS_PATH)/' \
+		-modtime 1 \
+		$(MIGRATIONS_PATH)/...
 
 # Protoc
 PROTOC_DIR ?= ./protoc
