@@ -32,11 +32,6 @@ LOOKOUT_BIN := $(BIN_PATH)/lookout
 # Tools
 BINDATA := go-bindata
 
-# this::build -> Makefile.main::build -> Makefile.main::$(COMMANDS)
-# The @echo forces this prerequisites to be run before `Makefile.main::build` ones.
-build: bindata
-	@echo
-
 .PHONY: bindata
 bindata:
 	$(BINDATA) \
