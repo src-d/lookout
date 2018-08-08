@@ -2,6 +2,7 @@ package github
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/src-d/lookout"
 
@@ -67,7 +68,8 @@ func castHash(sha1 *string) plumbing.Hash {
 func castPullRequest(r *lookout.RepositoryInfo, pr *github.PullRequest) *lookout.ReviewEvent {
 	pre := &lookout.ReviewEvent{}
 	pre.Provider = Provider
-	pre.InternalID = string(pr.GetID())
+	pre.InternalID = strconv.FormatInt(pr.GetID(), 10)
+
 	pre.Number = uint32(pr.GetNumber())
 	pre.RepositoryID = uint32(pr.GetHead().GetRepo().GetID())
 	pre.Source = castPullRequestBranch(pr.GetHead())
