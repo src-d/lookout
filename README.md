@@ -16,9 +16,8 @@ The included [`./docker-compose.yml`](./docker-compose.yml) allows to start all 
 Clone the repository, or download [`./docker-compose.yml`](./docker-compose.yml), and run:
 
 ```bash
-docker-compose up
+docker-compose up bblfsh postgres
 ```
-
 
 # Example
 
@@ -29,6 +28,19 @@ If you are developing an Analyzer, please check [SDK documentation](./sdk/README
 It includes a curl-style binary that allows to trigger Analyzers directly, without launching a full lookout server.
 
 ## Server
+
+### Docker
+
+To trigger the analysis on an actual pull request of a GitHub repository do:
+
+1. Obtain [GitHub access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
+2. Run:
+
+```bash
+GITHUB_USER=<user> GITHUB_TOKEN=<token> REPO=<github repository> docker-compose up
+```
+
+### Manual
 
 To trigger the analysis on an actual pull request of a GitHub repository do:
 
