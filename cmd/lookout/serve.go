@@ -20,6 +20,7 @@ import (
 	"github.com/src-d/lookout/util/cli"
 	"github.com/src-d/lookout/util/grpchelper"
 
+	"github.com/golang-migrate/migrate"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-billy.v4/osfs"
@@ -104,10 +105,11 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
-	db, err := sql.Open("postgres", c.DB)
+	db, err := c.initDB()
 	if err != nil {
 		return err
 	}
+
 	reviewStore := models.NewReviewEventStore(db)
 	eventOp := store.NewDBEventOperator(
 		reviewStore,
@@ -228,6 +230,48 @@ func (c *ServeCommand) startServer(srv *lookout.DataServerHandler) error {
 		}
 	}()
 	return nil
+}
+
+func (c *ServeCommand) initDB() (*sql.DB, error) {
+	db, err := sql.Open("postgres", c.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+
+	m, err := store.NewMigrateInstance(db)
+	if err != nil {
+		return nil, err
+	}
+
+	dbVersion, _, err := m.Version()
+
+	// The DB is not initialized
+	if err == migrate.ErrNilVersion {
+		return nil, fmt.Errorf("the DB is empty, it needs to be initialized with the 'lookout migrate' command")
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	maxVersion, err := store.MaxMigrateVersion()
+	if err != nil {
+		return nil, err
+	}
+
+	if dbVersion != maxVersion {
+		return nil, fmt.Errorf(
+			"database version mismatch. Current version is %v, but this binary (version %s, built on %s) needs version %v. "+
+				"Use 'lookout migrate' to upgrade your database", dbVersion, version, build, maxVersion)
+	}
+
+	log.Debugf("the DB version is up to date, %v", dbVersion)
+	log.Infof("connection with the DB established")
+	return db, nil
 }
 
 type LogPoster struct {
