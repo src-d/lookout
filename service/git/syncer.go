@@ -9,6 +9,7 @@ import (
 
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 // Syncer syncs the local copy of git repository for a given CommitRevision.
@@ -53,6 +54,8 @@ func (s *Syncer) Sync(ctx context.Context,
 }
 
 func (s *Syncer) fetch(ctx context.Context, repoURL string, r *git.Repository, refspecs []config.RefSpec) error {
+	log.Infof("fetching references for repository %s: %v", repoURL, refspecs)
+
 	opts := &git.FetchOptions{
 		RemoteName: "origin",
 		RefSpecs:   refspecs,

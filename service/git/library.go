@@ -13,6 +13,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/storage"
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 var (
@@ -49,6 +50,7 @@ func (l *Library) GetOrInit(url *lookout.RepositoryInfo) (
 
 // Init inits a new repository for the given URL.
 func (l *Library) Init(url *lookout.RepositoryInfo) (*git.Repository, error) {
+	log.Infof("creating local repository for: %s", url.CloneURL)
 	l.m.Lock()
 	defer l.m.Unlock()
 

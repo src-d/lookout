@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"gopkg.in/bblfsh/sdk.v1/protocol"
 	"gopkg.in/bblfsh/sdk.v1/uast"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 // Service implements data service interface which adds UAST to the responses
@@ -95,6 +96,8 @@ func (s *BaseScanner) processFile(f *lookout.File) error {
 	if f == nil {
 		return nil
 	}
+
+	log.Debugf("parsing uast for file: %s", f.Path)
 
 	var err error
 	f.UAST, err = s.parseFile(f)
