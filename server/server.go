@@ -38,10 +38,25 @@ func NewServer(w lookout.Watcher, p lookout.Poster, fileGetter lookout.FileGette
 
 // Run starts server
 func (s *Server) Run(ctx context.Context) error {
-	// FIXME(max): we most probably want to change interface of EventHandler instead of it
-	return s.watcher.Watch(ctx, func(e lookout.Event) error {
-		return s.handleEvent(ctx, e)
-	})
+	errCh := make(chan error, 1)
+	go func() {
+		// FIXME(max): we most probably want to change interface of EventHandler instead of it
+		err := s.watcher.Watch(ctx, func(e lookout.Event) error {
+			return s.handleEvent(ctx, e)
+		})
+		errCh <- err
+	}()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-errCh:
+		if err != nil {
+			log.Errorf(err, "error during watching, restart watching")
+			return s.Run(ctx)
+		}
+		return nil
+	}
 }
 
 func (s *Server) handleEvent(ctx context.Context, e lookout.Event) error {
