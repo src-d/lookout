@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/cmdtest"
@@ -37,9 +36,6 @@ func main() {
 		grepTrue(r, `{"analyzer-name":"Dummy","file":"provider/common.go","text":"The file has increased in 5 lines."}`)
 		grepTrue(r, `msg="New status" status=success`)
 	})
-
-	// the repository is cloned here already, we can reduce timeout
-	cmdtest.GrepTimeout = 20 * time.Second
 
 	testCase("skip review event", func() {
 		sendEvent(w, successJSON)
