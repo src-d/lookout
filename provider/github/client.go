@@ -181,6 +181,8 @@ func (t *limitRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 		t.pollIntervals[pollCategory(req.URL.Path)] = duration
 		logFields["poll-interval"] = duration
 	}
+
+	t.rateLimits[category(req.URL.Path)] = rate
 	t.rateMu.Unlock()
 
 	t.Log.With(logFields).Debugf("http request to %s", req.URL.Path)

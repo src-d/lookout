@@ -248,7 +248,7 @@ func (w *Watcher) newInterval(rate github.Rate) time.Duration {
 	if remaining > 0 {
 		secs := int(rate.Reset.Sub(time.Now()).Seconds() / float64(remaining))
 		interval = time.Duration(secs) * time.Second
-	} else {
+	} else if !rate.Reset.IsZero() {
 		interval = rate.Reset.Sub(time.Now())
 	}
 

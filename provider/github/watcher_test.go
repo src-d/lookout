@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -136,6 +137,50 @@ func (s *WatcherTestSuite) TestWatch_WithError() {
 	})
 
 	s.EqualError(err, "foo")
+}
+
+func (s *WatcherTestSuite) TestWatchLimit() {
+	var calls, prEvents int32
+
+	reset := strconv.FormatInt(time.Now().Add(time.Minute).Unix(), 10)
+
+	pullsHandler := func(calls *int32) func(w http.ResponseWriter, r *http.Request) {
+		return func(w http.ResponseWriter, r *http.Request) {
+			atomic.AddInt32(calls, 1)
+
+			w.Header().Set(headerRateReset, reset)
+			w.Header().Set(headerRateRemaining, "1")
+			fmt.Fprint(w, `[{"id":5}]`)
+		}
+	}
+	s.mux.HandleFunc("/repos/mock/test/events", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set(headerRateRemaining, "0")
+		fmt.Fprint(w, `[]`)
+	})
+
+	s.mux.HandleFunc("/repos/mock/test/pulls", pullsHandler(&calls))
+
+	repoURLs := []string{"github.com/mock/test"}
+	poll := newTestPool(repoURLs, s.githubURL, s.cache)
+	w, err := NewWatcher(poll, &lookout.WatchOptions{
+		URLs: repoURLs,
+	})
+
+	s.NoError(err)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	err = w.Watch(ctx, func(e lookout.Event) error {
+		prEvents++
+		s.Equal("02b508226b9c2f38be7d589fe765a119ddf4452b", e.ID().String())
+
+		return nil
+	})
+
+	s.Equal(1, atomic.LoadInt32(&calls))
+	s.Equal(1, prEvents)
+	s.EqualError(err, "context deadline exceeded")
 }
 
 func (s *WatcherTestSuite) TearDownSuite() {
