@@ -30,7 +30,7 @@ To trigger the analysis on an actual pull request of a GitHub repository you wil
 Run:
 
 ```bash
-GITHUB_USER=<user> GITHUB_TOKEN=<token> REPO=<github repository> docker-compose up
+GITHUB_USER=<user> GITHUB_TOKEN=<token> REPO=github.com/<user>/<name> docker-compose up
 ```
 
 ## Without Docker
