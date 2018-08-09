@@ -92,7 +92,7 @@ func (s *WatcherTestSuite) TestWatch() {
 	defer cancel()
 
 	err = w.Watch(ctx, func(e lookout.Event) error {
-		events++
+		atomic.AddInt32(&events, 1)
 
 		switch e.Type() {
 		case pb.ReviewEventType:
@@ -173,13 +173,13 @@ func (s *WatcherTestSuite) TestWatchLimit() {
 
 	err = w.Watch(ctx, func(e lookout.Event) error {
 		prEvents++
-		s.Equal("02b508226b9c2f38be7d589fe765a119ddf4452b", e.ID().String())
+		s.Equal("fd84071093b69f9aac25fb5dfeea1a870e3e19cf", e.ID().String())
 
 		return nil
 	})
 
-	s.Equal(1, atomic.LoadInt32(&calls))
-	s.Equal(1, prEvents)
+	s.EqualValues(1, atomic.LoadInt32(&calls))
+	s.EqualValues(1, prEvents)
 	s.EqualError(err, "context deadline exceeded")
 }
 
