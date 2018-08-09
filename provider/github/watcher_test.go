@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -14,9 +15,10 @@ import (
 	"github.com/src-d/lookout/pb"
 	"github.com/src-d/lookout/util/cache"
 
-	"github.com/google/go-github/github"
 	"github.com/gregjones/httpcache"
 	"github.com/stretchr/testify/suite"
+	vcsurl "gopkg.in/sourcegraph/go-vcsurl.v1"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 func init() {
@@ -26,10 +28,10 @@ func init() {
 
 type WatcherTestSuite struct {
 	suite.Suite
-	mux    *http.ServeMux
-	server *httptest.Server
-	client *github.Client
-	cache  *cache.ValidableCache
+	mux       *http.ServeMux
+	server    *httptest.Server
+	githubURL *url.URL
+	cache     *cache.ValidableCache
 }
 
 func (s *WatcherTestSuite) SetupTest() {
@@ -37,13 +39,7 @@ func (s *WatcherTestSuite) SetupTest() {
 	s.server = httptest.NewServer(s.mux)
 
 	s.cache = cache.NewValidableCache(httpcache.NewMemoryCache())
-	s.client = github.NewClient(&http.Client{
-		Transport: httpcache.NewTransport(s.cache),
-	})
-
-	url, _ := url.Parse(s.server.URL + "/")
-	s.client.BaseURL = url
-	s.client.UploadURL = url
+	s.githubURL, _ = url.Parse(s.server.URL + "/")
 }
 
 func (s *WatcherTestSuite) TestWatch() {
@@ -84,12 +80,11 @@ func (s *WatcherTestSuite) TestWatch() {
 	s.mux.HandleFunc("/repos/mock/test-b/pulls", pullsHandler(&callsB))
 	s.mux.HandleFunc("/repos/mock/test-b/events", eventsHandler(&callsB))
 
-	w, err := NewWatcher(nil, &lookout.WatchOptions{
-		URLs: []string{"github.com/mock/test-a", "github.com/mock/test-b"},
+	repoURLs := []string{"github.com/mock/test-a", "github.com/mock/test-b"}
+	poll := newTestPool(repoURLs, s.githubURL, s.cache)
+	w, err := NewWatcher(poll, &lookout.WatchOptions{
+		URLs: repoURLs,
 	})
-
-	w.c = s.client
-	w.cache = s.cache
 
 	s.NoError(err)
 
@@ -97,7 +92,7 @@ func (s *WatcherTestSuite) TestWatch() {
 	defer cancel()
 
 	err = w.Watch(ctx, func(e lookout.Event) error {
-		events++
+		atomic.AddInt32(&events, 1)
 
 		switch e.Type() {
 		case pb.ReviewEventType:
@@ -127,12 +122,11 @@ func (s *WatcherTestSuite) TestWatch_WithError() {
 		fmt.Fprint(w, `[{"id":"1", "type":"PushEvent", "payload":{"push_id": 1}}]`)
 	})
 
-	w, err := NewWatcher(nil, &lookout.WatchOptions{
-		URLs: []string{"github.com/mock/test"},
+	repoURLs := []string{"github.com/mock/test"}
+	poll := newTestPool(repoURLs, s.githubURL, s.cache)
+	w, err := NewWatcher(poll, &lookout.WatchOptions{
+		URLs: repoURLs,
 	})
-
-	w.c = s.client
-	w.cache = s.cache
 
 	s.NoError(err)
 
@@ -145,10 +139,86 @@ func (s *WatcherTestSuite) TestWatch_WithError() {
 	s.EqualError(err, "foo")
 }
 
+func (s *WatcherTestSuite) TestWatchLimit() {
+	var calls, prEvents int32
+
+	reset := strconv.FormatInt(time.Now().Add(time.Minute).Unix(), 10)
+
+	pullsHandler := func(calls *int32) func(w http.ResponseWriter, r *http.Request) {
+		return func(w http.ResponseWriter, r *http.Request) {
+			atomic.AddInt32(calls, 1)
+
+			w.Header().Set(headerRateReset, reset)
+			w.Header().Set(headerRateRemaining, "1")
+			fmt.Fprint(w, `[{"id":5}]`)
+		}
+	}
+	s.mux.HandleFunc("/repos/mock/test/events", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set(headerRateRemaining, "0")
+		fmt.Fprint(w, `[]`)
+	})
+
+	s.mux.HandleFunc("/repos/mock/test/pulls", pullsHandler(&calls))
+
+	repoURLs := []string{"github.com/mock/test"}
+	poll := newTestPool(repoURLs, s.githubURL, s.cache)
+	w, err := NewWatcher(poll, &lookout.WatchOptions{
+		URLs: repoURLs,
+	})
+
+	s.NoError(err)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	err = w.Watch(ctx, func(e lookout.Event) error {
+		prEvents++
+		s.Equal("fd84071093b69f9aac25fb5dfeea1a870e3e19cf", e.ID().String())
+
+		return nil
+	})
+
+	s.EqualValues(1, atomic.LoadInt32(&calls))
+	s.EqualValues(1, prEvents)
+	s.EqualError(err, "context deadline exceeded")
+}
+
 func (s *WatcherTestSuite) TearDownSuite() {
 	s.server.Close()
 }
 
 func TestWatcherTestSuite(t *testing.T) {
 	suite.Run(t, new(WatcherTestSuite))
+}
+
+type NoopTransport struct{}
+
+func (t *NoopTransport) Get(repo string) http.RoundTripper {
+	return nil
+}
+
+func newTestPool(repoURLs []string, githubURL *url.URL, cache *cache.ValidableCache) *ClientPool {
+	client := NewClient(nil, cache, log.New(log.Fields{}))
+	client.BaseURL = githubURL
+	client.UploadURL = githubURL
+
+	byClients := map[*Client][]*lookout.RepositoryInfo{
+		client: []*lookout.RepositoryInfo{},
+	}
+	byRepo := make(map[string]*Client, len(repoURLs))
+
+	for _, url := range repoURLs {
+		repo, err := vcsurl.Parse(url)
+		if err != nil {
+			panic(err)
+		}
+
+		byClients[client] = append(byClients[client], repo)
+		byRepo[repo.FullName] = client
+	}
+
+	return &ClientPool{
+		byClients: byClients,
+		byRepo:    byRepo,
+	}
 }

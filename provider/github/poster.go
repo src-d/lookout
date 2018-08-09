@@ -3,7 +3,6 @@ package github
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/src-d/lookout"
@@ -27,25 +26,16 @@ const (
 
 // Poster posts comments as Pull Request Reviews.
 type Poster struct {
-	rc   ReviewCreator
-	cc   CommitsComparator
-	sc   StatusCreator
+	pool *ClientPool
 	conf ProviderConfig
 }
 
 var _ lookout.Poster = &Poster{}
 
 // NewPoster creates a new poster for the GitHub API.
-func NewPoster(t http.RoundTripper, conf ProviderConfig) *Poster {
-	client := &http.Client{
-		Transport: t,
-	}
-
-	ghClient := github.NewClient(client)
+func NewPoster(pool *ClientPool, conf ProviderConfig) *Poster {
 	return &Poster{
-		rc:   ghClient.PullRequests,
-		cc:   ghClient.Repositories,
-		sc:   ghClient.Repositories,
+		pool: pool,
 		conf: conf,
 	}
 }
@@ -76,9 +66,14 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 		return err
 	}
 
+	client, err := p.getClient(owner, repo)
+	if err != nil {
+		return err
+	}
+
 	// TODO: make this request lazily, only if there are comments using
 	// positions.
-	cc, resp, err := p.cc.CompareCommits(ctx, owner, repo,
+	cc, resp, err := client.Repositories.CompareCommits(ctx, owner, repo,
 		e.Base.Hash,
 		e.Head.Hash)
 	if err = p.handleAPIError(resp, err); err != nil {
@@ -91,7 +86,7 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 		return err
 	}
 
-	_, resp, err = p.rc.CreateReview(ctx, owner, repo, pr, review)
+	_, resp, err = client.PullRequests.CreateReview(ctx, owner, repo, pr, review)
 	if err = p.handleAPIError(resp, err); err != nil {
 		return err
 	}
@@ -135,27 +130,6 @@ func (p *Poster) handleAPIError(resp *github.Response, err error) error {
 
 	return ErrGitHubAPI.Wrap(fmt.Errorf("bad HTTP status: %d", resp.StatusCode))
 }
-
-// ReviewCreator can create code reviews on GitHub. *github.PullRequestsService
-// fulfills this interface.
-type ReviewCreator interface {
-	// CreateReview creates a new code review on a GitHub pull request.
-	CreateReview(ctx context.Context, owner, repo string,
-		number int, review *github.PullRequestReviewRequest) (
-		*github.PullRequestReview, *github.Response, error)
-}
-
-var _ ReviewCreator = &github.PullRequestsService{}
-
-// CommitsComparator compares commits on GitHub. *github.RepositoriesService
-// fulfills this interface.
-type CommitsComparator interface {
-	// CompareCommits compare two commits.
-	CompareCommits(ctx context.Context, owner, repo string, base, head string) (
-		*github.CommitsComparison, *github.Response, error)
-}
-
-var _ CommitsComparator = &github.RepositoriesService{}
 
 func (p *Poster) addFootnote(aConf lookout.AnalyzerConfig, c *lookout.Comment) string {
 	tmpl := p.conf.CommentFooter
@@ -278,6 +252,19 @@ func (p *Poster) statusPR(ctx context.Context, e *lookout.ReviewEvent, status lo
 		Context:     &context,
 	}
 
-	_, _, err = p.sc.CreateStatus(ctx, owner, repo, e.CommitRevision.Head.Hash, repoStatus)
+	client, err := p.getClient(owner, repo)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = client.Repositories.CreateStatus(ctx, owner, repo, e.CommitRevision.Head.Hash, repoStatus)
 	return err
+}
+
+func (p *Poster) getClient(username, repository string) (*Client, error) {
+	client, ok := p.pool.Client(username, repository)
+	if !ok {
+		return nil, fmt.Errorf("client for %s/%s doesn't exists", username, repository)
+	}
+	return client, nil
 }

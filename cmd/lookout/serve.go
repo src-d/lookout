@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"strings"
 
+	"github.com/gregjones/httpcache/diskcache"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/provider/github"
 	"github.com/src-d/lookout/provider/json"
@@ -17,6 +17,7 @@ import (
 	"github.com/src-d/lookout/service/git"
 	"github.com/src-d/lookout/store"
 	"github.com/src-d/lookout/store/models"
+	"github.com/src-d/lookout/util/cache"
 	"github.com/src-d/lookout/util/cli"
 	"github.com/src-d/lookout/util/grpchelper"
 
@@ -51,6 +52,7 @@ type ServeCommand struct {
 	} `positional-args:"yes" required:"yes"`
 
 	analyzers map[string]lookout.AnalyzerClient
+	pool      *github.ClientPool
 }
 
 // Config holds the main configuration
@@ -59,6 +61,13 @@ type Config struct {
 	Providers     struct {
 		Github github.ProviderConfig
 	}
+	Repositories []RepoConfig
+}
+
+// RepoConfig holds configuration for repository, support only github provider
+type RepoConfig struct {
+	URL  string
+	Auth github.UserToken
 }
 
 func (c *ServeCommand) Execute(args []string) error {
@@ -95,6 +104,11 @@ func (c *ServeCommand) Execute(args []string) error {
 		}
 	}
 
+	err = c.initProvider(conf)
+	if err != nil {
+		return err
+	}
+
 	poster, err := c.initPoster(conf)
 	if err != nil {
 		return err
@@ -124,6 +138,43 @@ func (c *ServeCommand) Execute(args []string) error {
 	return server.NewServer(watcher, poster, dataHandler.FileGetter, analyzers, eventOp, commentsOp).Run(ctx)
 }
 
+func (c *ServeCommand) initProvider(conf Config) error {
+	switch c.Provider {
+	case github.Provider:
+		var emptyToken github.UserToken
+
+		urls := strings.Split(c.Positional.Repository, ",")
+		urlTokens := make(map[string]github.UserToken, len(urls))
+		configURLTokens := make(map[string]github.UserToken, len(conf.Repositories))
+		for _, repo := range conf.Repositories {
+			if repo.Auth != emptyToken {
+				configURLTokens[repo.URL] = repo.Auth
+			}
+		}
+
+		for _, url := range urls {
+			token, ok := configURLTokens[url]
+			if !ok {
+				log.Infof("use default token for repository %s", url)
+			}
+			urlTokens[url] = token
+		}
+
+		cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
+		pool, err := github.NewClientPoolFromTokens(urlTokens, github.UserToken{
+			User:  c.GithubUser,
+			Token: c.GithubToken,
+		}, cache)
+		if err != nil {
+			return err
+		}
+
+		c.pool = pool
+	}
+
+	return nil
+}
+
 func (c *ServeCommand) initPoster(conf Config) (lookout.Poster, error) {
 	if c.DryRun {
 		return &LogPoster{log.DefaultLogger}, nil
@@ -131,13 +182,7 @@ func (c *ServeCommand) initPoster(conf Config) (lookout.Poster, error) {
 
 	switch c.Provider {
 	case github.Provider:
-		return github.NewPoster(
-			&roundTripper{
-				Log:      log.DefaultLogger,
-				User:     c.GithubUser,
-				Password: c.GithubToken,
-			},
-			conf.Providers.Github), nil
+		return github.NewPoster(c.pool, conf.Providers.Github), nil
 	case json.Provider:
 		return json.NewPoster(os.Stdout), nil
 	default:
@@ -148,13 +193,7 @@ func (c *ServeCommand) initPoster(conf Config) (lookout.Poster, error) {
 func (c *ServeCommand) initWatcher(conf Config) (lookout.Watcher, error) {
 	switch c.Provider {
 	case github.Provider:
-		t := &roundTripper{
-			Log:      log.DefaultLogger,
-			User:     c.GithubUser,
-			Password: c.GithubToken,
-		}
-
-		watcher, err := github.NewWatcher(t, &lookout.WatchOptions{
+		watcher, err := github.NewWatcher(c.pool, &lookout.WatchOptions{
 			URLs: strings.Split(c.Positional.Repository, ","),
 		})
 		if err != nil {
@@ -308,30 +347,3 @@ func (p *LogPoster) Status(ctx context.Context, e lookout.Event,
 	p.Log.Infof("status: %s", status)
 	return nil
 }
-
-type roundTripper struct {
-	Log      log.Logger
-	Base     http.RoundTripper
-	User     string
-	Password string
-}
-
-func (t *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	t.Log.With(log.Fields{
-		"url":  req.URL.String(),
-		"user": t.User,
-	}).Debugf("http request")
-
-	if t.User != "" {
-		req.SetBasicAuth(t.User, t.Password)
-	}
-
-	rt := t.Base
-	if rt == nil {
-		rt = http.DefaultTransport
-	}
-
-	return rt.RoundTrip(req)
-}
-
-var _ http.RoundTripper = &roundTripper{}

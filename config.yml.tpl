@@ -6,3 +6,9 @@ analyzers:
 providers:
   github:
     comment_footer: "_If you have feedback about this comment, please, [tell us](%s)._"
+
+repositories:
+  - url: github.com/src-d/lookout
+    auth:
+      user:
+      token:

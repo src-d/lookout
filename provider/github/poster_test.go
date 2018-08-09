@@ -2,14 +2,18 @@ package github
 
 import (
 	"context"
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"testing"
 
-	"github.com/src-d/lookout"
-
 	"github.com/google/go-github/github"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
+	"github.com/gregjones/httpcache"
+	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/util/cache"
+	"github.com/stretchr/testify/suite"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -80,26 +84,47 @@ var mockAnalyzerComments = []lookout.AnalyzerComments{
 		Comments: mockComments,
 	}}
 
-func TestPoster_Post_OK(t *testing.T) {
-	require := require.New(t)
+type PosterTestSuite struct {
+	suite.Suite
+	mux    *http.ServeMux
+	server *httptest.Server
+	pool   *ClientPool
+}
 
-	mcc := &commitsComparator{}
-	mcc.On(
-		"CompareCommits",
-		mock.Anything, "foo", "bar", hash1, hash2).Once().Return(
-		&github.CommitsComparison{
+func (s *PosterTestSuite) SetupTest() {
+	s.mux = http.NewServeMux()
+	s.server = httptest.NewServer(s.mux)
+
+	cache := cache.NewValidableCache(httpcache.NewMemoryCache())
+	githubURL, _ := url.Parse(s.server.URL + "/")
+
+	repoURLs := []string{"github.com/foo/bar"}
+	s.pool = newTestPool(repoURLs, githubURL, cache)
+}
+
+func (s *PosterTestSuite) TestPostOK() {
+	compareCalled := false
+	s.mux.HandleFunc("/repos/foo/bar/compare/"+hash1+"..."+hash2, func(w http.ResponseWriter, r *http.Request) {
+		s.False(compareCalled)
+		compareCalled = true
+
+		cc := &github.CommitsComparison{
 			Files: []github.CommitFile{github.CommitFile{
 				Filename: strptr("main.go"),
 				Patch:    strptr("@@ -3,10 +3,10 @@"),
-			}}},
-		&github.Response{Response: &http.Response{StatusCode: 200}},
-		nil)
+			}}}
+		json.NewEncoder(w).Encode(cc)
+	})
 
-	mrc := &reviewCreator{}
-	mrc.On(
-		"CreateReview",
-		mock.Anything, "foo", "bar", 42,
-		&github.PullRequestReviewRequest{
+	createReviewsCalled := false
+	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
+		s.False(createReviewsCalled)
+		createReviewsCalled = true
+
+		body, err := ioutil.ReadAll(r.Body)
+		s.NoError(err)
+
+		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
 			Body:  strptr("Global comment\n\nAnother global comment"),
 			Event: strptr("APPROVE"),
 			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
@@ -110,40 +135,43 @@ func TestPoster_Post_OK(t *testing.T) {
 				Path:     strptr("main.go"),
 				Position: intptr(3),
 				Body:     strptr("Line comment"),
-			}}},
-	).Once().Return(
-		nil,
-		&github.Response{Response: &http.Response{StatusCode: 200}},
-		nil)
+			}}})
+		s.JSONEq(string(expected), string(body))
 
-	p := &Poster{rc: mrc, cc: mcc}
+		resp := &github.Response{Response: &http.Response{StatusCode: 200}}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	p := &Poster{pool: s.pool}
 	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments)
-	require.NoError(err)
+	s.NoError(err)
 
-	mcc.AssertExpectations(t)
-	mrc.AssertExpectations(t)
+	s.True(createReviewsCalled)
 }
 
-func TestPoster_Post_Footer(t *testing.T) {
-	require := require.New(t)
+func (s *PosterTestSuite) TestPostFooter() {
+	compareCalled := false
+	s.mux.HandleFunc("/repos/foo/bar/compare/"+hash1+"..."+hash2, func(w http.ResponseWriter, r *http.Request) {
+		s.False(compareCalled)
+		compareCalled = true
 
-	mcc := &commitsComparator{}
-	mcc.On(
-		"CompareCommits",
-		mock.Anything, "foo", "bar", hash1, hash2).Once().Return(
-		&github.CommitsComparison{
+		cc := &github.CommitsComparison{
 			Files: []github.CommitFile{github.CommitFile{
 				Filename: strptr("main.go"),
 				Patch:    strptr("@@ -3,10 +3,10 @@"),
-			}}},
-		&github.Response{Response: &http.Response{StatusCode: 200}},
-		nil)
+			}}}
+		json.NewEncoder(w).Encode(cc)
+	})
 
-	mrc := &reviewCreator{}
-	mrc.On(
-		"CreateReview",
-		mock.Anything, "foo", "bar", 42,
-		&github.PullRequestReviewRequest{
+	createReviewsCalled := false
+	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
+		s.False(createReviewsCalled)
+		createReviewsCalled = true
+
+		body, err := ioutil.ReadAll(r.Body)
+		s.NoError(err)
+
+		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
 			Body:  strptr("Global comment\n\nTo post feedback go to https://foo.bar/feedback\n\nAnother global comment\n\nTo post feedback go to https://foo.bar/feedback"),
 			Event: strptr("APPROVE"),
 			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
@@ -154,149 +182,112 @@ func TestPoster_Post_Footer(t *testing.T) {
 				Path:     strptr("main.go"),
 				Position: intptr(3),
 				Body:     strptr("Line comment\n\nTo post feedback go to https://foo.bar/feedback"),
-			}}},
-	).Once().Return(
-		nil,
-		&github.Response{Response: &http.Response{StatusCode: 200}},
-		nil)
+			}}})
+		s.JSONEq(string(expected), string(body))
 
-	p := &Poster{
-		rc: mrc,
-		cc: mcc,
-		conf: ProviderConfig{
-			CommentFooter: "To post feedback go to %s",
-		}}
+		resp := &github.Response{Response: &http.Response{StatusCode: 200}}
+		json.NewEncoder(w).Encode(resp)
+	})
 
 	aComments := mockAnalyzerComments
 	aComments[0].Config.Feedback = "https://foo.bar/feedback"
 
+	p := &Poster{
+		pool: s.pool,
+		conf: ProviderConfig{
+			CommentFooter: "To post feedback go to %s",
+		},
+	}
 	err := p.Post(context.Background(), mockEvent, aComments)
-	require.NoError(err)
+	s.NoError(err)
 
-	mcc.AssertExpectations(t)
-	mrc.AssertExpectations(t)
+	s.True(createReviewsCalled)
 }
 
-func TestPoster_Post_BadProvider(t *testing.T) {
-	require := require.New(t)
-
-	mcc := &commitsComparator{}
-	mrc := &reviewCreator{}
-	p := &Poster{rc: mrc, cc: mcc}
+func (s *PosterTestSuite) TestPostBadProvider() {
+	p := &Poster{pool: s.pool}
 
 	err := p.Post(context.Background(), badProviderEvent, mockAnalyzerComments)
-	require.True(ErrEventNotSupported.Is(err))
-	require.Equal(
-		"event not supported: unsupported provider: badprovider", err.Error())
-
-	mcc.AssertExpectations(t)
-	mrc.AssertExpectations(t)
+	s.True(ErrEventNotSupported.Is(err))
+	s.Equal("event not supported: unsupported provider: badprovider", err.Error())
 }
 
-func TestPoster_Post_BadReferenceNoRepository(t *testing.T) {
-	require := require.New(t)
-
-	mcc := &commitsComparator{}
-	mrc := &reviewCreator{}
-	p := &Poster{rc: mrc, cc: mcc}
+func (s *PosterTestSuite) TestPostBadReferenceNoRepository() {
+	p := &Poster{pool: s.pool}
 
 	err := p.Post(context.Background(), noRepoEvent, mockAnalyzerComments)
-	require.True(ErrEventNotSupported.Is(err))
-	require.Equal(
-		"event not supported: nil repository", err.Error())
-
-	mcc.AssertExpectations(t)
-	mrc.AssertExpectations(t)
+	s.True(ErrEventNotSupported.Is(err))
+	s.Equal("event not supported: nil repository", err.Error())
 }
 
-func TestPoster_Post_BadReference(t *testing.T) {
-	require := require.New(t)
-
-	mcc := &commitsComparator{}
-	mrc := &reviewCreator{}
-	p := &Poster{rc: mrc, cc: mcc}
+func (s *PosterTestSuite) TestPostBadReference() {
+	p := &Poster{pool: s.pool}
 
 	err := p.Post(context.Background(), badReferenceEvent, mockAnalyzerComments)
-	require.True(ErrEventNotSupported.Is(err))
-	require.Equal(
-		"event not supported: bad PR: BAD", err.Error())
-
-	mcc.AssertExpectations(t)
-	mrc.AssertExpectations(t)
+	s.True(ErrEventNotSupported.Is(err))
+	s.Equal("event not supported: bad PR: BAD", err.Error())
 }
 
-func TestPoster_Status_OK(t *testing.T) {
-	require := require.New(t)
+func (s *PosterTestSuite) TestStatusOK() {
+	createStatusCalled := false
 
-	msc := &statusCreator{}
-	msc.On(
-		"CreateStatus",
-		mock.Anything, "foo", "bar", hash2,
-		&github.RepoStatus{
+	s.mux.HandleFunc("/repos/foo/bar/statuses/02801e1a27a0a906d59530aeb81f4cd137f2c717", func(w http.ResponseWriter, r *http.Request) {
+		s.False(createStatusCalled)
+		createStatusCalled = true
+
+		body, err := ioutil.ReadAll(r.Body)
+		s.NoError(err)
+
+		expected, _ := json.Marshal(&github.RepoStatus{
 			State:       strptr("pending"),
 			TargetURL:   strptr("https://github.com/src-d/lookout"),
 			Description: strptr("The analysis is in progress"),
 			Context:     strptr("lookout"),
-		},
-	).Once().Return(
-		&github.RepoStatus{
+		})
+		s.JSONEq(string(expected), string(body))
+
+		rs := &github.RepoStatus{
 			ID:          int64ptr(1234),
 			URL:         strptr("https://api.github.com/repos/foo/bar/statuses/1234"),
 			State:       strptr("success"),
 			TargetURL:   strptr("https://github.com/foo/bar"),
 			Description: strptr("description"),
 			Context:     strptr("lookout"),
-		},
-		&github.Response{Response: &http.Response{StatusCode: 200}},
-		nil)
+		}
+		json.NewEncoder(w).Encode(rs)
+	})
 
-	p := &Poster{sc: msc}
+	p := &Poster{pool: s.pool}
 	err := p.Status(context.Background(), mockEvent, lookout.PendingAnalysisStatus)
-	require.NoError(err)
+	s.NoError(err)
 
-	msc.AssertExpectations(t)
+	s.True(createStatusCalled)
 }
 
-func TestPoster_Status_BadProvider(t *testing.T) {
-	require := require.New(t)
-
-	msc := &statusCreator{}
-	p := &Poster{sc: msc}
+func (s *PosterTestSuite) TestStatusBadProvider() {
+	p := &Poster{pool: s.pool}
 	err := p.Status(context.Background(), badProviderEvent, lookout.PendingAnalysisStatus)
 
-	require.True(ErrEventNotSupported.Is(err))
-	require.Equal(
-		"event not supported: unsupported provider: badprovider", err.Error())
-
-	msc.AssertExpectations(t)
+	s.True(ErrEventNotSupported.Is(err))
+	s.Equal("event not supported: unsupported provider: badprovider", err.Error())
 }
 
-func TestPoster_Status_BadReferenceNoRepository(t *testing.T) {
-	require := require.New(t)
-
-	msc := &statusCreator{}
-	p := &Poster{sc: msc}
-
+func (s *PosterTestSuite) TestStatusBadReferenceNoRepository() {
+	p := &Poster{pool: s.pool}
 	err := p.Status(context.Background(), noRepoEvent, lookout.PendingAnalysisStatus)
-	require.True(ErrEventNotSupported.Is(err))
-	require.Equal(
-		"event not supported: nil repository", err.Error())
-
-	msc.AssertExpectations(t)
+	s.True(ErrEventNotSupported.Is(err))
+	s.Equal("event not supported: nil repository", err.Error())
 }
 
-func TestPoster_Status_BadReference(t *testing.T) {
-	require := require.New(t)
-
-	msc := &statusCreator{}
-	p := &Poster{sc: msc}
-
+func (s *PosterTestSuite) TestStatusBadReference() {
+	p := &Poster{pool: s.pool}
 	err := p.Status(context.Background(), badReferenceEvent, lookout.PendingAnalysisStatus)
-	require.True(ErrEventNotSupported.Is(err))
-	require.Equal(
-		"event not supported: bad PR: BAD", err.Error())
+	s.True(ErrEventNotSupported.Is(err))
+	s.Equal("event not supported: bad PR: BAD", err.Error())
+}
 
-	msc.AssertExpectations(t)
+func TestPosterTestSuite(t *testing.T) {
+	suite.Run(t, new(PosterTestSuite))
 }
 
 func strptr(v string) *string {
@@ -309,81 +300,4 @@ func intptr(v int) *int {
 
 func int64ptr(v int64) *int64 {
 	return &v
-}
-
-type reviewCreator struct {
-	mock.Mock
-}
-
-func (m *reviewCreator) CreateReview(ctx context.Context, owner, repo string,
-	number int, review *github.PullRequestReviewRequest) (
-	*github.PullRequestReview, *github.Response, error) {
-
-	args := m.Called(ctx, owner, repo, number, review)
-
-	var (
-		r0 *github.PullRequestReview
-		r1 *github.Response
-	)
-
-	if v := args.Get(0); v != nil {
-		r0 = v.(*github.PullRequestReview)
-	}
-
-	if v := args.Get(1); v != nil {
-		r1 = v.(*github.Response)
-	}
-
-	return r0, r1, args.Error(2)
-}
-
-type commitsComparator struct {
-	mock.Mock
-}
-
-func (m *commitsComparator) CompareCommits(ctx context.Context,
-	owner, repo string, base, head string) (
-	*github.CommitsComparison, *github.Response, error) {
-
-	args := m.Called(ctx, owner, repo, base, head)
-
-	var (
-		r0 *github.CommitsComparison
-		r1 *github.Response
-	)
-
-	if v := args.Get(0); v != nil {
-		r0 = v.(*github.CommitsComparison)
-	}
-
-	if v := args.Get(1); v != nil {
-		r1 = v.(*github.Response)
-	}
-
-	return r0, r1, args.Error(2)
-}
-
-type statusCreator struct {
-	mock.Mock
-}
-
-func (m *statusCreator) CreateStatus(ctx context.Context, owner, repo, ref string,
-	status *github.RepoStatus) (*github.RepoStatus, *github.Response, error) {
-
-	args := m.Called(ctx, owner, repo, ref, status)
-
-	var (
-		r0 *github.RepoStatus
-		r1 *github.Response
-	)
-
-	if v := args.Get(0); v != nil {
-		r0 = v.(*github.RepoStatus)
-	}
-
-	if v := args.Get(1); v != nil {
-		r1 = v.(*github.Response)
-	}
-
-	return r0, r1, args.Error(2)
 }

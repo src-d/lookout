@@ -37,7 +37,9 @@ func (c *ValidableCache) Set(key string, responseBytes []byte) {
 
 // Validate validates the given key as a valid cache entry,
 func (c *ValidableCache) Validate(key string) error {
+	c.m.Lock()
 	content, ok := c.inMem[key]
+	c.m.Unlock()
 	if !ok {
 		return ErrNotFoundKey.New(key)
 	}
