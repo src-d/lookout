@@ -2,36 +2,43 @@
 
 A service for assisted code review, that allows running custom code Analyzers on pull requests.
 
+# SDK
+
+If you are developing an Analyzer, please check [SDK documentation](./sdk/README.md).
+
+It includes a curl-style binary that allows to trigger Analyzers directly, without launching a full lookout server.
+
 # Installation
 
 `go get github.com/src-d/lookout`
 
-## Dependencies
+# Dependencies
 
 The included [`./docker-compose.yml`](./docker-compose.yml) allows to start all dependencies using [Docker Compose](https://docs.docker.com/compose/) 
 
 * [bblfshd](https://github.com/bblfsh/bblfshd), on `localhost:9432`
 * [PostgreSQL](https://www.postgresql.org/), on `localhost:5432` password `example`
 
-Clone the repository, or download [`./docker-compose.yml`](./docker-compose.yml), and run:
+Clone the repository, or download [`./docker-compose.yml`](./docker-compose.yml)
+
+# Usage
+
+To trigger the analysis on an actual pull request of a GitHub repository you will need [GitHub access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/).
+
+## With Docker
+
+Run:
 
 ```bash
-docker-compose up
+GITHUB_USER=<user> GITHUB_TOKEN=<token> REPO=github.com/<user>/<name> docker-compose up
 ```
 
+## Without Docker
 
-# Example
-
-## SDK
-
-If you are developing an Analyzer, please check [SDK documentation](./sdk/README.md).
-
-It includes a curl-style binary that allows to trigger Analyzers directly, without launching a full lookout server.
-
-## Server
-
-To trigger the analysis on an actual pull request of a GitHub repository do:
-
+1. Run dependencies manually or using docker-compose:
+    ```bash
+    docker-compose up bblfsh postgres
+    ```
 1. Initialize the database. This command will work for the PostgreSQL created by docker-compose, use `-h` to see other options.
     ```bash
     lookout migrate
@@ -48,7 +55,6 @@ Any of the analyzers or a default dummy one, included in this repository
         - Run `lookout serve --github-token <token> --github-user <user> <repository>`
     1. Without posting analysis results (only printing)
         - `lookout serve --dry-run <repository>`
-1. Create a new pull requires in the repository
 
 
 # Configuration file

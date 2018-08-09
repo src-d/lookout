@@ -1,6 +1,27 @@
 version: '3.3'
 
 services:
+  lookout:
+    image: "srcd/lookout:latest"
+    network_mode: "host"
+    depends_on:
+      - postgres
+      - dummy
+    environment:
+      GITHUB_USER: ${GITHUB_USER}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+    ports:
+      - "10301:10301"
+    entrypoint: ["/bin/sh"]
+    # sleep because container with db is up but the db itself doesn't accept connections yet
+    command: ["-c", "sleep 5 && lookout migrate && lookout serve ${REPO}"]
+    volumes:
+      - ./config.yml:/config.yml
+  dummy:
+    image: "smacker/dummy-analyzer:latest"
+    network_mode: "host"
+    ports:
+      - "10302:10302"
   bblfsh:
     image: "bblfsh/bblfshd:v2.5.0"
     privileged: true
