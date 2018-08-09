@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -46,11 +47,12 @@ func (s *WatcherTestSuite) SetupTest() {
 }
 
 func (s *WatcherTestSuite) TestWatch() {
-	var callsA, callsB, events, prEvents, pushEvents int
+	var callsA, callsB, events, prEvents, pushEvents int32
 
-	pullsHandler := func(calls *int) func(w http.ResponseWriter, r *http.Request) {
+	pullsHandler := func(calls *int32) func(w http.ResponseWriter, r *http.Request) {
 		return func(w http.ResponseWriter, r *http.Request) {
-			*calls++
+			atomic.AddInt32(calls, 1)
+
 			etag := "124567"
 			if r.Header.Get("if-none-match") == etag {
 				w.WriteHeader(http.StatusNotModified)
@@ -62,9 +64,10 @@ func (s *WatcherTestSuite) TestWatch() {
 		}
 	}
 
-	eventsHandler := func(calls *int) func(w http.ResponseWriter, r *http.Request) {
+	eventsHandler := func(calls *int32) func(w http.ResponseWriter, r *http.Request) {
 		return func(w http.ResponseWriter, r *http.Request) {
-			*calls++
+			atomic.AddInt32(calls, 1)
+
 			etag := "124567"
 			if r.Header.Get("if-none-match") == etag {
 				w.WriteHeader(http.StatusNotModified)
@@ -108,11 +111,11 @@ func (s *WatcherTestSuite) TestWatch() {
 		return nil
 	})
 
-	s.True(callsA > 2)
-	s.True(callsB > 2)
-	s.Equal(4, events)
-	s.Equal(2, prEvents)
-	s.Equal(2, pushEvents)
+	s.True(atomic.LoadInt32(&callsA) > 2)
+	s.True(atomic.LoadInt32(&callsB) > 2)
+	s.EqualValues(4, events)
+	s.EqualValues(2, prEvents)
+	s.EqualValues(2, pushEvents)
 	s.EqualError(err, "context deadline exceeded")
 }
 
@@ -134,16 +137,12 @@ func (s *WatcherTestSuite) TestWatch_WithError() {
 	s.NoError(err)
 
 	err = w.Watch(context.TODO(), func(e lookout.Event) error {
-		switch e.Type() {
-		case pb.ReviewEventType:
-			s.Equal("96de6d9d321aa94faa0f053c72e2684a44961e5b", e.ID().String())
-		case pb.PushEventType:
-			s.Equal("d1f57cc4e520766576c5f1d9e7655aeea5fbccfa", e.ID().String())
-		}
+		s.Equal("d1f57cc4e520766576c5f1d9e7655aeea5fbccfa", e.ID().String())
+
 		return fmt.Errorf("foo")
 	})
 
-	s.Error(err, "foo")
+	s.EqualError(err, "foo")
 }
 
 func (s *WatcherTestSuite) TearDownSuite() {
