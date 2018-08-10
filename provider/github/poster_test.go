@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/google/go-github/github"
 	"github.com/gregjones/httpcache"
@@ -102,11 +103,10 @@ func (s *PosterTestSuite) SetupTest() {
 	s.pool = newTestPool(s.Suite, repoURLs, githubURL, cache)
 }
 
-func (s *PosterTestSuite) TestPostOK() {
-	compareCalled := false
+func (s *PosterTestSuite) compareHandle(compareCalled *bool) {
 	s.mux.HandleFunc("/repos/foo/bar/compare/"+hash1+"..."+hash2, func(w http.ResponseWriter, r *http.Request) {
-		s.False(compareCalled)
-		compareCalled = true
+		s.False(*compareCalled)
+		*compareCalled = true
 
 		cc := &github.CommitsComparison{
 			Files: []github.CommitFile{github.CommitFile{
@@ -115,6 +115,11 @@ func (s *PosterTestSuite) TestPostOK() {
 			}}}
 		json.NewEncoder(w).Encode(cc)
 	})
+}
+
+func (s *PosterTestSuite) TestPostOK() {
+	compareCalled := false
+	s.compareHandle(&compareCalled)
 
 	createReviewsCalled := false
 	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
@@ -151,17 +156,7 @@ func (s *PosterTestSuite) TestPostOK() {
 
 func (s *PosterTestSuite) TestPostFooter() {
 	compareCalled := false
-	s.mux.HandleFunc("/repos/foo/bar/compare/"+hash1+"..."+hash2, func(w http.ResponseWriter, r *http.Request) {
-		s.False(compareCalled)
-		compareCalled = true
-
-		cc := &github.CommitsComparison{
-			Files: []github.CommitFile{github.CommitFile{
-				Filename: strptr("main.go"),
-				Patch:    strptr("@@ -3,10 +3,10 @@"),
-			}}}
-		json.NewEncoder(w).Encode(cc)
-	})
+	s.compareHandle(&compareCalled)
 
 	createReviewsCalled := false
 	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
@@ -228,6 +223,50 @@ func (s *PosterTestSuite) TestPostBadReference() {
 	s.Equal("event not supported: bad PR: BAD", err.Error())
 }
 
+func (s *PosterTestSuite) TestPostHttpError() {
+	compareCalled := false
+	s.compareHandle(&compareCalled)
+
+	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	})
+
+	p := &Poster{pool: s.pool}
+	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments)
+	s.IsType(ErrGitHubAPI.New(), err)
+}
+
+func (s *PosterTestSuite) TestPostHttpTimeout() {
+	compareCalled := false
+	s.compareHandle(&compareCalled)
+
+	timeout := 10 * time.Millisecond
+
+	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(timeout * 2)
+	})
+
+	ctx, cancel := context.WithTimeout(context.TODO(), timeout)
+	defer cancel()
+
+	p := &Poster{pool: s.pool}
+	err := p.Post(ctx, mockEvent, mockAnalyzerComments)
+	s.IsType(ErrGitHubAPI.New(), err)
+}
+
+func (s *PosterTestSuite) TestPostHttpJSONErr() {
+	compareCalled := false
+	s.compareHandle(&compareCalled)
+
+	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"Status":"","StatusCode":200,"badjson!!!`))
+	})
+
+	p := &Poster{pool: s.pool}
+	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments)
+	s.IsType(ErrGitHubAPI.New(), err)
+}
+
 func (s *PosterTestSuite) TestStatusOK() {
 	createStatusCalled := false
 
@@ -284,6 +323,41 @@ func (s *PosterTestSuite) TestStatusBadReference() {
 	err := p.Status(context.Background(), badReferenceEvent, lookout.PendingAnalysisStatus)
 	s.True(ErrEventNotSupported.Is(err))
 	s.Equal("event not supported: bad PR: BAD", err.Error())
+}
+
+func (s *PosterTestSuite) TestStatusHttpError() {
+	s.mux.HandleFunc("/repos/foo/bar/statuses/02801e1a27a0a906d59530aeb81f4cd137f2c717", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	})
+
+	p := &Poster{pool: s.pool}
+	err := p.Status(context.Background(), mockEvent, lookout.PendingAnalysisStatus)
+	s.IsType(ErrGitHubAPI.New(), err)
+}
+
+func (s *PosterTestSuite) TestStatusHttpTimeout() {
+	timeout := 10 * time.Millisecond
+
+	s.mux.HandleFunc("/repos/foo/bar/statuses/02801e1a27a0a906d59530aeb81f4cd137f2c717", func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(timeout * 2)
+	})
+
+	ctx, cancel := context.WithTimeout(context.TODO(), timeout)
+	defer cancel()
+
+	p := &Poster{pool: s.pool}
+	err := p.Status(ctx, mockEvent, lookout.PendingAnalysisStatus)
+	s.IsType(ErrGitHubAPI.New(), err)
+}
+
+func (s *PosterTestSuite) TestStatusHttpJSONErr() {
+	s.mux.HandleFunc("/repos/foo/bar/statuses/02801e1a27a0a906d59530aeb81f4cd137f2c717", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"id":1234,"url":"https://api.github.com/repos/foo/bar/statuses/1234","state":"success","badjson!!!`))
+	})
+
+	p := &Poster{pool: s.pool}
+	err := p.Status(context.Background(), mockEvent, lookout.PendingAnalysisStatus)
+	s.IsType(ErrGitHubAPI.New(), err)
 }
 
 func TestPosterTestSuite(t *testing.T) {
