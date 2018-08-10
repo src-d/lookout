@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/src-d/lookout"
 
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 // Syncer syncs the local copy of git repository for a given CommitRevision.
@@ -52,7 +54,18 @@ func (s *Syncer) Sync(ctx context.Context,
 	return s.fetch(ctx, frp.InternalRepositoryURL, r, refspecs)
 }
 
-func (s *Syncer) fetch(ctx context.Context, repoURL string, r *git.Repository, refspecs []config.RefSpec) error {
+func (s *Syncer) fetch(ctx context.Context, repoURL string, r *git.Repository, refspecs []config.RefSpec) (err error) {
+	log.Infof("fetching references for repository %s: %v", repoURL, refspecs)
+	start := time.Now()
+	defer func() {
+		if err == nil {
+			log.
+				With(log.Fields{"duration": time.Now().Sub(start)}).
+				Debugf("references %v fetched for repository %s", repoURL, refspecs)
+		}
+		// in case of error it will be logged on upper level
+	}()
+
 	opts := &git.FetchOptions{
 		RemoteName: "origin",
 		RefSpecs:   refspecs,
@@ -64,9 +77,9 @@ func (s *Syncer) fetch(ctx context.Context, repoURL string, r *git.Repository, r
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	err := r.FetchContext(ctx, opts)
+	err = r.FetchContext(ctx, opts)
 	if err == git.NoErrAlreadyUpToDate {
-		return nil
+		err = nil
 	}
 
 	return err

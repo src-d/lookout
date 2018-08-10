@@ -9,6 +9,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 // Service implements data service interface on top of go-git
@@ -98,6 +99,8 @@ func (r *Service) loadTrees(ctx context.Context,
 	}
 
 	rps = append(rps, *head)
+
+	log.Debugf("load trees for references: %v", rps)
 
 	commits, err := r.loader.LoadCommits(ctx, rps...)
 	if err != nil {
