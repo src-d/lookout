@@ -144,6 +144,95 @@ func (s *WatcherTestSuite) TestWatch_CallbackError() {
 	s.EqualError(err, "foo")
 }
 
+func (s *WatcherTestSuite) TestWatch_HttpError() {
+	var calls, callsErr int32
+
+	errCodeHandler := func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&callsErr, 1)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	s.mux.HandleFunc("/repos/mock/test/pulls", pullsHandler(&calls))
+	s.mux.HandleFunc("/repos/mock/test/events", eventsHandler(&calls))
+
+	s.mux.HandleFunc("/repos/mock/test-err/pulls", errCodeHandler)
+	s.mux.HandleFunc("/repos/mock/test-err/events", errCodeHandler)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), minInterval*10)
+	defer cancel()
+
+	w := s.newWatcher([]string{"github.com/mock/test", "github.com/mock/test-err"})
+	err := w.Watch(ctx, func(e lookout.Event) error {
+		s.Equal("git://github.com/mock/test.git", e.Revision().Head.InternalRepositoryURL)
+		return nil
+	})
+
+	s.True(atomic.LoadInt32(&calls) > 1)
+	s.True(atomic.LoadInt32(&callsErr) > 1)
+
+	s.EqualError(err, "context deadline exceeded")
+}
+
+func (s *WatcherTestSuite) TestWatch_HttpTimeout() {
+	var calls, callsErr int32
+
+	// Change the request timeout for this test
+	RequestTimeout = 5 * minInterval
+
+	errCodeHandler := func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&callsErr, 1)
+		time.Sleep(RequestTimeout * 2)
+	}
+
+	s.mux.HandleFunc("/repos/mock/test/pulls", pullsHandler(&calls))
+	s.mux.HandleFunc("/repos/mock/test/events", eventsHandler(&calls))
+
+	s.mux.HandleFunc("/repos/mock/test-err/pulls", errCodeHandler)
+	s.mux.HandleFunc("/repos/mock/test-err/events", errCodeHandler)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), minInterval*10)
+	defer cancel()
+
+	w := s.newWatcher([]string{"github.com/mock/test", "github.com/mock/test-err"})
+	err := w.Watch(ctx, func(e lookout.Event) error {
+		s.Equal("git://github.com/mock/test.git", e.Revision().Head.InternalRepositoryURL)
+		return nil
+	})
+
+	s.True(atomic.LoadInt32(&calls) > 1)
+	s.True(atomic.LoadInt32(&callsErr) > 1)
+
+	s.EqualError(err, "context deadline exceeded")
+}
+
+func (s *WatcherTestSuite) TestWatch_JSONError() {
+	var calls, callsErr int32
+
+	errCodeHandler := func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&callsErr, 1)
+		fmt.Fprint(w, `[{"key":"value", "broken json!`)
+	}
+
+	s.mux.HandleFunc("/repos/mock/test/pulls", pullsHandler(&calls))
+	s.mux.HandleFunc("/repos/mock/test/events", eventsHandler(&calls))
+
+	s.mux.HandleFunc("/repos/mock/test-err/pulls", errCodeHandler)
+	s.mux.HandleFunc("/repos/mock/test-err/events", errCodeHandler)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), minInterval*10)
+	defer cancel()
+
+	w := s.newWatcher([]string{"github.com/mock/test", "github.com/mock/test-err"})
+	err := w.Watch(ctx, func(e lookout.Event) error {
+		return nil
+	})
+
+	s.True(atomic.LoadInt32(&calls) > 1)
+	s.True(atomic.LoadInt32(&callsErr) > 1)
+
+	s.EqualError(err, "context deadline exceeded")
+}
+
 func (s *WatcherTestSuite) TestWatchLimit() {
 	var calls, prEvents int32
 
