@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/mock"
@@ -327,6 +329,33 @@ func TestConfigMerger(t *testing.T) {
 	require.Equal(expectedMap, merged)
 }
 
+func TestWatcherError(t *testing.T) {
+	require := require.New(t)
+
+	logMock := &MockLogger{}
+	log.DefaultLogger = logMock
+
+	watcher := &ErrorWatcherMock{}
+	poster := &PosterMock{}
+	fileGetter := &FileGetterMock{}
+	analyzers := map[string]lookout.Analyzer{
+		"mock": lookout.Analyzer{
+			Client: &AnalyzerClientMock{},
+		},
+	}
+
+	srv := NewServer(watcher, poster, fileGetter, analyzers, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	err := srv.Run(ctx)
+
+	require.EqualError(err, "context deadline exceeded")
+	require.True(len(logMock.errors) > 0)
+	require.EqualError(logMock.errors[0], "some error")
+}
+
 func setupMockedServer() (*WatcherMock, *PosterMock) {
 	watcher := &WatcherMock{}
 	poster := &PosterMock{}
@@ -460,4 +489,27 @@ func (s *NoopFileScanner) File() *lookout.File {
 
 func (s *NoopFileScanner) Close() error {
 	return nil
+}
+
+type ErrorWatcherMock struct{}
+
+func (w *ErrorWatcherMock) Watch(ctx context.Context, e lookout.EventHandler) error {
+	return errors.New("some error")
+}
+
+type MockLogger struct {
+	errors []error
+}
+
+func (l *MockLogger) New(log.Fields) log.Logger {
+	return l
+}
+func (l *MockLogger) With(log.Fields) log.Logger {
+	return l
+}
+func (l *MockLogger) Debugf(format string, args ...interface{})   {}
+func (l *MockLogger) Infof(format string, args ...interface{})    {}
+func (l *MockLogger) Warningf(format string, args ...interface{}) {}
+func (l *MockLogger) Errorf(err error, format string, args ...interface{}) {
+	l.errors = append(l.errors, err)
 }
