@@ -73,7 +73,18 @@ func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
 func (w *Watcher) watchPrs(ctx context.Context, c *Client, repos []*lookout.RepositoryInfo, cb lookout.EventHandler, errCh chan error) {
 	for {
 		for _, repo := range repos {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(w.newInterval(c.Rate(coreCategory))):
+			}
+
 			resp, prs, err := w.doPRListRequest(ctx, repo.Username, repo.Name)
+			if ErrGitHubAPI.Is(err) {
+				log.With(log.Fields{"repository": repo.FullName, "response": resp}).Errorf(err, "request for PR list failed")
+				continue
+			}
+
 			if err != nil && !NoErrNotModified.Is(err) {
 				errCh <- err
 				return
@@ -83,21 +94,27 @@ func (w *Watcher) watchPrs(ctx context.Context, c *Client, repos []*lookout.Repo
 				errCh <- err
 				return
 			}
-
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(w.newInterval(c.Rate(coreCategory))):
-				continue
-			}
 		}
 	}
 }
 
 func (w *Watcher) watchEvents(ctx context.Context, c *Client, repos []*lookout.RepositoryInfo, cb lookout.EventHandler, errCh chan error) {
+	interval := minInterval
+
 	for {
 		for _, repo := range repos {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(interval):
+			}
+
 			resp, events, err := w.doEventRequest(ctx, repo.Username, repo.Name)
+			if ErrGitHubAPI.Is(err) {
+				log.With(log.Fields{"repository": repo.FullName, "response": resp}).Errorf(err, "request for events list failed")
+				continue
+			}
+
 			if err != nil && !NoErrNotModified.Is(err) {
 				errCh <- err
 				return
@@ -108,17 +125,10 @@ func (w *Watcher) watchEvents(ctx context.Context, c *Client, repos []*lookout.R
 				return
 			}
 
-			interval := w.newInterval(c.Rate(coreCategory))
+			interval = w.newInterval(c.Rate(coreCategory))
 			pollInterval := c.PollInterval(eventsCategory)
 			if pollInterval > interval {
 				interval = pollInterval
-			}
-
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(pollInterval):
-				continue
 			}
 		}
 	}
@@ -198,7 +208,7 @@ func (w *Watcher) doPRListRequest(ctx context.Context, username, repository stri
 	}
 	prs, resp, err := client.PullRequests.List(ctx, username, repository, &github.PullRequestListOptions{})
 	if err != nil {
-		return resp, nil, err
+		return resp, nil, ErrGitHubAPI.Wrap(err)
 	}
 
 	if isStatusNotModified(resp.Response) {
@@ -224,7 +234,7 @@ func (w *Watcher) doEventRequest(ctx context.Context, username, repository strin
 	)
 
 	if err != nil {
-		return resp, nil, err
+		return resp, nil, ErrGitHubAPI.Wrap(err)
 	}
 
 	if isStatusNotModified(resp.Response) {
@@ -237,7 +247,7 @@ func (w *Watcher) doEventRequest(ctx context.Context, username, repository strin
 func (w *Watcher) getClient(username, repository string) (*Client, error) {
 	client, ok := w.pool.Client(username, repository)
 	if !ok {
-		return nil, fmt.Errorf("client for %s/%s doesn't exists", username, repository)
+		return nil, fmt.Errorf("client for %s/%s doesn't exist", username, repository)
 	}
 	return client, nil
 }
