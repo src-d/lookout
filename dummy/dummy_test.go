@@ -13,7 +13,12 @@ import (
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-git-fixtures.v3"
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
+	log "gopkg.in/src-d/go-log.v1"
 )
+
+func init() {
+	log.DefaultLogger = log.New(log.Fields{"app": "dummy"})
+}
 
 type DummySuite struct {
 	suite.Suite

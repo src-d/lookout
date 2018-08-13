@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/util/ctxlog"
 	"gopkg.in/src-d/go-log.v1"
 )
 
@@ -44,6 +45,6 @@ func (p *Poster) Post(ctx context.Context, e lookout.Event,
 func (p *Poster) Status(ctx context.Context, e lookout.Event,
 	status lookout.AnalysisStatus) error {
 
-	log.With(log.Fields{"status": status}).Infof("New status")
+	ctxlog.Get(ctx).With(log.Fields{"status": status}).Infof("New status")
 	return nil
 }

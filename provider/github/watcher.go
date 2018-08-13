@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/util/ctxlog"
 
 	"github.com/google/go-github/github"
 	"gopkg.in/src-d/go-errors.v1"
@@ -47,7 +48,7 @@ func NewWatcher(pool *ClientPool, o *lookout.WatchOptions) (*Watcher, error) {
 
 // Watch start to make request to the GitHub API and return the new events.
 func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
-	log.With(log.Fields{"urls": w.o.URLs}).Infof("Starting watcher")
+	ctxlog.Get(ctx).With(log.Fields{"urls": w.o.URLs}).Infof("Starting watcher")
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -125,7 +126,7 @@ func (w *Watcher) processRepoPRs(
 		return minInterval, err
 	}
 
-	err = w.handlePrs(cb, repo, resp, prs)
+	err = w.handlePrs(ctx, cb, repo, resp, prs)
 	return minInterval, err
 }
 
@@ -147,26 +148,32 @@ func (w *Watcher) processRepoEvents(
 		return c.PollInterval(eventsCategory), err
 	}
 
-	err = w.handleEvents(cb, repo, resp, events)
+	err = w.handleEvents(ctx, cb, repo, resp, events)
 	return c.PollInterval(eventsCategory), err
 }
 
-func (w *Watcher) handlePrs(cb lookout.EventHandler, r *lookout.RepositoryInfo,
+func (w *Watcher) handlePrs(ctx context.Context, cb lookout.EventHandler, r *lookout.RepositoryInfo,
 	resp *github.Response, prs []*github.PullRequest) error {
 
 	if len(prs) == 0 {
 		return nil
 	}
 
+	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{"repo": r.Link()})
+
 	for _, e := range prs {
-		event := castPullRequest(r, e)
+		ctx, _ := ctxlog.WithLogFields(ctx, log.Fields{
+			"pr-id":     e.GetID(),
+			"pr-number": e.GetNumber(),
+		})
+		event := castPullRequest(ctx, r, e)
 
 		if err := cb(event); err != nil {
 			return err
 		}
 	}
 
-	log.Debugf("request to %s cached", resp.Request.URL)
+	logger.Debugf("request to %s cached", resp.Request.URL)
 
 	client, err := w.getClient(r.Username, r.Name)
 	if err != nil {
@@ -176,17 +183,19 @@ func (w *Watcher) handlePrs(cb lookout.EventHandler, r *lookout.RepositoryInfo,
 	return client.Validate(resp.Request.URL.String())
 }
 
-func (w *Watcher) handleEvents(cb lookout.EventHandler, r *lookout.RepositoryInfo,
+func (w *Watcher) handleEvents(ctx context.Context, cb lookout.EventHandler, r *lookout.RepositoryInfo,
 	resp *github.Response, events []*github.Event) error {
 
 	if len(events) == 0 {
 		return nil
 	}
 
+	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{"repo": r.Link()})
+
 	for _, e := range events {
 		event, err := w.handleEvent(r, e)
 		if err != nil {
-			log.Errorf(err, "error handling event")
+			logger.Errorf(err, "error handling event")
 			continue
 		}
 
@@ -199,7 +208,7 @@ func (w *Watcher) handleEvents(cb lookout.EventHandler, r *lookout.RepositoryInf
 		}
 	}
 
-	log.Debugf("request to %s cached", resp.Request.URL)
+	logger.Debugf("request to %s cached", resp.Request.URL)
 
 	client, err := w.getClient(r.Username, r.Name)
 	if err != nil {

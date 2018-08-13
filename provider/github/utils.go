@@ -1,15 +1,16 @@
 package github
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/util/ctxlog"
 
 	"github.com/google/go-github/github"
 	"gopkg.in/sourcegraph/go-vcsurl.v1"
 	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-log.v1"
 )
 
 func castEvent(r *lookout.RepositoryInfo, e *github.Event) (lookout.Event, error) {
@@ -65,21 +66,21 @@ func castHash(sha1 *string) plumbing.Hash {
 	return plumbing.NewHash(*sha1)
 }
 
-func castPullRequest(r *lookout.RepositoryInfo, pr *github.PullRequest) *lookout.ReviewEvent {
+func castPullRequest(ctx context.Context, r *lookout.RepositoryInfo, pr *github.PullRequest) *lookout.ReviewEvent {
 	pre := &lookout.ReviewEvent{}
 	pre.Provider = Provider
 	pre.InternalID = strconv.FormatInt(pr.GetID(), 10)
 
 	pre.Number = uint32(pr.GetNumber())
 	pre.RepositoryID = uint32(pr.GetHead().GetRepo().GetID())
-	pre.Source = castPullRequestBranch(pr.GetHead())
+	pre.Source = castPullRequestBranch(ctx, pr.GetHead())
 	pre.Merge = lookout.ReferencePointer{
 		InternalRepositoryURL: r.CloneURL,
 		ReferenceName:         plumbing.ReferenceName(fmt.Sprintf("refs/pull/%d/merge", pr.GetNumber())),
 		Hash:                  pr.GetMergeCommitSHA(),
 	}
 
-	pre.Base = castPullRequestBranch(pr.GetBase())
+	pre.Base = castPullRequestBranch(ctx, pr.GetBase())
 	pre.Head = lookout.ReferencePointer{
 		InternalRepositoryURL: r.CloneURL,
 		ReferenceName:         plumbing.ReferenceName(fmt.Sprintf("refs/pull/%d/head", pr.GetNumber())),
@@ -91,15 +92,15 @@ func castPullRequest(r *lookout.RepositoryInfo, pr *github.PullRequest) *lookout
 	return pre
 }
 
-func castPullRequestBranch(b *github.PullRequestBranch) lookout.ReferencePointer {
+func castPullRequestBranch(ctx context.Context, b *github.PullRequestBranch) lookout.ReferencePointer {
 	if b == nil {
-		log.Warningf("empty pull request branch given")
+		ctxlog.Get(ctx).Warningf("empty pull request branch given")
 		return lookout.ReferencePointer{}
 	}
 
 	r, err := vcsurl.Parse(b.GetRepo().GetCloneURL())
 	if err != nil {
-		log.Warningf("malformed repository URL on pull request branch")
+		ctxlog.Get(ctx).Warningf("malformed repository URL on pull request branch")
 		return lookout.ReferencePointer{}
 	}
 

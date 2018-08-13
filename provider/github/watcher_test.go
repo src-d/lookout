@@ -24,6 +24,7 @@ import (
 func init() {
 	// make everything faster for tests
 	minInterval = time.Millisecond
+	log.DefaultLogger = log.New(log.Fields{"app": "lookout"})
 }
 
 type WatcherTestSuite struct {

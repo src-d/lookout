@@ -9,6 +9,8 @@ import (
 	"github.com/src-d/lookout/pb"
 	"github.com/src-d/lookout/store"
 	"github.com/src-d/lookout/store/models"
+	"github.com/src-d/lookout/util/ctxlog"
+
 	log "gopkg.in/src-d/go-log.v1"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -53,7 +55,7 @@ func (s *Server) Run(ctx context.Context) error {
 			return ctx.Err()
 		case err := <-errCh:
 			if err != nil {
-				log.Errorf(err, "error during watching, restart watching")
+				ctxlog.Get(ctx).Errorf(err, "error during watching, restart watching")
 			} else {
 				return nil
 			}
@@ -62,7 +64,7 @@ func (s *Server) Run(ctx context.Context) error {
 }
 
 func (s *Server) handleEvent(ctx context.Context, e lookout.Event) error {
-	logger := log.With(log.Fields{
+	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{
 		"event-type": e.Type(),
 		"event-id":   e.ID(),
 	})
@@ -84,7 +86,7 @@ func (s *Server) handleEvent(ctx context.Context, e lookout.Event) error {
 	case *lookout.PushEvent:
 		err = s.HandlePush(ctx, ev)
 	default:
-		log.Debugf("ignoring unsupported event: %s", ev)
+		logger.Debugf("ignoring unsupported event: %s", ev)
 	}
 
 	if err == nil {
@@ -104,7 +106,7 @@ func (s *Server) handleEvent(ctx context.Context, e lookout.Event) error {
 
 // HandleReview sends request to analyzers concurrently
 func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent) error {
-	logger := log.DefaultLogger.With(log.Fields{
+	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{
 		"provider":   e.Provider,
 		"repository": e.Head.InternalRepositoryURL,
 		"head":       e.Head.ReferenceName,
@@ -115,12 +117,12 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent) error
 		return err
 	}
 
-	conf, err := s.getConfig(ctx, logger, e)
+	conf, err := s.getConfig(ctx, e)
 	if err != nil {
 		return err
 	}
 
-	s.status(ctx, logger, e, lookout.PendingAnalysisStatus)
+	s.status(ctx, e, lookout.PendingAnalysisStatus)
 
 	send := func(a lookout.AnalyzerClient, settings map[string]interface{}) ([]*lookout.Comment, error) {
 		st := pb.ToStruct(settings)
@@ -133,21 +135,21 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent) error
 		}
 		return resp.Comments, nil
 	}
-	comments := s.concurrentRequest(ctx, logger, conf, send)
+	comments := s.concurrentRequest(ctx, conf, send)
 
-	if err := s.post(ctx, logger, e, comments); err != nil {
-		s.status(ctx, logger, e, lookout.ErrorAnalysisStatus)
+	if err := s.post(ctx, e, comments); err != nil {
+		s.status(ctx, e, lookout.ErrorAnalysisStatus)
 		return fmt.Errorf("posting analysis failed: %s", err)
 	}
 
-	s.status(ctx, logger, e, lookout.SuccessAnalysisStatus)
+	s.status(ctx, e, lookout.SuccessAnalysisStatus)
 
 	return nil
 }
 
 // HandlePush sends request to analyzers concurrently
 func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
-	logger := log.DefaultLogger.With(log.Fields{
+	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{
 		"provider":   e.Provider,
 		"repository": e.Head.InternalRepositoryURL,
 		"head":       e.Head.ReferenceName,
@@ -158,12 +160,12 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
 		return err
 	}
 
-	conf, err := s.getConfig(ctx, logger, e)
+	conf, err := s.getConfig(ctx, e)
 	if err != nil {
 		return err
 	}
 
-	s.status(ctx, logger, e, lookout.PendingAnalysisStatus)
+	s.status(ctx, e, lookout.PendingAnalysisStatus)
 
 	send := func(a lookout.AnalyzerClient, settings map[string]interface{}) ([]*lookout.Comment, error) {
 		st := pb.ToStruct(settings)
@@ -176,19 +178,18 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
 		}
 		return resp.Comments, nil
 	}
-	comments := s.concurrentRequest(ctx, logger, conf, send)
+	comments := s.concurrentRequest(ctx, conf, send)
 
-	if err := s.post(ctx, logger, e, comments); err != nil {
-		s.status(ctx, logger, e, lookout.ErrorAnalysisStatus)
+	if err := s.post(ctx, e, comments); err != nil {
+		s.status(ctx, e, lookout.ErrorAnalysisStatus)
 		return fmt.Errorf("posting analysis failed: %s", err)
 	}
-	s.status(ctx, logger, e, lookout.SuccessAnalysisStatus)
+	s.status(ctx, e, lookout.SuccessAnalysisStatus)
 
 	return nil
 }
 
-// FIXME(max): it's better to hold logger inside context
-func (s *Server) getConfig(ctx context.Context, logger log.Logger, e lookout.Event) (map[string]lookout.AnalyzerConfig, error) {
+func (s *Server) getConfig(ctx context.Context, e lookout.Event) (map[string]lookout.AnalyzerConfig, error) {
 	rev := e.Revision()
 	scanner, err := s.fileGetter.GetFiles(ctx, &lookout.FilesRequest{
 		Revision:       &rev.Head,
@@ -208,7 +209,7 @@ func (s *Server) getConfig(ctx context.Context, logger log.Logger, e lookout.Eve
 	}
 
 	if len(configContent) == 0 {
-		logger.Infof("repository config is not found")
+		ctxlog.Get(ctx).Infof("repository config is not found")
 		return nil, nil
 	}
 
@@ -223,7 +224,7 @@ func (s *Server) getConfig(ctx context.Context, logger log.Logger, e lookout.Eve
 	}
 	for _, aConf := range conf.Analyzers {
 		if _, ok := s.analyzers[aConf.Name]; !ok {
-			logger.Warningf("analyzer '%s' required by local config isn't enabled on server", aConf.Name)
+			ctxlog.Get(ctx).Warningf("analyzer '%s' required by local config isn't enabled on server", aConf.Name)
 			continue
 		}
 		res[aConf.Name] = aConf
@@ -232,8 +233,7 @@ func (s *Server) getConfig(ctx context.Context, logger log.Logger, e lookout.Eve
 	return res, nil
 }
 
-// FIXME(max): it's better to hold logger inside context
-func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, conf map[string]lookout.AnalyzerConfig, send reqSent) []lookout.AnalyzerComments {
+func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.AnalyzerConfig, send reqSent) []lookout.AnalyzerComments {
 	var comments commentsList
 
 	var wg sync.WaitGroup
@@ -246,7 +246,7 @@ func (s *Server) concurrentRequest(ctx context.Context, logger log.Logger, conf 
 		go func(name string, a lookout.Analyzer) {
 			defer wg.Done()
 
-			aLogger := logger.With(log.Fields{
+			aLogger := ctxlog.Get(ctx).With(log.Fields{
 				"analyzer": name,
 			})
 
@@ -302,14 +302,14 @@ func mergeMaps(global, local map[string]interface{}) map[string]interface{} {
 	return merged
 }
 
-func (s *Server) post(ctx context.Context, logger log.Logger, e lookout.Event, comments []lookout.AnalyzerComments) error {
+func (s *Server) post(ctx context.Context, e lookout.Event, comments []lookout.AnalyzerComments) error {
 	var filtered []lookout.AnalyzerComments
 	for _, cg := range comments {
 		var filteredComments []*lookout.Comment
 		for _, c := range cg.Comments {
 			yes, err := s.commentOp.Posted(ctx, e, c)
 			if err != nil {
-				logger.Errorf(err, "comment posted check failed")
+				ctxlog.Get(ctx).Errorf(err, "comment posted check failed")
 			}
 			if yes {
 				continue
@@ -328,7 +328,7 @@ func (s *Server) post(ctx context.Context, logger log.Logger, e lookout.Event, c
 		return nil
 	}
 
-	logger.With(log.Fields{
+	ctxlog.Get(ctx).With(log.Fields{
 		"comments": len(comments),
 	}).Infof("posting analysis")
 
@@ -339,7 +339,7 @@ func (s *Server) post(ctx context.Context, logger log.Logger, e lookout.Event, c
 	for _, cg := range comments {
 		for _, c := range cg.Comments {
 			if err := s.commentOp.Save(ctx, e, c); err != nil {
-				log.Errorf(err, "can't save comment")
+				ctxlog.Get(ctx).Errorf(err, "can't save comment")
 			}
 		}
 	}
@@ -347,9 +347,9 @@ func (s *Server) post(ctx context.Context, logger log.Logger, e lookout.Event, c
 	return nil
 }
 
-func (s *Server) status(ctx context.Context, logger log.Logger, e lookout.Event, st lookout.AnalysisStatus) {
+func (s *Server) status(ctx context.Context, e lookout.Event, st lookout.AnalysisStatus) {
 	if err := s.poster.Status(ctx, e, st); err != nil {
-		logger.With(log.Fields{"status": st}).Errorf(err, "posting status failed")
+		ctxlog.Get(ctx).With(log.Fields{"status": st}).Errorf(err, "posting status failed")
 	}
 }
 
