@@ -2,6 +2,7 @@ package bblfsh
 
 import (
 	"context"
+	"strings"
 
 	"github.com/src-d/lookout"
 
@@ -31,12 +32,10 @@ func NewService(changes lookout.ChangeGetter, files lookout.FileGetter, conn *gr
 }
 
 // GetChanges returns a ChangeScanner that scans all changes according to the request.
-func (s *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
-	lookout.ChangeScanner, error) {
-
-	wantContents := req.WantContents
+func (s *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (lookout.ChangeScanner, error) {
 	if req.WantUAST {
 		req.WantContents = true
+		req.WantLanguage = true
 	}
 
 	changes, err := s.changes.GetChanges(ctx, req)
@@ -51,17 +50,14 @@ func (s *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 	return &ChangeScanner{
 		underlying: changes,
 		BaseScanner: BaseScanner{
-			ctx:           ctx,
-			client:        s.client,
-			purgeContents: !wantContents,
+			ctx:    ctx,
+			client: s.client,
 		},
 	}, nil
 }
 
 // GetFiles returns a FilesScanner that scans all files according to the request.
-func (s *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (
-	lookout.FileScanner, error) {
-	wantContents := req.WantContents
+func (s *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (lookout.FileScanner, error) {
 	if req.WantUAST {
 		req.WantContents = true
 	}
@@ -78,18 +74,16 @@ func (s *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (
 	return &FileScanner{
 		underlying: files,
 		BaseScanner: BaseScanner{
-			ctx:           ctx,
-			client:        s.client,
-			purgeContents: !wantContents,
+			ctx:    ctx,
+			client: s.client,
 		},
 	}, nil
 }
 
 type BaseScanner struct {
-	ctx           context.Context
-	client        protocol.ProtocolServiceClient
-	purgeContents bool
-	err           error
+	ctx    context.Context
+	client protocol.ProtocolServiceClient
+	err    error
 }
 
 func (s *BaseScanner) processFile(f *lookout.File) error {
@@ -105,10 +99,6 @@ func (s *BaseScanner) processFile(f *lookout.File) error {
 		return err
 	}
 
-	if s.purgeContents {
-		f.Content = nil
-	}
-
 	return nil
 }
 
@@ -121,6 +111,7 @@ func (s *BaseScanner) parseFile(f *lookout.File) (*uast.Node, error) {
 		Filename: f.Path,
 		Content:  string(f.Content),
 		Encoding: protocol.UTF8,
+		Language: strings.ToLower(f.Language),
 	}
 	resp, err := s.client.Parse(s.ctx, req)
 	if err != nil {

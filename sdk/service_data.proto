@@ -73,5 +73,6 @@ message FilesRequest {
     bool exclude_vendored = 4;
     bool want_contents = 5;
     bool want_uast = 6 [(gogoproto.customname) = "WantUAST"];
+    // WantLanguage set to true if UAST was requested
     bool want_language = 7;
 }

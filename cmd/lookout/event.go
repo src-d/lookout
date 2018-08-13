@@ -9,7 +9,9 @@ import (
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/service/bblfsh"
+	"github.com/src-d/lookout/service/enry"
 	"github.com/src-d/lookout/service/git"
+	"github.com/src-d/lookout/service/purge"
 	"github.com/src-d/lookout/util/cli"
 	"github.com/src-d/lookout/util/grpchelper"
 	"google.golang.org/grpc"
@@ -86,6 +88,7 @@ func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, erro
 
 	loader := git.NewStorerCommitLoader(c.repo.Storer)
 	dataService = git.NewService(loader)
+	dataService = enry.NewService(dataService, dataService)
 
 	grpcAddr, err := grpchelper.ToGoGrpcAddress(c.Bblfshd)
 	if err != nil {
@@ -103,6 +106,8 @@ func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, erro
 	} else {
 		dataService = bblfsh.NewService(dataService, dataService, bblfshConn)
 	}
+
+	dataService = purge.NewService(dataService, dataService)
 
 	srv := &lookout.DataServerHandler{
 		ChangeGetter: dataService,
