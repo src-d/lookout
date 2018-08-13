@@ -192,6 +192,7 @@ func (p *Poster) createReviewRequest(
 }
 
 // Status sets the Pull Request global status, visible from the GitHub UI
+// If a GitHub API request fails, ErrGitHubAPI is returned.
 func (p *Poster) Status(ctx context.Context, e lookout.Event, status lookout.AnalysisStatus) error {
 	switch ev := e.(type) {
 	case *lookout.ReviewEvent:
@@ -258,7 +259,11 @@ func (p *Poster) statusPR(ctx context.Context, e *lookout.ReviewEvent, status lo
 	}
 
 	_, _, err = client.Repositories.CreateStatus(ctx, owner, repo, e.CommitRevision.Head.Hash, repoStatus)
-	return err
+	if err != nil {
+		return ErrGitHubAPI.Wrap(err)
+	}
+
+	return nil
 }
 
 func (p *Poster) getClient(username, repository string) (*Client, error) {

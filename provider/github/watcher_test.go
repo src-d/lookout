@@ -42,65 +42,74 @@ func (s *WatcherTestSuite) SetupTest() {
 	s.githubURL, _ = url.Parse(s.server.URL + "/")
 }
 
+var pullsHandler = func(calls *int32) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(calls, 1)
+
+		etag := "124567"
+		if r.Header.Get("if-none-match") == etag {
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+
+		w.Header().Set("etag", etag)
+		fmt.Fprint(w, `[{"id":5}]`)
+	}
+}
+
+var eventsHandler = func(calls *int32) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(calls, 1)
+
+		etag := "124567"
+		if r.Header.Get("if-none-match") == etag {
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+
+		w.Header().Set("etag", etag)
+		fmt.Fprint(w, `[{"id":"1", "type":"PushEvent", "payload":{"push_id": 1}}]`)
+	}
+}
+
+const (
+	pullID = "fd84071093b69f9aac25fb5dfeea1a870e3e19cf"
+	pushID = "d1f57cc4e520766576c5f1d9e7655aeea5fbccfa"
+)
+
+func (s *WatcherTestSuite) newWatcher(repoURLs []string) *Watcher {
+	pool := newTestPool(s.Suite, repoURLs, s.githubURL, s.cache)
+	w, err := NewWatcher(pool, &lookout.WatchOptions{
+		URLs: repoURLs,
+	})
+
+	s.NoError(err)
+
+	return w
+}
+
 func (s *WatcherTestSuite) TestWatch() {
 	var callsA, callsB, events, prEvents, pushEvents int32
-
-	pullsHandler := func(calls *int32) func(w http.ResponseWriter, r *http.Request) {
-		return func(w http.ResponseWriter, r *http.Request) {
-			atomic.AddInt32(calls, 1)
-
-			etag := "124567"
-			if r.Header.Get("if-none-match") == etag {
-				w.WriteHeader(http.StatusNotModified)
-				return
-			}
-
-			w.Header().Set("etag", etag)
-			fmt.Fprint(w, `[{"id":5}]`)
-		}
-	}
-
-	eventsHandler := func(calls *int32) func(w http.ResponseWriter, r *http.Request) {
-		return func(w http.ResponseWriter, r *http.Request) {
-			atomic.AddInt32(calls, 1)
-
-			etag := "124567"
-			if r.Header.Get("if-none-match") == etag {
-				w.WriteHeader(http.StatusNotModified)
-				return
-			}
-
-			w.Header().Set("etag", etag)
-			fmt.Fprint(w, `[{"id":"1", "type":"PushEvent", "payload":{"push_id": 1}}]`)
-		}
-	}
 
 	s.mux.HandleFunc("/repos/mock/test-a/pulls", pullsHandler(&callsA))
 	s.mux.HandleFunc("/repos/mock/test-a/events", eventsHandler(&callsA))
 	s.mux.HandleFunc("/repos/mock/test-b/pulls", pullsHandler(&callsB))
 	s.mux.HandleFunc("/repos/mock/test-b/events", eventsHandler(&callsB))
 
-	repoURLs := []string{"github.com/mock/test-a", "github.com/mock/test-b"}
-	poll := newTestPool(repoURLs, s.githubURL, s.cache)
-	w, err := NewWatcher(poll, &lookout.WatchOptions{
-		URLs: repoURLs,
-	})
-
-	s.NoError(err)
-
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), minInterval*10)
 	defer cancel()
 
-	err = w.Watch(ctx, func(e lookout.Event) error {
+	w := s.newWatcher([]string{"github.com/mock/test-a", "github.com/mock/test-b"})
+	err := w.Watch(ctx, func(e lookout.Event) error {
 		atomic.AddInt32(&events, 1)
 
 		switch e.Type() {
 		case pb.ReviewEventType:
 			prEvents++
-			s.Equal("fd84071093b69f9aac25fb5dfeea1a870e3e19cf", e.ID().String())
+			s.Equal(pullID, e.ID().String())
 		case pb.PushEventType:
 			pushEvents++
-			s.Equal("d1f57cc4e520766576c5f1d9e7655aeea5fbccfa", e.ID().String())
+			s.Equal(pushID, e.ID().String())
 		}
 
 		return nil
@@ -114,29 +123,116 @@ func (s *WatcherTestSuite) TestWatch() {
 	s.EqualError(err, "context deadline exceeded")
 }
 
-func (s *WatcherTestSuite) TestWatch_WithError() {
-	s.mux.HandleFunc("/repos/mock/test/pulls", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `[{"id":1}]`)
-	})
-	s.mux.HandleFunc("/repos/mock/test/events", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `[{"id":"1", "type":"PushEvent", "payload":{"push_id": 1}}]`)
-	})
+func (s *WatcherTestSuite) TestWatch_CallbackError() {
+	var calls int32
 
-	repoURLs := []string{"github.com/mock/test"}
-	poll := newTestPool(repoURLs, s.githubURL, s.cache)
-	w, err := NewWatcher(poll, &lookout.WatchOptions{
-		URLs: repoURLs,
-	})
+	s.mux.HandleFunc("/repos/mock/test/pulls", pullsHandler(&calls))
+	s.mux.HandleFunc("/repos/mock/test/events", eventsHandler(&calls))
 
-	s.NoError(err)
-
-	err = w.Watch(context.TODO(), func(e lookout.Event) error {
-		s.Equal("d1f57cc4e520766576c5f1d9e7655aeea5fbccfa", e.ID().String())
+	w := s.newWatcher([]string{"github.com/mock/test"})
+	err := w.Watch(context.TODO(), func(e lookout.Event) error {
+		switch e.Type() {
+		case pb.ReviewEventType:
+			s.Equal(pullID, e.ID().String())
+		case pb.PushEventType:
+			s.Equal(pushID, e.ID().String())
+		}
 
 		return fmt.Errorf("foo")
 	})
 
 	s.EqualError(err, "foo")
+}
+
+func (s *WatcherTestSuite) TestWatch_HttpError() {
+	var calls, callsErr int32
+
+	errCodeHandler := func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&callsErr, 1)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	s.mux.HandleFunc("/repos/mock/test/pulls", pullsHandler(&calls))
+	s.mux.HandleFunc("/repos/mock/test/events", eventsHandler(&calls))
+
+	s.mux.HandleFunc("/repos/mock/test-err/pulls", errCodeHandler)
+	s.mux.HandleFunc("/repos/mock/test-err/events", errCodeHandler)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), minInterval*10)
+	defer cancel()
+
+	w := s.newWatcher([]string{"github.com/mock/test", "github.com/mock/test-err"})
+	err := w.Watch(ctx, func(e lookout.Event) error {
+		s.Equal("git://github.com/mock/test.git", e.Revision().Head.InternalRepositoryURL)
+		return nil
+	})
+
+	s.True(atomic.LoadInt32(&calls) > 1)
+	s.True(atomic.LoadInt32(&callsErr) > 1)
+
+	s.EqualError(err, "context deadline exceeded")
+}
+
+func (s *WatcherTestSuite) TestWatch_HttpTimeout() {
+	var calls, callsErr int32
+
+	// Change the request timeout for this test
+	prevRequestTimeout := RequestTimeout
+	RequestTimeout = 5 * minInterval
+	defer func() { RequestTimeout = prevRequestTimeout }()
+
+	errCodeHandler := func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&callsErr, 1)
+		time.Sleep(RequestTimeout * 2)
+	}
+
+	s.mux.HandleFunc("/repos/mock/test/pulls", pullsHandler(&calls))
+	s.mux.HandleFunc("/repos/mock/test/events", eventsHandler(&calls))
+
+	s.mux.HandleFunc("/repos/mock/test-err/pulls", errCodeHandler)
+	s.mux.HandleFunc("/repos/mock/test-err/events", errCodeHandler)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), minInterval*10)
+	defer cancel()
+
+	w := s.newWatcher([]string{"github.com/mock/test", "github.com/mock/test-err"})
+	err := w.Watch(ctx, func(e lookout.Event) error {
+		s.Equal("git://github.com/mock/test.git", e.Revision().Head.InternalRepositoryURL)
+		return nil
+	})
+
+	s.True(atomic.LoadInt32(&calls) > 1)
+	s.True(atomic.LoadInt32(&callsErr) > 1)
+
+	s.EqualError(err, "context deadline exceeded")
+}
+
+func (s *WatcherTestSuite) TestWatch_JSONError() {
+	var calls, callsErr int32
+
+	errCodeHandler := func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&callsErr, 1)
+		fmt.Fprint(w, `[{"key":"value", "broken json!`)
+	}
+
+	s.mux.HandleFunc("/repos/mock/test/pulls", pullsHandler(&calls))
+	s.mux.HandleFunc("/repos/mock/test/events", eventsHandler(&calls))
+
+	s.mux.HandleFunc("/repos/mock/test-err/pulls", errCodeHandler)
+	s.mux.HandleFunc("/repos/mock/test-err/events", errCodeHandler)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), minInterval*10)
+	defer cancel()
+
+	w := s.newWatcher([]string{"github.com/mock/test", "github.com/mock/test-err"})
+	err := w.Watch(ctx, func(e lookout.Event) error {
+		return nil
+	})
+
+	s.True(atomic.LoadInt32(&calls) > 1)
+	s.True(atomic.LoadInt32(&callsErr) > 1)
+
+	s.EqualError(err, "context deadline exceeded")
 }
 
 func (s *WatcherTestSuite) TestWatchLimit() {
@@ -160,18 +256,11 @@ func (s *WatcherTestSuite) TestWatchLimit() {
 
 	s.mux.HandleFunc("/repos/mock/test/pulls", pullsHandler(&calls))
 
-	repoURLs := []string{"github.com/mock/test"}
-	poll := newTestPool(repoURLs, s.githubURL, s.cache)
-	w, err := NewWatcher(poll, &lookout.WatchOptions{
-		URLs: repoURLs,
-	})
-
-	s.NoError(err)
-
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), minInterval*10)
 	defer cancel()
 
-	err = w.Watch(ctx, func(e lookout.Event) error {
+	w := s.newWatcher([]string{"github.com/mock/test"})
+	err := w.Watch(ctx, func(e lookout.Event) error {
 		prEvents++
 		s.Equal("fd84071093b69f9aac25fb5dfeea1a870e3e19cf", e.ID().String())
 
@@ -197,7 +286,7 @@ func (t *NoopTransport) Get(repo string) http.RoundTripper {
 	return nil
 }
 
-func newTestPool(repoURLs []string, githubURL *url.URL, cache *cache.ValidableCache) *ClientPool {
+func newTestPool(s suite.Suite, repoURLs []string, githubURL *url.URL, cache *cache.ValidableCache) *ClientPool {
 	client := NewClient(nil, cache, log.New(log.Fields{}))
 	client.BaseURL = githubURL
 	client.UploadURL = githubURL
@@ -209,9 +298,7 @@ func newTestPool(repoURLs []string, githubURL *url.URL, cache *cache.ValidableCa
 
 	for _, url := range repoURLs {
 		repo, err := vcsurl.Parse(url)
-		if err != nil {
-			panic(err)
-		}
+		s.NoError(err)
 
 		byClients[client] = append(byClients[client], repo)
 		byRepo[repo.FullName] = client
