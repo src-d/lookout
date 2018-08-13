@@ -43,6 +43,8 @@ message File {
     bytes content = 4;
     // UAST.
     gopkg.in.bblfsh.sdk.v1.uast.Node uast = 5 [(gogoproto.customname) = "UAST"];
+    // Programming/data/markup language of the file.
+    string language = 6;
 }
 
 message Change {
@@ -61,6 +63,7 @@ message ChangesRequest {
     bool exclude_vendored = 5;
     bool want_contents = 6;
     bool want_uast = 7 [(gogoproto.customname) = "WantUAST"];
+    bool want_language = 8;
 }
 
 message FilesRequest {
@@ -70,4 +73,5 @@ message FilesRequest {
     bool exclude_vendored = 4;
     bool want_contents = 5;
     bool want_uast = 6 [(gogoproto.customname) = "WantUAST"];
+    bool want_language = 7;
 }
