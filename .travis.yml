@@ -64,6 +64,8 @@ jobs:
         - make no-changes-in-commit
         - make build
         - make no-changes-in-commit
+        - make godep
+        - make no-changes-in-commit
         # check that proto files are buildable by python
         - sudo apt-get --no-install-recommends -y install python3-pip
         - sudo pip3 install -U pip setuptools wheel

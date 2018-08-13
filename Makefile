@@ -141,3 +141,12 @@ packages-sdk: build
 			tar -cvzf $(PROJECT)_$${TAR_VERSION}_$${os}_$${arch}.tar.gz $(PROJECT)_$${os}_$${arch}/; \
 		done; \
 	done
+
+# TODO: remove when https://github.com/src-d/ci/pull/84 is merged
+.PHONY: godep
+GODEP ?= $(CI_PATH)/dep
+godep:
+	export INSTALL_DIRECTORY=$(CI_PATH) ; \
+	test -f $(GODEP) || \
+		curl https://raw.githubusercontent.com/golang/dep/master/install.sh | bash ; \
+	$(GODEP) ensure -v
