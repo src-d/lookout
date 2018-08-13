@@ -34,7 +34,7 @@ func main() {
 		sendEvent(w, successJSON)
 		grepTrue(r, "processing pull request")
 		grepTrue(r, `{"analyzer-name":"Dummy","file":"provider/common.go","text":"The file has increased in 5 lines."}`)
-		grepTrue(r, `msg="New status" status=success`)
+		grepTrue(r, `status=success`)
 	})
 
 	testCase("skip review event", func() {
@@ -46,7 +46,7 @@ func main() {
 		json := `{"event":"review", "internal_id": "2", "number": 1, "commit_revision":{"base":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"4eebef102d7979570aadf69ff54ae1ffcca7ce00"},"head":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"d304499cb2a9cad3ea260f06ad59c1658db4763d"}}}`
 		sendEvent(w, json)
 		grepTrue(r, "processing pull request")
-		grepAndNot(r, `msg="New status" status=success`, `posting analysis`)
+		grepAndNot(r, `status=success`, `posting analysis`)
 	})
 
 	testCase("wrong commit revision", func() {
@@ -60,7 +60,7 @@ func main() {
 		sendEvent(w, successPushJSON)
 		grepTrue(r, "processing push")
 		grepTrue(r, "comments can belong only to review event but 1 is given")
-		grepTrue(r, `msg="New status" status=success`)
+		grepTrue(r, `status=success`)
 	})
 
 	// restart server with multiple analyzers
@@ -78,9 +78,9 @@ func main() {
 		sendEvent(w, successJSON)
 		grepTrue(r, "processing pull request")
 		grepTrue(r, "posting analysis")
-		found, buf := cmdtest.Grep(r, `msg="New status" status=success`)
+		found, buf := cmdtest.Grep(r, `status=success`)
 		if !found {
-			fmt.Printf("'%s' not found in:\n%s", `msg="New status" status=success`, buf.String())
+			fmt.Printf("'%s' not found in:\n%s", `status=success`, buf.String())
 			stop()
 			os.Exit(1)
 		}
