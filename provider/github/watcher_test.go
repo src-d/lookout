@@ -177,7 +177,9 @@ func (s *WatcherTestSuite) TestWatch_HttpTimeout() {
 	var calls, callsErr int32
 
 	// Change the request timeout for this test
+	prevRequestTimeout := RequestTimeout
 	RequestTimeout = 5 * minInterval
+	defer func() { RequestTimeout = prevRequestTimeout }()
 
 	errCodeHandler := func(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&callsErr, 1)
