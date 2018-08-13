@@ -14,7 +14,9 @@ import (
 	"github.com/src-d/lookout/provider/json"
 	"github.com/src-d/lookout/server"
 	"github.com/src-d/lookout/service/bblfsh"
+	"github.com/src-d/lookout/service/enry"
 	"github.com/src-d/lookout/service/git"
+	"github.com/src-d/lookout/service/purge"
 	"github.com/src-d/lookout/store"
 	"github.com/src-d/lookout/store/models"
 	"github.com/src-d/lookout/util/cache"
@@ -245,11 +247,13 @@ func (c *ServeCommand) initDataHadler() (*lookout.DataServerHandler, error) {
 	loader := git.NewLibraryCommitLoader(lib, sync)
 
 	gitService := git.NewService(loader)
-	bblfshService := bblfsh.NewService(gitService, gitService, bblfshConn)
+	enryService := enry.NewService(gitService, gitService)
+	bblfshService := bblfsh.NewService(enryService, enryService, bblfshConn)
+	purgeService := purge.NewService(bblfshService, bblfshService)
 
 	srv := &lookout.DataServerHandler{
-		ChangeGetter: bblfshService,
-		FileGetter:   bblfshService,
+		ChangeGetter: purgeService,
+		FileGetter:   purgeService,
 	}
 
 	return srv, nil

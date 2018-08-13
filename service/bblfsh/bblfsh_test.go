@@ -8,7 +8,6 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/mock"
 
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"gopkg.in/bblfsh/sdk.v1/protocol"
@@ -61,7 +60,7 @@ func (s *ServiceSuite) TearDownSuite() {
 func (s *ServiceSuite) TestChanges() {
 	require := s.Require()
 
-	underlying := &MockChangesService{T: s.T()}
+	underlying := &mock.MockChangesService{T: s.T()}
 	srv := NewService(underlying, nil, s.BblfshClient)
 	require.NotNil(srv)
 
@@ -133,7 +132,7 @@ func (s *ServiceSuite) TestChanges() {
 func (s *ServiceSuite) TestFiles() {
 	require := s.Require()
 
-	underlying := &MockFilesService{T: s.T()}
+	underlying := &mock.MockFilesService{T: s.T()}
 	srv := NewService(nil, underlying, s.BblfshClient)
 	require.NotNil(srv)
 
@@ -208,34 +207,4 @@ func (s *MockBblfshServer) Parse(ctx context.Context,
 		Response: protocol.Response{Status: protocol.Ok},
 		UAST:     node,
 	}, nil
-}
-
-type MockChangesService struct {
-	T               *testing.T
-	ExpectedRequest *lookout.ChangesRequest
-	ChangeScanner   lookout.ChangeScanner
-	Error           error
-}
-
-func (r *MockChangesService) GetChanges(ctx context.Context,
-	req *lookout.ChangesRequest) (
-	lookout.ChangeScanner, error) {
-	require := require.New(r.T)
-	require.Equal(r.ExpectedRequest, req)
-	return r.ChangeScanner, r.Error
-}
-
-type MockFilesService struct {
-	T               *testing.T
-	ExpectedRequest *lookout.FilesRequest
-	FileScanner     lookout.FileScanner
-	Error           error
-}
-
-func (r *MockFilesService) GetFiles(ctx context.Context,
-	req *lookout.FilesRequest) (
-	lookout.FileScanner, error) {
-	require := require.New(r.T)
-	require.Equal(r.ExpectedRequest, req)
-	return r.FileScanner, r.Error
 }
