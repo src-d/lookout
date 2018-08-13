@@ -5,6 +5,18 @@ This document outlines some of the
 conventions on development workflow, commit message formatting, contact points,
 and other resources to make it easier to get your contribution accepted.
 
+## Build
+
+To build lookout binary run:
+```bash
+make build
+```
+
+To build sdk & dummy analyzer run:
+```bash
+build-sdk
+```
+
 ## Code generation
 
 * Go code from proto files: `make protogen`
@@ -17,6 +29,23 @@ and other resources to make it easier to get your contribution accepted.
     make dependencies
     make bindata
     ```
+
+## Testing
+
+For unit-tests run:
+```bash
+make test
+```
+
+For SDK integration tests:
+```bash
+make test-sdk
+```
+
+For lookout serve integration tests:
+```bash
+make test-json
+```
 
 ## Certificate of Origin
 
