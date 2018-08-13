@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:e0499b93857a1b91efbdc0c21e26f1130685de98035008f3b01eeeb0713798cb"
+  digest = "1:167b6f65a6656de568092189ae791253939f076df60231fdd64588ac703892a1"
   name = "github.com/BurntSushi/toml"
   packages = ["."]
   pruneopts = "NUT"
@@ -34,7 +34,7 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:0417f48517eafe384b94fd38238b699c3714b5f12554e8a212446d58b024d2a2"
+  digest = "1:de4a74b504df31145ffa8ca0c4edbffa2f3eb7f466753962184611b618fa5981"
   name = "github.com/emirpasic/gods"
   packages = [
     "containers",
@@ -49,7 +49,7 @@
   version = "v1.9.0"
 
 [[projects]]
-  digest = "1:2a1db9bae44464f781d3637b67df38e896c6e1b9c902e27d24ee9037cb50f23b"
+  digest = "1:aba848b77ff362b03db51ac06379c36a120bc05b4cc6c5c74f6e6fa310454fa5"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -63,7 +63,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:b4f1d27c67482380e411d295fe7c709625983dad605f0a25c634291c43f902cf"
+  digest = "1:d49485d62a6b0f0c0c5a59ddfb86ae9f9be581fb47a97eb9cf8bee9d945e2d35"
   name = "github.com/golang-migrate/migrate"
   packages = [
     ".",
@@ -78,7 +78,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b5958a38532996608dc41071a5807c065a86be9bf70f6d3b1746da6cd8be0d53"
+  digest = "1:ea49a8449bca90d790df7eb4144d9829b3942550da851aa6ecd7592820056e04"
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
@@ -116,7 +116,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a1db0214936912602a7a8cedc09a2e3211f5c097dc89189fb4b3bc86346c9e89"
+  digest = "1:7fdf3223c7372d1ced0b98bf53457c5e89d89aecbad9a77ba9fcc6e01f9e5621"
   name = "github.com/gregjones/httpcache"
   packages = [
     ".",
@@ -126,7 +126,7 @@
   revision = "9cad4c3443a7200dd6400aef47183728de563a38"
 
 [[projects]]
-  digest = "1:51d2f46054e5e7bdbc33d4d36cdecd0e4954f1d73182785e4c873f892abe5f97"
+  digest = "1:7fdbd8167ecc1f2d879c2379d5b57f1979aa61c76822610b22b15301c9a3df7b"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
   packages = [
     ".",
@@ -178,7 +178,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2c52c3bfa3e106abd7df09126db04bd385aa0f3c250508d8568896253e80cb10"
+  digest = "1:6415011db6d5f89961c38446f3552c74749462bef94904534c55e3dda1affeb9"
   name = "github.com/lib/pq"
   packages = [
     ".",
@@ -308,7 +308,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:b8e3d68722a983a3451af8ca1acab725782cbc8cf28948a7c08cf394d8e2ad17"
+  digest = "1:ccca1dcd18bc54e23b517a3c5babeff2e3924a7d8fc1932162225876cfe4bfb0"
   name = "github.com/src-d/gcfg"
   packages = [
     ".",
@@ -329,7 +329,7 @@
   version = "v0.1.1"
 
 [[projects]]
-  digest = "1:f0c06359f1cc2acba73ea8fceee05761f7865aa533ce12296e27a1d79a22a2cf"
+  digest = "1:f1e5a94fc8fde9a67a97106d7d7d386ad0b938b41fde2b110e70447590aea6e7"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
@@ -367,7 +367,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d2705e5ca5ffaf16703484e4e787e2142a5b4ee0dfde7587302f4c2a44b92277"
+  digest = "1:fc9b8c739a290a9c09b3006bc176bb2e8712fd8da08fc173b1e4307d27ebc8fe"
   name = "golang.org/x/crypto"
   packages = [
     "cast5",
@@ -393,7 +393,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:256e49894dd9c5343f82bfde276f134387e7e3fdc42b15dc8dac0c096ac49fbe"
+  digest = "1:f2166590ddbe84307eb6c5acbbb8a15105e74b6cd3854ec87d0dda7fa7f19902"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -409,7 +409,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5600c8993ef3231fccb5f179dc0f6b21f5897f1b3e82c750a4e9148bb7d2c396"
+  digest = "1:baa3044d8a33b3cd690c16fd555c5a543f980206cd1a696f7902307f57f911ec"
   name = "golang.org/x/sys"
   packages = [
     "unix",
@@ -419,7 +419,7 @@
   revision = "7138fd3d9dc8335c567ca206f4333fb75eb05d56"
 
 [[projects]]
-  digest = "1:a0f29009397dc27c9dc8440f0945d49e5cbb9b72d0b0fc745474d9bfdea2d9f8"
+  digest = "1:e7071ed636b5422cc51c0e3a6cebc229d6c9fffc528814b519a980641422d619"
   name = "golang.org/x/text"
   packages = [
     "collate",
@@ -450,7 +450,7 @@
   revision = "80063a038e333bbe006c878e4c5ce4c74d055498"
 
 [[projects]]
-  digest = "1:f778941d5c2e46da5e0f5d553d3e80bf70eb40d2e80bb4c649b625b9133f3d5f"
+  digest = "1:d0e5846da58e4e20d1bbd7502b24f31d37e3ac1e02a9042d95bd93c2d0c139dd"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -484,7 +484,7 @@
   version = "v1.13.0"
 
 [[projects]]
-  digest = "1:da126f28a82cb1a6c0c2a0091267dd4798c4b61f475ed7c1e37c17b1fbd7b5b8"
+  digest = "1:85ce4b06f191dd616ad7f4377843ea08db7db003757bd0a67e1b3ac4cbd5c2ef"
   name = "gopkg.in/bblfsh/sdk.v1"
   packages = [
     "manifest",
@@ -512,7 +512,7 @@
   version = "v1"
 
 [[projects]]
-  digest = "1:e642b2447a3a8ff721dc5ce3fea53043782926e0b948acf22f78b416c09c80a7"
+  digest = "1:d11329b27b0f34c399185531f3232493d7da40f576574da04776812b0a94f66b"
   name = "gopkg.in/src-d/enry.v1"
   packages = [
     ".",
@@ -524,7 +524,7 @@
   version = "v1.6.4"
 
 [[projects]]
-  digest = "1:21cb6015792de88ace7ec8b13bf9acf9fa6e4000e48bfa79c9caea5d928d4198"
+  digest = "1:b3aa16e13560619b05e0bf75832cf74272c183b5879a29415cf23b12c3ea0e92"
   name = "gopkg.in/src-d/go-billy.v4"
   packages = [
     ".",
@@ -547,7 +547,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:8a035ae4d550a977228d96eea1806b9e81ba13e38b23061c3fe6ba1211049cc5"
+  digest = "1:251a6672526e992d31a9db679a7aa0a2d19b96f95af3417d237d65135ccd0fef"
   name = "gopkg.in/src-d/go-git-fixtures.v3"
   packages = ["."]
   pruneopts = "T"
@@ -555,7 +555,7 @@
   version = "v3.1.0"
 
 [[projects]]
-  digest = "1:ed1024c538f53c70f6abec31e045d533c1bbc6f1c5b90d19d9b69092aa7442ac"
+  digest = "1:f83a1e160ab0e7184716c36431aa12ffa7da8016cc9f2c00adc3a2fc77559583"
   name = "gopkg.in/src-d/go-git.v4"
   packages = [
     ".",
@@ -655,6 +655,7 @@
     "github.com/gogo/protobuf/types",
     "github.com/golang-migrate/migrate",
     "github.com/golang-migrate/migrate/database/postgres",
+    "github.com/golang-migrate/migrate/source",
     "github.com/golang-migrate/migrate/source/go-bindata",
     "github.com/google/go-github/github",
     "github.com/gregjones/httpcache",
