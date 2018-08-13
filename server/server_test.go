@@ -11,6 +11,7 @@ import (
 	"github.com/src-d/lookout/mock"
 	"github.com/src-d/lookout/pb"
 	"github.com/src-d/lookout/store"
+	"github.com/src-d/lookout/util/ctxlog"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	log "gopkg.in/src-d/go-log.v1"
@@ -333,7 +334,6 @@ func TestWatcherError(t *testing.T) {
 	require := require.New(t)
 
 	logMock := &MockLogger{}
-	log.DefaultLogger = logMock
 
 	watcher := &ErrorWatcherMock{}
 	poster := &PosterMock{}
@@ -347,6 +347,7 @@ func TestWatcherError(t *testing.T) {
 	srv := NewServer(watcher, poster, fileGetter, analyzers, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx = ctxlog.Set(ctx, logMock)
 	defer cancel()
 
 	err := srv.Run(ctx)

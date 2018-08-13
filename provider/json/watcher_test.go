@@ -9,6 +9,7 @@ import (
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/pb"
+	log "gopkg.in/src-d/go-log.v1"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -27,6 +28,10 @@ var (
 	badEvent   = `{"event":"none"}`
 	badJSON    = `{"event":"push", { ...`
 )
+
+func init() {
+	log.DefaultLogger = log.New(log.Fields{"app": "lookout"})
+}
 
 func (s *WatcherTestSuite) TestWatch() {
 	var events int

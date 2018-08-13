@@ -6,8 +6,8 @@ import (
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/store/models"
+	"github.com/src-d/lookout/util/ctxlog"
 	kallax "gopkg.in/src-d/go-kallax.v1"
-	log "gopkg.in/src-d/go-log.v1"
 )
 
 // DBEventOperator operates on event database store
@@ -31,7 +31,7 @@ func (o *DBEventOperator) Save(ctx context.Context, e lookout.Event) (models.Eve
 	case *lookout.PushEvent:
 		return o.savePush(ctx, ev)
 	default:
-		log.Debugf("ignoring unsupported event: %s", ev)
+		ctxlog.Get(ctx).Debugf("ignoring unsupported event: %s", ev)
 	}
 
 	return models.EventStatusNew, nil
@@ -45,7 +45,7 @@ func (o *DBEventOperator) UpdateStatus(ctx context.Context, e lookout.Event, sta
 	case *lookout.PushEvent:
 		return o.updatePushStatus(ctx, ev, status)
 	default:
-		log.Debugf("ignoring unsupported event: %s", ev)
+		ctxlog.Get(ctx).Debugf("ignoring unsupported event: %s", ev)
 		return nil
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/util/ctxlog"
 
 	"gopkg.in/src-d/go-log.v1"
 )
@@ -31,7 +32,7 @@ func NewWatcher(reader io.Reader, o *lookout.WatchOptions) (*Watcher, error) {
 
 // Watch reads json from stdin and calls cb for each new event
 func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
-	log.With(log.Fields{"provider": Provider}).Infof("Starting watcher")
+	ctxlog.Get(ctx).With(log.Fields{"provider": Provider}).Infof("Starting watcher")
 
 	lines := make(chan string, 1)
 	go func() {
@@ -45,7 +46,7 @@ func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case line := <-lines:
-			if err := w.handleInput(cb, line); err != nil {
+			if err := w.handleInput(ctx, cb, line); err != nil {
 				if lookout.NoErrStopWatcher.Is(err) {
 					return nil
 				}
@@ -60,15 +61,17 @@ type eventType struct {
 	Event string `json:"event"`
 }
 
-func (w *Watcher) handleInput(cb lookout.EventHandler, line string) error {
+func (w *Watcher) handleInput(ctx context.Context, cb lookout.EventHandler, line string) error {
 	if line == "" {
 		return nil
 	}
 
+	logger := ctxlog.Get(ctx).With(log.Fields{"input": line})
+
 	var eventType eventType
 
 	if err := json.Unmarshal([]byte(line), &eventType); err != nil {
-		log.With(log.Fields{"input": line}).Errorf(err, "could not unmarshal the event")
+		logger.Errorf(err, "could not unmarshal the event")
 
 		return nil
 	}
@@ -77,12 +80,12 @@ func (w *Watcher) handleInput(cb lookout.EventHandler, line string) error {
 
 	switch strings.ToLower(eventType.Event) {
 	case "":
-		log.With(log.Fields{"input": line}).Errorf(nil, `field "event" is mandatory`)
+		logger.Errorf(nil, `field "event" is mandatory`)
 		return nil
 	case "review":
 		var reviewEvent *lookout.ReviewEvent
 		if err := json.Unmarshal([]byte(line), &reviewEvent); err != nil {
-			log.With(log.Fields{"input": line}).Errorf(err, "could not unmarshal the ReviewEvent")
+			logger.Errorf(err, "could not unmarshal the ReviewEvent")
 			return nil
 		}
 
@@ -90,13 +93,13 @@ func (w *Watcher) handleInput(cb lookout.EventHandler, line string) error {
 	case "push":
 		var pushEvent *lookout.PushEvent
 		if err := json.Unmarshal([]byte(line), &pushEvent); err != nil {
-			log.With(log.Fields{"input": line}).Errorf(err, "could not unmarshal the PushEvent")
+			logger.Errorf(err, "could not unmarshal the PushEvent")
 			return nil
 		}
 
 		event = pushEvent
 	default:
-		log.Errorf(nil, "event %q not supported", eventType.Event)
+		logger.Errorf(nil, "event %q not supported", eventType.Event)
 		return nil
 	}
 

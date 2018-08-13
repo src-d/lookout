@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/util/ctxlog"
 
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
@@ -55,11 +56,11 @@ func (s *Syncer) Sync(ctx context.Context,
 }
 
 func (s *Syncer) fetch(ctx context.Context, repoURL string, r *git.Repository, refspecs []config.RefSpec) (err error) {
-	log.Infof("fetching references for repository %s: %v", repoURL, refspecs)
+	ctxlog.Get(ctx).Infof("fetching references for repository %s: %v", repoURL, refspecs)
 	start := time.Now()
 	defer func() {
 		if err == nil {
-			log.
+			ctxlog.Get(ctx).
 				With(log.Fields{"duration": time.Now().Sub(start)}).
 				Debugf("references %v fetched for repository %s", repoURL, refspecs)
 		}
