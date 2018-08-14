@@ -37,7 +37,7 @@ jobs:
     - name: "SDK Integration Tests macOS"
       if: NOT type = pull_request
       script:
-        - make test-sdk-macos
+        - make test-sdk-short
       os: osx
       osx_image: xcode9.4
       before_install: skip

@@ -86,8 +86,8 @@ test-sdk: clean-sdk build-sdk
 	$(GOTEST_INTEGRATION) github.com/src-d/lookout/cmd/sdk-test
 
 # Same as test-sdk, but skipping tests that require a bblfshd server
-.PHONY: test-sdk-macos
-test-sdk-macos: clean-sdk build-sdk
+.PHONY: test-sdk-short
+test-sdk-short: clean-sdk build-sdk
 	DUMMY_BIN=$(PWD)/$(DUMMY_BIN) \
 	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_BIN) \
 	$(GOTEST_INTEGRATION) -test.short github.com/src-d/lookout/cmd/sdk-test
