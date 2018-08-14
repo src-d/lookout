@@ -12,3 +12,4 @@ repositories:
     auth:
       user:
       token:
+      minInterval: 1m

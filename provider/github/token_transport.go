@@ -11,8 +11,9 @@ import (
 
 // UserToken holds github username and token
 type UserToken struct {
-	User  string
-	Token string
+	User        string
+	Token       string
+	MinInterval string
 }
 
 // NewClientPoolFromTokens creates new ClientPool based on map[repoURL]UserToken
@@ -41,7 +42,7 @@ func NewClientPoolFromTokens(urls map[string]UserToken, defaultToken UserToken, 
 			Log:      log.DefaultLogger,
 			User:     token.User,
 			Password: token.Token,
-		}, cache, log.DefaultLogger)
+		}, cache, log.DefaultLogger, token.MinInterval)
 
 		if _, ok := byClients[client]; !ok {
 			byClients[client] = []*lookout.RepositoryInfo{}
