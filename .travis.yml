@@ -36,7 +36,7 @@ jobs:
         - make test-sdk
     - name: "Lookout serve Integration Tests Linux"
       script:
-      - make ci-install
+      - make prepare-services
       - psql -c 'create database lookout;' -U postgres
       - make build
       - ./build/bin/lookout migrate
@@ -44,7 +44,7 @@ jobs:
       - make test-json
     - name: "Lookout serve Integration Tests macOS"
       script:
-      - make ci-install
+      - make prepare-services
       - psql -c 'create database lookout;' -U postgres
       - make build
       - ./build/lookout_darwin_amd64/lookout migrate
