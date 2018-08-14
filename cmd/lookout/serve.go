@@ -68,8 +68,8 @@ type Config struct {
 
 // RepoConfig holds configuration for repository, support only github provider
 type RepoConfig struct {
-	URL  string
-	Auth github.UserToken
+	URL    string
+	Client github.ClientConfig
 }
 
 func (c *ServeCommand) Execute(args []string) error {
@@ -143,27 +143,25 @@ func (c *ServeCommand) Execute(args []string) error {
 func (c *ServeCommand) initProvider(conf Config) error {
 	switch c.Provider {
 	case github.Provider:
-		var emptyToken github.UserToken
-
 		urls := strings.Split(c.Positional.Repository, ",")
-		urlTokens := make(map[string]github.UserToken, len(urls))
-		configURLTokens := make(map[string]github.UserToken, len(conf.Repositories))
+		urlToConfig := make(map[string]github.ClientConfig, len(urls))
+		repoToConfig := make(map[string]github.ClientConfig, len(conf.Repositories))
 		for _, repo := range conf.Repositories {
-			if repo.Auth != emptyToken {
-				configURLTokens[repo.URL] = repo.Auth
+			if !repo.Client.IsZero() {
+				repoToConfig[repo.URL] = repo.Client
 			}
 		}
 
 		for _, url := range urls {
-			token, ok := configURLTokens[url]
+			conf, ok := repoToConfig[url]
 			if !ok {
 				log.Infof("use default token for repository %s", url)
 			}
-			urlTokens[url] = token
+			urlToConfig[url] = conf
 		}
 
 		cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
-		pool, err := github.NewClientPoolFromTokens(urlTokens, github.UserToken{
+		pool, err := github.NewClientPoolFromTokens(urlToConfig, github.ClientConfig{
 			User:  c.GithubUser,
 			Token: c.GithubToken,
 		}, cache)

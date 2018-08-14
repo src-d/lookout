@@ -9,7 +9,7 @@ providers:
 
 repositories:
   - url: github.com/src-d/lookout
-    auth:
-      user:
-      token:
-      minInterval: 1m
+    client:
+      # user:
+      # token:
+      # minInterval: 1m

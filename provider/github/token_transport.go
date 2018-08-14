@@ -9,40 +9,46 @@ import (
 	log "gopkg.in/src-d/go-log.v1"
 )
 
-// UserToken holds github username and token
-type UserToken struct {
+// ClientConfig holds github username, token and watch interval
+type ClientConfig struct {
 	User        string
 	Token       string
 	MinInterval string
 }
 
-// NewClientPoolFromTokens creates new ClientPool based on map[repoURL]UserToken
-// later we will need another constructor that would request installations and create pool from it
-func NewClientPoolFromTokens(urls map[string]UserToken, defaultToken UserToken, cache *cache.ValidableCache) (*ClientPool, error) {
-	byToken := make(map[UserToken][]*lookout.RepositoryInfo)
-	emptyToken := UserToken{}
+var zeroClientConfig = &ClientConfig{}
 
-	for url, ut := range urls {
+// IsZero return true if config is empty and false otherwise
+func (c *ClientConfig) IsZero() bool {
+	return c == zeroClientConfig
+}
+
+// NewClientPoolFromTokens creates new ClientPool based on map[repoURL]ClientConfig
+// later we will need another constructor that would request installations and create pool from it
+func NewClientPoolFromTokens(urlToConfig map[string]ClientConfig, defaultConfig ClientConfig, cache *cache.ValidableCache) (*ClientPool, error) {
+	byConfig := make(map[ClientConfig][]*lookout.RepositoryInfo)
+
+	for url, c := range urlToConfig {
 		repo, err := vcsurl.Parse(url)
 		if err != nil {
 			return nil, err
 		}
 
-		if ut == emptyToken {
-			ut = defaultToken
+		if c.IsZero() {
+			c = defaultConfig
 		}
 
-		byToken[ut] = append(byToken[ut], repo)
+		byConfig[c] = append(byConfig[c], repo)
 	}
 
-	byClients := make(map[*Client][]*lookout.RepositoryInfo, len(byToken))
-	byRepo := make(map[string]*Client, len(urls))
-	for token, repos := range byToken {
+	byClients := make(map[*Client][]*lookout.RepositoryInfo, len(byConfig))
+	byRepo := make(map[string]*Client, len(urlToConfig))
+	for conf, repos := range byConfig {
 		client := NewClient(&roundTripper{
 			Log:      log.DefaultLogger,
-			User:     token.User,
-			Password: token.Token,
-		}, cache, log.DefaultLogger, token.MinInterval)
+			User:     conf.User,
+			Password: conf.Token,
+		}, cache, log.DefaultLogger, conf.MinInterval)
 
 		if _, ok := byClients[client]; !ok {
 			byClients[client] = []*lookout.RepositoryInfo{}
