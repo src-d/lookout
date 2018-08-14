@@ -76,15 +76,26 @@ $(PROTOC):
 	unzip  -d $(PROTOC_DIR) $(PROTOC_DIR)/$(PROTOC_ZIP_NAME)
 	rm $(PROTOC_DIR)/$(PROTOC_ZIP_NAME)
 
+GOTEST_INTEGRATION = $(GOTEST) -tags=integration
+
 # Integration test for sdk client
 .PHONY: test-sdk
 test-sdk: clean-sdk build-sdk
-	DUMMY_BIN=$(DUMMY_BIN) LOOKOUT_BIN=$(LOOKOUT_BIN) $(GOCMD) run cmd/sdk-test/main.go
+	DUMMY_BIN=$(PWD)/$(DUMMY_BIN) \
+	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_BIN) \
+	$(GOTEST_INTEGRATION) github.com/src-d/lookout/cmd/sdk-test
+
+# Same as test-sdk, but skipping tests that require a bblfshd server
+.PHONY: test-sdk-macos
+test-sdk-macos: clean-sdk build-sdk
+	DUMMY_BIN=$(PWD)/$(DUMMY_BIN) \
+	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_BIN) \
+	$(GOTEST_INTEGRATION) -test.short github.com/src-d/lookout/cmd/sdk-test
 
 # Integration test for lookout serve
 .PHONY: test-json
 test-json: clean-sdk build-sdk
-	DUMMY_BIN=$(DUMMY_BIN) LOOKOUT_BIN=$(LOOKOUT_BIN) $(GOCMD) run cmd/server-test/main.go
+	DUMMY_BIN=$(PWD)/$(DUMMY_BIN) LOOKOUT_BIN=$(PWD)/$(LOOKOUT_BIN) $(GOCMD) run cmd/server-test/main.go
 
 # Build sdk client and dummy analyzer
 .PHONY: build-sdk
