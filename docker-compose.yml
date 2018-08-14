@@ -18,7 +18,7 @@ services:
     volumes:
       - ./config.yml:/config.yml
   dummy:
-    image: "smacker/dummy-analyzer:latest"
+    image: "srcd/lookout-dummy-analyzer:latest"
     network_mode: "host"
     ports:
       - "10302:10302"
