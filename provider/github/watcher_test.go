@@ -273,6 +273,42 @@ func (s *WatcherTestSuite) TestWatchLimit() {
 	s.EqualError(err, "context deadline exceeded")
 }
 
+func (s *WatcherTestSuite) TestCustomMinInterval() {
+	var pullCalls, eventCalls int32
+
+	s.mux.HandleFunc("/repos/mock/test/pulls", pullsHandler(&pullCalls))
+	s.mux.HandleFunc("/repos/mock/test/events", eventsHandler(&eventCalls))
+
+	clientMinInterval := 200 * time.Millisecond
+	client := NewClient(nil, s.cache, log.New(log.Fields{}), clientMinInterval.String())
+	client.BaseURL = s.githubURL
+	client.UploadURL = s.githubURL
+
+	repo, _ := vcsurl.Parse("github.com/mock/test")
+
+	pool := &ClientPool{
+		byClients: map[*Client][]*lookout.RepositoryInfo{
+			client: []*lookout.RepositoryInfo{repo},
+		},
+		byRepo: map[string]*Client{"mock/test": client},
+	}
+
+	w, err := NewWatcher(pool, &lookout.WatchOptions{
+		URLs: []string{"github.com/mock/test"},
+	})
+	s.NoError(err)
+
+	globalTimeout := clientMinInterval * 3
+	ctx, cancel := context.WithTimeout(context.TODO(), globalTimeout)
+	defer cancel()
+
+	err = w.Watch(ctx, func(e lookout.Event) error { return nil })
+
+	s.EqualValues(globalTimeout/clientMinInterval, atomic.LoadInt32(&pullCalls))
+	s.EqualValues(globalTimeout/clientMinInterval, atomic.LoadInt32(&eventCalls))
+	s.EqualError(err, "context deadline exceeded")
+}
+
 func (s *WatcherTestSuite) TearDownSuite() {
 	s.server.Close()
 }
@@ -288,7 +324,7 @@ func (t *NoopTransport) Get(repo string) http.RoundTripper {
 }
 
 func newTestPool(s suite.Suite, repoURLs []string, githubURL *url.URL, cache *cache.ValidableCache) *ClientPool {
-	client := NewClient(nil, cache, log.New(log.Fields{}))
+	client := NewClient(nil, cache, log.New(log.Fields{}), "")
 	client.BaseURL = githubURL
 	client.UploadURL = githubURL
 

@@ -93,7 +93,7 @@ func (w *Watcher) watchLoop(
 				return
 			}
 
-			interval := w.newInterval(c.Rate(coreCategory))
+			interval := w.newInterval(c.Rate(coreCategory), c.watchMinInterval)
 			if categoryInterval > interval {
 				interval = categoryInterval
 			}
@@ -119,15 +119,15 @@ func (w *Watcher) processRepoPRs(
 		log.With(log.Fields{
 			"repository": repo.FullName, "response": resp,
 		}).Errorf(err, "request for PR list failed")
-		return minInterval, nil
+		return c.watchMinInterval, nil
 	}
 
 	if err != nil && !NoErrNotModified.Is(err) {
-		return minInterval, err
+		return c.watchMinInterval, err
 	}
 
 	err = w.handlePrs(ctx, cb, repo, resp, prs)
-	return minInterval, err
+	return c.watchMinInterval, err
 }
 
 func (w *Watcher) processRepoEvents(
@@ -278,7 +278,7 @@ func (w *Watcher) getClient(username, repository string) (*Client, error) {
 	return client, nil
 }
 
-func (w *Watcher) newInterval(rate github.Rate) time.Duration {
+func (w *Watcher) newInterval(rate github.Rate, minInterval time.Duration) time.Duration {
 	interval := minInterval
 	remaining := rate.Remaining / 2 // we call 2 endpoints for each repo
 	if remaining > 0 {

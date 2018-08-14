@@ -34,12 +34,13 @@ func (p *ClientPool) Client(username, repo string) (*Client, bool) {
 // Client is a wrapper for github.Client that supports cache and provides rate limit information
 type Client struct {
 	*github.Client
-	cache   *cache.ValidableCache
-	limitRT *limitRoundTripper
+	cache            *cache.ValidableCache
+	limitRT          *limitRoundTripper
+	watchMinInterval time.Duration
 }
 
 // NewClient creates new Client
-func NewClient(t http.RoundTripper, cache *cache.ValidableCache, l log.Logger) *Client {
+func NewClient(t http.RoundTripper, cache *cache.ValidableCache, l log.Logger, watchMinInterval string) *Client {
 	limitRT := &limitRoundTripper{
 		Base: t,
 		Log:  l,
@@ -49,10 +50,21 @@ func NewClient(t http.RoundTripper, cache *cache.ValidableCache, l log.Logger) *
 	cachedT.MarkCachedResponses = true
 	cachedT.Transport = limitRT
 
+	interval := minInterval
+	if watchMinInterval != "" {
+		d, err := time.ParseDuration(watchMinInterval)
+		if err != nil {
+			l.Errorf(err, "can't parse min interval")
+		} else {
+			interval = d
+		}
+	}
+
 	return &Client{
-		Client:  github.NewClient(&http.Client{Transport: cachedT}),
-		cache:   cache,
-		limitRT: limitRT,
+		Client:           github.NewClient(&http.Client{Transport: cachedT}),
+		cache:            cache,
+		limitRT:          limitRT,
+		watchMinInterval: interval,
 	}
 }
 
