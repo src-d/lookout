@@ -47,6 +47,12 @@ For lookout serve integration tests:
 make test-json
 ```
 
+## Dummy Analyzer Release
+
+To publish the dummy analyzer container you need to create a tag with the `dummy` prefix, e.g. `dummy-v0.0.1`. Please note this this doesn't require to do a GitHub release, we just need the Git tag.
+
+A normal release tag will not publish this container.
+
 ## Certificate of Origin
 
 By contributing to this project you agree to the [Developer Certificate of
