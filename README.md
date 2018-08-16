@@ -17,7 +17,7 @@ It includes a curl-style binary that allows to trigger Analyzers directly, witho
 The included [`./docker-compose.yml`](./docker-compose.yml) allows to start all dependencies using [Docker Compose](https://docs.docker.com/compose/) 
 
 * [bblfshd](https://github.com/bblfsh/bblfshd), on `localhost:9432`
-* [PostgreSQL](https://www.postgresql.org/), on `localhost:5432` password `example`
+* [PostgreSQL](https://www.postgresql.org/), on `localhost:5432` password `postgres`
 
 Clone the repository, or download [`./docker-compose.yml`](./docker-compose.yml)
 
