@@ -1,6 +1,7 @@
 package git
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"regexp"
@@ -248,19 +249,19 @@ func (b *blobAdder) Fn(f *lookout.File) (bool, error) {
 
 	of, err := b.tree.File(f.Path)
 	if err != nil {
-		return true, err
+		return true, fmt.Errorf("can not get file:'%v', %v", f.Path, err)
 	}
 
 	r, err := of.Blob.Reader()
 	if err != nil {
-		return true, err
+		return true, fmt.Errorf("can not get reader for file:'%v', %v", f.Path, err)
 	}
 
 	defer gitioutil.CheckClose(r, &err)
 
 	f.Content, err = ioutil.ReadAll(r)
 	if err != nil {
-		return true, err
+		return true, fmt.Errorf("can not read file:'%v', %v", f.Path, err)
 	}
 
 	return false, nil
