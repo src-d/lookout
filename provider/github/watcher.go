@@ -116,7 +116,7 @@ func (w *Watcher) processRepoPRs(
 ) (time.Duration, error) {
 	resp, prs, err := w.doPRListRequest(ctx, repo.Username, repo.Name)
 	if ErrGitHubAPI.Is(err) {
-		log.With(log.Fields{
+		ctxlog.Get(ctx).With(log.Fields{
 			"repository": repo.FullName, "response": resp,
 		}).Errorf(err, "request for PR list failed")
 		return c.watchMinInterval, nil
@@ -138,7 +138,7 @@ func (w *Watcher) processRepoEvents(
 ) (time.Duration, error) {
 	resp, events, err := w.doEventRequest(ctx, repo.Username, repo.Name)
 	if ErrGitHubAPI.Is(err) {
-		log.With(log.Fields{
+		ctxlog.Get(ctx).With(log.Fields{
 			"repository": repo.FullName, "response": resp,
 		}).Errorf(err, "request for events list failed")
 		return c.PollInterval(eventsCategory), nil

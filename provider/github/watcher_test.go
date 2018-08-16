@@ -23,7 +23,7 @@ import (
 
 func init() {
 	// make everything faster for tests
-	minInterval = time.Millisecond
+	minInterval = 10 * time.Millisecond
 	log.DefaultLogger = log.New(log.Fields{"app": "lookout"})
 }
 
@@ -71,6 +71,10 @@ var eventsHandler = func(calls *int32) func(w http.ResponseWriter, r *http.Reque
 		w.Header().Set("etag", etag)
 		fmt.Fprint(w, `[{"id":"1", "type":"PushEvent", "payload":{"push_id": 1}}]`)
 	}
+}
+
+var emptyArrayHandler = func(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, `[]`)
 }
 
 const (
@@ -124,20 +128,33 @@ func (s *WatcherTestSuite) TestWatch() {
 	s.EqualError(err, "context deadline exceeded")
 }
 
-func (s *WatcherTestSuite) TestWatch_CallbackError() {
+func (s *WatcherTestSuite) TestWatch_CallbackError_Pull() {
 	var calls int32
 
 	s.mux.HandleFunc("/repos/mock/test/pulls", pullsHandler(&calls))
+	s.mux.HandleFunc("/repos/mock/test/events", emptyArrayHandler)
+
+	w := s.newWatcher([]string{"github.com/mock/test"})
+	err := w.Watch(context.TODO(), func(e lookout.Event) error {
+		s.Equal(pb.ReviewEventType, e.Type())
+		s.Equal(pullID, e.ID().String())
+
+		return fmt.Errorf("foo")
+	})
+
+	s.EqualError(err, "foo")
+}
+
+func (s *WatcherTestSuite) TestWatch_CallbackError_Event() {
+	var calls int32
+
+	s.mux.HandleFunc("/repos/mock/test/pulls", emptyArrayHandler)
 	s.mux.HandleFunc("/repos/mock/test/events", eventsHandler(&calls))
 
 	w := s.newWatcher([]string{"github.com/mock/test"})
 	err := w.Watch(context.TODO(), func(e lookout.Event) error {
-		switch e.Type() {
-		case pb.ReviewEventType:
-			s.Equal(pullID, e.ID().String())
-		case pb.PushEventType:
-			s.Equal(pushID, e.ID().String())
-		}
+		s.Equal(pb.PushEventType, e.Type())
+		s.Equal(pushID, e.ID().String())
 
 		return fmt.Errorf("foo")
 	})
@@ -180,11 +197,12 @@ func (s *WatcherTestSuite) TestWatch_HttpTimeout() {
 	// Change the request timeout for this test
 	prevRequestTimeout := RequestTimeout
 	RequestTimeout = 5 * minInterval
+	sleepTime := RequestTimeout * 2
 	defer func() { RequestTimeout = prevRequestTimeout }()
 
 	errCodeHandler := func(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&callsErr, 1)
-		time.Sleep(RequestTimeout * 2)
+		time.Sleep(sleepTime)
 	}
 
 	s.mux.HandleFunc("/repos/mock/test/pulls", pullsHandler(&calls))
@@ -324,7 +342,7 @@ func (t *NoopTransport) Get(repo string) http.RoundTripper {
 }
 
 func newTestPool(s suite.Suite, repoURLs []string, githubURL *url.URL, cache *cache.ValidableCache) *ClientPool {
-	client := NewClient(nil, cache, log.New(log.Fields{}), "")
+	client := NewClient(nil, cache, log.DefaultLogger, "")
 	client.BaseURL = githubURL
 	client.UploadURL = githubURL
 
