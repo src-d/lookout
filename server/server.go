@@ -191,6 +191,7 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
 
 func (s *Server) getConfig(ctx context.Context, e lookout.Event) (map[string]lookout.AnalyzerConfig, error) {
 	rev := e.Revision()
+	ctxlog.Get(ctx).Infof("getting .lookout.yml")
 	scanner, err := s.fileGetter.GetFiles(ctx, &lookout.FilesRequest{
 		Revision:       &rev.Head,
 		IncludePattern: `^\.lookout\.yml$`,
