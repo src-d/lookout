@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"gopkg.in/src-d/go-errors.v1"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 var (
@@ -171,6 +172,13 @@ func (p *Poster) createReviewRequest(
 				req.Comments = append(req.Comments, comment)
 			} else {
 				line, err := dl.ConvertLine(c.File, int(c.Line))
+				if ErrLineOutOfDiff.Is(err) {
+					log.Debugf(
+						"comment is out the diff range. analyzer: %s, file %s, line %d",
+						aComments.Config.Name, c.File, c.Line)
+					continue
+				}
+
 				if err != nil {
 					return nil, err
 				}

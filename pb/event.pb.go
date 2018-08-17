@@ -113,7 +113,7 @@ type ReviewEvent struct {
 	IsMergeable bool `protobuf:"varint,5,opt,name=is_mergeable,json=isMergeable,proto3" json:"is_mergeable,omitempty"`
 	// Source reference to the original branch and repository where the changes came from.
 	Source ReferencePointer `protobuf:"bytes,8,opt,name=source" json:"source"`
-	// Merge branch in the destination repository where the Pull Request is stored.
+	// Merge reference to the branch and repository where the merged Pull Request is stored.
 	Merge ReferencePointer `protobuf:"bytes,9,opt,name=merge" json:"merge"`
 	// Configuration contains any configuration related to specific analyzer
 	Configuration google_protobuf2.Struct `protobuf:"bytes,10,opt,name=configuration" json:"configuration"`
