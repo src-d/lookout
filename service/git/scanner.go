@@ -250,20 +250,20 @@ func (b *blobAdder) Fn(f *lookout.File) (bool, error) {
 
 	of, err := b.tree.File(f.Path)
 	if err != nil {
-		log.Warningf("skipping - can not get file:'%v', %v", f.Path, err)
+		log.Warningf("skipping - cannot get file:'%v', %v", f.Path, err)
 		return true, nil
 	}
 
 	r, err := of.Blob.Reader()
 	if err != nil {
-		return true, fmt.Errorf("can not get reader for file:'%v', %v", f.Path, err)
+		return true, fmt.Errorf("cannot get reader for file:'%v', %v", f.Path, err)
 	}
 
 	defer gitioutil.CheckClose(r, &err)
 
 	f.Content, err = ioutil.ReadAll(r)
 	if err != nil {
-		return true, fmt.Errorf("can not read file:'%v', %v", f.Path, err)
+		return true, fmt.Errorf("cannot read file:'%v', %v", f.Path, err)
 	}
 
 	return false, nil
