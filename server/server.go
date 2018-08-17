@@ -80,6 +80,12 @@ func (s *Server) handleEvent(ctx context.Context, e lookout.Event) error {
 		return nil
 	}
 
+	// TODO(max): we need some retry policy here depends on errors
+	if status == models.EventStatusFailed {
+		logger.Infof("event processing failed, skipping...")
+		return nil
+	}
+
 	switch ev := e.(type) {
 	case *lookout.ReviewEvent:
 		err = s.HandleReview(ctx, ev)
