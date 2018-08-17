@@ -149,7 +149,7 @@ func RunCli(ctx context.Context, cmd string, args ...string) io.Reader {
 
 // ResetDB recreates database for the test
 func ResetDB() {
-	db, err := sql.Open("postgres", "postgres://postgres:example@localhost:5432/lookout?sslmode=disable")
+	db, err := sql.Open("postgres", "postgres://postgres:postgres@localhost:5432/lookout?sslmode=disable")
 	if err != nil {
 		fmt.Println("can't connect to DB:", err)
 		os.Exit(1)

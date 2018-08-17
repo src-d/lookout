@@ -50,7 +50,7 @@ $ docker-compose up
 This will create the following Docker containers:
 
 * [bblfshd](https://github.com/bblfsh/bblfshd), listening on `localhost:9432`
-* [PostgreSQL](https://www.postgresql.org/), listening on `localhost:5432`, password `example`. _Note_: this will be a requirement for future functionality, it is not used right now.
+* [PostgreSQL](https://www.postgresql.org/), listening on `localhost:5432`, password `postgres`. _Note_: this will be a requirement for future functionality, it is not used right now.
 
 
 ### lookout SDK Commands

@@ -1,6 +1,7 @@
 package git
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"regexp"
@@ -11,6 +12,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 	gitioutil "gopkg.in/src-d/go-git.v4/utils/ioutil"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 // TreeScanner is a scanner for files of git tree
@@ -248,19 +250,20 @@ func (b *blobAdder) Fn(f *lookout.File) (bool, error) {
 
 	of, err := b.tree.File(f.Path)
 	if err != nil {
-		return true, err
+		log.Warningf("skipping - cannot get file:'%v', %v", f.Path, err)
+		return true, nil
 	}
 
 	r, err := of.Blob.Reader()
 	if err != nil {
-		return true, err
+		return true, fmt.Errorf("cannot get reader for file:'%v', %v", f.Path, err)
 	}
 
 	defer gitioutil.CheckClose(r, &err)
 
 	f.Content, err = ioutil.ReadAll(r)
 	if err != nil {
-		return true, err
+		return true, fmt.Errorf("cannot read file:'%v', %v", f.Path, err)
 	}
 
 	return false, nil
