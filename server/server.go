@@ -66,7 +66,7 @@ func (s *Server) Run(ctx context.Context) error {
 func (s *Server) handleEvent(ctx context.Context, e lookout.Event) error {
 	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{
 		"event-type": e.Type(),
-		"event-id":   e.ID(),
+		"event-id":   e.ID().String(),
 	})
 
 	status, err := s.eventOp.Save(ctx, e)
