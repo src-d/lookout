@@ -267,6 +267,64 @@ func (s *PosterTestSuite) TestPostHttpJSONErr() {
 	s.IsType(ErrGitHubAPI.New(), err)
 }
 
+func (s *PosterTestSuite) TestPostOutOfRange() {
+	compareCalled := false
+	s.compareHandle(&compareCalled)
+
+	createReviewsCalled := false
+	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
+		s.False(createReviewsCalled)
+		createReviewsCalled = true
+
+		body, err := ioutil.ReadAll(r.Body)
+		s.NoError(err)
+
+		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
+			Body:  strptr(""),
+			Event: strptr("APPROVE"),
+			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
+				Path:     strptr("main.go"),
+				Position: intptr(1),
+				Body:     strptr("Line comment"),
+			}}})
+		s.JSONEq(string(expected), string(body))
+
+		resp := &github.Response{Response: &http.Response{StatusCode: 200}}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	mockComments = []*lookout.Comment{
+		&lookout.Comment{
+			File: "main.go",
+			Line: 1,
+			Text: "out of range comment before",
+		},
+		&lookout.Comment{
+			File: "main.go",
+			Line: 3,
+			Text: "Line comment",
+		},
+		&lookout.Comment{
+			File: "main.go",
+			Line: 205,
+			Text: "out of range comment after",
+		}}
+
+	mockAnalyzerComments = []lookout.AnalyzerComments{
+		lookout.AnalyzerComments{
+			Config: lookout.AnalyzerConfig{
+				Name: "mock",
+			},
+			Comments: mockComments,
+		}}
+
+	p := &Poster{pool: s.pool}
+	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments)
+	s.NoError(err)
+
+	s.True(createReviewsCalled)
+}
+
 func (s *PosterTestSuite) TestStatusOK() {
 	createStatusCalled := false
 

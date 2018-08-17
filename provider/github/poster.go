@@ -171,6 +171,10 @@ func (p *Poster) createReviewRequest(
 				req.Comments = append(req.Comments, comment)
 			} else {
 				line, err := dl.ConvertLine(c.File, int(c.Line))
+				if ErrLineOutOfDiff.Is(err) {
+					continue
+				}
+
 				if err != nil {
 					return nil, err
 				}

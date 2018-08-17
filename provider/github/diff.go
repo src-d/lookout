@@ -52,7 +52,7 @@ func (d *diffLines) convertLine(ranges []*posRange, line int) (int, error) {
 		}
 	}
 
-	return 0, fmt.Errorf("line position is not in diff range")
+	return 0, ErrLineOutOfDiff.New()
 }
 
 func (d *diffLines) ranges(file string) ([]*posRange, error) {
