@@ -155,6 +155,10 @@ func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
 }
 
 func getCommitHashByRev(r *gogit.Repository, revName string) (string, error) {
+	if revName == "" {
+		return "", errors.New("Revision can't be empty")
+	}
+
 	h, err := r.ResolveRevision(plumbing.Revision(revName))
 	if err != nil {
 		return "", err
