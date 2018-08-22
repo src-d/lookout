@@ -1,0 +1,81 @@
+workspace:
+  base: /go
+  path: src/github.com/src-d/lookout
+
+branches: [master]
+
+# ANCHORS
+
+build: &build
+  image: golang:1.10-stretch
+  commands:
+    - make dependencies
+    - PKG_OS=linux DOCKER_OS=linux DOCKER_ARCH=amd64 make packages
+  debug: true
+
+docker_image: &docker_image
+  group: docker
+  image: plugins/docker
+  registry: docker.io
+  repo: srcd/lookout
+  secrets: [ docker_username, docker_password ]
+  dockerfile: Dockerfile
+  debug: true
+
+helm_deploy: &helm_deploy
+  image: quay.io/ipedrazas/drone-helm:master-9b37211
+  skip_tls_verify: true
+  helm_repos: srcd-charts=https://src-d.github.io/charts/
+  chart: srcd-charts/lookout
+  release: gp
+  tiller_ns: kube-system
+  wait: true
+
+# PIPELINE STEPS
+
+pipeline:
+
+  clone:
+    image: plugins/git
+    debug: true
+
+  # deployment to staging environment when master is pushed
+
+  build_stg:
+    <<: *build
+    when:
+      branch: [master]
+      event: [push]
+
+  docker_image_stg:
+    <<: *docker_image
+    # workaround for bug https://github.com/kubernetes/helm/issues/1707
+    tag: 'commit-${DRONE_COMMIT_SHA:0:7}'
+    when:
+      branch: [master]
+      event: [push]
+
+  helm_deploy_stg:
+    <<: *helm_deploy
+    prefix: STG
+    secrets: [ STG_API_SERVER, STG_KUBERNETES_TOKEN ]
+    values: image.lookout.tag=commit-${DRONE_COMMIT_SHA:0:7}
+    values_files: [.helm-staging.yml]
+    when:
+      branch: [master]
+      event: [push]
+
+  # Push to DockerHub when a new tag is created
+
+  build_release:
+    <<: *build
+    when:
+      event: [tag]
+
+  docker_image_release:
+    <<: *docker_image
+    tags:
+      - '${DRONE_TAG}'
+      - 'latest'
+    when:
+      event: [tag]
