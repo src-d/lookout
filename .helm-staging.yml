@@ -1,0 +1,19 @@
+app:
+  lookout:
+    repository: github.com/src-d/lookout
+    logLevel: debug
+    secretName: lookout-github-credentials
+    dbConnectionString: postgres://lookout:lookout@lookout-postgresql:5432/lookout?sslmode=disable
+    bblfshdConnectionString: ipv4://lookout-bblfshd-bblfshd:9432
+
+nodeSelector:
+ lookout:
+   srcd.host/type: worker
+
+nodeSelector:
+ dummyAnalyzer:
+   srcd.host/type: worker
+
+providers:
+  github:
+    comment_footer: "_If you have feedback about this comment, please, [tell us](%s)._"

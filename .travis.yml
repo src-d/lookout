@@ -101,11 +101,6 @@ jobs:
       before_install: skip
       script: PKG_OS="darwin" make packages-sdk
       deploy: *deploy_anchor
-    - name: "push image to Docker Hub"
-      stage: release
-      script:
-        - PKG_OS=linux make build
-        - DOCKER_PUSH_LATEST=true make docker-push
     - name: "push dummy analyzer image to Docker Hub"
       stage: release dummy analyzer
       script:
