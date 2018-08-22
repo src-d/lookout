@@ -25,17 +25,13 @@ func (c ClientConfig) IsZero() bool {
 
 // NewClientPoolFromTokens creates new ClientPool based on map[repoURL]ClientConfig
 // later we will need another constructor that would request installations and create pool from it
-func NewClientPoolFromTokens(urlToConfig map[string]ClientConfig, defaultConfig ClientConfig, cache *cache.ValidableCache) (*ClientPool, error) {
+func NewClientPoolFromTokens(urlToConfig map[string]ClientConfig, cache *cache.ValidableCache) (*ClientPool, error) {
 	byConfig := make(map[ClientConfig][]*lookout.RepositoryInfo)
 
 	for url, c := range urlToConfig {
 		repo, err := vcsurl.Parse(url)
 		if err != nil {
 			return nil, err
-		}
-
-		if c.IsZero() {
-			c = defaultConfig
 		}
 
 		byConfig[c] = append(byConfig[c], repo)
