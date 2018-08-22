@@ -16,26 +16,22 @@ type ClientConfig struct {
 	MinInterval string
 }
 
-var zeroClientConfig = &ClientConfig{}
+var zeroClientConfig = ClientConfig{}
 
 // IsZero return true if config is empty and false otherwise
-func (c *ClientConfig) IsZero() bool {
+func (c ClientConfig) IsZero() bool {
 	return c == zeroClientConfig
 }
 
 // NewClientPoolFromTokens creates new ClientPool based on map[repoURL]ClientConfig
 // later we will need another constructor that would request installations and create pool from it
-func NewClientPoolFromTokens(urlToConfig map[string]ClientConfig, defaultConfig ClientConfig, cache *cache.ValidableCache) (*ClientPool, error) {
+func NewClientPoolFromTokens(urlToConfig map[string]ClientConfig, cache *cache.ValidableCache) (*ClientPool, error) {
 	byConfig := make(map[ClientConfig][]*lookout.RepositoryInfo)
 
 	for url, c := range urlToConfig {
 		repo, err := vcsurl.Parse(url)
 		if err != nil {
 			return nil, err
-		}
-
-		if c.IsZero() {
-			c = defaultConfig
 		}
 
 		byConfig[c] = append(byConfig[c], repo)
