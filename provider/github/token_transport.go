@@ -16,10 +16,10 @@ type ClientConfig struct {
 	MinInterval string
 }
 
-var zeroClientConfig = &ClientConfig{}
+var zeroClientConfig = ClientConfig{}
 
 // IsZero return true if config is empty and false otherwise
-func (c *ClientConfig) IsZero() bool {
+func (c ClientConfig) IsZero() bool {
 	return c == zeroClientConfig
 }
 
