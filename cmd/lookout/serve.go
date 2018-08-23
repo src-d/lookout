@@ -141,7 +141,7 @@ func (c *ServeCommand) Execute(args []string) error {
 }
 
 func (c *ServeCommand) initProvider(conf Config) error {
-	noDeafultAuth := c.GithubUser == "" || c.GithubToken == ""
+	noDefaultAuth := c.GithubUser == "" || c.GithubToken == ""
 	defaultConfig := github.ClientConfig{
 		User:  c.GithubUser,
 		Token: c.GithubToken,
@@ -161,7 +161,7 @@ func (c *ServeCommand) initProvider(conf Config) error {
 		for _, url := range urls {
 			conf, ok := repoToConfig[url]
 			if !ok {
-				if noDeafultAuth {
+				if noDefaultAuth {
 					// Empty github auth is only useful for --dry-run,
 					// we may want to enforce this as an error
 					log.Warningf("missing authentication for repository %s, and no default provided", url)
