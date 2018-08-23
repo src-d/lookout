@@ -23,7 +23,7 @@ docker_image: &docker_image
   debug: true
 
 helm_deploy: &helm_deploy
-  image: srcd/drone-helm:50d87fa
+  image: quay.io/ipedrazas/drone-helm:master-9b37211
   skip_tls_verify: true
   helm_repos: srcd-charts=https://src-d.github.io/charts/
   chart: srcd-charts/lookout
