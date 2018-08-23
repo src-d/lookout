@@ -131,7 +131,7 @@ func (s *PosterTestSuite) TestPostOK() {
 
 		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
 			Body:  strptr("Global comment\n\nAnother global comment"),
-			Event: strptr("APPROVE"),
+			Event: strptr(commentEvent),
 			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
 				Path:     strptr("main.go"),
 				Body:     strptr("File comment"),
@@ -168,7 +168,7 @@ func (s *PosterTestSuite) TestPostFooter() {
 
 		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
 			Body:  strptr("Global comment\n\nTo post feedback go to https://foo.bar/feedback\n\nAnother global comment\n\nTo post feedback go to https://foo.bar/feedback"),
-			Event: strptr("APPROVE"),
+			Event: strptr(commentEvent),
 			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
 				Path:     strptr("main.go"),
 				Body:     strptr("File comment\n\nTo post feedback go to https://foo.bar/feedback"),
@@ -281,7 +281,7 @@ func (s *PosterTestSuite) TestPostOutOfRange() {
 
 		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
 			Body:  strptr(""),
-			Event: strptr("APPROVE"),
+			Event: strptr(commentEvent),
 			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
 				Path:     strptr("main.go"),
 				Position: intptr(1),
