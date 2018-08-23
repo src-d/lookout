@@ -67,7 +67,6 @@ pipeline:
 
   helm_deploy_test:
     <<: *helm_deploy
-    prefix: STG
     secrets: [ STG_API_SERVER, STG_KUBERNETES_TOKEN ]
     values: image.lookout.tag=v0.1.2
     values_files: [.helm-staging.yml]
