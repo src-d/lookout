@@ -27,7 +27,7 @@ helm_deploy: &helm_deploy
   skip_tls_verify: true
   helm_repos: srcd-charts=https://src-d.github.io/charts/
   chart: srcd-charts/lookout
-  release: gp
+  release: lookout
   tiller_ns: kube-system
   wait: true
 
@@ -64,6 +64,15 @@ pipeline:
     when:
       branch: [master]
       event: [push]
+
+  helm_deploy_test:
+    <<: *helm_deploy
+    secrets: [ STG_API_SERVER, STG_KUBERNETES_TOKEN ]
+    values: image.lookout.tag=v0.1.2
+    values_files: [.helm-staging.yml]
+    debug: true
+    when:
+      event: [pull_request]
 
   # Push to DockerHub when a new tag is created
 
