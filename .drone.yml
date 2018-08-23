@@ -30,7 +30,6 @@ helm_deploy: &helm_deploy
   release: lookout
   tiller_ns: kube-system
   wait: true
-  prefix: STG
 
 # PIPELINE STEPS
 
