@@ -143,7 +143,11 @@ func (p *Poster) addFootnote(aConf lookout.AnalyzerConfig, c *lookout.Comment) s
 	return fmt.Sprintf("%s\n\n%s", c.Text, fmt.Sprintf(tmpl, url))
 }
 
-var approveEvent = "APPROVE"
+var (
+	approveEvent        = "APPROVE"
+	requestChangesEvent = "REQUEST_CHANGES"
+	commentEvent        = "COMMENT"
+)
 
 func (p *Poster) createReviewRequest(
 	aCommentsList []lookout.AnalyzerComments,
@@ -151,7 +155,7 @@ func (p *Poster) createReviewRequest(
 	req := &github.PullRequestReviewRequest{
 		// TODO: Add CommitID of HEAD to ensure that comments are attached to
 		//       the right lines.
-		Event: &approveEvent,
+		Event: &commentEvent,
 	}
 
 	var bodyComments []string
