@@ -91,6 +91,21 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
+	db, err := c.initDB()
+	if err != nil {
+		return fmt.Errorf("Can't connect to the DB: %s", err)
+	}
+
+	reviewStore := models.NewReviewEventStore(db)
+	eventOp := store.NewDBEventOperator(
+		reviewStore,
+		models.NewPushEventStore(db),
+	)
+	commentsOp := store.NewDBCommentOperator(
+		models.NewCommentStore(db),
+		reviewStore,
+	)
+
 	analyzers := make(map[string]lookout.Analyzer)
 	for _, aConf := range conf.Analyzers {
 		if aConf.Disabled {
@@ -120,21 +135,6 @@ func (c *ServeCommand) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-
-	db, err := c.initDB()
-	if err != nil {
-		return err
-	}
-
-	reviewStore := models.NewReviewEventStore(db)
-	eventOp := store.NewDBEventOperator(
-		reviewStore,
-		models.NewPushEventStore(db),
-	)
-	commentsOp := store.NewDBCommentOperator(
-		models.NewCommentStore(db),
-		reviewStore,
-	)
 
 	ctx := context.Background()
 	return server.NewServer(watcher, poster, dataHandler.FileGetter, analyzers, eventOp, commentsOp).Run(ctx)
