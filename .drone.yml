@@ -65,6 +65,15 @@ pipeline:
       branch: [master]
       event: [push]
 
+  helm_deploy_test:
+    <<: *helm_deploy
+    prefix: STG
+    secrets: [ STG_API_SERVER, STG_KUBERNETES_TOKEN, STG_KUBERNETES_CERTIFICATE ]
+    values: image.lookout.tag=v0.1.2
+    values_files: [.helm-staging.yml]
+    when:
+      event: [pull_request]
+
   # Push to DockerHub when a new tag is created
 
   build_release:
