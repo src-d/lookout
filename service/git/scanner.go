@@ -12,7 +12,6 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 	gitioutil "gopkg.in/src-d/go-git.v4/utils/ioutil"
-	log "gopkg.in/src-d/go-log.v1"
 )
 
 // TreeScanner is a scanner for files of git tree
@@ -54,6 +53,9 @@ func (s *TreeScanner) Next() bool {
 		if !entry.Mode.IsFile() {
 			continue
 		}
+		//FIXME(bzz): this can still return Commit objects e.g for sub-modules
+		//check entry.Hash object type == Commit
+		//entry.Hash
 
 		s.val = &lookout.File{
 			Path: name,
@@ -250,8 +252,7 @@ func (b *blobAdder) Fn(f *lookout.File) (bool, error) {
 
 	of, err := b.tree.File(f.Path)
 	if err != nil {
-		log.Warningf("skipping - cannot get file:'%v', %v", f.Path, err)
-		return true, nil
+		return true, fmt.Errorf("cannot get file:'%v', %v", f.Path, err)
 	}
 
 	r, err := of.Blob.Reader()
