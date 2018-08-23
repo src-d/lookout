@@ -71,6 +71,7 @@ pipeline:
     secrets: [ STG_API_SERVER, STG_KUBERNETES_TOKEN ]
     values: image.lookout.tag=v0.1.2
     values_files: [.helm-staging.yml]
+    debug: true
     when:
       event: [pull_request]
 
