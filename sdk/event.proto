@@ -33,7 +33,7 @@ message CommitRevision {
 
 // ReferencePointer is the reference to a git refererence in a repository.
 message ReferencePointer {
-    // InternalRepositoryURL is the origina; clone URL not canonized.
+    // InternalRepositoryURL is the original clone URL, not canonicalized.
     string internal_repository_url = 1 [(gogoproto.customname) = "InternalRepositoryURL"];
     // ReferenceName is the name of the reference pointing.
     string reference_name = 2 [(gogoproto.casttype) = "gopkg.in/src-d/go-git.v4/plumbing.ReferenceName"];
