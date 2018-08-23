@@ -19,7 +19,7 @@ docker_image: &docker_image
   registry: docker.io
   repo: srcd/lookout
   secrets: [ docker_username, docker_password ]
-  dockerfile: Dockerfile
+  dockerfile: docker/Dockerfile
   debug: true
 
 helm_deploy: &helm_deploy
