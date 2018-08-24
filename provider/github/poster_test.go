@@ -103,6 +103,18 @@ func (s *PosterTestSuite) SetupTest() {
 	s.pool = newTestPool(s.Suite, repoURLs, githubURL, cache)
 }
 
+var mockedPatch = `@@ -3,0 +3,10 @@
++1
++2
++3
++4
++5
++6
++7
++8
++9
++10`
+
 func (s *PosterTestSuite) compareHandle(compareCalled *bool) {
 	s.mux.HandleFunc("/repos/foo/bar/compare/"+hash1+"..."+hash2, func(w http.ResponseWriter, r *http.Request) {
 		s.False(*compareCalled)
@@ -111,7 +123,7 @@ func (s *PosterTestSuite) compareHandle(compareCalled *bool) {
 		cc := &github.CommitsComparison{
 			Files: []github.CommitFile{github.CommitFile{
 				Filename: strptr("main.go"),
-				Patch:    strptr("@@ -3,10 +3,10 @@"),
+				Patch:    strptr(mockedPatch),
 			}}}
 		json.NewEncoder(w).Encode(cc)
 	})

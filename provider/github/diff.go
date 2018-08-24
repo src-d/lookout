@@ -1,9 +1,11 @@
 package github
 
 import (
+	"bufio"
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/google/go-github/github"
 	"gopkg.in/src-d/go-errors.v1"
@@ -19,9 +21,23 @@ type diffLines struct {
 	parsed map[string][]*posRange
 }
 
+type lineType int
+
+const (
+	lineAdded lineType = iota
+	lineDeleted
+	lineContext
+)
+
+type linesChunk struct {
+	Type  lineType
+	Lines int
+}
+
 type hunk struct {
 	OldStartLine, OldLines int
 	NewStartLine, NewLines int
+	Chunks                 []linesChunk
 }
 
 type posRange struct {
@@ -92,23 +108,101 @@ func (d *diffLines) hunks(file string) ([]*hunk, error) {
 	return hunks, nil
 }
 
+var hunkPattern = regexp.MustCompile(`^(@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@[^@]*)(?:@@.*|$)`)
+
 func parseHunks(s string) ([]*hunk, error) {
-	i := 0
+	r := strings.NewReader(s)
+	scanner := bufio.NewScanner(r)
+
 	var hs []*hunk
-	for i < len(s) {
-		read, h, err := parseHunk(s[i:])
-		if err != nil {
-			return nil, err
+	var h *hunk
+	var err error
+	var lChunk linesChunk
+	for scanner.Scan() {
+		var lt lineType
+
+		line := scanner.Text()
+		switch true {
+		case strings.HasPrefix(line, "@@"):
+			if lChunk.Lines > 0 {
+				h.Chunks = append(h.Chunks, lChunk)
+			}
+			lChunk = linesChunk{}
+			h, err = parseHunkHeader(line)
+			if err != nil {
+				return nil, err
+			}
+			hs = append(hs, h)
+			continue
+		case strings.HasPrefix(line, "+"):
+			lt = lineAdded
+		case strings.HasPrefix(line, "-"):
+			lt = lineDeleted
+		default:
+			lt = lineContext
 		}
 
-		i += read
-		hs = append(hs, h)
+		if lChunk.Lines != 0 && lChunk.Type != lt {
+			h.Chunks = append(h.Chunks, lChunk)
+			lChunk = linesChunk{}
+		}
+
+		lChunk.Type = lt
+		lChunk.Lines++
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	if lChunk.Lines > 0 {
+		h.Chunks = append(h.Chunks, lChunk)
 	}
 
 	return hs, nil
 }
 
-var hunkPattern = regexp.MustCompile(`^(@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@[^@]*)(?:@@.*|$)`)
+func parseHunkHeader(line string) (*hunk, error) {
+	var (
+		err error
+		h   = &hunk{}
+	)
+
+	matches := hunkPattern.FindStringSubmatch(line)
+	if len(matches) == 0 {
+		return nil, fmt.Errorf("bad hunk format")
+	}
+
+	h.OldStartLine, err = strconv.Atoi(matches[2])
+	if err != nil {
+		return nil, fmt.Errorf("bad hunk format")
+	}
+
+	if matches[3] == "" {
+		h.OldLines = 1
+	} else {
+		h.OldLines, err = strconv.Atoi(matches[3])
+		if err != nil {
+			return nil, fmt.Errorf("bad hunk format")
+		}
+	}
+
+	h.NewStartLine, err = strconv.Atoi(matches[4])
+	if err != nil {
+		return nil, fmt.Errorf("bad hunk format")
+	}
+
+	if matches[5] == "" {
+		h.NewLines = 1
+	} else {
+		h.NewLines, err = strconv.Atoi(matches[5])
+		if err != nil {
+			return nil, fmt.Errorf("bad hunk format")
+		}
+	}
+
+	return h, nil
+}
 
 func parseHunk(s string) (int, *hunk, error) {
 	var (
@@ -156,23 +250,50 @@ func convertRanges(hunks []*hunk) []*posRange {
 		return nil
 	}
 
-	ranges := make([]*posRange, len(hunks))
-	for i, hunk := range hunks {
-		if i == 0 {
-			ranges[0] = &posRange{
-				AbsStart: hunk.NewStartLine,
-				AbsEnd:   hunk.NewStartLine + hunk.NewLines,
-				RelStart: 1,
-				RelEnd:   1 + hunk.NewLines,
+	ranges := make([]*posRange, 0)
+	// relative position of the last range end
+	lastRelEnd := 0
+	for _, hunk := range hunks {
+		absStart := hunk.NewStartLine
+
+		// number of lines in diff to skip
+		// each hunk has a header line which should be skipped
+		// delete lines should be also skipped
+		skipLines := 1
+		// number of lines for the range
+		lines := 0
+
+		newRange := func() {
+			r := &posRange{
+				AbsStart: absStart,
+				AbsEnd:   absStart + lines,
+				RelStart: lastRelEnd + skipLines,
+				RelEnd:   lastRelEnd + lines + skipLines,
 			}
-			continue
+			ranges = append(ranges, r)
+
+			absStart = r.AbsEnd
+			lastRelEnd = r.RelEnd
 		}
 
-		ranges[i] = &posRange{
-			AbsStart: hunk.NewStartLine,
-			AbsEnd:   hunk.NewStartLine + hunk.NewLines,
-			RelStart: ranges[i-1].RelEnd + 1,
-			RelEnd:   ranges[i-1].RelEnd + 1 + hunk.NewLines,
+		for _, chunk := range hunk.Chunks {
+			if chunk.Type != lineDeleted {
+				lines += chunk.Lines
+			} else {
+				// create a range for the lines before first deleted line
+				if lines > 0 {
+					newRange()
+					lines = 0
+
+				}
+
+				skipLines = chunk.Lines
+				continue
+			}
+		}
+		if lines > 0 {
+			newRange()
+			skipLines = 0
 		}
 	}
 
