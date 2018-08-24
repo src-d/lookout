@@ -1,6 +1,6 @@
 app:
   lookout:
-    repository: github.com/src-d/lookout
+    repository: github.com/src-d/lookout,github.com/bblfsh/uast-viewer
     logLevel: debug
     secretName: lookout-github-credentials
     dbConnectionString: postgres://lookout:lookout@lookout-postgresql:5432/lookout?sslmode=disable
@@ -21,6 +21,3 @@ providers:
 analyzers:
   - name: style-analyzer
     addr: ipv4://lookout-style-analyzer:2000
-
-repositories:
-  - url: github.com/bblfsh/uast-viewer
