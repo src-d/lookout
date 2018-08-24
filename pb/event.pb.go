@@ -64,7 +64,7 @@ func (*CommitRevision) Descriptor() ([]byte, []int) { return fileDescriptorEvent
 
 // ReferencePointer is the reference to a git refererence in a repository.
 type ReferencePointer struct {
-	// InternalRepositoryURL is the origina; clone URL not canonized.
+	// InternalRepositoryURL is the original clone URL, not canonicalized.
 	InternalRepositoryURL string `protobuf:"bytes,1,opt,name=internal_repository_url,json=internalRepositoryUrl,proto3" json:"internal_repository_url,omitempty"`
 	// ReferenceName is the name of the reference pointing.
 	ReferenceName gopkg_in_src_d_go_git_v4_plumbing.ReferenceName `protobuf:"bytes,2,opt,name=reference_name,json=referenceName,proto3,casttype=gopkg.in/src-d/go-git.v4/plumbing.ReferenceName" json:"reference_name,omitempty"`
