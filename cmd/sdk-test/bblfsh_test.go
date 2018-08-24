@@ -27,7 +27,10 @@ func (suite *BblfshIntegrationSuite) TearDownSuite() {
 }
 
 func (suite *BblfshIntegrationSuite) TestNoBblfshError() {
-	r := cmdtest.RunCli(suite.ctx, "review", "ipv4://localhost:10302", "--bblfshd=ipv4://localhost:0000")
+	r := cmdtest.RunCli(suite.ctx, "review", "ipv4://localhost:10302",
+		"--bblfshd=ipv4://localhost:0000",
+		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
+		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
 	cmdtest.GrepTrue(r, "WantUAST isn't allowed")
 }
 
