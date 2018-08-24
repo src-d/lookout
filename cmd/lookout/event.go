@@ -46,6 +46,7 @@ func (c *EventCommand) openRepository() error {
 }
 
 func (c *EventCommand) resolveRefs() (*lookout.ReferencePointer, *lookout.ReferencePointer, error) {
+	log.Infof("Resolving to/from references")
 	baseHash, err := getCommitHashByRev(c.repo, c.RevFrom)
 	if err != nil {
 		return nil, nil, fmt.Errorf("base revision error: %s", err)
@@ -118,6 +119,7 @@ func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, erro
 }
 
 func (c *EventCommand) bindDataServer(srv *lookout.DataServerHandler, serveResult chan error) (*grpc.Server, error) {
+	log.Infof("starging a DataServer at %s", c.DataServer)
 	grpcSrv := grpchelper.NewServer()
 	lookout.RegisterDataServer(grpcSrv, srv)
 
@@ -133,6 +135,7 @@ func (c *EventCommand) bindDataServer(srv *lookout.DataServerHandler, serveResul
 
 func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
 	var err error
+	log.Infof("start looking for Analyzer at %s", c.Args.Analyzer)
 
 	grpcAddr, err := grpchelper.ToGoGrpcAddress(c.Args.Analyzer)
 	if err != nil {
