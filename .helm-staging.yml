@@ -21,3 +21,6 @@ providers:
 analyzers:
   - name: style-analyzer
     addr: ipv4://lookout-style-analyzer:2000
+
+repositories:
+  - url: github.com/bblfsh/uast-viewer
