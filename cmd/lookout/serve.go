@@ -82,7 +82,7 @@ func (c *ServeCommand) Execute(args []string) error {
 		return fmt.Errorf("Can't parse configuration file: %s", err)
 	}
 
-	dataHandler, err := c.initDataHadler()
+	dataHandler, err := c.initDataHandler()
 	if err != nil {
 		return err
 	}
@@ -239,7 +239,7 @@ func (c *ServeCommand) startAnalyzer(conf lookout.AnalyzerConfig) (lookout.Analy
 	return lookout.NewAnalyzerClient(conn), nil
 }
 
-func (c *ServeCommand) initDataHadler() (*lookout.DataServerHandler, error) {
+func (c *ServeCommand) initDataHandler() (*lookout.DataServerHandler, error) {
 	var err error
 	c.Bblfshd, err = grpchelper.ToGoGrpcAddress(c.Bblfshd)
 	if err != nil {
