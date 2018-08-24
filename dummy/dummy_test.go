@@ -48,6 +48,7 @@ func (s *DummySuite) SetupSuite() {
 	s.apiServer = grpc.NewServer()
 	server := &lookout.DataServerHandler{
 		ChangeGetter: git.NewService(&git.StorerCommitLoader{sto}),
+		FileGetter:   git.NewService(&git.StorerCommitLoader{sto}),
 	}
 	lookout.RegisterDataServer(s.apiServer, server)
 
@@ -86,7 +87,8 @@ func (s *DummySuite) Test() {
 	require := s.Require()
 
 	a := &Analyzer{
-		DataClient: s.apiClient,
+		DataClient:       s.apiClient,
+		RequestFilesPush: true,
 	}
 
 	s.analyzerServer = grpc.NewServer()

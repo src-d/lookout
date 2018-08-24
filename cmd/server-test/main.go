@@ -23,17 +23,17 @@ func main() {
 	cmdtest.ResetDB()
 
 	ctx, stop := cmdtest.StoppableCtx()
-	cmdtest.StartDummy(ctx)
+	cmdtest.StartDummy(ctx, "--files")
 	r, w := cmdtest.StartServe(ctx, "--provider", "json", "dummy-repo-url")
 
 	// make sure server started correctly
 	grepTrue(r, "Starting watcher")
 
-	successJSON := `{"event":"review", "internal_id": "1", "number": 1, "commit_revision":{"base":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"4eebef102d7979570aadf69ff54ae1ffcca7ce00"},"head":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"d304499cb2a9cad3ea260f06ad59c1658db4763d"}}}`
+	successJSON := `{"event":"review", "internal_id": "1", "number": 1, "commit_revision":{"base":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"66924f49aa9987273a137857c979ee5f0e709e30"},"head":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"2c9f56bcb55be47cf35d40d024ec755399f699c7"}}}`
 	testCase("success review", func() {
 		sendEvent(w, successJSON)
 		grepTrue(r, "processing pull request")
-		grepTrue(r, `{"analyzer-name":"Dummy","file":"provider/common.go","text":"The file has increased in 5 lines."}`)
+		grepTrue(r, `{"analyzer-name":"Dummy","file":"cmd/lookout/push.go","line":13,"text":"This line exceeded 80 bytes."}`)
 		grepTrue(r, `status=success`)
 	})
 
@@ -43,7 +43,7 @@ func main() {
 	})
 
 	testCase("process review but don't post anything", func() {
-		json := `{"event":"review", "internal_id": "2", "number": 1, "commit_revision":{"base":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"4eebef102d7979570aadf69ff54ae1ffcca7ce00"},"head":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"d304499cb2a9cad3ea260f06ad59c1658db4763d"}}}`
+		json := `{"event":"review", "internal_id": "2", "number": 1, "commit_revision":{"base":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"66924f49aa9987273a137857c979ee5f0e709e30"},"head":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"2c9f56bcb55be47cf35d40d024ec755399f699c7"}}}`
 		sendEvent(w, json)
 		grepTrue(r, "processing pull request")
 		grepAndNot(r, `status=success`, `posting analysis`)
@@ -56,7 +56,7 @@ func main() {
 	})
 
 	testCase("success push", func() {
-		successPushJSON := `{"event":"push", "internal_id": "1", "commit_revision":{"base":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"4eebef102d7979570aadf69ff54ae1ffcca7ce00"},"head":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"d304499cb2a9cad3ea260f06ad59c1658db4763d"}}}`
+		successPushJSON := `{"event":"push", "internal_id": "1", "commit_revision":{"base":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"66924f49aa9987273a137857c979ee5f0e709e30"},"head":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"2c9f56bcb55be47cf35d40d024ec755399f699c7"}}}`
 		sendEvent(w, successPushJSON)
 		grepTrue(r, "processing push")
 		grepTrue(r, "comments can belong only to review event but 1 is given")
@@ -68,8 +68,8 @@ func main() {
 	cmdtest.ResetDB()
 
 	ctx, stop = cmdtest.StoppableCtx()
-	cmdtest.StartDummy(ctx)
-	cmdtest.StartDummy(ctx, "--analyzer", "ipv4://localhost:10303")
+	cmdtest.StartDummy(ctx, "--files")
+	cmdtest.StartDummy(ctx, "--files", "--analyzer", "ipv4://localhost:10303")
 	r, w = cmdtest.StartServe(ctx, "--provider", "json", "-c", "fixtures/double_dummy_config.yml", "dummy-repo-url")
 
 	grepTrue(r, "Starting watcher")
@@ -86,14 +86,16 @@ func main() {
 		}
 		if !strings.Contains(
 			buf.String(),
-			`{"analyzer-name":"Dummy1","file":"provider/common.go","text":"The file has increased in 5 lines."}`) {
+			`{"analyzer-name":"Dummy1","file":"cmd/lookout/push.go","line":13,"text":"This line exceeded 80 bytes."}`) {
+
 			fmt.Println("no comments from the first analyzer")
 			stop()
 			os.Exit(1)
 		}
 		if !strings.Contains(
 			buf.String(),
-			`{"analyzer-name":"Dummy2","file":"provider/common.go","text":"The file has increased in 5 lines."}`) {
+			`{"analyzer-name":"Dummy2","file":"cmd/lookout/push.go","line":13,"text":"This line exceeded 80 bytes."}`) {
+
 			fmt.Println("no comments from the second analyzer")
 			stop()
 			os.Exit(1)

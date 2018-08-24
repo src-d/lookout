@@ -11,9 +11,10 @@ import (
 )
 
 type Analyzer struct {
-	Version     string
-	DataClient  *lookout.DataClient
-	RequestUAST bool
+	Version          string
+	DataClient       *lookout.DataClient
+	RequestUAST      bool
+	RequestFilesPush bool
 }
 
 var _ lookout.AnalyzerServer = &Analyzer{}
@@ -35,9 +36,10 @@ func (a *Analyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent
 	for changes.Next() {
 		change := changes.Change()
 		resp.Comments = append(resp.Comments, a.lineIncrease(change)...)
-		resp.Comments = append(resp.Comments, a.maxLineWidth(change)...)
+		resp.Comments = append(resp.Comments, a.maxLineWidth(change.Head)...)
 		if a.RequestUAST {
-			resp.Comments = append(resp.Comments, a.noUAST(change)...)
+			resp.Comments = append(resp.Comments, a.hasUAST(change.Head)...)
+			resp.Comments = append(resp.Comments, a.language(change.Head)...)
 		}
 	}
 
@@ -49,17 +51,35 @@ func (a *Analyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent
 }
 
 func (a *Analyzer) NotifyPushEvent(ctx context.Context, e *lookout.PushEvent) (*lookout.EventResponse, error) {
-	return &lookout.EventResponse{
-		AnalyzerVersion: a.Version,
-		Comments: []*lookout.Comment{
-			{Text: fmt.Sprintf(
-				"dummy comment for push event: %s -> %s (%d commits)",
-				e.CommitRevision.Base,
-				e.CommitRevision.Head,
-				e.Commits,
-			)},
-		},
-	}, nil
+	resp := &lookout.EventResponse{AnalyzerVersion: a.Version}
+
+	if !a.RequestFilesPush {
+		return resp, nil
+	}
+	files, err := a.DataClient.GetFiles(ctx, &lookout.FilesRequest{
+		Revision:        &e.CommitRevision.Head,
+		ExcludeVendored: true,
+		WantContents:    true,
+		WantUAST:        a.RequestUAST,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for files.Next() {
+		file := files.File()
+		resp.Comments = append(resp.Comments, a.maxLineWidth(file)...)
+		if a.RequestUAST {
+			resp.Comments = append(resp.Comments, a.hasUAST(file)...)
+			resp.Comments = append(resp.Comments, a.language(file)...)
+		}
+	}
+
+	if err := files.Err(); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 func (a *Analyzer) lineIncrease(ch *lookout.Change) []*lookout.Comment {
@@ -79,17 +99,17 @@ func (a *Analyzer) lineIncrease(ch *lookout.Change) []*lookout.Comment {
 	}}
 }
 
-func (a *Analyzer) maxLineWidth(ch *lookout.Change) []*lookout.Comment {
-	if ch.Head == nil {
+func (a *Analyzer) maxLineWidth(file *lookout.File) []*lookout.Comment {
+	if file == nil {
 		return nil
 	}
 
-	lines := bytes.Split(ch.Head.Content, []byte("\n"))
+	lines := bytes.Split(file.Content, []byte("\n"))
 	var comments []*lookout.Comment
 	for i, line := range lines {
 		if len(line) > 80 {
 			comments = append(comments, &lookout.Comment{
-				File: ch.Head.Path,
+				File: file.Path,
 				Line: int32(i + 1),
 				Text: "This line exceeded 80 bytes.",
 			})
@@ -99,20 +119,35 @@ func (a *Analyzer) maxLineWidth(ch *lookout.Change) []*lookout.Comment {
 	return comments
 }
 
-func (a *Analyzer) noUAST(ch *lookout.Change) []*lookout.Comment {
-	if ch.Head == nil {
+func (a *Analyzer) hasUAST(file *lookout.File) []*lookout.Comment {
+	if file == nil {
 		return nil
 	}
 
-	if ch.Head.UAST == nil {
-		return []*lookout.Comment{{
-			File: ch.Head.Path,
-			Line: 0,
-			Text: fmt.Sprintf("The file doesn't have UAST."),
-		}}
+	var text string
+	if file.UAST == nil {
+		text = "The file doesn't have UAST."
+	} else {
+		text = "The file has UAST."
 	}
 
-	return nil
+	return []*lookout.Comment{{
+		File: file.Path,
+		Line: 0,
+		Text: text,
+	}}
+}
+
+func (a *Analyzer) language(file *lookout.File) []*lookout.Comment {
+	if file == nil {
+		return nil
+	}
+
+	return []*lookout.Comment{{
+		File: file.Path,
+		Line: 0,
+		Text: fmt.Sprintf("The file has language detected: %q", file.Language),
+	}}
 }
 
 func (a *Analyzer) isBinary(f *lookout.File) bool {
