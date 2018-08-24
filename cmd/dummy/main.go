@@ -18,9 +18,10 @@ var (
 
 type ServeCommand struct {
 	cli.CommonOptions
-	Analyzer    string `long:"analyzer" default:"ipv4://localhost:10302" env:"LOOKOUT_ANALYZER" description:"gRPC URL to bind the analyzer to"`
-	DataServer  string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL of the data server"`
-	RequestUAST bool   `long:"uast" env:"LOOKOUT_REQUEST_UAST" description:"analyzer will request UAST from the data server"`
+	Analyzer         string `long:"analyzer" default:"ipv4://localhost:10302" env:"LOOKOUT_ANALYZER" description:"gRPC URL to bind the analyzer to"`
+	DataServer       string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL of the data server"`
+	RequestUAST      bool   `long:"uast" env:"LOOKOUT_REQUEST_UAST" description:"analyzer will request UAST from the data server"`
+	RequestFilesPush bool   `long:"files" env:"LOOKOUT_REQUEST_FILES" description:"on push events the analyzer will request files from HEAD, and return comments"`
 }
 
 func (c *ServeCommand) Execute(args []string) error {
@@ -41,9 +42,10 @@ func (c *ServeCommand) Execute(args []string) error {
 	}
 
 	a := &dummy.Analyzer{
-		Version:     version,
-		DataClient:  lookout.NewDataClient(conn),
-		RequestUAST: c.RequestUAST,
+		Version:          version,
+		DataClient:       lookout.NewDataClient(conn),
+		RequestUAST:      c.RequestUAST,
+		RequestFilesPush: c.RequestFilesPush,
 	}
 
 	server := grpchelper.NewServer()
