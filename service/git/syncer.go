@@ -62,7 +62,7 @@ func (s *Syncer) fetch(ctx context.Context, repoURL string, r *git.Repository, r
 		if err == nil {
 			ctxlog.Get(ctx).
 				With(log.Fields{"duration": time.Now().Sub(start)}).
-				Debugf("references %v fetched for repository %s", repoURL, refspecs)
+				Debugf("references %v fetched for repository %s", refspecs, repoURL)
 		}
 		// in case of error it will be logged on upper level
 	}()
