@@ -173,10 +173,6 @@ func TestParseHunks_issue_165(t *testing.T) {
 		NewLines:     59,
 	}}, hunks)
 
-	read, hunk, err := parseHunk(largeHunk)
-	require.NoError(err)
-	require.NotEmpty(read)
-	require.NotNil(hunk)
 }
 
 func TestConvertRanges(t *testing.T) {
