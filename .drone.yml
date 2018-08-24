@@ -29,7 +29,6 @@ helm_deploy: &helm_deploy
   chart: srcd-charts/lookout
   release: lookout
   tiller_ns: kube-system
-  wait: true
 
 # PIPELINE STEPS
 
