@@ -60,6 +60,7 @@ func (s *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 func (s *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (lookout.FileScanner, error) {
 	if req.WantUAST {
 		req.WantContents = true
+		req.WantLanguage = true
 	}
 
 	files, err := s.files.GetFiles(ctx, req)
