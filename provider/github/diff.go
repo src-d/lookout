@@ -211,12 +211,12 @@ func parseHunk(s string) (int, *hunk, error) {
 	)
 	matches := hunkPattern.FindStringSubmatch(s)
 	if len(matches) == 0 {
-		return 0, nil, fmt.Errorf("bad hunk format")
+		return 0, nil, fmt.Errorf("bad hunk format: does not match regepx '%s'", hunkPattern)
 	}
 
 	h.OldStartLine, err = strconv.Atoi(matches[2])
 	if err != nil {
-		return 0, nil, fmt.Errorf("bad hunk format")
+		return 0, nil, fmt.Errorf("bad hunk format: old start line is not a number '%s'", matches[2])
 	}
 
 	if matches[3] == "" {
@@ -224,13 +224,13 @@ func parseHunk(s string) (int, *hunk, error) {
 	} else {
 		h.OldLines, err = strconv.Atoi(matches[3])
 		if err != nil {
-			return 0, nil, fmt.Errorf("bad hunk format")
+			return 0, nil, fmt.Errorf("bad hunk format: old lines is not a number '%s'", matches[3])
 		}
 	}
 
 	h.NewStartLine, err = strconv.Atoi(matches[4])
 	if err != nil {
-		return 0, nil, fmt.Errorf("bad hunk format")
+		return 0, nil, fmt.Errorf("bad hunk format: new start line is not a number '%s'", matches[4])
 	}
 
 	if matches[5] == "" {
@@ -238,7 +238,7 @@ func parseHunk(s string) (int, *hunk, error) {
 	} else {
 		h.NewLines, err = strconv.Atoi(matches[5])
 		if err != nil {
-			return 0, nil, fmt.Errorf("bad hunk format")
+			return 0, nil, fmt.Errorf("bad hunk format: new lines is not a number '%s'", matches[5])
 		}
 	}
 
