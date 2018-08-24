@@ -23,7 +23,7 @@ func main() {
 	cmdtest.ResetDB()
 
 	ctx, stop := cmdtest.StoppableCtx()
-	cmdtest.StartDummy(ctx)
+	cmdtest.StartDummy(ctx, "--files")
 	r, w := cmdtest.StartServe(ctx, "--provider", "json", "dummy-repo-url")
 
 	// make sure server started correctly
@@ -59,7 +59,6 @@ func main() {
 		successPushJSON := `{"event":"push", "internal_id": "1", "commit_revision":{"base":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"4eebef102d7979570aadf69ff54ae1ffcca7ce00"},"head":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"d304499cb2a9cad3ea260f06ad59c1658db4763d"}}}`
 		sendEvent(w, successPushJSON)
 		grepTrue(r, "processing push")
-		grepTrue(r, "comments can belong only to review event but 1 is given")
 		grepTrue(r, `status=success`)
 	})
 
@@ -68,8 +67,8 @@ func main() {
 	cmdtest.ResetDB()
 
 	ctx, stop = cmdtest.StoppableCtx()
-	cmdtest.StartDummy(ctx)
-	cmdtest.StartDummy(ctx, "--analyzer", "ipv4://localhost:10303")
+	cmdtest.StartDummy(ctx, "--files")
+	cmdtest.StartDummy(ctx, "--files", "--analyzer", "ipv4://localhost:10303")
 	r, w = cmdtest.StartServe(ctx, "--provider", "json", "-c", "fixtures/double_dummy_config.yml", "dummy-repo-url")
 
 	grepTrue(r, "Starting watcher")
