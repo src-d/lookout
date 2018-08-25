@@ -64,13 +64,13 @@ func (c *EventCommand) resolveRefs() (*lookout.ReferencePointer, *lookout.Refere
 
 	fromRef := lookout.ReferencePointer{
 		InternalRepositoryURL: "file://" + fullGitPath,
-		ReferenceName:         plumbing.ReferenceName(c.RevFrom),
+		ReferenceName:         plumbing.HEAD,
 		Hash:                  baseHash,
 	}
 
 	toRef := lookout.ReferencePointer{
 		InternalRepositoryURL: "file://" + fullGitPath,
-		ReferenceName:         plumbing.ReferenceName(c.RevTo),
+		ReferenceName:         plumbing.HEAD,
 		Hash:                  headHash,
 	}
 

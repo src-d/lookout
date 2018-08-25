@@ -30,11 +30,13 @@ func Example() {
 		&lookout.ChangesRequest{
 			Base: &lookout.ReferencePointer{
 				InternalRepositoryURL: "file:///myrepo",
-				Hash: "af2d6a6954d532f8ffb47615169c8fdf9d383a1a",
+				ReferenceName:         "notUsedInTestsButValidated",
+				Hash:                  "af2d6a6954d532f8ffb47615169c8fdf9d383a1a",
 			},
 			Head: &lookout.ReferencePointer{
 				InternalRepositoryURL: "file:///myrepo",
-				Hash: "6ecf0ef2c2dffb796033e5a02219af86ec6584e5",
+				ReferenceName:         "notUsedInTestsButValidated",
+				Hash:                  "6ecf0ef2c2dffb796033e5a02219af86ec6584e5",
 			},
 		})
 	if err != nil {
