@@ -36,7 +36,7 @@ func (a *Analyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent
 	for changes.Next() {
 		change := changes.Change()
 		resp.Comments = append(resp.Comments, a.lineIncrease(change)...)
-		resp.Comments = append(resp.Comments, a.maxLineWidth(change.Head)...)
+		resp.Comments = append(resp.Comments, a.maxLineLen(change.Head)...)
 		if a.RequestUAST {
 			resp.Comments = append(resp.Comments, a.hasUAST(change.Head)...)
 			resp.Comments = append(resp.Comments, a.language(change.Head)...)
@@ -68,7 +68,7 @@ func (a *Analyzer) NotifyPushEvent(ctx context.Context, e *lookout.PushEvent) (*
 
 	for files.Next() {
 		file := files.File()
-		resp.Comments = append(resp.Comments, a.maxLineWidth(file)...)
+		resp.Comments = append(resp.Comments, a.maxLineLen(file)...)
 		if a.RequestUAST {
 			resp.Comments = append(resp.Comments, a.hasUAST(file)...)
 			resp.Comments = append(resp.Comments, a.language(file)...)
@@ -99,19 +99,21 @@ func (a *Analyzer) lineIncrease(ch *lookout.Change) []*lookout.Comment {
 	}}
 }
 
-func (a *Analyzer) maxLineWidth(file *lookout.File) []*lookout.Comment {
-	if file == nil {
+const maxLineLength = 120
+
+func (a *Analyzer) maxLineLen(file *lookout.File) []*lookout.Comment {
+	if file == nil || a.isBinary(file) {
 		return nil
 	}
 
 	lines := bytes.Split(file.Content, []byte("\n"))
 	var comments []*lookout.Comment
 	for i, line := range lines {
-		if len(line) > 80 {
+		if len(line) > maxLineLength {
 			comments = append(comments, &lookout.Comment{
 				File: file.Path,
 				Line: int32(i + 1),
-				Text: "This line exceeded 80 bytes.",
+				Text: fmt.Sprintf("This line exceeded %d bytes.", maxLineLength),
 			})
 		}
 	}
