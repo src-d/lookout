@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const dummyConfigFile = "../../fixtures/dummy_config.yml"
+
 type DummyIntegrationSuite struct {
 	IntegrationSuite
 }
@@ -20,7 +22,7 @@ func (suite *DummyIntegrationSuite) SetupTest() {
 	suite.StoppableCtx()
 	suite.StartDummy("--files")
 	suite.r, suite.w = suite.StartServe("--provider", "json",
-		"-c", "../../fixtures/dummy_config.yml", "dummy-repo-url")
+		"-c", dummyConfigFile, "dummy-repo-url")
 
 	// make sure server started correctly
 	cmdtest.GrepTrue(suite.r, "Starting watcher")
@@ -35,7 +37,7 @@ const successJSON = `{"event":"review", "internal_id": "1", "number": 1, "commit
 func (suite *DummyIntegrationSuite) TestSuccessReview() {
 	suite.sendEvent(successJSON)
 	cmdtest.GrepTrue(suite.r, "processing pull request")
-	cmdtest.GrepTrue(suite.r, `{"analyzer-name":"Dummy","file":"cmd/lookout/push.go","line":13,"text":"This line exceeded 80 bytes."}`)
+	cmdtest.GrepTrue(suite.r, `{"analyzer-name":"Dummy","file":"cmd/lookout/serve.go","line":33,"text":"This line exceeded`)
 	cmdtest.GrepTrue(suite.r, `status=success`)
 }
 

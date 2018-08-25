@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/src-d/lookout"
 
@@ -106,14 +107,14 @@ func (a *Analyzer) maxLineLen(file *lookout.File) []*lookout.Comment {
 		return nil
 	}
 
-	lines := bytes.Split(file.Content, []byte("\n"))
+	lines := strings.Split(string(file.Content), "\n")
 	var comments []*lookout.Comment
 	for i, line := range lines {
 		if len(line) > maxLineLength {
 			comments = append(comments, &lookout.Comment{
 				File: file.Path,
 				Line: int32(i + 1),
-				Text: fmt.Sprintf("This line exceeded %d bytes.", maxLineLength),
+				Text: fmt.Sprintf("This line exceeded %d chars.", maxLineLength),
 			})
 		}
 	}

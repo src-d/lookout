@@ -3,12 +3,15 @@
 package server_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/src-d/lookout/util/cmdtest"
 
 	"github.com/stretchr/testify/suite"
 )
+
+const dubleDummyConfigFile = "../../fixtures/double_dummy_config.yml"
 
 type MultiDummyIntegrationSuite struct {
 	IntegrationSuite
@@ -21,7 +24,7 @@ func (suite *MultiDummyIntegrationSuite) SetupTest() {
 	suite.StartDummy("--files")
 	suite.StartDummy("--files", "--analyzer", "ipv4://localhost:10303")
 	suite.r, suite.w = suite.StartServe("--provider", "json",
-		"-c", "../../fixtures/double_dummy_config.yml", "dummy-repo-url")
+		"-c", dubleDummyConfigFile, "dummy-repo-url")
 
 	// make sure server started correctly
 	cmdtest.GrepTrue(suite.r, "Starting watcher")
@@ -42,13 +45,15 @@ func (suite *MultiDummyIntegrationSuite) TestSuccessReview() {
 
 	suite.Require().Contains(
 		st,
-		`{"analyzer-name":"Dummy1","file":"cmd/lookout/push.go","line":13,"text":"This line exceeded 80 bytes."}`,
-		"no comments from the first analyzer")
+		`{"analyzer-name":"Dummy1","file":"cmd/lookout/serve.go","line":33,"text":"This line exceeded`,
+		fmt.Sprintf("no comments from the first analyzer from %s in '%s'", dubleDummyConfigFile, buf),
+	)
 
 	suite.Require().Contains(
 		st,
-		`{"analyzer-name":"Dummy2","file":"cmd/lookout/push.go","line":13,"text":"This line exceeded 80 bytes."}`,
-		"no comments from the second analyzer")
+		`{"analyzer-name":"Dummy2","file":"cmd/lookout/serve.go","line":33,"text":"This line exceeded`,
+		fmt.Sprintf("no comments from the second analyzer from %s in '%s'", dubleDummyConfigFile, buf),
+	)
 }
 
 func TestMultiDummyIntegrationSuite(t *testing.T) {
