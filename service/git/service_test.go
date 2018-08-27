@@ -53,7 +53,8 @@ func (s *ServiceSuite) TestTreeChanges() {
 	resp, err := dr.GetChanges(context.TODO(), &lookout.ChangesRequest{
 		Head: &lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///myrepo",
-			Hash: s.Basic.Head.String(),
+			ReferenceName:         "notUsedInTestsButValidated",
+			Hash:                  s.Basic.Head.String(),
 		},
 	})
 
@@ -73,11 +74,13 @@ func (s *ServiceSuite) TestTreeChangesDeleteFile() {
 	resp, err := dr.GetChanges(context.TODO(), &lookout.ChangesRequest{
 		Base: &lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///myrepo",
-			Hash: "2275fa7d0c75d20103f90b0e1616937d5a9fc5e6",
+			ReferenceName:         "notUsedInTestsButValidated",
+			Hash:                  "2275fa7d0c75d20103f90b0e1616937d5a9fc5e6",
 		},
 		Head: &lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///myrepo",
-			Hash: "e1d8866ffa78fa16d2f39b0ba5344a7269ee5371",
+			ReferenceName:         "notUsedInTestsButValidated",
+			Hash:                  "e1d8866ffa78fa16d2f39b0ba5344a7269ee5371",
 		},
 		WantContents:    true,
 		ExcludeVendored: true,
@@ -109,11 +112,13 @@ func (s *ServiceSuite) TestDiffTree() {
 	resp, err := dr.GetChanges(context.TODO(), &lookout.ChangesRequest{
 		Base: &lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///myrepo",
-			Hash: "918c48b83bd081e863dbe1b80f8998f058cd8294",
+			ReferenceName:         "notUsedInTestsButValidated",
+			Hash:                  "918c48b83bd081e863dbe1b80f8998f058cd8294",
 		},
 		Head: &lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///myrepo",
-			Hash: s.Basic.Head.String(),
+			ReferenceName:         "notUsedInTestsButValidated",
+			Hash:                  s.Basic.Head.String(),
 		},
 	})
 	require.NoError(err)
@@ -132,23 +137,57 @@ func (s *ServiceSuite) TestErrorNoRepository() {
 	resp, err := dr.GetChanges(context.TODO(), &lookout.ChangesRequest{
 		Head: &lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///myrepo",
-			Hash: s.Basic.Head.String(),
+			ReferenceName:         "notUsedInTestsButValidated",
+			Hash:                  s.Basic.Head.String(),
 		},
 	})
 	require.Error(err)
 	require.Nil(resp)
 }
 
-func (s *ServiceSuite) TestErrorBadTop() {
+func (s *ServiceSuite) TestError_BadTop() {
 	require := s.Require()
 
 	dr := NewService(&StorerCommitLoader{s.Storer})
 	resp, err := dr.GetChanges(context.TODO(), &lookout.ChangesRequest{
 		Head: &lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///myrepo",
-			Hash: "979a482e63de12d39675ff741c5a0cf4f068c109",
+			ReferenceName:         "notUsedInTestsButValidated",
+			Hash:                  "979a482e63de12d39675ff741c5a0cf4f068c109",
 		},
 	})
 	require.Error(err)
 	require.Nil(resp)
+	require.False(ErrRefValidation.Is(err))
+}
+
+func (ss *ServiceSuite) TestError_EmptyValsInReferencePointer() {
+	require := ss.Require()
+
+	srv := NewService(&StorerCommitLoader{ss.Storer})
+	_, err := srv.GetChanges(context.TODO(), &lookout.ChangesRequest{
+		Head: &lookout.ReferencePointer{},
+	})
+	require.Error(err)
+	require.True(ErrRefValidation.Is(err))
+
+	_, err = srv.GetChanges(context.TODO(), &lookout.ChangesRequest{
+		Head: &lookout.ReferencePointer{
+			InternalRepositoryURL: "sdfsd",
+			ReferenceName:         "",
+			Hash:                  "sdfs",
+		},
+	})
+	require.Error(err)
+	require.True(ErrRefValidation.Is(err))
+
+	resp, err := srv.GetFiles(context.TODO(), &lookout.FilesRequest{
+		Revision: &lookout.ReferencePointer{
+			InternalRepositoryURL: "file:///myrepo",
+			ReferenceName:         "",
+			Hash:                  ss.Basic.Head.String(),
+		},
+	})
+	require.NoError(err)
+	require.NotNil(resp)
 }

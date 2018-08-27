@@ -14,6 +14,8 @@ import (
 	log "gopkg.in/src-d/go-log.v1"
 )
 
+const defaultRemoteName = "origin"
+
 // Syncer syncs the local copy of git repository for a given CommitRevision.
 type Syncer struct {
 	m sync.Map // holds mutexes per repository
@@ -48,7 +50,13 @@ func (s *Syncer) Sync(ctx context.Context,
 
 	var refspecs []config.RefSpec
 	for _, rp := range rps {
-		rs := config.RefSpec(fmt.Sprintf("%s:%[1]s", rp.ReferenceName))
+		var rs config.RefSpec
+		if "" == rp.ReferenceName {
+			rs = config.RefSpec(fmt.Sprintf(config.DefaultFetchRefSpec, defaultRemoteName))
+			log.Warningf("empty ReferenceName given in %v, using default '%s' instead", rp, rs)
+		} else {
+			rs = config.RefSpec(fmt.Sprintf("%s:%[1]s", rp.ReferenceName))
+		}
 		refspecs = append(refspecs, rs)
 	}
 
@@ -68,7 +76,7 @@ func (s *Syncer) fetch(ctx context.Context, repoURL string, r *git.Repository, r
 	}()
 
 	opts := &git.FetchOptions{
-		RemoteName: "origin",
+		RemoteName: defaultRemoteName,
 		RefSpecs:   refspecs,
 		Force:      true,
 	}

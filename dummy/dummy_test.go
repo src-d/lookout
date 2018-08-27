@@ -111,11 +111,13 @@ func (s *DummySuite) Test() {
 		CommitRevision: lookout.CommitRevision{
 			Base: lookout.ReferencePointer{
 				InternalRepositoryURL: "file:///fixture/basic",
-				Hash: "918c48b83bd081e863dbe1b80f8998f058cd8294",
+				ReferenceName:         "notUsedInTestsButValidated",
+				Hash:                  "918c48b83bd081e863dbe1b80f8998f058cd8294",
 			},
 			Head: lookout.ReferencePointer{
 				InternalRepositoryURL: "file:///fixture/basic",
-				Hash: s.Basic.Head.String(),
+				ReferenceName:         "notUsedInTestsButValidated",
+				Hash:                  s.Basic.Head.String(),
 			},
 		},
 	})
@@ -126,11 +128,13 @@ func (s *DummySuite) Test() {
 		CommitRevision: lookout.CommitRevision{
 			Base: lookout.ReferencePointer{
 				InternalRepositoryURL: "file:///fixture/basic",
-				Hash: "918c48b83bd081e863dbe1b80f8998f058cd8294",
+				ReferenceName:         "notUsedInTestsButValidated",
+				Hash:                  "918c48b83bd081e863dbe1b80f8998f058cd8294",
 			},
 			Head: lookout.ReferencePointer{
 				InternalRepositoryURL: "file:///fixture/basic",
-				Hash: s.Basic.Head.String(),
+				ReferenceName:         "notUsedInTestsButValidated",
+				Hash:                  s.Basic.Head.String(),
 			},
 		},
 	})
