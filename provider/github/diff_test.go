@@ -140,6 +140,41 @@ func TestParseHunks(t *testing.T) {
 	}}, hunks)
 }
 
+const largeHunk = "@@ -6,20 +6,21 @@ import (\n \t\"database/sql\"\n \t\"fmt\"\n \t\"io\"\n-\t\"io/ioutil\"\n \t\"os\"\n \t\"os/exec\"\n+\t\"strings\"\n \t\"time\"\n \n \t_ \"github.com/lib/pq\"\n+\t\"github.com/stretchr/testify/require\"\n )\n \n // CmdTimeout defines timeout for a command\n var CmdTimeout = time.Minute\n \n // default path to binaries\n-var dummyBin = \"build/bin/dummy\"\n-var lookoutBin = \"build/bin/lookout\"\n+var dummyBin = \"../../build/bin/dummy\"\n+var lookoutBin = \"../../build/bin/lookout\"\n \n // function to stop running commands\n // redefined in StoppableCtx\n@@ -50,7 +51,7 @@ func StoppableCtx() (context.Context, func()) {\n }\n \n // StartDummy starts dummy analyzer with context and optional arguments\n-func StartDummy(ctx context.Context, args ...string) io.Reader {\n+func StartDummy(ctx context.Context, require *require.Assertions, args ...string) io.Reader {\n \tr, outputWriter := io.Pipe()\n \tbuf := \u0026bytes.Buffer{}\n \ttee := io.TeeReader(r, buf)\n@@ -61,31 +62,25 @@ func StartDummy(ctx context.Context, args ...string) io.Reader {\n \tcmd.Stdout = outputWriter\n \tcmd.Stderr = outputWriter\n \terr := cmd.Start()\n-\tif err != nil {\n-\t\tioutil.ReadAll(tee)\n-\t\tfmt.Println(\"can't start analyzer:\")\n-\t\tfmt.Println(err)\n-\t\tfmt.Printf(\"output:\\n %s\", buf.String())\n-\t\tos.Exit(1)\n-\t} else {\n-\t\tgo func() {\n-\t\t\tif err := cmd.Wait(); err != nil {\n-\t\t\t\t// don't print error if analyzer was killed by cancel\n-\t\t\t\tif ctx.Err() != context.Canceled {\n-\t\t\t\t\tioutil.ReadAll(tee)\n-\t\t\t\t\tfmt.Println(\"analyzer exited with error:\", err)\n-\t\t\t\t\tfmt.Printf(\"output:\\n%s\", buf.String())\n-\t\t\t\t\tfailExit()\n-\t\t\t\t}\n+\trequire.NoError(err, \"can't start analyzer\")\n+\n+\tgo func() {\n+\t\tif err := cmd.Wait(); err != nil {\n+\t\t\t// don't print error if analyzer was killed by cancel\n+\t\t\tif ctx.Err() != context.Canceled {\n+\t\t\t\tfmt.Println(\"analyzer exited with error:\", err)\n+\t\t\t\tfmt.Printf(\"output:\\n%s\", buf.String())\n+\t\t\t\t// T.Fail cannot be called from a goroutine\n+\t\t\t\tfailExit()\n \t\t\t}\n-\t\t}()\n-\t}\n+\t\t}\n+\t}()\n \n \treturn tee\n }\n \n // StartServe starts lookout server with context and optional arguments\n-func StartServe(ctx context.Context, args ...string) (io.Reader, io.WriteCloser) {\n+func StartServe(ctx context.Context, require *require.Assertions, args ...string) (io.Reader, io.WriteCloser) {\n \tr, outputWriter := io.Pipe()\n \tbuf := \u0026bytes.Buffer{}\n \ttee := io.TeeReader(r, buf)\n@@ -97,85 +92,59 @@ func StartServe(ctx context.Context, args ...string) (io.Reader, io.WriteCloser)\n \tcmd.Stderr = outputWriter\n \n \tw, err := cmd.StdinPipe()\n-\tif err != nil {\n-\t\tfmt.Println(\"can't start server:\")\n-\t\tfmt.Println(err)\n-\t\tos.Exit(1)\n-\t}\n+\trequire.NoError(err, \"can't start server\")\n \n \terr = cmd.Start()\n-\tif err != nil {\n-\t\tioutil.ReadAll(tee)\n-\t\tfmt.Println(\"can't start server:\")\n-\t\tfmt.Println(err)\n-\t\tfmt.Printf(\"output:\\n %s\", buf.String())\n-\t\tos.Exit(1)\n-\t} else {\n-\t\tgo func() {\n-\t\t\tif err := cmd.Wait(); err != nil {\n-\t\t\t\t// don't print error if analyzer was killed by cancel\n-\t\t\t\tif ctx.Err() != context.Canceled {\n-\t\t\t\t\tioutil.ReadAll(tee)\n-\t\t\t\t\tfmt.Println(\"server exited with error:\", err)\n-\t\t\t\t\tfmt.Printf(\"output:\\n%s\", buf.String())\n-\t\t\t\t\tfailExit()\n-\t\t\t\t}\n+\trequire.NoError(err, \"can't start server\")\n+\n+\tgo func() {\n+\t\tif err := cmd.Wait(); err != nil {\n+\t\t\t// don't print error if analyzer was killed by cancel\n+\t\t\tif ctx.Err() != context.Canceled {\n+\t\t\t\tfmt.Println(\"server exited with error:\", err)\n+\t\t\t\tfmt.Printf(\"output:\\n%s\", buf.String())\n+\t\t\t\t// T.Fail cannot be called from a goroutine\n+\t\t\t\tfailExit()\n \t\t\t}\n-\t\t}()\n-\t}\n+\t\t}\n+\t}()\n \n \treturn tee, w\n }\n \n // RunCli runs lookout subcommand (not a server)\n-func RunCli(ctx context.Context, cmd string, args ...string) io.Reader {\n+func RunCli(ctx context.Context, require *require.Assertions, cmd string, args ...string) io.Reader {\n \targs = append([]string{cmd}, args...)\n \n \tvar out bytes.Buffer\n-\treviewCmd := exec.CommandContext(ctx, lookoutBin, args...)\n-\treviewCmd.Stdout = \u0026out\n-\treviewCmd.Stderr = \u0026out\n-\n-\terr := reviewCmd.Run()\n-\tif err != nil {\n-\t\tfmt.Println(\"review command returned error\")\n-\t\tfmt.Println(err)\n-\t\tfmt.Printf(\"output:\\n %s\", out.String())\n-\t\tfailExit()\n-\t}\n+\tcliCmd := exec.CommandContext(ctx, lookoutBin, args...)\n+\tcliCmd.Stdout = \u0026out\n+\tcliCmd.Stderr = \u0026out\n+\n+\terr := cliCmd.Run()\n+\trequire.NoErrorf(err,\n+\t\t\"'lookout %s' command returned error. output:\\n%s\",\n+\t\tstrings.Join(args, \" \"), out.String())\n \n \treturn \u0026out\n }\n \n // ResetDB recreates database for the test\n-func ResetDB() {\n+func ResetDB(require *require.Assertions) {\n \tdb, err := sql.Open(\"postgres\", \"postgres://postgres:postgres@localhost:5432/lookout?sslmode=disable\")\n-\tif err != nil {\n-\t\tfmt.Println(\"can't connect to DB:\", err)\n-\t\tos.Exit(1)\n-\t}\n+\trequire.NoError(err, \"can't connect to DB\")\n \n \t_, err = db.Exec(\"DROP SCHEMA public CASCADE;\")\n-\tnoDBErr(err)\n+\trequire.NoError(err, \"can't execute query\")\n \t_, err = db.Exec(\"CREATE SCHEMA public;\")\n-\tnoDBErr(err)\n+\trequire.NoError(err, \"can't execute query\")\n \t_, err = db.Exec(\"GRANT ALL ON SCHEMA public TO postgres;\")\n-\tnoDBErr(err)\n+\trequire.NoError(err, \"can't execute query\")\n \t_, err = db.Exec(\"GRANT ALL ON SCHEMA public TO public;\")\n-\tnoDBErr(err)\n+\trequire.NoError(err, \"can't execute query\")\n \n \terr = exec.Command(lookoutBin, \"migrate\").Run()\n-\tif err != nil {\n-\t\tfmt.Println(\"can't migrate DB:\", err)\n-\t\tos.Exit(1)\n-\t}\n-}\n-\n-func noDBErr(err error) {\n-\tif err != nil {\n-\t\tfmt.Println(\"can't execute query\", err)\n-\t\tos.Exit(1)\n-\t}\n+\trequire.NoError(err, \"can't migrate DB\")\n }\n \n func failExit() {"
+
+func TestParseHunks_issue_165(t *testing.T) {
+	require := require.New(t)
+
+	hunks, err := parseHunks(largeHunk)
+	require.NoError(err)
+	for _, hunk := range hunks {
+		hunk.Chunks = nil
+	}
+
+	require.Equal([]*hunk{&hunk{
+		OldStartLine: 6,
+		OldLines:     20,
+		NewStartLine: 6,
+		NewLines:     21,
+	}, &hunk{
+		OldStartLine: 50,
+		OldLines:     7,
+		NewStartLine: 51,
+		NewLines:     7,
+	}, &hunk{
+		OldStartLine: 61,
+		OldLines:     31,
+		NewStartLine: 62,
+		NewLines:     25,
+	}, &hunk{
+		OldStartLine: 97,
+		OldLines:     85,
+		NewStartLine: 92,
+		NewLines:     59,
+	}}, hunks)
+
+}
+
 func TestConvertRanges(t *testing.T) {
 	require := require.New(t)
 

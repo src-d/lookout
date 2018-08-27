@@ -204,47 +204,6 @@ func parseHunkHeader(line string) (*hunk, error) {
 	return h, nil
 }
 
-func parseHunk(s string) (int, *hunk, error) {
-	var (
-		err error
-		h   = &hunk{}
-	)
-	matches := hunkPattern.FindStringSubmatch(s)
-	if len(matches) == 0 {
-		return 0, nil, fmt.Errorf("bad hunk format")
-	}
-
-	h.OldStartLine, err = strconv.Atoi(matches[2])
-	if err != nil {
-		return 0, nil, fmt.Errorf("bad hunk format")
-	}
-
-	if matches[3] == "" {
-		h.OldLines = 1
-	} else {
-		h.OldLines, err = strconv.Atoi(matches[3])
-		if err != nil {
-			return 0, nil, fmt.Errorf("bad hunk format")
-		}
-	}
-
-	h.NewStartLine, err = strconv.Atoi(matches[4])
-	if err != nil {
-		return 0, nil, fmt.Errorf("bad hunk format")
-	}
-
-	if matches[5] == "" {
-		h.NewLines = 1
-	} else {
-		h.NewLines, err = strconv.Atoi(matches[5])
-		if err != nil {
-			return 0, nil, fmt.Errorf("bad hunk format")
-		}
-	}
-
-	return len(matches[1]), h, nil
-}
-
 func convertRanges(hunks []*hunk) []*posRange {
 	if len(hunks) == 0 {
 		return nil
