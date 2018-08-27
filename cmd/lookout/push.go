@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -61,6 +63,11 @@ func (c *PushCommand) Execute(args []string) error {
 	for {
 		commit, err := log.Next()
 		if err != nil {
+			if err == io.EOF {
+				return fmt.Errorf("revision %s is not a parent of %s",
+					fromRef.Hash, toRef.Hash)
+			}
+
 			return err
 		}
 		if commit.Hash.String() == fromRef.Hash {
