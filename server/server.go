@@ -245,7 +245,8 @@ func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.
 
 	var wg sync.WaitGroup
 	for name, a := range s.analyzers {
-		if a.Config.Disabled {
+		if a.Config.Disabled || conf[name].Disabled {
+			ctxlog.Get(ctx).Infof("analyzer %s disabled by local .lookout.yml", name)
 			continue
 		}
 
