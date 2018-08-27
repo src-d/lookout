@@ -63,18 +63,3 @@ pipeline:
     when:
       branch: [master]
       event: [push]
-
-  # Push to DockerHub when a new tag is created
-
-  build_release:
-    <<: *build
-    when:
-      event: [tag]
-
-  docker_image_release:
-    <<: *docker_image
-    tags:
-      - '${DRONE_TAG}'
-      - 'latest'
-    when:
-      event: [tag]
