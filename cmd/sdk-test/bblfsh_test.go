@@ -3,7 +3,6 @@
 package sdk_test
 
 import (
-	"context"
 	"io"
 	"testing"
 
@@ -13,34 +12,32 @@ import (
 )
 
 type BblfshIntegrationSuite struct {
-	suite.Suite
-	ctx  context.Context
-	stop func()
+	cmdtest.IntegrationSuite
 }
 
 func (suite *BblfshIntegrationSuite) SetupSuite() {
-	suite.ctx, suite.stop = cmdtest.StoppableCtx()
-	cmdtest.StartDummy(suite.ctx, "--uast", "--files")
+	suite.StoppableCtx()
+	suite.StartDummy("--uast", "--files")
 }
 
 func (suite *BblfshIntegrationSuite) TearDownSuite() {
-	suite.stop()
+	suite.Stop()
 }
 
 func (suite *BblfshIntegrationSuite) RunReview() io.Reader {
-	return cmdtest.RunCli(suite.ctx, "review", "ipv4://localhost:10302",
+	return suite.RunCli("review", "ipv4://localhost:10302",
 		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
 		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
 }
 
 func (suite *BblfshIntegrationSuite) RunPush() io.Reader {
-	return cmdtest.RunCli(suite.ctx, "push", "ipv4://localhost:10302",
+	return suite.RunCli("push", "ipv4://localhost:10302",
 		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
 		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
 }
 
 func (suite *BblfshIntegrationSuite) TestReviewNoBblfshError() {
-	r := cmdtest.RunCli(suite.ctx, "review", "ipv4://localhost:10302",
+	r := suite.RunCli("review", "ipv4://localhost:10302",
 		"--bblfshd=ipv4://localhost:0000",
 		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
 		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
@@ -63,7 +60,7 @@ func (suite *BblfshIntegrationSuite) TestReviewLanguage() {
 }
 
 func (suite *BblfshIntegrationSuite) TestPushNoBblfshError() {
-	r := cmdtest.RunCli(suite.ctx, "push", "ipv4://localhost:10302",
+	r := suite.RunCli("push", "ipv4://localhost:10302",
 		"--bblfshd=ipv4://localhost:0000",
 		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
 		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")

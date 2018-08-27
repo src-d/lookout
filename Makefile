@@ -95,7 +95,9 @@ test-sdk-short: clean-sdk build-sdk
 # Integration test for lookout serve
 .PHONY: test-json
 test-json: clean-sdk build-sdk
-	DUMMY_BIN=$(PWD)/$(DUMMY_BIN) LOOKOUT_BIN=$(PWD)/$(LOOKOUT_BIN) $(GOCMD) run cmd/server-test/main.go
+	DUMMY_BIN=$(PWD)/$(DUMMY_BIN) \
+	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_BIN) \
+	$(GOTEST_INTEGRATION) github.com/src-d/lookout/cmd/server-test
 
 # Build sdk client and dummy analyzer
 .PHONY: build-sdk

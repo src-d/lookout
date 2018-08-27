@@ -3,7 +3,6 @@
 package sdk_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/src-d/lookout/util/cmdtest"
@@ -11,47 +10,45 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type IntegrationSuite struct {
-	suite.Suite
-	ctx  context.Context
-	stop func()
+type SDKDummyTestSuite struct {
+	cmdtest.IntegrationSuite
 }
 
-func (suite *IntegrationSuite) SetupTest() {
-	suite.ctx, suite.stop = cmdtest.StoppableCtx()
+func (suite *SDKDummyTestSuite) SetupTest() {
+	suite.StoppableCtx()
 }
 
-func (suite *IntegrationSuite) TearDownTest() {
-	suite.stop()
+func (suite *SDKDummyTestSuite) TearDownTest() {
+	suite.Stop()
 }
 
-func (suite *IntegrationSuite) TestReview() {
-	cmdtest.StartDummy(suite.ctx, "--files")
+func (suite *SDKDummyTestSuite) TestReview() {
+	suite.StartDummy("--files")
 
-	r := cmdtest.RunCli(suite.ctx, "review", "ipv4://localhost:10302",
+	r := suite.RunCli("review", "ipv4://localhost:10302",
 		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
 		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
 	cmdtest.GrepTrue(r, "posting analysis")
 }
 
-func (suite *IntegrationSuite) TestPush() {
-	cmdtest.StartDummy(suite.ctx, "--files")
+func (suite *SDKDummyTestSuite) TestPush() {
+	suite.StartDummy("--files")
 
-	r := cmdtest.RunCli(suite.ctx, "push", "ipv4://localhost:10302",
+	r := suite.RunCli("push", "ipv4://localhost:10302",
 		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
 		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
 	cmdtest.GrepTrue(r, "posting analysis")
 }
 
-func (suite *IntegrationSuite) TestPushNoComments() {
-	cmdtest.StartDummy(suite.ctx)
+func (suite *SDKDummyTestSuite) TestPushNoComments() {
+	suite.StartDummy()
 
-	r := cmdtest.RunCli(suite.ctx, "push", "ipv4://localhost:10302",
+	r := suite.RunCli("push", "ipv4://localhost:10302",
 		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
 		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
 	cmdtest.GrepTrue(r, "no comments were produced")
 }
 
-func TestIntegrationSuite(t *testing.T) {
-	suite.Run(t, new(IntegrationSuite))
+func TestSDKDummyTestSuite(t *testing.T) {
+	suite.Run(t, new(SDKDummyTestSuite))
 }
