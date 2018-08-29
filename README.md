@@ -9,7 +9,7 @@ If you are developing an Analyzer, please check [SDK documentation](./sdk/README
 It includes a curl-style binary that allows to trigger Analyzers directly, without launching a full lookout server.
 
 # Installation
-
+ 
 `go get github.com/src-d/lookout`
 
 # Dependencies
