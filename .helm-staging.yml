@@ -21,3 +21,5 @@ providers:
 analyzers:
   - name: style-analyzer
     addr: ipv4://lookout-style-analyzer:2000
+  - name: gometalint-analyzer
+    addr: ipv4://lookout-gometalint-analyzer:10303
