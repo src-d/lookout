@@ -23,12 +23,10 @@ import (
 
 type EventCommand struct {
 	cli.CommonOptions
-	DataServer string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL to bind the data server to"`
-	Bblfshd    string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
-	GitDir     string `long:"git-dir" default:"." env:"GIT_DIR" description:"path to the .git directory to analyze"`
-	RevFrom    string `long:"from" default:"HEAD^" description:"name of the base revision for event"`
-	RevTo      string `long:"to" default:"HEAD" description:"name of the head revision for event"`
-	Args       struct {
+	GitDir  string `long:"git-dir" default:"." env:"GIT_DIR" description:"path to the .git directory to analyze"`
+	RevFrom string `long:"from" default:"HEAD^" description:"name of the base revision for event"`
+	RevTo   string `long:"to" default:"HEAD" description:"name of the head revision for event"`
+	Args    struct {
 		Analyzer string `positional-arg-name:"analyzer" description:"gRPC URL of the analyzer to use"`
 	} `positional-args:"yes" required:"yes"`
 
@@ -77,42 +75,34 @@ func (c *EventCommand) resolveRefs() (*lookout.ReferencePointer, *lookout.Refere
 	return &fromRef, &toRef, nil
 }
 
-type dataService interface {
-	lookout.ChangeGetter
-	lookout.FileGetter
-}
-
 func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, error) {
 	var err error
 
-	var dataService dataService
-
 	loader := git.NewStorerCommitLoader(c.repo.Storer)
-	dataService = git.NewService(loader)
-	dataService = enry.NewService(dataService, dataService)
+	gitService := git.NewService(loader)
+	enryService := enry.NewService(gitService, gitService)
 
-	grpcAddr, err := grpchelper.ToGoGrpcAddress(c.Bblfshd)
+	var bblfshService bblfsh.Svc
+	c.Bblfshd, err = grpchelper.ToGoGrpcAddress(c.Bblfshd)
 	if err != nil {
 		return nil, fmt.Errorf("Can't resolve bblfsh address '%s': %s", c.Bblfshd, err)
 	}
+
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	bblfshConn, err := grpchelper.DialContext(timeoutCtx, grpcAddr, grpc.WithInsecure(), grpc.WithBlock())
+	bblfshConn, err := grpchelper.DialContext(timeoutCtx, c.Bblfshd, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Warningf("bblfshd instance could not be found at %s. No UASTs will be available to analyzers. Error: %s", c.Bblfshd, err)
-		dataService = &noBblfshService{
-			changes: dataService,
-			files:   dataService,
-		}
+			bblfshService = bblfsh.NewNoReplyService(enryService, enryService, bblfshConn)
 	} else {
-		dataService = bblfsh.NewService(dataService, dataService, bblfshConn)
+		bblfshService = bblfsh.NewService(enryService, enryService, bblfshConn)
 	}
 
-	dataService = purge.NewService(dataService, dataService)
+	purgeService := purge.NewService(bblfshService, bblfshService)
 
 	srv := &lookout.DataServerHandler{
-		ChangeGetter: dataService,
-		FileGetter:   dataService,
+		ChangeGetter: purgeService,
+		FileGetter:   purgeService,
 	}
 
 	return srv, nil
@@ -168,30 +158,4 @@ func getCommitHashByRev(r *gogit.Repository, revName string) (string, error) {
 	}
 
 	return h.String(), nil
-}
-
-type noBblfshService struct {
-	changes lookout.ChangeGetter
-	files   lookout.FileGetter
-}
-
-var _ lookout.ChangeGetter = &noBblfshService{}
-var _ lookout.FileGetter = &noBblfshService{}
-
-var errNoBblfsh = errors.New("Data server was started without bbflsh. WantUAST isn't allowed")
-
-func (s *noBblfshService) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (lookout.ChangeScanner, error) {
-	if req.WantUAST {
-		return nil, errNoBblfsh
-	}
-
-	return s.changes.GetChanges(ctx, req)
-}
-
-func (s *noBblfshService) GetFiles(ctx context.Context, req *lookout.FilesRequest) (lookout.FileScanner, error) {
-	if req.WantUAST {
-		return nil, errNoBblfsh
-	}
-
-	return s.files.GetFiles(ctx, req)
 }

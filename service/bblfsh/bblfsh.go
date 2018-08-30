@@ -2,6 +2,7 @@ package bblfsh
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/src-d/lookout"
@@ -11,6 +12,11 @@ import (
 	"gopkg.in/bblfsh/sdk.v1/uast"
 	log "gopkg.in/src-d/go-log.v1"
 )
+
+type Svc interface {
+	GetChanges(ctx context.Context, req *lookout.ChangesRequest) (lookout.ChangeScanner, error)
+	GetFiles(ctx context.Context, req *lookout.FilesRequest) (lookout.FileScanner, error)
+}
 
 // Service implements data service interface which adds UAST to the responses
 type Service struct {
@@ -213,4 +219,34 @@ func (s *FileScanner) File() *lookout.File {
 
 func (s *FileScanner) Close() error {
 	return s.underlying.Close()
+}
+
+func NewNoReplyService(changes lookout.ChangeGetter, files lookout.FileGetter, conn *grpc.ClientConn) Svc {
+	return &NoBblfshService{
+		changes: changes,
+		files:   files,
+	}
+}
+
+type NoBblfshService struct {
+	changes lookout.ChangeGetter
+	files   lookout.FileGetter
+}
+
+var errNoBblfsh = errors.New("Data server was started without bbflsh. WantUAST isn't allowed")
+
+func (s *NoBblfshService) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (lookout.ChangeScanner, error) {
+	if req.WantUAST {
+		return nil, errNoBblfsh
+	}
+
+	return s.changes.GetChanges(ctx, req)
+}
+
+func (s *NoBblfshService) GetFiles(ctx context.Context, req *lookout.FilesRequest) (lookout.FileScanner, error) {
+	if req.WantUAST {
+		return nil, errNoBblfsh
+	}
+
+	return s.files.GetFiles(ctx, req)
 }
