@@ -3,7 +3,7 @@ package main
 import "github.com/src-d/lookout/util/cli"
 
 var (
-	name    = "lookout"
+	name    = "lookoutd"
 	version = "undefined"
 	build   = "undefined"
 )

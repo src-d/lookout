@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gregjones/httpcache/diskcache"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/provider/github"
 	"github.com/src-d/lookout/provider/json"
@@ -24,6 +23,7 @@ import (
 	"github.com/src-d/lookout/util/grpchelper"
 
 	"github.com/golang-migrate/migrate"
+	"github.com/gregjones/httpcache/diskcache"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-billy.v4/osfs"
@@ -188,7 +188,7 @@ func (c *ServeCommand) initProvider(conf Config) error {
 
 func (c *ServeCommand) initPoster(conf Config) (lookout.Poster, error) {
 	if c.DryRun {
-		return &LogPoster{log.DefaultLogger}, nil
+		return &server.LogPoster{log.DefaultLogger}, nil
 	}
 
 	switch c.Provider {
@@ -324,39 +324,4 @@ func (c *ServeCommand) initDB() (*sql.DB, error) {
 	log.Debugf("the DB version is up to date, %v", dbVersion)
 	log.Infof("connection with the DB established")
 	return db, nil
-}
-
-type LogPoster struct {
-	Log log.Logger
-}
-
-func (p *LogPoster) Post(ctx context.Context, e lookout.Event,
-	aCommentsList []lookout.AnalyzerComments) error {
-	for _, aComments := range aCommentsList {
-		for _, c := range aComments.Comments {
-			logger := p.Log.With(log.Fields{
-				"text": c.Text,
-			})
-			if c.File == "" {
-				logger.Infof("global comment")
-				continue
-			}
-
-			logger = logger.With(log.Fields{"file": c.File})
-			if c.Line == 0 {
-				logger.Infof("file comment")
-				continue
-			}
-
-			logger.With(log.Fields{"line": c.Line}).Infof("line comment")
-		}
-	}
-
-	return nil
-}
-
-func (p *LogPoster) Status(ctx context.Context, e lookout.Event,
-	status lookout.AnalysisStatus) error {
-	p.Log.Infof("status: %s", status)
-	return nil
 }
