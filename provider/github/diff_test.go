@@ -434,3 +434,23 @@ func TestConvertLines_issue173(t *testing.T) {
 		}
 	}
 }
+
+func TestConvertLines_issue213(t *testing.T) {
+	// test that a file with no Patch (a rename with no changes) does not
+	// crash, and returns an out of diff error
+	require := require.New(t)
+
+	filename := "cmd/lookout/serve.go"
+
+	cc := &github.CommitsComparison{
+		Files: []github.CommitFile{
+			{
+				Filename: &filename,
+			},
+		},
+	}
+	dl := newDiffLines(cc)
+
+	_, err := dl.ConvertLine(filename, 42)
+	require.EqualError(err, ErrLineOutOfDiff.Message)
+}
