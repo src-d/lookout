@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/util/ctxlog"
 
 	"github.com/google/go-github/github"
 	"gopkg.in/src-d/go-errors.v1"
@@ -18,6 +19,9 @@ var (
 	// ErrEventNotSupported signals that this provider does not support the
 	// given event for a given operation.
 	ErrEventNotSupported = errors.NewKind("event not supported")
+	// errNoComments signals that the PullRequestReviewRequest was not created
+	// because it would not contain any comments
+	errNoComments = errors.NewKind("no comments to post")
 )
 
 const (
@@ -83,6 +87,10 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 
 	dl := newDiffLines(cc)
 	review, err := p.createReviewRequest(aCommentsList, dl)
+	if errNoComments.Is(err) {
+		ctxlog.Get(ctx).Debugf("skipping posting analysis, there are no comments")
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -205,6 +213,10 @@ func (p *Poster) createReviewRequest(
 
 	body := strings.Join(bodyComments, "\n\n")
 	req.Body = &body
+
+	if *req.Body == "" && len(req.Comments) == 0 {
+		return nil, errNoComments.New()
+	}
 
 	return req, nil
 }
