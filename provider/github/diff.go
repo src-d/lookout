@@ -99,6 +99,10 @@ func (d *diffLines) hunks(file string) ([]*hunk, error) {
 		return nil, fmt.Errorf("file not found: %s", file)
 	}
 
+	if ff.Patch == nil {
+		return nil, ErrLineOutOfDiff.New()
+	}
+
 	hunks, err := parseHunks(*ff.Patch)
 	if err != nil {
 		log.DefaultLogger.With(log.Fields{"hunk": *ff.Patch}).Errorf(err, "bad hunks")
