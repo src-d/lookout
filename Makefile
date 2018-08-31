@@ -1,6 +1,6 @@
 # Package configuration
 PROJECT = lookout
-COMMANDS = cmd/lookout
+COMMANDS = cmd/lookoutd
 DEPENDENCIES = \
 	gopkg.in/src-d/go-kallax.v1 \
 	github.com/jteeuwen/go-bindata
@@ -27,7 +27,10 @@ CONFIG_FILE := config.yml
 
 # SDK binaries
 DUMMY_BIN := $(BIN_PATH)/dummy
-LOOKOUT_BIN := $(BIN_PATH)/lookout
+LOOKOUT_SDK_BIN := $(BIN_PATH)/lookout-sdk
+
+# lookoutd binary
+LOOKOUTD_BIN := $(BIN_PATH)/lookoutd
 
 # Tools
 BINDATA := go-bindata
@@ -82,39 +85,39 @@ GOTEST_INTEGRATION = $(GOTEST) -tags=integration
 .PHONY: test-sdk
 test-sdk: clean-sdk build-sdk
 	DUMMY_BIN=$(PWD)/$(DUMMY_BIN) \
-	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_BIN) \
+	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_SDK_BIN) \
 	$(GOTEST_INTEGRATION) github.com/src-d/lookout/cmd/sdk-test
 
 # Same as test-sdk, but skipping tests that require a bblfshd server
 .PHONY: test-sdk-short
 test-sdk-short: clean-sdk build-sdk
 	DUMMY_BIN=$(PWD)/$(DUMMY_BIN) \
-	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_BIN) \
+	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_SDK_BIN) \
 	$(GOTEST_INTEGRATION) -test.short github.com/src-d/lookout/cmd/sdk-test
 
 # Integration test for lookout serve
 .PHONY: test-json
-test-json: clean-sdk build-sdk
+test-json: clean build build-sdk
 	DUMMY_BIN=$(PWD)/$(DUMMY_BIN) \
-	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_BIN) \
+	LOOKOUT_BIN=$(PWD)/$(LOOKOUTD_BIN) \
 	$(GOTEST_INTEGRATION) github.com/src-d/lookout/cmd/server-test
 
 # Build sdk client and dummy analyzer
 .PHONY: build-sdk
-build-sdk: $(DUMMY_BIN) $(LOOKOUT_BIN)
-$(LOOKOUT_BIN):
-	$(GOBUILD) -o "$(LOOKOUT_BIN)" ./cmd/lookout
+build-sdk: $(DUMMY_BIN) $(LOOKOUT_SDK_BIN)
+$(LOOKOUT_SDK_BIN):
+	$(GOBUILD) -o "$(LOOKOUT_SDK_BIN)" ./cmd/lookout-sdk
 $(DUMMY_BIN):
 	$(GOBUILD) -o "$(DUMMY_BIN)" ./cmd/dummy
 
 .PHONY: clean-sdk
 clean-sdk:
 	rm -f $(DUMMY_BIN)
-	rm -f $(LOOKOUT_BIN)
+	rm -f $(LOOKOUT_SDK_BIN)
 
 .PHONY: dry-run
 dry-run: $(CONFIG_FILE)
-	go run cmd/lookout/*.go serve --dry-run github.com/src-d/lookout
+	go run cmd/lookoutd/*.go serve --dry-run github.com/src-d/lookout
 $(CONFIG_FILE):
 	cp "$(CONFIG_FILE).tpl" $(CONFIG_FILE)
 
