@@ -14,11 +14,14 @@ import (
 
 var (
 	ErrLineOutOfDiff = errors.NewKind("line number is not in diff")
+	// ErrLineNotAddition is returned when the file line number is not
+	// a + change in the patch diff
+	ErrLineNotAddition = errors.NewKind("line number is not an added change")
 )
 
 type diffLines struct {
 	cc     *github.CommitsComparison
-	parsed map[string][]*posRange
+	parsed map[string]*parsedFile
 }
 
 type lineType int
@@ -45,20 +48,41 @@ type posRange struct {
 	RelStart, RelEnd int
 }
 
+type parsedFile struct {
+	ranges     []*posRange
+	linesAdded map[int]bool
+}
+
 func newDiffLines(cc *github.CommitsComparison) *diffLines {
 	return &diffLines{
 		cc:     cc,
-		parsed: make(map[string][]*posRange, len(cc.Files)),
+		parsed: make(map[string]*parsedFile, len(cc.Files)),
 	}
 }
 
-func (d *diffLines) ConvertLine(file string, line int) (int, error) {
-	ranges, err := d.ranges(file)
+// ConvertLine takes a line number on the original file, and returns the
+// corresponding line number in the patch diff. It will return ErrLineOutOfDiff
+// if the line falls outside of the diff (changed lines plus context).
+// With strict set to true, ErrLineNotAddition will be returned for lines
+// that are not an addition (+ lines in the diff).
+func (d *diffLines) ConvertLine(file string, line int, strict bool) (int, error) {
+	parsedFile, err := d.parseFile(file)
 	if err != nil {
 		return 0, err
 	}
 
-	return d.convertLine(ranges, line)
+	diffLine, err := d.convertLine(parsedFile.ranges, line)
+	if err != nil {
+		return 0, err
+	}
+
+	if strict {
+		if !parsedFile.linesAdded[diffLine] {
+			return 0, ErrLineNotAddition.New()
+		}
+	}
+
+	return diffLine, nil
 }
 
 func (d *diffLines) convertLine(ranges []*posRange, line int) (int, error) {
@@ -71,22 +95,22 @@ func (d *diffLines) convertLine(ranges []*posRange, line int) (int, error) {
 	return 0, ErrLineOutOfDiff.New()
 }
 
-func (d *diffLines) ranges(file string) ([]*posRange, error) {
-	if ranges, ok := d.parsed[file]; ok {
-		return ranges, nil
+func (d *diffLines) parseFile(file string) (*parsedFile, error) {
+	if parsedFile, ok := d.parsed[file]; ok {
+		return parsedFile, nil
 	}
 
-	hunks, err := d.hunks(file)
+	hunks, linesAdded, err := d.hunks(file)
 	if err != nil {
 		return nil, err
 	}
 
 	ranges := convertRanges(hunks)
-	d.parsed[file] = ranges
-	return ranges, nil
+	d.parsed[file] = &parsedFile{ranges: ranges, linesAdded: linesAdded}
+	return d.parsed[file], nil
 }
 
-func (d *diffLines) hunks(file string) ([]*hunk, error) {
+func (d *diffLines) hunks(file string) ([]*hunk, map[int]bool, error) {
 	var ff *github.CommitFile
 	for _, f := range d.cc.Files {
 		if file == *f.Filename {
@@ -96,25 +120,25 @@ func (d *diffLines) hunks(file string) ([]*hunk, error) {
 	}
 
 	if ff == nil {
-		return nil, fmt.Errorf("file not found: %s", file)
+		return nil, nil, fmt.Errorf("file not found: %s", file)
 	}
 
 	if ff.Patch == nil {
-		return nil, ErrLineOutOfDiff.New()
+		return nil, nil, ErrLineOutOfDiff.New()
 	}
 
-	hunks, err := parseHunks(*ff.Patch)
+	hunks, linesAdded, err := parseHunks(*ff.Patch)
 	if err != nil {
 		log.DefaultLogger.With(log.Fields{"hunk": *ff.Patch}).Errorf(err, "bad hunks")
-		return nil, err
+		return nil, nil, err
 	}
 
-	return hunks, nil
+	return hunks, linesAdded, nil
 }
 
 var hunkPattern = regexp.MustCompile(`^(@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@[^@]*)(?:@@.*|$)`)
 
-func parseHunks(s string) ([]*hunk, error) {
+func parseHunks(s string) ([]*hunk, map[int]bool, error) {
 	r := strings.NewReader(s)
 	scanner := bufio.NewScanner(r)
 
@@ -122,7 +146,8 @@ func parseHunks(s string) ([]*hunk, error) {
 	var h *hunk
 	var err error
 	var lChunk linesChunk
-	for scanner.Scan() {
+	linesAdded := make(map[int]bool)
+	for i := 0; scanner.Scan(); i++ {
 		var lt lineType
 
 		line := scanner.Text()
@@ -134,12 +159,13 @@ func parseHunks(s string) ([]*hunk, error) {
 			lChunk = linesChunk{}
 			h, err = parseHunkHeader(line)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			hs = append(hs, h)
 			continue
 		case strings.HasPrefix(line, "+"):
 			lt = lineAdded
+			linesAdded[i] = true
 		case strings.HasPrefix(line, "-"):
 			lt = lineDeleted
 		default:
@@ -156,14 +182,14 @@ func parseHunks(s string) ([]*hunk, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if lChunk.Lines > 0 {
 		h.Chunks = append(h.Chunks, lChunk)
 	}
 
-	return hs, nil
+	return hs, linesAdded, nil
 }
 
 func parseHunkHeader(line string) (*hunk, error) {

@@ -175,10 +175,16 @@ func (p *Poster) createReviewRequest(
 				}
 				req.Comments = append(req.Comments, comment)
 			} else {
-				line, err := dl.ConvertLine(c.File, int(c.Line))
+				line, err := dl.ConvertLine(c.File, int(c.Line), true)
 				if ErrLineOutOfDiff.Is(err) {
 					log.Debugf(
-						"comment is out the diff range. analyzer: %s, file %s, line %d",
+						"skipping comment out the diff range. analyzer: %s, file %s, line %d",
+						aComments.Config.Name, c.File, c.Line)
+					continue
+				}
+				if ErrLineNotAddition.Is(err) {
+					log.Debugf(
+						"skipping comment not on an added line (+ in diff). analyzer: %s, file %s, line %d",
 						aComments.Config.Name, c.File, c.Line)
 					continue
 				}

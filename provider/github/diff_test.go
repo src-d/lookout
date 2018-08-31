@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	"github.com/google/go-github/github"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestParseHunks(t *testing.T) {
 	require := require.New(t)
 
-	hunks, err := parseHunks("@@ -0,0 +1 @@")
+	hunks, _, err := parseHunks("@@ -0,0 +1 @@")
 	require.NoError(err)
 	require.Equal([]*hunk{&hunk{
 		OldStartLine: 0,
@@ -20,7 +21,7 @@ func TestParseHunks(t *testing.T) {
 		NewLines:     1,
 	}}, hunks)
 
-	hunks, err = parseHunks("@@ -1 +1,3 @@")
+	hunks, _, err = parseHunks("@@ -1 +1,3 @@")
 	require.NoError(err)
 	require.Equal([]*hunk{&hunk{
 		OldStartLine: 1,
@@ -29,7 +30,7 @@ func TestParseHunks(t *testing.T) {
 		NewLines:     3,
 	}}, hunks)
 
-	hunks, err = parseHunks("@@ -132,7 +132,7 @@")
+	hunks, _, err = parseHunks("@@ -132,7 +132,7 @@")
 	require.NoError(err)
 	require.Equal([]*hunk{&hunk{
 		OldStartLine: 132,
@@ -38,21 +39,7 @@ func TestParseHunks(t *testing.T) {
 		NewLines:     7,
 	}}, hunks)
 
-	hunks, err = parseHunks("@@ -132,7 +132,7 @@ module Test\n@@ -1000,7 +1000,7 @@ module Test")
-	require.NoError(err)
-	require.Equal([]*hunk{&hunk{
-		OldStartLine: 132,
-		OldLines:     7,
-		NewStartLine: 132,
-		NewLines:     7,
-	}, &hunk{
-		OldStartLine: 1000,
-		OldLines:     7,
-		NewStartLine: 1000,
-		NewLines:     7,
-	}}, hunks)
-
-	hunks, err = parseHunks("@@ -132,7 +132,7 @@\n@@ -1000,7 +1000,7 @@")
+	hunks, _, err = parseHunks("@@ -132,7 +132,7 @@ module Test\n@@ -1000,7 +1000,7 @@ module Test")
 	require.NoError(err)
 	require.Equal([]*hunk{&hunk{
 		OldStartLine: 132,
@@ -66,7 +53,21 @@ func TestParseHunks(t *testing.T) {
 		NewLines:     7,
 	}}, hunks)
 
-	hunks, err = parseHunks(`@@ -132,7 +132,7 @@
+	hunks, _, err = parseHunks("@@ -132,7 +132,7 @@\n@@ -1000,7 +1000,7 @@")
+	require.NoError(err)
+	require.Equal([]*hunk{&hunk{
+		OldStartLine: 132,
+		OldLines:     7,
+		NewStartLine: 132,
+		NewLines:     7,
+	}, &hunk{
+		OldStartLine: 1000,
+		OldLines:     7,
+		NewStartLine: 1000,
+		NewLines:     7,
+	}}, hunks)
+
+	hunks, _, err = parseHunks(`@@ -132,7 +132,7 @@
  context-line
 -delete-line
 +insert-line`)
@@ -83,7 +84,7 @@ func TestParseHunks(t *testing.T) {
 		},
 	}}, hunks)
 
-	hunks, err = parseHunks(`@@ -132,7 +132,7 @@
+	hunks, _, err = parseHunks(`@@ -132,7 +132,7 @@
  context-line
  context-line
 -delete-line
@@ -102,7 +103,7 @@ func TestParseHunks(t *testing.T) {
 			{Type: lineContext, Lines: 2},
 		},
 	}}, hunks)
-	hunks, err = parseHunks(`@@ -132,7 +132,7 @@
+	hunks, _, err = parseHunks(`@@ -132,7 +132,7 @@
  context-line
  context-line
 -delete-line
@@ -145,7 +146,7 @@ const largeHunk = "@@ -6,20 +6,21 @@ import (\n \t\"database/sql\"\n \t\"fmt\"\n
 func TestParseHunks_issue_165(t *testing.T) {
 	require := require.New(t)
 
-	hunks, err := parseHunks(largeHunk)
+	hunks, _, err := parseHunks(largeHunk)
 	require.NoError(err)
 	for _, hunk := range hunks {
 		hunk.Chunks = nil
@@ -295,8 +296,6 @@ func TestConvertRanges(t *testing.T) {
 }
 
 func TestConvertLines(t *testing.T) {
-	require := require.New(t)
-
 	filename := "some_file"
 
 	// only insert
@@ -357,34 +356,59 @@ func TestConvertLines(t *testing.T) {
 	}
 	dl := newDiffLines(cc)
 
-	commentLines := map[int]*int{
+	lineTestCases := []struct {
+		fileLine, diffLine int
+		err, strictErr     error
+	}{
 		// out of range
-		1: nil,
-		// comment on new line in first hunk
-		8: intPointer(4),
+		{1, 0, ErrLineOutOfDiff.New(), ErrLineOutOfDiff.New()},
+		// comment on new-line1 in first hunk
+		{8, 4, nil, nil},
 		// out of range between hunks
-		15: nil,
+		{15, 0, ErrLineOutOfDiff.New(), ErrLineOutOfDiff.New()},
 		// comment on context line before delete in second hunk
-		23: intPointer(11),
+		{23, 11, nil, ErrLineNotAddition.New()},
 		// comment on context line after delete in second hunk
-		25: intPointer(15),
+		{25, 15, nil, ErrLineNotAddition.New()},
 		// comment on insert in 3rd hunk
-		38: intPointer(23),
+		{38, 23, nil, nil},
 		// comment on first insert in 4th hunk
-		53: intPointer(32),
+		{53, 32, nil, nil},
 		// comment on second insert in 4th hunk
-		58: intPointer(38),
+		{58, 38, nil, nil},
 		// out of range
-		100: nil,
+		{100, 0, ErrLineOutOfDiff.New(), ErrLineOutOfDiff.New()},
 	}
 
-	for line, expected := range commentLines {
-		newLine, err := dl.ConvertLine(filename, int(line))
-		if expected == nil {
-			require.EqualError(err, "line number is not in diff", fmt.Sprintf("old line %d, new line %d", line, newLine))
-		} else {
-			require.Equal(newLine, *expected, fmt.Sprintf("old line: %d", line))
-		}
+	for _, tc := range lineTestCases {
+		t.Run(fmt.Sprintf("file line %v", tc.fileLine), func(t *testing.T) {
+			// require uses FailNow, that panics inside a goroutine
+			assert := assert.New(t)
+
+			diffLine, err := dl.ConvertLine(filename, tc.fileLine, false)
+
+			if tc.err != nil {
+				assert.Equal(0, diffLine)
+				assert.NotNil(err)
+				assert.EqualError(err, tc.err.Error(),
+					fmt.Sprintf("file line %d, diff line %d", tc.fileLine, diffLine))
+			} else {
+				assert.Equal(tc.diffLine, diffLine)
+				assert.NoError(err)
+			}
+
+			diffLine, err = dl.ConvertLine(filename, tc.fileLine, true)
+
+			if tc.strictErr != nil {
+				assert.Equal(0, diffLine)
+				assert.NotNil(err)
+				assert.EqualError(err, tc.strictErr.Error(),
+					fmt.Sprintf("file line %d, diff line %d", tc.fileLine, diffLine))
+			} else {
+				assert.Equal(tc.diffLine, diffLine)
+				assert.NoError(err)
+			}
+		})
 	}
 }
 
@@ -426,7 +450,7 @@ func TestConvertLines_issue173(t *testing.T) {
 		321,
 	}
 	for _, line := range commentLines {
-		newLine, err := dl.ConvertLine(filename, int(line))
+		newLine, err := dl.ConvertLine(filename, int(line), false)
 		if line == 140 {
 			require.Equal(42, newLine)
 		} else {
@@ -451,6 +475,6 @@ func TestConvertLines_issue213(t *testing.T) {
 	}
 	dl := newDiffLines(cc)
 
-	_, err := dl.ConvertLine(filename, 42)
+	_, err := dl.ConvertLine(filename, 42, false)
 	require.EqualError(err, ErrLineOutOfDiff.Message)
 }
