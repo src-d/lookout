@@ -28,7 +28,7 @@ func (suite *SDKDummyTestSuite) TestReview() {
 	r := suite.RunCli("review", "ipv4://localhost:10302",
 		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
 		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
-	cmdtest.GrepTrue(r, "posting analysis")
+	suite.GrepTrue(r, "posting analysis")
 }
 
 func (suite *SDKDummyTestSuite) TestPush() {
@@ -37,7 +37,7 @@ func (suite *SDKDummyTestSuite) TestPush() {
 	r := suite.RunCli("push", "ipv4://localhost:10302",
 		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
 		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
-	cmdtest.GrepTrue(r, "posting analysis")
+	suite.GrepTrue(r, "posting analysis")
 }
 
 func (suite *SDKDummyTestSuite) TestPushNoComments() {
@@ -46,7 +46,7 @@ func (suite *SDKDummyTestSuite) TestPushNoComments() {
 	r := suite.RunCli("push", "ipv4://localhost:10302",
 		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
 		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
-	cmdtest.GrepTrue(r, "no comments were produced")
+	suite.GrepTrue(r, "no comments were produced")
 }
 
 func TestSDKDummyTestSuite(t *testing.T) {
