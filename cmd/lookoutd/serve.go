@@ -318,7 +318,7 @@ func (c *ServeCommand) initDB() (*sql.DB, error) {
 	if dbVersion != maxVersion {
 		return nil, fmt.Errorf(
 			"database version mismatch. Current version is %v, but this binary (version %s, built on %s) needs version %v. "+
-				"Use 'lookout migrate' to upgrade your database", dbVersion, version, build, maxVersion)
+				"Use '%s migrate' to upgrade your database", dbVersion, version, build, maxVersion, name)
 	}
 
 	log.Debugf("the DB version is up to date, %v", dbVersion)

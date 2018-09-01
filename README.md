@@ -41,7 +41,7 @@ GITHUB_USER=<user> GITHUB_TOKEN=<token> REPO=github.com/<user>/<name> docker-com
     ```
 1. Initialize the database. This command will work for the PostgreSQL created by docker-compose, use `-h` to see other options.
     ```bash
-    lookout migrate
+    lookoutd migrate
     ```
 1. Start an analyzer
 Any of the analyzers or a default dummy one, included in this repository
@@ -52,9 +52,9 @@ Any of the analyzers or a default dummy one, included in this repository
 1. Start a lookout server
     1. With posting analysis results on GitHub
         - Obtain [GitHub access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
-        - Run `lookout serve --github-token <token> --github-user <user> <repository>`
+        - Run `lookoutd serve --github-token <token> --github-user <user> <repository>`
     1. Without posting analysis results (only printing)
-        - `lookout serve --dry-run <repository>`
+        - `lookoutd serve --dry-run <repository>`
 
 
 # Configuration file
