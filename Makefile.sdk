@@ -1,6 +1,6 @@
-# Packaging Dummy Analzyer binary
-PROJECT = lookout-dummy-analyzer
-COMMANDS = cmd/dummy
+# Packaging lookout-sdk binary
+PROJECT = lookout-sdk
+COMMANDS = cmd/lookout-sdk
 
 # Including ci Makefile
 CI_REPOSITORY ?= https://github.com/src-d/ci.git
@@ -10,6 +10,3 @@ MAKEFILE := $(CI_PATH)/Makefile.main
 $(MAKEFILE):
 	git clone --quiet --depth 1 -b $(CI_BRANCH) $(CI_REPOSITORY) $(CI_PATH);
 -include $(MAKEFILE)
-
-# Dummy analyzer dockerfile
-DOCKERFILES=./docker/Dockerfile.dummy:$(PROJECT)

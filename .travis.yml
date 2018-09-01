@@ -86,7 +86,7 @@ jobs:
         - find "$PY_OUT_DIR" -iname gogo_pb2_grpc.py | grep '.*'
     - name: "linux packages"
       stage: release
-      script: PKG_OS="linux" make packages-sdk
+      script: PKG_OS="linux" make -f Makefile.sdk packages
       deploy: &deploy_anchor
         provider: releases
         api_key: $GITHUB_TOKEN
@@ -100,7 +100,7 @@ jobs:
       os: osx
       osx_image: xcode9.4
       before_install: skip
-      script: PKG_OS="darwin" make packages-sdk
+      script: PKG_OS="darwin" make -f Makefile.sdk packages
       deploy: *deploy_anchor
     - name: "push image to Docker Hub"
       stage: release

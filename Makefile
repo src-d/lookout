@@ -124,23 +124,6 @@ dry-run: $(CONFIG_FILE)
 $(CONFIG_FILE):
 	cp "$(CONFIG_FILE).tpl" $(CONFIG_FILE)
 
-# Builds build/lookout_sdk_*.tar.gz with the lookout-sdk bin and sdk dir
-.PHONY: packages-sdk
-packages-sdk: PROJECT = lookout_sdk COMMANDS = cmd/lookout-sdk
-packages-sdk: build
-	@for os in $(PKG_OS); do \
-		for arch in $(PKG_ARCH); do \
-			cp -r sdk $(BUILD_PATH)/$(PROJECT)_$${os}_$${arch}/; \
-		done; \
-	done; \
-	cd $(BUILD_PATH); \
-	for os in $(PKG_OS); do \
-		for arch in $(PKG_ARCH); do \
-			TAR_VERSION=`echo $(VERSION) | tr "/" "-"`; \
-			tar -cvzf $(PROJECT)_$${TAR_VERSION}_$${os}_$${arch}.tar.gz $(PROJECT)_$${os}_$${arch}/; \
-		done; \
-	done
-
 # TODO: remove when https://github.com/src-d/ci/pull/84 is merged
 .PHONY: godep
 GODEP ?= $(CI_PATH)/dep
