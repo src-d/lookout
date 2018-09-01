@@ -30,7 +30,7 @@ DUMMY_BIN := $(BIN_PATH)/dummy
 LOOKOUT_SDK_BIN := $(BIN_PATH)/lookout-sdk
 
 # lookoutd binary
-LOOKOUTD_BIN := $(BIN_PATH)/lookoutd
+LOOKOUT_BIN := $(BIN_PATH)/lookoutd
 
 # Tools
 BINDATA := go-bindata
@@ -83,36 +83,39 @@ GOTEST_INTEGRATION = $(GOTEST) -tags=integration
 
 # Integration test for sdk client
 .PHONY: test-sdk
-test-sdk: clean-sdk build-sdk
+test-sdk: clean-all build-all
 	DUMMY_BIN=$(PWD)/$(DUMMY_BIN) \
 	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_SDK_BIN) \
 	$(GOTEST_INTEGRATION) github.com/src-d/lookout/cmd/sdk-test
 
 # Same as test-sdk, but skipping tests that require a bblfshd server
 .PHONY: test-sdk-short
-test-sdk-short: clean-sdk build-sdk
+test-sdk-short: clean-all build-all
 	DUMMY_BIN=$(PWD)/$(DUMMY_BIN) \
 	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_SDK_BIN) \
 	$(GOTEST_INTEGRATION) -test.short github.com/src-d/lookout/cmd/sdk-test
 
 # Integration test for lookout serve
 .PHONY: test-json
-test-json: clean build build-sdk
+test-json: clean build-all
 	DUMMY_BIN=$(PWD)/$(DUMMY_BIN) \
-	LOOKOUT_BIN=$(PWD)/$(LOOKOUTD_BIN) \
+	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_BIN) \
 	$(GOTEST_INTEGRATION) github.com/src-d/lookout/cmd/server-test
 
 # Build sdk client and dummy analyzer
-.PHONY: build-sdk
-build-sdk: $(DUMMY_BIN) $(LOOKOUT_SDK_BIN)
+.PHONY: build-all
+build-all: $(DUMMY_BIN) $(LOOKOUT_BIN) $(LOOKOUT_SDK_BIN)
+$(LOOKOUT_BIN):
+	$(GOBUILD) -o "$(LOOKOUT_BIN)" ./cmd/lookoutd
 $(LOOKOUT_SDK_BIN):
 	$(GOBUILD) -o "$(LOOKOUT_SDK_BIN)" ./cmd/lookout-sdk
 $(DUMMY_BIN):
 	$(GOBUILD) -o "$(DUMMY_BIN)" ./cmd/dummy
 
-.PHONY: clean-sdk
-clean-sdk:
+.PHONY: clean-all
+clean-all:
 	rm -f $(DUMMY_BIN)
+	rm -f $(LOOKOUT_BIN)
 	rm -f $(LOOKOUT_SDK_BIN)
 
 .PHONY: dry-run
@@ -121,9 +124,9 @@ dry-run: $(CONFIG_FILE)
 $(CONFIG_FILE):
 	cp "$(CONFIG_FILE).tpl" $(CONFIG_FILE)
 
-# Builds build/lookout_sdk_*.tar.gz with the lookout bin and sdk dir
+# Builds build/lookout_sdk_*.tar.gz with the lookout-sdk bin and sdk dir
 .PHONY: packages-sdk
-packages-sdk: PROJECT = lookout_sdk
+packages-sdk: PROJECT = lookout_sdk COMMANDS = cmd/lookout-sdk
 packages-sdk: build
 	@for os in $(PKG_OS); do \
 		for arch in $(PKG_ARCH); do \
