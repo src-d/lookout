@@ -14,7 +14,7 @@ services:
       - "10301:10301"
     entrypoint: ["/bin/sh"]
     # sleep because container with db is up but the db itself doesn't accept connections yet
-    command: ["-c", "sleep 5 && lookout migrate && lookout serve ${REPO}"]
+    command: ["-c", "sleep 5 && lookoutd migrate && lookoutd serve ${REPO}"]
     volumes:
       - ./config.yml:/config.yml
   dummy:

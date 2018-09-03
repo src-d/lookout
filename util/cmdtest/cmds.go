@@ -20,7 +20,7 @@ var CmdTimeout = time.Minute
 
 // default path to binaries
 var dummyBin = "../../build/bin/dummy"
-var lookoutBin = "../../build/bin/lookout"
+var lookoutBin = "../../build/bin/lookoutd"
 
 type IntegrationSuite struct {
 	suite.Suite
@@ -146,6 +146,7 @@ func (suite *IntegrationSuite) ResetDB() {
 	suite.runQuery(db, "GRANT ALL ON SCHEMA public TO postgres;")
 	suite.runQuery(db, "GRANT ALL ON SCHEMA public TO public;")
 
+	suite.T().Logf("running %s", lookoutBin)
 	err = exec.Command(lookoutBin, "migrate").Run()
 	require.NoError(err, "can't migrate DB")
 }

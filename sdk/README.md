@@ -38,7 +38,7 @@ _Note_ Currently there are conflicts when the generated code and the `bblfsh` Py
 
 ### Requirements
 
-Before getting started you will need the latest lookout binary. You can download it from the [releases page](https://github.com/src-d/lookout/releases).
+Before getting started you will need the latest `lookout-sdk` binary. It is a simplified version of the lookout server that works with local git repository and does not need access to Github. You can download it from the [releases page](https://github.com/src-d/lookout/releases).
 
 If your analyzer makes use of UAST, you will need a [Babelfish server](https://doc.bblf.sh/using-babelfish/getting-started.html) running.
 To start it using [Docker Compose](https://docs.docker.com/compose/) clone this repository, or download [`/docker-compose.yml`](/docker-compose.yml), and run:
@@ -55,12 +55,11 @@ This will create the following Docker containers:
 
 ### lookout SDK Commands
 
-The lookout binary has the following sub-commands:
+The `lookout-sdk` binary has the following sub-commands:
 - `review`: Performs a `NotifyReviewEvent` call to the analyzer and serves the Data Server endpoint.
 - `push`: Performs a `NotifyPushEvent` call to the analyzer and serves the Data Server endpoint.
-- `serve`: This is the main lookout server execution mode. In the context of the SDK it can be ignored.
 
-Both `lookout push` and `lookout review` can be configured with environment variables or CLI arguments:
+Both `lookout-sdk push` and `lookout-sdk review` can be configured with environment variables or CLI arguments:
 
 | Env var | Option | Description | Default |
 | -- | -- | -- | -- |
@@ -78,24 +77,24 @@ Both `lookout push` and `lookout review` can be configured with environment vari
 
 ### NotifyReviewEvent
 
-The main output of the Analyzer will be the `NotifyReviewEvent` response comments, triggered by Pull Requests from GitHub. For development purposes you can manually trigger a review event for a Git repository in your local filesystem, using `lookout review`.
+The main output of the Analyzer will be the `NotifyReviewEvent` response comments, triggered by Pull Requests from GitHub. For development purposes you can manually trigger a review event for a Git repository in your local filesystem, using `lookout-sdk review`.
 
-For example, if you place the `lookout` binary in a git repository directory, you can run:
+For example, if you place the `lookout-sdk` binary in a git repository directory, you can run:
 
 ```bash
-$ ./lookout review ipv4://localhost:10302
+$ ./lookout-sdk review ipv4://localhost:10302
 ```
 
-In this case the `lookout` binary will send a gRPC `NotifyReviewEvent` call to your Analyzer, which should be listening on `ipv4://localhost:10302`. The analyzer will be able to request file contents and UAST to the gRPC Data Server endpoint, exposed by the `lookout` binary at `ipv4://localhost:10301`.
+In this case the `lookout-sdk` binary will send a gRPC `NotifyReviewEvent` call to your Analyzer, which should be listening on `ipv4://localhost:10302`. The analyzer will be able to request file contents and UAST to the gRPC Data Server endpoint, exposed by the `lookout-sdk` binary at `ipv4://localhost:10301`.
 
-The lookout process will wait until the Analyzer sends a response with the comments, and exit right after that. This means the Data Server endpoint will also stop being available.
+The lookout-sdk process will wait until the Analyzer sends a response with the comments, and exit right after that. This means the Data Server endpoint will also stop being available.
 
 ![sequence diagram](./seq-diagram.svg)
 
 [_Diagram source at mermaidjs_](https://mermaidjs.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgcGFydGljaXBhbnQgQmFiZWxmaXNoXG4gICAgcGFydGljaXBhbnQgbG9va291dFxuICAgIHBhcnRpY2lwYW50IEFuYWx5emVyXG4gICAgbG9va291dC0-PkFuYWx5emVyOiBOb3RpZnlSZXZpZXdFdmVudFxuICAgIEFuYWx5emVyLT4-bG9va291dDogR2V0Q2hhbmdlcy9HZXRGaWxlc1xuICAgIGxvb2tvdXQtPj5CYWJlbGZpc2g6IHBhcnNlRmlsZSAoaWYgV2FudFVBU1QpXG4gICAgQmFiZWxmaXNoLS0-Pmxvb2tvdXQ6IFVBU1RcbiAgICBsb29rb3V0LS0-PkFuYWx5emVyOiBDaGFuZ2UvRmlsZVxuICAgIEFuYWx5emVyLS0-Pmxvb2tvdXQ6IENvbW1lbnRzXG4iLCJtZXJtYWlkIjp7InRoZW1lIjoiZGVmYXVsdCJ9fQ)
 
 
-By default the `lookout review` command will trigger a review for the changes between `HEAD^` and `HEAD`. If we look at this example history:
+By default the `lookout-sdk review` command will trigger a review for the changes between `HEAD^` and `HEAD`. If we look at this example history:
 
 ```
 $ git log --pretty=oneline --graph
@@ -125,7 +124,7 @@ Use the `--from` (base) and `--to` (head) options to trigger the analysis betwee
 For example, using commit sha1s:
 
 ```bash
-$ ./lookout review \
+$ ./lookout-sdk review \
 --from=fa97fa19e5c9b3482e5f88e264fb62b1e7fc6d8f \
 --to=355f001d719bd0368c0469acd1a46298a80bacc0 \
 ipv4://localhost:10302
@@ -134,14 +133,14 @@ ipv4://localhost:10302
 Let's say you have `branch-c` that is ahead of `master` by a few commits. Then you could run:
 
 ```bash
-$ ./lookout review --from=master --to=branch-c ipv4://localhost:10302
+$ ./lookout-sdk review --from=master --to=branch-c ipv4://localhost:10302
 ```
 
 ### NotifyPushEvent
 
-All the documentation for `NotifyReviewEvent` applies also to `NotifyPushEvent`, using `lookout push`.
+All the documentation for `NotifyReviewEvent` applies also to `NotifyPushEvent`, using `lookout-sdk push`.
 
-_Important note_: The response for `NotifyPushEvent` allows a series of comments, but this is a placeholder for future functionality. The Analyzer is not expected to return any comment in current lookout versions.
+_Important note_: The response for `NotifyPushEvent` allows a series of comments, but this is a placeholder for future functionality. The Analyzer is not expected to return any comment in current version.
 
 This method call is used to notify the Analyzers of any new commits pushed to a repository. The Analyzer is not enforced to do anything with this notification. It could be used, for example, to re-train an internal model using the new contents of the master branch.
 

@@ -375,3 +375,38 @@ func (l *commentsList) Add(conf lookout.AnalyzerConfig, cs ...*lookout.Comment) 
 func (l *commentsList) Get() []lookout.AnalyzerComments {
 	return l.list
 }
+
+type LogPoster struct {
+	Log log.Logger
+}
+
+func (p *LogPoster) Post(ctx context.Context, e lookout.Event,
+	aCommentsList []lookout.AnalyzerComments) error {
+	for _, aComments := range aCommentsList {
+		for _, c := range aComments.Comments {
+			logger := p.Log.With(log.Fields{
+				"text": c.Text,
+			})
+			if c.File == "" {
+				logger.Infof("global comment")
+				continue
+			}
+
+			logger = logger.With(log.Fields{"file": c.File})
+			if c.Line == 0 {
+				logger.Infof("file comment")
+				continue
+			}
+
+			logger.With(log.Fields{"line": c.Line}).Infof("line comment")
+		}
+	}
+
+	return nil
+}
+
+func (p *LogPoster) Status(ctx context.Context, e lookout.Event,
+	status lookout.AnalysisStatus) error {
+	p.Log.Infof("status: %s", status)
+	return nil
+}

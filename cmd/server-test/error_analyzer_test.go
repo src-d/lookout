@@ -69,7 +69,7 @@ func (suite *ErrorAnalyzerIntegrationSuite) TearDownTest() {
 func (suite *ErrorAnalyzerIntegrationSuite) TestAnalyzerErr() {
 	suite.sendEvent(successJSON)
 
-	suite.GrepTrue(suite.r, `msg="analysis failed" analyzer=Dummy app=lookout error="rpc error: code = Unknown desc = review error"`)
+	suite.GrepTrue(suite.r, `msg="analysis failed" analyzer=Dummy app=lookoutd error="rpc error: code = Unknown desc = review error"`)
 }
 
 func TestErrorAnalyzerIntegrationSuite(t *testing.T) {

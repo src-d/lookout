@@ -4,7 +4,7 @@ RUN apt-get update && \
     apt-get install -y ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-ADD ./build/bin/lookout /bin/lookout
+ADD ./build/bin/lookoutd /bin/lookoutd
 
-ENTRYPOINT ["/bin/lookout"]
+ENTRYPOINT ["/bin/lookoutd"]
 CMD [ "serve" ]
