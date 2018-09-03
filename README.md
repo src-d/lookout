@@ -6,7 +6,7 @@ A service for assisted code review, that allows running custom code Analyzers on
 
 If you are developing an Analyzer, please check [SDK documentation](./sdk/README.md).
 
-It includes a curl-style binary that allows to trigger Analyzers directly, without launching a full lookout server.
+It includes a curl-style binary `lookout-sdk` that allows to trigger Analyzers directly, without launching a full lookout server.
 
 # Installation
 
