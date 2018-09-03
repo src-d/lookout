@@ -22,10 +22,6 @@ var CmdTimeout = time.Minute
 var dummyBin = "../../build/bin/dummy"
 var lookoutBin = "../../build/bin/lookout"
 
-// function to stop running commands
-// redefined in StoppableCtx
-var stop func()
-
 type IntegrationSuite struct {
 	suite.Suite
 	Ctx  context.Context
@@ -76,7 +72,8 @@ func (suite *IntegrationSuite) StartDummy(args ...string) io.Reader {
 				fmt.Println("analyzer exited with error:", err)
 				fmt.Printf("output:\n%s", buf.String())
 				// T.Fail cannot be called from a goroutine
-				failExit()
+				suite.Stop()
+				os.Exit(1)
 			}
 		}
 	}()
@@ -111,7 +108,8 @@ func (suite *IntegrationSuite) StartServe(args ...string) (io.Reader, io.WriteCl
 				fmt.Println("server exited with error:", err)
 				fmt.Printf("output:\n%s", buf.String())
 				// T.Fail cannot be called from a goroutine
-				failExit()
+				suite.Stop()
+				os.Exit(1)
 			}
 		}
 	}()
@@ -155,10 +153,4 @@ func (suite *IntegrationSuite) ResetDB() {
 func (suite *IntegrationSuite) runQuery(db *sql.DB, query string) {
 	_, err := db.Exec(query)
 	suite.Require().NoError(err, "can't execute SQL: %q", query)
-}
-
-func failExit() {
-	stop()
-
-	os.Exit(1)
 }

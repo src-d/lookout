@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/src-d/lookout"
-	"github.com/src-d/lookout/util/cmdtest"
 	"github.com/src-d/lookout/util/grpchelper"
 	log "gopkg.in/src-d/go-log.v1"
 
@@ -60,7 +59,7 @@ func (suite *ErrorAnalyzerIntegrationSuite) SetupTest() {
 		"-c", "../../fixtures/dummy_config.yml", "dummy-repo-url")
 
 	// make sure server started correctly
-	cmdtest.GrepTrue(suite.r, "Starting watcher")
+	suite.GrepTrue(suite.r, "Starting watcher")
 }
 
 func (suite *ErrorAnalyzerIntegrationSuite) TearDownTest() {
@@ -70,7 +69,7 @@ func (suite *ErrorAnalyzerIntegrationSuite) TearDownTest() {
 func (suite *ErrorAnalyzerIntegrationSuite) TestAnalyzerErr() {
 	suite.sendEvent(successJSON)
 
-	cmdtest.GrepTrue(suite.r, `msg="analysis failed" analyzer=Dummy app=lookout error="rpc error: code = Unknown desc = review error"`)
+	suite.GrepTrue(suite.r, `msg="analysis failed" analyzer=Dummy app=lookout error="rpc error: code = Unknown desc = review error"`)
 }
 
 func TestErrorAnalyzerIntegrationSuite(t *testing.T) {

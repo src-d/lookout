@@ -4,6 +4,9 @@ sudo: required
 services:
   - docker
 
+git:
+  depth: false
+
 addons:
   apt:
     sources:

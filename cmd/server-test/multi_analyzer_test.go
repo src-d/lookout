@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/src-d/lookout/util/cmdtest"
-
 	"github.com/stretchr/testify/suite"
 )
 
@@ -27,7 +25,7 @@ func (suite *MultiDummyIntegrationSuite) SetupTest() {
 		"-c", dubleDummyConfigFile, "dummy-repo-url")
 
 	// make sure server started correctly
-	cmdtest.GrepTrue(suite.r, "Starting watcher")
+	suite.GrepTrue(suite.r, "Starting watcher")
 }
 
 func (suite *MultiDummyIntegrationSuite) TearDownTest() {
@@ -36,9 +34,9 @@ func (suite *MultiDummyIntegrationSuite) TearDownTest() {
 
 func (suite *MultiDummyIntegrationSuite) TestSuccessReview() {
 	suite.sendEvent(successJSON)
-	cmdtest.GrepTrue(suite.r, "processing pull request")
-	cmdtest.GrepTrue(suite.r, "posting analysis")
-	found, buf := cmdtest.Grep(suite.r, `status=success`)
+	suite.GrepTrue(suite.r, "processing pull request")
+	suite.GrepTrue(suite.r, "posting analysis")
+	found, buf := suite.Grep(suite.r, `status=success`)
 	suite.Require().Truef(found, "'%s' not found in:\n%s", `status=success`, buf.String())
 
 	st := buf.String()
