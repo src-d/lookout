@@ -80,3 +80,7 @@
 [[constraint]]
   name = "gopkg.in/src-d/lookout-sdk.v0"
   revision = "13a9d4e12a91b75bafa30802b1df5c6ea2693fca"
+
+[[constraint]]
+  name = "github.com/sanity-io/litter"
+  revision = "09e3a73d5b65eac2f14578aec8fb74ee9b4f1a5e"

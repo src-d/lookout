@@ -276,6 +276,13 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:5cb64ae11c6690416028ba76726f101ffc669cbfacf05cdb5607c52bcfff11a0"
+  name = "github.com/sanity-io/litter"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "09e3a73d5b65eac2f14578aec8fb74ee9b4f1a5e"
+
+[[projects]]
   digest = "1:6bc0652ea6e39e22ccd522458b8bdd8665bf23bdc5a20eec90056e4dc7e273ca"
   name = "github.com/satori/go.uuid"
   packages = ["."]
@@ -669,6 +676,7 @@
     "github.com/grpc-ecosystem/go-grpc-middleware/logging",
     "github.com/jessevdk/go-flags",
     "github.com/lib/pq",
+    "github.com/sanity-io/litter",
     "github.com/satori/go.uuid",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
