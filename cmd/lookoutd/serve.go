@@ -24,7 +24,9 @@ import (
 
 	"github.com/golang-migrate/migrate"
 	"github.com/gregjones/httpcache/diskcache"
+	"github.com/jinzhu/copier"
 	_ "github.com/lib/pq"
+	"github.com/sanity-io/litter"
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-billy.v4/osfs"
 	"gopkg.in/src-d/go-log.v1"
@@ -82,6 +84,8 @@ func (c *ServeCommand) Execute(args []string) error {
 		return fmt.Errorf("Can't parse configuration file: %s", err)
 	}
 
+	c.logConfig(conf)
+
 	dataHandler, err := c.initDataHandler()
 	if err != nil {
 		return err
@@ -138,6 +142,30 @@ func (c *ServeCommand) Execute(args []string) error {
 
 	ctx := context.Background()
 	return server.NewServer(watcher, poster, dataHandler.FileGetter, analyzers, eventOp, commentsOp).Run(ctx)
+}
+
+func (c *ServeCommand) logConfig(conf Config) {
+	var cCp ServeCommand
+	copier.Copy(&cCp, c)
+
+	cCp.DBOptions.DB = "****"
+	cCp.GithubToken = "****"
+
+	var confCp Config
+	copier.Copy(&confCp, conf)
+
+	for i := range confCp.Repositories {
+		confCp.Repositories[i].Client.Token = "****"
+	}
+
+	lt := litter.Options{
+		Compact: true,
+	}
+
+	log.With(log.Fields{
+		"options": lt.Sdump(cCp),
+		"conf":    lt.Sdump(confCp),
+	}).Infof("starting %s", name)
 }
 
 func (c *ServeCommand) initProvider(conf Config) error {
