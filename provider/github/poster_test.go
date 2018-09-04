@@ -103,6 +103,10 @@ func (s *PosterTestSuite) SetupTest() {
 	s.pool = newTestPool(s.Suite, repoURLs, githubURL, cache)
 }
 
+func (s *PosterTestSuite) TearDownTest() {
+	s.server.Close()
+}
+
 var mockedPatch = `@@ -3,0 +3,10 @@
 +1
 +2
@@ -305,7 +309,7 @@ func (s *PosterTestSuite) TestPostOutOfRange() {
 		json.NewEncoder(w).Encode(resp)
 	})
 
-	mockComments = []*lookout.Comment{
+	outRangeComments := []*lookout.Comment{
 		&lookout.Comment{
 			File: "main.go",
 			Line: 1,
@@ -322,16 +326,107 @@ func (s *PosterTestSuite) TestPostOutOfRange() {
 			Text: "out of range comment after",
 		}}
 
-	mockAnalyzerComments = []lookout.AnalyzerComments{
+	outRangeAnalyzerComments := []lookout.AnalyzerComments{
 		lookout.AnalyzerComments{
 			Config: lookout.AnalyzerConfig{
 				Name: "mock",
 			},
-			Comments: mockComments,
+			Comments: outRangeComments,
 		}}
 
 	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments)
+	err := p.Post(context.Background(), mockEvent, outRangeAnalyzerComments)
+	s.NoError(err)
+
+	s.True(createReviewsCalled)
+}
+
+func (s *PosterTestSuite) TestPostAllOutOfRange() {
+	compareCalled := false
+	s.compareHandle(&compareCalled)
+
+	createReviewsCalled := false
+	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
+		createReviewsCalled = true
+
+		resp := &github.Response{Response: &http.Response{StatusCode: 200}}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	outRangeComments := []*lookout.Comment{
+		&lookout.Comment{
+			File: "main.go",
+			Line: 1,
+			Text: "out of range comment before",
+		},
+		&lookout.Comment{
+			File: "main.go",
+			Line: 205,
+			Text: "out of range comment after",
+		}}
+
+	outRangeAnalyzerComments := []lookout.AnalyzerComments{
+		lookout.AnalyzerComments{
+			Config: lookout.AnalyzerConfig{
+				Name: "mock",
+			},
+			Comments: outRangeComments,
+		}}
+
+	p := &Poster{pool: s.pool}
+	err := p.Post(context.Background(), mockEvent, outRangeAnalyzerComments)
+	s.NoError(err)
+
+	s.False(createReviewsCalled)
+}
+
+func (s *PosterTestSuite) TestPostOutOfRangeAndBody() {
+	compareCalled := false
+	s.compareHandle(&compareCalled)
+
+	createReviewsCalled := false
+	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
+		s.False(createReviewsCalled)
+		createReviewsCalled = true
+
+		body, err := ioutil.ReadAll(r.Body)
+		s.NoError(err)
+
+		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
+			Body:  strptr("Body comment"),
+			Event: strptr(commentEvent),
+		})
+		s.JSONEq(string(expected), string(body))
+
+		resp := &github.Response{Response: &http.Response{StatusCode: 200}}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	outRangeComments := []*lookout.Comment{
+		&lookout.Comment{
+			File: "main.go",
+			Line: 1,
+			Text: "out of range comment before",
+		},
+		&lookout.Comment{
+			Text: "Body comment",
+		},
+		&lookout.Comment{
+			File: "main.go",
+			Line: 205,
+			Text: "out of range comment after",
+		}}
+
+	outRangeAnalyzerComments := []lookout.AnalyzerComments{
+		lookout.AnalyzerComments{
+			Config: lookout.AnalyzerConfig{
+				Name: "mock",
+			},
+			Comments: outRangeComments,
+		}}
+
+	p := &Poster{pool: s.pool}
+	err := p.Post(context.Background(), mockEvent, outRangeAnalyzerComments)
 	s.NoError(err)
 
 	s.True(createReviewsCalled)
