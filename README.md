@@ -88,6 +88,26 @@ Merging rules:
 - Arrays are replaced
 - Null value replaces object
 
+# Authenticate as a GitHub App
+
+Instead of using a GitHub username and token you can use lookout as a [GitHub App](https://developer.github.com/apps/about-apps/).
+
+You need to create a new GitHub App following the [GitHub documentation](https://developer.github.com/apps/building-github-apps/creating-a-github-app/). Then download a private key ([see how here](https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/)) and set the following fields in your `config.yml` file:
+
+```yml
+providers:
+  github:
+    app_id: 1234
+    private_key: ./key.pem
+```
+
+You should also unset any environment variable or option for the GitHub username and token authentication.
+
+_Note_: This authentication method is still under development. There are some caveats you should be aware of:
+
+When using this authentication method the repositories to analyze are retrieved from the GitHub installations.
+This means that the positional argument for `lookoutd serve` is ignored. You should also be aware that the list of repositories is retrieved only once when the server starts.
+
 # Contribute
 
 [Contributions](https://github.com/src-d/lookout/issues) are more than welcome, if you are interested please take a look to
