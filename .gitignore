@@ -17,8 +17,5 @@
 # build results
 /build
 
-# dependencies
-/protoc
-
 # Configuration
 /config.yml

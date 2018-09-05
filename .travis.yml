@@ -10,13 +10,13 @@ git:
 addons:
   apt:
     sources:
-    - ubuntu-toolchain-r-test
+      - ubuntu-toolchain-r-test
     packages:
-    - gcc-6
-    - g++-6
+      - gcc-6
+      - g++-6
 
 go:
-  - "1.10.x"
+  - '1.10.x'
 
 before_install:
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
@@ -31,60 +31,50 @@ stages:
 
 jobs:
   include:
-    - name: "Unit Tests"
+    - name: 'Unit Tests'
       stage: tests
       script: make test-coverage codecov
-    - name: "SDK Integration Tests Linux"
+    - name: 'SDK Integration Tests Linux'
       script:
         - docker run -d --name bblfshd --privileged -v $HOME/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd
         - docker exec -it bblfshd bblfshctl driver install go bblfsh/go-driver:v2.0.3
         - make test-sdk
-    - name: "SDK Integration Tests macOS"
+    - name: 'SDK Integration Tests macOS'
       if: NOT type = pull_request
       script:
         - make test-sdk-short
       os: osx
       osx_image: xcode9.4
       before_install: skip
-    - name: "Lookoutd Integration Tests Linux"
+    - name: 'Lookoutd Integration Tests Linux'
       script:
-      - make prepare-services
-      - psql -c 'create database lookout;' -U postgres
-      - make build
-      - ./build/bin/lookoutd migrate
-      - make test-json
-    - name: "Lookoutd Integration Tests macOS"
+        - make prepare-services
+        - psql -c 'create database lookout;' -U postgres
+        - make build
+        - ./build/bin/lookoutd migrate
+        - make test-json
+    - name: 'Lookoutd Integration Tests macOS'
       script:
-      - make prepare-services
-      - psql -c 'create database lookout;' -U postgres
-      - make build
-      - ./build/lookout_darwin_amd64/lookoutd migrate
-      - make test-json
+        - make prepare-services
+        - psql -c 'create database lookout;' -U postgres
+        - make build
+        - ./build/lookout_darwin_amd64/lookoutd migrate
+        - make test-json
       os: osx
       osx_image: xcode9.4
       before_install: skip
-    - name: "Generated code"
+    - name: 'Generated code'
       script:
         - make dependencies
         - kallax migrate --input ./store/models/ --out ./store/migrations --name test-changes
         - make no-changes-in-commit
         - make bindata
         - make no-changes-in-commit
-        - make protogen
-        - make no-changes-in-commit
         - make build
         - make no-changes-in-commit
         - make godep
         - make no-changes-in-commit
-        # check that proto files are buildable by python
-        - sudo apt-get --no-install-recommends -y install python3-pip
-        - sudo pip3 install -U pip setuptools wheel
-        - pip3 install --user grpcio-tools
-        - export PY_OUT_DIR=py
-        - mkdir -p "$PY_OUT_DIR"
-        - python3 -m grpc_tools.protoc -Isdk --python_out="$PY_OUT_DIR" --grpc_python_out="$PY_OUT_DIR" $(find sdk -name *.proto)
-        - find "$PY_OUT_DIR" -iname gogo_pb2_grpc.py | grep '.*'
-    - name: "linux packages"
+    - name: 'linux packages'
       stage: release
       script: PKG_OS="linux" make -f Makefile.sdk packages
       deploy: &deploy_anchor
@@ -95,19 +85,19 @@ jobs:
         skip_cleanup: true
         on:
           all_branches: true
-    - name: "macOS packages"
+    - name: 'macOS packages'
       stage: release
       os: osx
       osx_image: xcode9.4
       before_install: skip
       script: PKG_OS="darwin" make -f Makefile.sdk packages
       deploy: *deploy_anchor
-    - name: "push image to Docker Hub"
+    - name: 'push image to Docker Hub'
       stage: release
       script:
         - PKG_OS=linux make build
         - DOCKER_PUSH_LATEST=true make docker-push
-    - name: "push dummy analyzer image to Docker Hub"
+    - name: 'push dummy analyzer image to Docker Hub'
       stage: release dummy analyzer
       script:
         - PKG_OS=linux make -f Makefile.dummy build
@@ -118,6 +108,5 @@ before_cache:
 
 cache:
   directories:
-    - $HOME/protoc
     - $HOME/.cache/pip/wheels
     - $HOME/bblfshd/images

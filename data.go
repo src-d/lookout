@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/src-d/lookout/pb"
-	"gopkg.in/src-d/go-git.v4/utils/ioutil"
-
 	"google.golang.org/grpc"
+	"gopkg.in/src-d/go-git.v4/utils/ioutil"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 type ChangesRequest = pb.ChangesRequest

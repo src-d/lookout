@@ -8,10 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/src-d/lookout/pb"
-
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 func setupDataServer(t *testing.T, dr *MockService) (*grpc.Server,
