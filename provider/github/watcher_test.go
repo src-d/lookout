@@ -12,13 +12,13 @@ import (
 	"time"
 
 	"github.com/src-d/lookout"
-	"github.com/src-d/lookout/pb"
 	"github.com/src-d/lookout/util/cache"
 
 	"github.com/gregjones/httpcache"
 	"github.com/stretchr/testify/suite"
 	vcsurl "gopkg.in/sourcegraph/go-vcsurl.v1"
 	log "gopkg.in/src-d/go-log.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 func init() {

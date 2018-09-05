@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/src-d/lookout"
-	"github.com/src-d/lookout/pb"
-	log "gopkg.in/src-d/go-log.v1"
 
 	"github.com/stretchr/testify/suite"
+	log "gopkg.in/src-d/go-log.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 type WatcherTestSuite struct {

@@ -1,9 +1,8 @@
 package lookout
 
 import (
-	"github.com/src-d/lookout/pb"
-
 	"google.golang.org/grpc"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 type EventResponse = pb.EventResponse

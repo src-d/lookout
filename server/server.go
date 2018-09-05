@@ -6,10 +6,10 @@ import (
 	"sync"
 
 	"github.com/src-d/lookout"
-	"github.com/src-d/lookout/pb"
 	"github.com/src-d/lookout/store"
 	"github.com/src-d/lookout/store/models"
 	"github.com/src-d/lookout/util/ctxlog"
+	"github.com/src-d/lookout/util/grpchelper"
 
 	log "gopkg.in/src-d/go-log.v1"
 	yaml "gopkg.in/yaml.v2"
@@ -131,7 +131,7 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent) error
 	s.status(ctx, e, lookout.PendingAnalysisStatus)
 
 	send := func(a lookout.AnalyzerClient, settings map[string]interface{}) ([]*lookout.Comment, error) {
-		st := pb.ToStruct(settings)
+		st := grpchelper.ToPBStruct(settings)
 		if st != nil {
 			e.Configuration = *st
 		}
@@ -174,7 +174,7 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
 	s.status(ctx, e, lookout.PendingAnalysisStatus)
 
 	send := func(a lookout.AnalyzerClient, settings map[string]interface{}) ([]*lookout.Comment, error) {
-		st := pb.ToStruct(settings)
+		st := grpchelper.ToPBStruct(settings)
 		if st != nil {
 			e.Configuration = *st
 		}
