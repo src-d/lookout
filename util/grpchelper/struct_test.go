@@ -1,12 +1,11 @@
-package pb_test
+package grpchelper_test
 
 import (
 	"testing"
 
 	types "github.com/gogo/protobuf/types"
+	"github.com/src-d/lookout/util/grpchelper"
 	"github.com/stretchr/testify/require"
-
-	"github.com/src-d/lookout/pb"
 )
 
 func TestToStruct(t *testing.T) {
@@ -97,6 +96,6 @@ func TestToStruct(t *testing.T) {
 		},
 	}
 
-	st := pb.ToStruct(inputMap)
+	st := grpchelper.ToPBStruct(inputMap)
 	require.Equal(expectedSt, st)
 }

@@ -1,4 +1,4 @@
-package pb
+package grpchelper
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 	types "github.com/gogo/protobuf/types"
 )
 
-// ToStruct converts a map[string]interface{} to a types.Struct
-func ToStruct(v map[string]interface{}) *types.Struct {
+// ToPBStruct converts a map[string]interface{} to a types.Struct
+func ToPBStruct(v map[string]interface{}) *types.Struct {
 	size := len(v)
 	if size == 0 {
 		return nil
