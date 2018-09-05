@@ -153,6 +153,14 @@
   version = "v1.4.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:6c2f939d99ad2074a4113c36aa93fa792ede8ff0b8cdb97634b41b9c5da7fab6"
+  name = "github.com/jinzhu/copier"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "7e38e58719c33e0d44d585c4ab477a30f8cb82dd"
+
+[[projects]]
   digest = "1:8021af4dcbd531ae89433c8c3a6520e51064114aaf8eb1724c3cf911c497c9ba"
   name = "github.com/kevinburke/ssh_config"
   packages = ["."]
@@ -274,6 +282,13 @@
   pruneopts = "NUT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:5cb64ae11c6690416028ba76726f101ffc669cbfacf05cdb5607c52bcfff11a0"
+  name = "github.com/sanity-io/litter"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "09e3a73d5b65eac2f14578aec8fb74ee9b4f1a5e"
 
 [[projects]]
   digest = "1:6bc0652ea6e39e22ccd522458b8bdd8665bf23bdc5a20eec90056e4dc7e273ca"
@@ -668,7 +683,9 @@
     "github.com/grpc-ecosystem/go-grpc-middleware",
     "github.com/grpc-ecosystem/go-grpc-middleware/logging",
     "github.com/jessevdk/go-flags",
+    "github.com/jinzhu/copier",
     "github.com/lib/pq",
+    "github.com/sanity-io/litter",
     "github.com/satori/go.uuid",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
