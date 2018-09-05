@@ -49,7 +49,7 @@
   version = "v1.9.0"
 
 [[projects]]
-  digest = "1:aba848b77ff362b03db51ac06379c36a120bc05b4cc6c5c74f6e6fa310454fa5"
+  digest = "1:da39f4a22829ca95e63566208e0ea42d6f055f41dff1b14fdab88d88f62df653"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -59,8 +59,8 @@
     "types",
   ]
   pruneopts = "T"
-  revision = "1adfc126b41513cc696b209667c8656ea7aac67c"
-  version = "v1.0.0"
+  revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
+  version = "v1.1.1"
 
 [[projects]]
   digest = "1:d49485d62a6b0f0c0c5a59ddfb86ae9f9be581fb47a97eb9cf8bee9d945e2d35"
@@ -623,6 +623,13 @@
   version = "v1.0.1"
 
 [[projects]]
+  digest = "1:10d795ab45a9e608b4c6ce471ac7dad79744b58b0940d93444b96f2131224a66"
+  name = "gopkg.in/src-d/lookout-sdk.v0"
+  packages = ["pb"]
+  pruneopts = "NUT"
+  revision = "13a9d4e12a91b75bafa30802b1df5c6ea2693fca"
+
+[[projects]]
   digest = "1:20d5d24cfd1dac53cbf730d5c9861c0792c68ae547e67fc16fa0ed0660481b0a"
   name = "gopkg.in/toqueteos/substring.v1"
   packages = ["."]
@@ -650,8 +657,6 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/gogo/protobuf/gogoproto",
-    "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/types",
     "github.com/golang-migrate/migrate",
     "github.com/golang-migrate/migrate/database/postgres",
@@ -669,7 +674,6 @@
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
-    "golang.org/x/net/context",
     "google.golang.org/grpc",
     "google.golang.org/grpc/connectivity",
     "gopkg.in/bblfsh/sdk.v1/protocol",
@@ -693,6 +697,7 @@
     "gopkg.in/src-d/go-kallax.v1",
     "gopkg.in/src-d/go-kallax.v1/types",
     "gopkg.in/src-d/go-log.v1",
+    "gopkg.in/src-d/lookout-sdk.v0/pb",
     "gopkg.in/yaml.v2",
   ]
   solver-name = "gps-cdcl"
