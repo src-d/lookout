@@ -1,3 +1,13 @@
+[prune]
+  go-tests = true
+  unused-packages = true
+  non-go = true
+
+  [[prune.project]]
+    name = "gopkg.in/src-d/go-git-fixtures.v3"
+    non-go = false
+    unused-packages = false
+
 [[constraint]]
   name = "github.com/gogo/protobuf"
   version = "1.1.1"
@@ -45,21 +55,6 @@
 [[constraint]]
   name = "gopkg.in/src-d/go-log.v1"
   version = "1.0.1"
-
-[prune]
-  go-tests = true
-  unused-packages = true
-  non-go = true
-
-  [[prune.project]]
-    name = "gopkg.in/src-d/go-git-fixtures.v3"
-    non-go = false
-    unused-packages = false
-
-  [[prune.project]]
-    name = "github.com/gogo/protobuf"
-    non-go = false
-    unused-packages = false
 
 [[constraint]]
   name = "gopkg.in/yaml.v2"
