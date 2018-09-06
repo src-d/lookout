@@ -16,7 +16,7 @@ addons:
       - g++-6
 
 go:
-  - '1.10.x'
+  - '1.11.x'
 
 before_install:
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
