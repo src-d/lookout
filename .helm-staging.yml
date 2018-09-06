@@ -1,6 +1,5 @@
 app:
   lookout:
-    repository: github.com/src-d/lookout,github.com/bblfsh/uast-viewer
     logLevel: debug
     secretName: lookout-github-credentials
     dbConnectionString: postgres://lookout:lookout@lookout-postgresql:5432/lookout?sslmode=disable
@@ -13,6 +12,10 @@ nodeSelector:
 nodeSelector:
  dummyAnalyzer:
    srcd.host/type: worker
+
+repositories:
+  - url: github.com/src-d/lookout
+  - url: github.com/bblfsh/uast-viewer
 
 providers:
   github:
