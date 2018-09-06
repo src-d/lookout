@@ -432,6 +432,69 @@ func (s *PosterTestSuite) TestPostOutOfRangeAndBody() {
 	s.True(createReviewsCalled)
 }
 
+func (s *PosterTestSuite) TestPostOKAndWrongFile() {
+	compareCalled := false
+	s.compareHandle(&compareCalled)
+
+	createReviewsCalled := false
+	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
+		s.False(createReviewsCalled)
+		createReviewsCalled = true
+
+		body, err := ioutil.ReadAll(r.Body)
+		s.NoError(err)
+
+		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
+			Body:  strptr("Global comment\n\nAnother global comment"),
+			Event: strptr(commentEvent),
+			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
+				Path:     strptr("main.go"),
+				Body:     strptr("File comment"),
+				Position: intptr(1),
+			}, &github.DraftReviewComment{
+				Path:     strptr("main.go"),
+				Position: intptr(3),
+				Body:     strptr("Line comment"),
+			}}})
+		s.JSONEq(string(expected), string(body))
+
+		resp := &github.Response{Response: &http.Response{StatusCode: 200}}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	customMockComments := []*lookout.Comment{
+		&lookout.Comment{
+			Text: "Global comment",
+		}, &lookout.Comment{
+			File: "main.go",
+			Text: "File comment",
+		}, &lookout.Comment{
+			File: "main.go",
+			Line: 5,
+			Text: "Line comment",
+		}, &lookout.Comment{
+			Text: "Another global comment",
+		}, &lookout.Comment{
+			File: "file-does-not-exist.txt",
+			Line: 5,
+			Text: "Line comment",
+		}}
+
+	customMockAnalyzerComments := []lookout.AnalyzerComments{
+		lookout.AnalyzerComments{
+			Config: lookout.AnalyzerConfig{
+				Name: "mock",
+			},
+			Comments: customMockComments,
+		}}
+
+	p := &Poster{pool: s.pool}
+	err := p.Post(context.Background(), mockEvent, customMockAnalyzerComments)
+	s.NoError(err)
+
+	s.True(createReviewsCalled)
+}
+
 func (s *PosterTestSuite) TestStatusOK() {
 	createStatusCalled := false
 

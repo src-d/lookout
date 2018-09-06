@@ -17,6 +17,8 @@ var (
 	// ErrLineNotAddition is returned when the file line number is not
 	// a + change in the patch diff
 	ErrLineNotAddition = errors.NewKind("line number is not an added change")
+	// ErrFileNotFound is returned when the file name is not part of the diff
+	ErrFileNotFound = errors.NewKind("file not found")
 )
 
 type diffLines struct {
@@ -120,7 +122,7 @@ func (d *diffLines) hunks(file string) ([]*hunk, map[int]bool, error) {
 	}
 
 	if ff == nil {
-		return nil, nil, fmt.Errorf("file not found: %s", file)
+		return nil, nil, ErrFileNotFound.New()
 	}
 
 	if ff.Patch == nil {

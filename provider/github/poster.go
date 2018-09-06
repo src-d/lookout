@@ -86,7 +86,7 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 	}
 
 	dl := newDiffLines(cc)
-	review, err := p.createReviewRequest(aCommentsList, dl)
+	review, err := p.createReviewRequest(ctx, aCommentsList, dl)
 	if errNoComments.Is(err) {
 		ctxlog.Get(ctx).Debugf("skipping posting analysis, there are no comments")
 		return nil
@@ -158,6 +158,7 @@ var (
 )
 
 func (p *Poster) createReviewRequest(
+	ctx context.Context,
 	aCommentsList []lookout.AnalyzerComments,
 	dl *diffLines) (*github.PullRequestReviewRequest, error) {
 	req := &github.PullRequestReviewRequest{
@@ -165,6 +166,8 @@ func (p *Poster) createReviewRequest(
 		//       the right lines.
 		Event: &commentEvent,
 	}
+
+	logger := ctxlog.Get(ctx)
 
 	var bodyComments []string
 
@@ -185,15 +188,27 @@ func (p *Poster) createReviewRequest(
 			} else {
 				line, err := dl.ConvertLine(c.File, int(c.Line), true)
 				if ErrLineOutOfDiff.Is(err) {
-					log.Debugf(
-						"skipping comment out the diff range. analyzer: %s, file %s, line %d",
-						aComments.Config.Name, c.File, c.Line)
+					logger.With(log.Fields{
+						"analyzer": aComments.Config.Name,
+						"file":     c.File,
+						"line":     c.Line,
+					}).Debugf("skipping comment out the diff range")
 					continue
 				}
 				if ErrLineNotAddition.Is(err) {
-					log.Debugf(
-						"skipping comment not on an added line (+ in diff). analyzer: %s, file %s, line %d",
-						aComments.Config.Name, c.File, c.Line)
+					logger.With(log.Fields{
+						"analyzer": aComments.Config.Name,
+						"file":     c.File,
+						"line":     c.Line,
+					}).Debugf("skipping comment not on an added line (+ in diff)")
+					continue
+				}
+				if ErrFileNotFound.Is(err) {
+					logger.With(log.Fields{
+						"analyzer": aComments.Config.Name,
+						"file":     c.File,
+						"line":     c.Line,
+					}).Warningf("skipping comment on a file not part of the diff")
 					continue
 				}
 
