@@ -6,6 +6,9 @@ analyzers:
 providers:
   github:
     comment_footer: "_If you have feedback about this comment, please, [tell us](%s)._"
+    # See https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
+    # app_id: 1234
+    # private_key: ./key.pem
 
 repositories:
   - url: github.com/src-d/lookout

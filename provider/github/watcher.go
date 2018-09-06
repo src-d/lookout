@@ -19,6 +19,8 @@ const Provider = "github"
 // ProviderConfig represents the yml config
 type ProviderConfig struct {
 	CommentFooter string `yaml:"comment_footer"`
+	PrivateKey    string `yaml:"private_key"`
+	AppID         int    `yaml:"app_id"`
 }
 
 // don't call github more often than

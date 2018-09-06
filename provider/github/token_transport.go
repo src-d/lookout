@@ -1,8 +1,12 @@
 package github
 
 import (
+	"context"
 	"net/http"
+	"strings"
 
+	"github.com/bradleyfalzon/ghinstallation"
+	"github.com/google/go-github/github"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/cache"
 	vcsurl "gopkg.in/sourcegraph/go-vcsurl.v1"
@@ -55,6 +59,83 @@ func NewClientPoolFromTokens(urlToConfig map[string]ClientConfig, cache *cache.V
 			byRepo[r.FullName] = client
 		}
 	}
+
+	pool := &ClientPool{
+		byClients: byClients,
+		byRepo:    byRepo,
+	}
+	return pool, nil
+}
+
+// NewClientPoolInstallations creates a new ClientPool using the App ID and
+// private key set in providerConf
+func NewClientPoolInstallations(
+	cache *cache.ValidableCache,
+	providerConf ProviderConfig,
+) (*ClientPool, error) {
+	// Use App authorization to list installations
+	appTr, err := ghinstallation.NewAppsTransportKeyFromFile(
+		http.DefaultTransport, providerConf.AppID, providerConf.PrivateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	appClient := github.NewClient(&http.Client{Transport: appTr})
+	app, _, err := appClient.Apps.Get(context.TODO(), "")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Infof("authorized as GitHub application %q, ID %v", app.GetName(), app.GetID())
+
+	installations, _, err := appClient.Apps.ListInstallations(context.TODO(), &github.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	byClients := make(map[*Client][]*lookout.RepositoryInfo, len(installations))
+	byRepo := make(map[string]*Client)
+	allRepos := make([]string, 0)
+
+	// Create a client for each installation, assign it to its repos
+	for _, installation := range installations {
+		installationID := int(installation.GetID())
+
+		itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport,
+			providerConf.AppID, installationID, providerConf.PrivateKey)
+		if err != nil {
+			return nil, err
+		}
+
+		// TODO (carlosms): hardcoded, take from config
+		watchMinInterval := ""
+		iClient := NewClient(itr, cache, log.DefaultLogger, watchMinInterval)
+
+		ghRepos, _, err := iClient.Apps.ListRepos(context.TODO(), &github.ListOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		repos := make([]*lookout.RepositoryInfo, len(ghRepos))
+
+		for i, ghRepo := range ghRepos {
+			log.Debugf("installation %v has repo %s", installationID, *ghRepo.HTMLURL)
+
+			repo, err := vcsurl.Parse(*ghRepo.HTMLURL)
+			if err != nil {
+				return nil, err
+			}
+
+			repos[i] = repo
+			byRepo[repo.FullName] = iClient
+			allRepos = append(allRepos, repo.FullName)
+		}
+
+		byClients[iClient] = repos
+	}
+
+	log.Infof("found %v repositories using the GitHub application: %v",
+		len(allRepos), strings.Join(allRepos, ","))
 
 	pool := &ClientPool{
 		byClients: byClients,

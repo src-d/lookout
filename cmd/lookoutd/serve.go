@@ -169,48 +169,78 @@ func (c *ServeCommand) logConfig(conf Config) {
 }
 
 func (c *ServeCommand) initProvider(conf Config) error {
+	switch c.Provider {
+	case github.Provider:
+		if conf.Providers.Github.PrivateKey != "" || conf.Providers.Github.AppID != 0 {
+			return c.initProviderGithubApp(conf)
+		}
+
+		return c.initProviderGithubToken(conf)
+	}
+
+	return nil
+}
+
+func (c *ServeCommand) initProviderGithubToken(conf Config) error {
 	noDefaultAuth := c.GithubUser == "" || c.GithubToken == ""
 	defaultConfig := github.ClientConfig{
 		User:  c.GithubUser,
 		Token: c.GithubToken,
 	}
 
-	switch c.Provider {
-	case github.Provider:
-		urls := strings.Split(c.Positional.Repository, ",")
-		urlToConfig := make(map[string]github.ClientConfig, len(urls))
-		repoToConfig := make(map[string]github.ClientConfig, len(conf.Repositories))
-		for _, repo := range conf.Repositories {
-			if !repo.Client.IsZero() {
-				repoToConfig[repo.URL] = repo.Client
-			}
+	urls := strings.Split(c.Positional.Repository, ",")
+	urlToConfig := make(map[string]github.ClientConfig, len(urls))
+	repoToConfig := make(map[string]github.ClientConfig, len(conf.Repositories))
+	for _, repo := range conf.Repositories {
+		if !repo.Client.IsZero() {
+			repoToConfig[repo.URL] = repo.Client
 		}
-
-		for _, url := range urls {
-			conf, ok := repoToConfig[url]
-			if !ok {
-				if noDefaultAuth {
-					// Empty github auth is only useful for --dry-run,
-					// we may want to enforce this as an error
-					log.Warningf("missing authentication for repository %s, and no default provided", url)
-				} else {
-					log.Infof("using default authentication for repository %s", url)
-				}
-
-				conf = defaultConfig
-			}
-			urlToConfig[url] = conf
-		}
-
-		cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
-		pool, err := github.NewClientPoolFromTokens(urlToConfig, cache)
-		if err != nil {
-			return err
-		}
-
-		c.pool = pool
 	}
 
+	for _, url := range urls {
+		conf, ok := repoToConfig[url]
+		if !ok {
+			if noDefaultAuth {
+				// Empty github auth is only useful for --dry-run,
+				// we may want to enforce this as an error
+				log.Warningf("missing authentication for repository %s, and no default provided", url)
+			} else {
+				log.Infof("using default authentication for repository %s", url)
+			}
+
+			conf = defaultConfig
+		}
+		urlToConfig[url] = conf
+	}
+
+	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
+	pool, err := github.NewClientPoolFromTokens(urlToConfig, cache)
+	if err != nil {
+		return err
+	}
+
+	c.pool = pool
+	return nil
+}
+
+func (c *ServeCommand) initProviderGithubApp(conf Config) error {
+	log.Warningf("with GitHub App authentication the repository argument is ignored")
+
+	if conf.Providers.Github.PrivateKey == "" {
+		return fmt.Errorf("missing GitHub App private key filepath in config")
+	}
+	if conf.Providers.Github.AppID == 0 {
+		return fmt.Errorf("missing GitHub App ID in config")
+	}
+
+	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
+	pool, err := github.NewClientPoolInstallations(cache, conf.Providers.Github)
+
+	if err != nil {
+		return err
+	}
+
+	c.pool = pool
 	return nil
 }
 
