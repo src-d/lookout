@@ -22,7 +22,7 @@ func (suite *MultiDummyIntegrationSuite) SetupTest() {
 	suite.StartDummy("--files")
 	suite.StartDummy("--files", "--analyzer", "ipv4://localhost:10303")
 	suite.r, suite.w = suite.StartServe("--provider", "json",
-		"-c", dubleDummyConfigFile, "dummy-repo-url")
+		"-c", dubleDummyConfigFile)
 
 	// make sure server started correctly
 	suite.GrepTrue(suite.r, "Starting watcher")

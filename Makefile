@@ -86,7 +86,7 @@ clean-all:
 
 .PHONY: dry-run
 dry-run: $(CONFIG_FILE)
-	go run cmd/lookoutd/*.go serve --dry-run github.com/src-d/lookout
+	go run cmd/lookoutd/*.go serve --dry-run
 $(CONFIG_FILE):
 	cp "$(CONFIG_FILE).tpl" $(CONFIG_FILE)
 
