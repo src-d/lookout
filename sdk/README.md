@@ -1,10 +1,10 @@
 # Lookout Analyzer SDK
 
-An analyzer is a [gRPC](https://grpc.io/) server that implements the [Analyzer service](./service_analyzer.proto) to receive events from the lookout server.
+An analyzer is a [gRPC](https://grpc.io/) server that implements the [Analyzer service](https://github.com/src-d/lookout-sdk/tree/master/proto/service_analyzer.proto) to receive events from the lookout server.
 
-At the same time, an analyzer acts as a gRPC client to access the [Data Server](./service_data.proto) exposed by the lookout server. This endpoint will provide the necessary source code and [Babelfish Universal Abstract Syntax Trees (UAST)](https://doc.bblf.sh/uast/uast-specification.html). See `LOOKOUT_DATA_SERVER` environment variable below for more details.
+At the same time, an analyzer acts as a gRPC client to access the [Data Server](https://github.com/src-d/lookout-sdk/blob/master/proto/service_data.proto) exposed by the lookout server. This endpoint will provide the necessary source code and [Babelfish Universal Abstract Syntax Trees (UAST)](https://doc.bblf.sh/uast/uast-specification.html). See `LOOKOUT_DATA_SERVER` environment variable below for more details.
 
-All the needed `.proto` files are located in the top-level [/sdk directory](./).
+All the needed `.proto` files are located in the [/sdk directory](https://github.com/src-d/lookout-sdk/tree/master/proto).
 
 ## Code generation
 
@@ -12,27 +12,7 @@ gPRC communication is performed using protocol buffers. You can create a new ana
 
 Please refer to the [official Protocol Buffers documentation](https://developers.google.com/protocol-buffers/) to learn how to get started.
 
-### Python
-
-For convenience we are including here a simplified example of how to generate Python code.
-You have more detailed instructions in the [official gRPC Python Quickstart guide](https://grpc.io/docs/quickstart/python.html).
-
-First install the dependencies:
-
-```bash
-$ pip install grpcio-tools
-```
-
-Now clone this repository and run this command from the root directory:
-
-```bash
-$ PY_OUT_DIR=<directory for generated files> mkdir -p $PY_OUT_DIR && \
-    python -m grpc_tools.protoc -Isdk \
-    --python_out="$PY_OUT_DIR" --grpc_python_out="$PY_OUT_DIR" \
-    $(find sdk -name *.proto)
-```
-
-_Note_ Currently there are conflicts when the generated code and the `bblfsh` Python package are used. See [this file](https://github.com/src-d/style-analyzer/blob/master/lookout/core/generate_rpc.sh) for a workaround.
+Pre-generated libraries code for Golang and Python is available in the [lookout-sdk repository](https://github.com/src-d/lookout-sdk).
 
 ## Developing an Analyzer
 
