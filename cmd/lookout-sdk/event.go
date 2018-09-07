@@ -39,10 +39,16 @@ func (c *EventCommand) openRepository() error {
 	var err error
 
 	c.repo, err = gogit.PlainOpenWithOptions(c.GitDir, &gogit.PlainOpenOptions{
-		DetectDotGit: true,
+		// it's useful to walk to parent in case --git-dir is default
+		// but very confusing in all other cases
+		DetectDotGit: c.GitDir == ".",
 	})
 
-	return err
+	if err != nil {
+		return fmt.Errorf("can't open repository at path '%s': %s", c.GitDir, err)
+	}
+
+	return nil
 }
 
 func (c *EventCommand) resolveRefs() (*lookout.ReferencePointer, *lookout.ReferencePointer, error) {
