@@ -49,17 +49,17 @@ func (c *EventCommand) resolveRefs() (*lookout.ReferencePointer, *lookout.Refere
 	log.Infof("resolving to/from references")
 	baseHash, err := getCommitHashByRev(c.repo, c.RevFrom)
 	if err != nil {
-		return nil, nil, fmt.Errorf("base revision error: %s", err)
+		return nil, nil, fmt.Errorf("base revision '%s' error: %s", c.RevFrom, err)
 	}
 
 	headHash, err := getCommitHashByRev(c.repo, c.RevTo)
 	if err != nil {
-		return nil, nil, fmt.Errorf("head revision error: %s", err)
+		return nil, nil, fmt.Errorf("head revision '%s' error: %s", c.RevTo, err)
 	}
 
 	fullGitPath, err := filepath.Abs(c.GitDir)
 	if err != nil {
-		return nil, nil, fmt.Errorf("can't resolve full path: %s", err)
+		return nil, nil, fmt.Errorf("can't resolve '%s' full path: %s", c.GitDir, err)
 	}
 
 	fromRef := lookout.ReferencePointer{
