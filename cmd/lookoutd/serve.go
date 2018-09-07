@@ -256,21 +256,14 @@ func (c *ServeCommand) initPoster(conf Config) (lookout.Poster, error) {
 func (c *ServeCommand) initWatcher(conf Config) (lookout.Watcher, error) {
 	switch c.Provider {
 	case github.Provider:
-		urls := make([]string, len(conf.Repositories))
-		for i, repo := range conf.Repositories {
-			urls[i] = repo.URL
-		}
-
-		watcher, err := github.NewWatcher(c.pool, &lookout.WatchOptions{
-			URLs: urls,
-		})
+		watcher, err := github.NewWatcher(c.pool)
 		if err != nil {
 			return nil, err
 		}
 
 		return watcher, nil
 	case json.Provider:
-		return json.NewWatcher(os.Stdin, &lookout.WatchOptions{})
+		return json.NewWatcher(os.Stdin)
 	default:
 		return nil, fmt.Errorf("provider %s not supported", c.Provider)
 	}
