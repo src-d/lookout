@@ -5,6 +5,7 @@ package server_test
 import (
 	"testing"
 
+	"github.com/src-d/lookout"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -30,12 +31,10 @@ func (suite *DummyIntegrationSuite) TearDownTest() {
 	suite.Stop()
 }
 
-const successJSON = `{"event":"review", "internal_id": "1", "number": 1, "commit_revision":{"base":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"66924f49aa9987273a137857c979ee5f0e709e30"},"head":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"2c9f56bcb55be47cf35d40d024ec755399f699c7"}}}`
-
 func (suite *DummyIntegrationSuite) TestSuccessReview() {
 	suite.sendEvent(successJSON)
 	suite.GrepTrue(suite.r, "processing pull request")
-	suite.GrepTrue(suite.r, `{"analyzer-name":"Dummy","file":"cmd/lookout/serve.go","line":33,"text":"This line exceeded`)
+	suite.GrepTrue(suite.r, `{"analyzer-name":"Dummy","file":"another.go","line":3,"text":"This line exceeded`)
 	suite.GrepTrue(suite.r, `status=success`)
 }
 
@@ -51,21 +50,43 @@ func (suite *DummyIntegrationSuite) TestReviewDontPost() {
 	suite.sendEvent(successJSON)
 	suite.GrepTrue(suite.r, `status=success`)
 
-	json := `{"event":"review", "internal_id": "2", "number": 1, "commit_revision":{"base":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"66924f49aa9987273a137857c979ee5f0e709e30"},"head":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"2c9f56bcb55be47cf35d40d024ec755399f699c7"}}}`
-	suite.sendEvent(json)
+	newEventForSuccessPREvent := &jsonReviewEvent{
+		ReviewEvent: &lookout.ReviewEvent{
+			InternalID:     "2",
+			Number:         1,
+			CommitRevision: longLineFixture.CommitRevision,
+		},
+	}
+
+	suite.sendEvent(newEventForSuccessPREvent.String())
 	suite.GrepTrue(suite.r, "processing pull request")
 	suite.GrepAndNot(suite.r, `status=success`, `posting analysis`)
 }
 
 func (suite *DummyIntegrationSuite) TestWrongRevision() {
-	json := `{"event":"review", "internal_id": "3", "number": 3, "commit_revision": {"base":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"0000000000000000000000000000000000000000"},"head":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"0000000000000000000000000000000000000000"}}}`
-	suite.sendEvent(json)
+	e := &jsonReviewEvent{
+		ReviewEvent: &lookout.ReviewEvent{
+			InternalID:     "3",
+			Number:         3,
+			CommitRevision: longLineFixture.CommitRevision,
+		},
+	}
+	// change hashes to incorrect ones
+	e.CommitRevision.Base.Hash = "0000000000000000000000000000000000000000"
+	e.CommitRevision.Head.Hash = "0000000000000000000000000000000000000000"
+
+	suite.sendEvent(e.String())
 	suite.GrepTrue(suite.r, `event processing failed`)
 }
 
 func (suite *DummyIntegrationSuite) TestSuccessPush() {
-	successPushJSON := `{"event":"push", "internal_id": "1", "commit_revision":{"base":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"66924f49aa9987273a137857c979ee5f0e709e30"},"head":{"internal_repository_url":"https://github.com/src-d/lookout.git","reference_name":"refs/heads/master","hash":"2c9f56bcb55be47cf35d40d024ec755399f699c7"}}}`
-	suite.sendEvent(successPushJSON)
+	pushEvent := jsonPushEvent{
+		PushEvent: &lookout.PushEvent{
+			InternalID:     "1",
+			CommitRevision: longLineFixture.CommitRevision,
+		},
+	}
+	suite.sendEvent(pushEvent.String())
 	suite.GrepTrue(suite.r, "processing push")
 	suite.GrepTrue(suite.r, "comments can belong only to review event but 1 is given")
 	suite.GrepTrue(suite.r, `status=success`)

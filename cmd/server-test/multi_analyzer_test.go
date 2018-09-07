@@ -43,13 +43,13 @@ func (suite *MultiDummyIntegrationSuite) TestSuccessReview() {
 
 	suite.Require().Contains(
 		st,
-		`{"analyzer-name":"Dummy1","file":"cmd/lookout/serve.go","line":33,"text":"This line exceeded`,
+		`{"analyzer-name":"Dummy1","file":"another.go","line":3,"text":"This line exceeded`,
 		fmt.Sprintf("no comments from the first analyzer from %s in '%s'", dubleDummyConfigFile, buf),
 	)
 
 	suite.Require().Contains(
 		st,
-		`{"analyzer-name":"Dummy2","file":"cmd/lookout/serve.go","line":33,"text":"This line exceeded`,
+		`{"analyzer-name":"Dummy2","file":"another.go","line":3,"text":"This line exceeded`,
 		fmt.Sprintf("no comments from the second analyzer from %s in '%s'", dubleDummyConfigFile, buf),
 	)
 }
