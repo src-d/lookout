@@ -31,6 +31,16 @@ func (p *ClientPool) Client(username, repo string) (*Client, bool) {
 	return c, ok
 }
 
+// Repos returns list of repositories in the pool
+func (p *ClientPool) Repos() []string {
+	var rps []string
+	for r := range p.byRepo {
+		rps = append(rps, r)
+	}
+
+	return rps
+}
+
 // Client is a wrapper for github.Client that supports cache and provides rate limit information
 type Client struct {
 	*github.Client

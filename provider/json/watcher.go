@@ -18,14 +18,12 @@ const Provider = "json"
 
 // Watcher watches for new json events in the console
 type Watcher struct {
-	o       *lookout.WatchOptions
 	scanner *bufio.Scanner
 }
 
 // NewWatcher returns a new json console watcher
-func NewWatcher(reader io.Reader, o *lookout.WatchOptions) (*Watcher, error) {
+func NewWatcher(reader io.Reader) (*Watcher, error) {
 	return &Watcher{
-		o:       o,
 		scanner: bufio.NewScanner(reader),
 	}, nil
 }

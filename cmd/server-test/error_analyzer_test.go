@@ -56,7 +56,7 @@ func (suite *ErrorAnalyzerIntegrationSuite) SetupTest() {
 	suite.StoppableCtx()
 	suite.startAnalyzer(suite.Ctx, &errAnalyzer{})
 	suite.r, suite.w = suite.StartServe("--provider", "json",
-		"-c", "../../fixtures/dummy_config.yml", "dummy-repo-url")
+		"-c", "../../fixtures/dummy_config.yml")
 
 	// make sure server started correctly
 	suite.GrepTrue(suite.r, "Starting watcher")

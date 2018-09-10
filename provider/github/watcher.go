@@ -37,20 +37,18 @@ var (
 
 type Watcher struct {
 	pool *ClientPool
-	o    *lookout.WatchOptions
 }
 
 // NewWatcher returns a new
-func NewWatcher(pool *ClientPool, o *lookout.WatchOptions) (*Watcher, error) {
+func NewWatcher(pool *ClientPool) (*Watcher, error) {
 	return &Watcher{
 		pool: pool,
-		o:    o,
 	}, nil
 }
 
 // Watch start to make request to the GitHub API and return the new events.
 func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
-	ctxlog.Get(ctx).With(log.Fields{"urls": w.o.URLs}).Infof("Starting watcher")
+	ctxlog.Get(ctx).With(log.Fields{"repos": w.pool.Repos()}).Infof("Starting watcher")
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

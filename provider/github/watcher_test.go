@@ -84,9 +84,7 @@ const (
 
 func (s *WatcherTestSuite) newWatcher(repoURLs []string) *Watcher {
 	pool := newTestPool(s.Suite, repoURLs, s.githubURL, s.cache)
-	w, err := NewWatcher(pool, &lookout.WatchOptions{
-		URLs: repoURLs,
-	})
+	w, err := NewWatcher(pool)
 
 	s.NoError(err)
 
@@ -311,9 +309,7 @@ func (s *WatcherTestSuite) TestCustomMinInterval() {
 		byRepo: map[string]*Client{"mock/test": client},
 	}
 
-	w, err := NewWatcher(pool, &lookout.WatchOptions{
-		URLs: []string{"github.com/mock/test"},
-	})
+	w, err := NewWatcher(pool)
 	s.NoError(err)
 
 	globalTimeout := clientMinInterval * 3

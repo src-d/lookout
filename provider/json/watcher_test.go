@@ -36,7 +36,7 @@ func init() {
 func (s *WatcherTestSuite) TestWatch() {
 	var events int
 
-	w, err := NewWatcher(strings.NewReader(pushJSON+"\n"+reviewJSON), &lookout.WatchOptions{})
+	w, err := NewWatcher(strings.NewReader(pushJSON + "\n" + reviewJSON))
 
 	s.NoError(err)
 
@@ -60,7 +60,7 @@ func (s *WatcherTestSuite) TestWatch() {
 func (s *WatcherTestSuite) TestWatch_WrongEvent() {
 	var events int
 
-	w, err := NewWatcher(strings.NewReader(badEvent), &lookout.WatchOptions{})
+	w, err := NewWatcher(strings.NewReader(badEvent))
 
 	s.NoError(err)
 
@@ -79,7 +79,7 @@ func (s *WatcherTestSuite) TestWatch_WrongEvent() {
 func (s *WatcherTestSuite) TestWatch_BadJSON() {
 	var events int
 
-	w, err := NewWatcher(strings.NewReader(badEvent), &lookout.WatchOptions{})
+	w, err := NewWatcher(strings.NewReader(badEvent))
 
 	s.NoError(err)
 
@@ -96,7 +96,7 @@ func (s *WatcherTestSuite) TestWatch_BadJSON() {
 }
 
 func (s *WatcherTestSuite) TestWatch_WithError() {
-	w, err := NewWatcher(strings.NewReader(pushJSON), &lookout.WatchOptions{})
+	w, err := NewWatcher(strings.NewReader(pushJSON))
 
 	s.NoError(err)
 

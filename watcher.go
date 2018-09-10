@@ -22,8 +22,3 @@ type Watcher interface {
 
 // EventHandler funciton to be called when a new event happends.
 type EventHandler func(Event) error
-
-// WatchOptions options to use in the Watcher constructors.
-type WatchOptions struct {
-	URLs []string
-}

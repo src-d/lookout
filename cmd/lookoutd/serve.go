@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/provider/github"
@@ -51,9 +50,6 @@ type ServeCommand struct {
 	DryRun      bool   `long:"dry-run" env:"LOOKOUT_DRY_RUN" description:"analyze repositories and log the result without posting code reviews to GitHub"`
 	Library     string `long:"library" default:"/tmp/lookout" env:"LOOKOUT_LIBRARY" description:"path to the lookout library"`
 	Provider    string `long:"provider" default:"github" env:"LOOKOUT_PROVIDER" description:"provider name: github, json"`
-	Positional  struct {
-		Repository string `positional-arg-name:"repository"`
-	} `positional-args:"yes" required:"yes"`
 
 	analyzers map[string]lookout.AnalyzerClient
 	pool      *github.ClientPool
@@ -154,8 +150,14 @@ func (c *ServeCommand) logConfig(conf Config) {
 	var confCp Config
 	copier.Copy(&confCp, conf)
 
-	for i := range confCp.Repositories {
-		confCp.Repositories[i].Client.Token = "****"
+	confCp.Repositories = make([]RepoConfig, len(conf.Repositories))
+	for i := range conf.Repositories {
+		var repoConfigCp RepoConfig
+		copier.Copy(&repoConfigCp, conf.Repositories[i])
+		if repoConfigCp.Client.Token != "" {
+			repoConfigCp.Client.Token = "****"
+		}
+		confCp.Repositories[i] = repoConfigCp
 	}
 
 	lt := litter.Options{
@@ -188,18 +190,13 @@ func (c *ServeCommand) initProviderGithubToken(conf Config) error {
 		Token: c.GithubToken,
 	}
 
-	urls := strings.Split(c.Positional.Repository, ",")
-	urlToConfig := make(map[string]github.ClientConfig, len(urls))
 	repoToConfig := make(map[string]github.ClientConfig, len(conf.Repositories))
 	for _, repo := range conf.Repositories {
-		if !repo.Client.IsZero() {
-			repoToConfig[repo.URL] = repo.Client
-		}
+		repoToConfig[repo.URL] = repo.Client
 	}
 
-	for _, url := range urls {
-		conf, ok := repoToConfig[url]
-		if !ok {
+	for url, config := range repoToConfig {
+		if config.IsZero() {
 			if noDefaultAuth {
 				// Empty github auth is only useful for --dry-run,
 				// we may want to enforce this as an error
@@ -208,13 +205,12 @@ func (c *ServeCommand) initProviderGithubToken(conf Config) error {
 				log.Infof("using default authentication for repository %s", url)
 			}
 
-			conf = defaultConfig
+			repoToConfig[url] = defaultConfig
 		}
-		urlToConfig[url] = conf
 	}
 
 	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
-	pool, err := github.NewClientPoolFromTokens(urlToConfig, cache)
+	pool, err := github.NewClientPoolFromTokens(repoToConfig, cache)
 	if err != nil {
 		return err
 	}
@@ -224,8 +220,6 @@ func (c *ServeCommand) initProviderGithubToken(conf Config) error {
 }
 
 func (c *ServeCommand) initProviderGithubApp(conf Config) error {
-	log.Warningf("with GitHub App authentication the repository argument is ignored")
-
 	if conf.Providers.Github.PrivateKey == "" {
 		return fmt.Errorf("missing GitHub App private key filepath in config")
 	}
@@ -262,16 +256,14 @@ func (c *ServeCommand) initPoster(conf Config) (lookout.Poster, error) {
 func (c *ServeCommand) initWatcher(conf Config) (lookout.Watcher, error) {
 	switch c.Provider {
 	case github.Provider:
-		watcher, err := github.NewWatcher(c.pool, &lookout.WatchOptions{
-			URLs: strings.Split(c.Positional.Repository, ","),
-		})
+		watcher, err := github.NewWatcher(c.pool)
 		if err != nil {
 			return nil, err
 		}
 
 		return watcher, nil
 	case json.Provider:
-		return json.NewWatcher(os.Stdin, &lookout.WatchOptions{})
+		return json.NewWatcher(os.Stdin)
 	default:
 		return nil, fmt.Errorf("provider %s not supported", c.Provider)
 	}
