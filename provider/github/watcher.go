@@ -158,7 +158,7 @@ func (w *Watcher) processRepoPRs(
 	repo *lookout.RepositoryInfo,
 	cb lookout.EventHandler,
 ) (time.Duration, error) {
-	resp, prs, err := w.doPRListRequest(ctx, repo.Username, repo.Name)
+	resp, prs, err := w.doPRListRequest(ctx, c, repo.Username, repo.Name)
 	if ErrGitHubAPI.Is(err) {
 		ctxlog.Get(ctx).With(log.Fields{
 			"repository": repo.FullName, "response": resp,
@@ -170,7 +170,7 @@ func (w *Watcher) processRepoPRs(
 		return c.watchMinInterval, err
 	}
 
-	err = w.handlePrs(ctx, cb, repo, resp, prs)
+	err = w.handlePrs(ctx, c, cb, repo, resp, prs)
 	return c.watchMinInterval, err
 }
 
@@ -180,7 +180,7 @@ func (w *Watcher) processRepoEvents(
 	repo *lookout.RepositoryInfo,
 	cb lookout.EventHandler,
 ) (time.Duration, error) {
-	resp, events, err := w.doEventRequest(ctx, repo.Username, repo.Name)
+	resp, events, err := w.doEventRequest(ctx, c, repo.Username, repo.Name)
 	if ErrGitHubAPI.Is(err) {
 		ctxlog.Get(ctx).With(log.Fields{
 			"repository": repo.FullName, "response": resp,
@@ -192,12 +192,17 @@ func (w *Watcher) processRepoEvents(
 		return c.PollInterval(eventsCategory), err
 	}
 
-	err = w.handleEvents(ctx, cb, repo, resp, events)
+	err = w.handleEvents(ctx, c, cb, repo, resp, events)
 	return c.PollInterval(eventsCategory), err
 }
 
-func (w *Watcher) handlePrs(ctx context.Context, cb lookout.EventHandler, r *lookout.RepositoryInfo,
-	resp *github.Response, prs []*github.PullRequest) error {
+func (w *Watcher) handlePrs(ctx context.Context,
+	client *Client,
+	cb lookout.EventHandler,
+	r *lookout.RepositoryInfo,
+	resp *github.Response,
+	prs []*github.PullRequest,
+) error {
 
 	if len(prs) == 0 {
 		return nil
@@ -219,16 +224,17 @@ func (w *Watcher) handlePrs(ctx context.Context, cb lookout.EventHandler, r *loo
 
 	logger.Debugf("request to %s cached", resp.Request.URL)
 
-	client, err := w.getClient(r.Username, r.Name)
-	if err != nil {
-		return err
-	}
-
 	return client.Validate(resp.Request.URL.String())
 }
 
-func (w *Watcher) handleEvents(ctx context.Context, cb lookout.EventHandler, r *lookout.RepositoryInfo,
-	resp *github.Response, events []*github.Event) error {
+func (w *Watcher) handleEvents(
+	ctx context.Context,
+	client *Client,
+	cb lookout.EventHandler,
+	r *lookout.RepositoryInfo,
+	resp *github.Response,
+	events []*github.Event,
+) error {
 
 	if len(events) == 0 {
 		return nil
@@ -254,11 +260,6 @@ func (w *Watcher) handleEvents(ctx context.Context, cb lookout.EventHandler, r *
 
 	logger.Debugf("request to %s cached", resp.Request.URL)
 
-	client, err := w.getClient(r.Username, r.Name)
-	if err != nil {
-		return err
-	}
-
 	return client.Validate(resp.Request.URL.String())
 }
 
@@ -266,16 +267,12 @@ func (w *Watcher) handleEvent(r *lookout.RepositoryInfo, e *github.Event) (looko
 	return castEvent(r, e)
 }
 
-func (w *Watcher) doPRListRequest(ctx context.Context, username, repository string) (
+func (w *Watcher) doPRListRequest(ctx context.Context, client *Client, username, repository string) (
 	*github.Response, []*github.PullRequest, error,
 ) {
 	ctx, cancel := context.WithTimeout(ctx, RequestTimeout)
 	defer cancel()
 
-	client, err := w.getClient(username, repository)
-	if err != nil {
-		return nil, nil, err
-	}
 	prs, resp, err := client.PullRequests.List(ctx, username, repository, &github.PullRequestListOptions{})
 	if err != nil {
 		return resp, nil, ErrGitHubAPI.Wrap(err)
@@ -288,16 +285,11 @@ func (w *Watcher) doPRListRequest(ctx context.Context, username, repository stri
 	return resp, prs, err
 }
 
-func (w *Watcher) doEventRequest(ctx context.Context, username, repository string) (
+func (w *Watcher) doEventRequest(ctx context.Context, client *Client, username, repository string) (
 	*github.Response, []*github.Event, error,
 ) {
 	ctx, cancel := context.WithTimeout(ctx, RequestTimeout)
 	defer cancel()
-
-	client, err := w.getClient(username, repository)
-	if err != nil {
-		return nil, nil, err
-	}
 
 	events, resp, err := client.Activity.ListRepositoryEvents(
 		ctx, username, repository, &github.ListOptions{},
@@ -312,14 +304,6 @@ func (w *Watcher) doEventRequest(ctx context.Context, username, repository strin
 	}
 
 	return resp, events, err
-}
-
-func (w *Watcher) getClient(username, repository string) (*Client, error) {
-	client, ok := w.pool.Client(username, repository)
-	if !ok {
-		return nil, fmt.Errorf("client for %s/%s doesn't exist", username, repository)
-	}
-	return client, nil
 }
 
 func (w *Watcher) newInterval(rate github.Rate, minInterval time.Duration) time.Duration {
