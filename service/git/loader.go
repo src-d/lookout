@@ -48,7 +48,7 @@ func (l *LibraryCommitLoader) LoadCommits(
 		return nil, err
 	}
 
-	r, err := l.Library.GetOrInit(frp.Repository())
+	r, err := l.Library.GetOrInit(ctx, frp.Repository())
 	if err != nil {
 		return nil, err
 	}

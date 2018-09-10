@@ -1,6 +1,7 @@
 package git
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -204,6 +205,7 @@ func (s *ScannerSuite) testFileFilterScannerFixture(fixture *lookout.FilesReques
 		require.NoError(err)
 
 		cs := NewFileFilterScanner(
+			context.Background(),
 			NewTreeScanner(headTree),
 			fixture.IncludePattern, fixture.ExcludePattern,
 		)
@@ -229,6 +231,7 @@ func (s *ScannerSuite) TestChangeBlobScanner() {
 	require.NoError(err)
 
 	cs := NewChangeBlobScanner(
+		context.Background(),
 		NewTreeScanner(headTree),
 		nil, headTree,
 	)
@@ -262,6 +265,7 @@ func (s *ScannerSuite) TestFileBlobScanner() {
 	require.NoError(err)
 
 	cs := NewFileBlobScanner(
+		context.Background(),
 		NewTreeScanner(headTree),
 		headTree,
 	)
@@ -340,7 +344,7 @@ func (s *ScannerSuite) TestFileExcludeVendorScanner() {
 	headTree, err := head.Tree()
 	require.NoError(err)
 
-	cs := NewFileExcludeVendorScanner(NewTreeScanner(headTree))
+	cs := NewFileExcludeVendorScanner(context.Background(), NewTreeScanner(headTree))
 
 	var files []*lookout.File
 	for cs.Next() {

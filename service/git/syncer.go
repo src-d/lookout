@@ -43,7 +43,7 @@ func (s *Syncer) Sync(ctx context.Context,
 		}
 	}
 
-	r, err := s.l.GetOrInit(frp.Repository())
+	r, err := s.l.GetOrInit(ctx, frp.Repository())
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (s *Syncer) Sync(ctx context.Context,
 		var rs config.RefSpec
 		if "" == rp.ReferenceName {
 			rs = config.RefSpec(fmt.Sprintf(config.DefaultFetchRefSpec, defaultRemoteName))
-			log.Warningf("empty ReferenceName given in %v, using default '%s' instead", rp, rs)
+			ctxlog.Get(ctx).Warningf("empty ReferenceName given in %v, using default '%s' instead", rp, rs)
 		} else {
 			rs = config.RefSpec(fmt.Sprintf("%s:%[1]s", rp.ReferenceName))
 		}
