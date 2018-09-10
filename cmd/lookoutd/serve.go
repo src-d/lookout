@@ -281,7 +281,7 @@ func (c *ServeCommand) startAnalyzer(conf lookout.AnalyzerConfig) (lookout.Analy
 		return nil, err
 	}
 
-	go grpchelper.LogConnStatusChanges(ctx, log.With(log.Fields{
+	go grpchelper.LogConnStatusChanges(ctx, log.DefaultLogger.With(log.Fields{
 		"analyzer": conf.Name,
 		"addr":     conf.Addr,
 	}), conn)
