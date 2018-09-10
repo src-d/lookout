@@ -20,5 +20,5 @@ type Watcher interface {
 	Watch(context.Context, EventHandler) error
 }
 
-// EventHandler funciton to be called when a new event happends.
-type EventHandler func(Event) error
+// EventHandler is the function to be called when a new event happens.
+type EventHandler func(context.Context, Event) error

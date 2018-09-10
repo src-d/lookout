@@ -103,7 +103,7 @@ func (s *WatcherTestSuite) TestWatch() {
 	defer cancel()
 
 	w := s.newWatcher([]string{"github.com/mock/test-a", "github.com/mock/test-b"})
-	err := w.Watch(ctx, func(e lookout.Event) error {
+	err := w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
 		atomic.AddInt32(&events, 1)
 
 		switch e.Type() {
@@ -133,7 +133,7 @@ func (s *WatcherTestSuite) TestWatch_CallbackError_Pull() {
 	s.mux.HandleFunc("/repos/mock/test/events", emptyArrayHandler)
 
 	w := s.newWatcher([]string{"github.com/mock/test"})
-	err := w.Watch(context.TODO(), func(e lookout.Event) error {
+	err := w.Watch(context.TODO(), func(ctx context.Context, e lookout.Event) error {
 		s.Equal(pb.ReviewEventType, e.Type())
 		s.Equal(pullID, e.ID().String())
 
@@ -150,7 +150,7 @@ func (s *WatcherTestSuite) TestWatch_CallbackError_Event() {
 	s.mux.HandleFunc("/repos/mock/test/events", eventsHandler(&calls))
 
 	w := s.newWatcher([]string{"github.com/mock/test"})
-	err := w.Watch(context.TODO(), func(e lookout.Event) error {
+	err := w.Watch(context.TODO(), func(ctx context.Context, e lookout.Event) error {
 		s.Equal(pb.PushEventType, e.Type())
 		s.Equal(pushID, e.ID().String())
 
@@ -178,7 +178,7 @@ func (s *WatcherTestSuite) TestWatch_HttpError() {
 	defer cancel()
 
 	w := s.newWatcher([]string{"github.com/mock/test", "github.com/mock/test-err"})
-	err := w.Watch(ctx, func(e lookout.Event) error {
+	err := w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
 		s.Equal("git://github.com/mock/test.git", e.Revision().Head.InternalRepositoryURL)
 		return nil
 	})
@@ -213,7 +213,7 @@ func (s *WatcherTestSuite) TestWatch_HttpTimeout() {
 	defer cancel()
 
 	w := s.newWatcher([]string{"github.com/mock/test", "github.com/mock/test-err"})
-	err := w.Watch(ctx, func(e lookout.Event) error {
+	err := w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
 		s.Equal("git://github.com/mock/test.git", e.Revision().Head.InternalRepositoryURL)
 		return nil
 	})
@@ -242,7 +242,7 @@ func (s *WatcherTestSuite) TestWatch_JSONError() {
 	defer cancel()
 
 	w := s.newWatcher([]string{"github.com/mock/test", "github.com/mock/test-err"})
-	err := w.Watch(ctx, func(e lookout.Event) error {
+	err := w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
 		return nil
 	})
 
@@ -277,7 +277,7 @@ func (s *WatcherTestSuite) TestWatchLimit() {
 	defer cancel()
 
 	w := s.newWatcher([]string{"github.com/mock/test"})
-	err := w.Watch(ctx, func(e lookout.Event) error {
+	err := w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
 		prEvents++
 		s.Equal("fd84071093b69f9aac25fb5dfeea1a870e3e19cf", e.ID().String())
 
@@ -316,7 +316,7 @@ func (s *WatcherTestSuite) TestCustomMinInterval() {
 	ctx, cancel := context.WithTimeout(context.TODO(), globalTimeout)
 	defer cancel()
 
-	err = w.Watch(ctx, func(e lookout.Event) error { return nil })
+	err = w.Watch(ctx, func(ctx context.Context, e lookout.Event) error { return nil })
 
 	s.EqualValues(globalTimeout/clientMinInterval, atomic.LoadInt32(&pullCalls))
 	s.EqualValues(globalTimeout/clientMinInterval, atomic.LoadInt32(&eventCalls))

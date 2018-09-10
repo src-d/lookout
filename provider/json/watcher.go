@@ -101,5 +101,5 @@ func (w *Watcher) handleInput(ctx context.Context, cb lookout.EventHandler, line
 		return nil
 	}
 
-	return cb(event)
+	return cb(ctx, event)
 }

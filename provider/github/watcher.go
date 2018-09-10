@@ -168,7 +168,7 @@ func (w *Watcher) handlePrs(ctx context.Context, cb lookout.EventHandler, r *loo
 		})
 		event := castPullRequest(ctx, r, e)
 
-		if err := cb(event); err != nil {
+		if err := cb(ctx, event); err != nil {
 			return err
 		}
 	}
@@ -203,7 +203,7 @@ func (w *Watcher) handleEvents(ctx context.Context, cb lookout.EventHandler, r *
 			continue
 		}
 
-		if err := cb(event); err != nil {
+		if err := cb(ctx, event); err != nil {
 			return err
 		}
 	}
