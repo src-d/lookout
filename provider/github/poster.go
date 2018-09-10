@@ -211,6 +211,15 @@ func (p *Poster) createReviewRequest(
 					}).Warningf("skipping comment on a file not part of the diff")
 					continue
 				}
+				if ErrBadPatch.Is(err) {
+					patch, _ := dl.filePatch(c.File)
+					logger.With(log.Fields{
+						"analyzer": aComments.Config.Name,
+						"file":     c.File,
+						"patch":    patch,
+					}).Errorf(err, "skipping comment because the diff could not be parsed")
+					continue
+				}
 
 				if err != nil {
 					return nil, err

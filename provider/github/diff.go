@@ -9,16 +9,19 @@ import (
 
 	"github.com/google/go-github/github"
 	"gopkg.in/src-d/go-errors.v1"
-	log "gopkg.in/src-d/go-log.v1"
 )
 
 var (
+	// ErrLineOutOfDiff is returned when the file line number is not
+	// in the patch diff
 	ErrLineOutOfDiff = errors.NewKind("line number is not in diff")
 	// ErrLineNotAddition is returned when the file line number is not
 	// a + change in the patch diff
 	ErrLineNotAddition = errors.NewKind("line number is not an added change")
 	// ErrFileNotFound is returned when the file name is not part of the diff
 	ErrFileNotFound = errors.NewKind("file not found")
+	// ErrBadPatch is returned when there was a problem parsing the diff
+	ErrBadPatch = errors.NewKind("diff patch could not be parsed")
 )
 
 type diffLines struct {
@@ -112,7 +115,7 @@ func (d *diffLines) parseFile(file string) (*parsedFile, error) {
 	return d.parsed[file], nil
 }
 
-func (d *diffLines) hunks(file string) ([]*hunk, map[int]bool, error) {
+func (d *diffLines) filePatch(file string) (string, error) {
 	var ff *github.CommitFile
 	for _, f := range d.cc.Files {
 		if file == *f.Filename {
@@ -122,17 +125,25 @@ func (d *diffLines) hunks(file string) ([]*hunk, map[int]bool, error) {
 	}
 
 	if ff == nil {
-		return nil, nil, ErrFileNotFound.New()
+		return "", ErrFileNotFound.New()
 	}
 
 	if ff.Patch == nil {
-		return nil, nil, ErrLineOutOfDiff.New()
+		return "", ErrLineOutOfDiff.New()
 	}
 
-	hunks, linesAdded, err := parseHunks(*ff.Patch)
+	return *ff.Patch, nil
+}
+
+func (d *diffLines) hunks(file string) ([]*hunk, map[int]bool, error) {
+	patch, err := d.filePatch(file)
 	if err != nil {
-		log.DefaultLogger.With(log.Fields{"hunk": *ff.Patch}).Errorf(err, "bad hunks")
 		return nil, nil, err
+	}
+
+	hunks, linesAdded, err := parseHunks(patch)
+	if err != nil {
+		return nil, nil, ErrBadPatch.Wrap(err)
 	}
 
 	return hunks, linesAdded, nil
@@ -202,12 +213,12 @@ func parseHunkHeader(line string) (*hunk, error) {
 
 	matches := hunkPattern.FindStringSubmatch(line)
 	if len(matches) == 0 {
-		return nil, fmt.Errorf("bad hunk format")
+		return nil, fmt.Errorf("bad hunk line format: %s", line)
 	}
 
 	h.OldStartLine, err = strconv.Atoi(matches[2])
 	if err != nil {
-		return nil, fmt.Errorf("bad hunk format")
+		return nil, fmt.Errorf("bad hunk line format: %s", line)
 	}
 
 	if matches[3] == "" {
@@ -215,13 +226,13 @@ func parseHunkHeader(line string) (*hunk, error) {
 	} else {
 		h.OldLines, err = strconv.Atoi(matches[3])
 		if err != nil {
-			return nil, fmt.Errorf("bad hunk format")
+			return nil, fmt.Errorf("bad hunk line format: %s", line)
 		}
 	}
 
 	h.NewStartLine, err = strconv.Atoi(matches[4])
 	if err != nil {
-		return nil, fmt.Errorf("bad hunk format")
+		return nil, fmt.Errorf("bad hunk line format: %s", line)
 	}
 
 	if matches[5] == "" {
@@ -229,7 +240,7 @@ func parseHunkHeader(line string) (*hunk, error) {
 	} else {
 		h.NewLines, err = strconv.Atoi(matches[5])
 		if err != nil {
-			return nil, fmt.Errorf("bad hunk format")
+			return nil, fmt.Errorf("bad hunk line format: %s", line)
 		}
 	}
 
