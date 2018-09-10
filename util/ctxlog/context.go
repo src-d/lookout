@@ -17,6 +17,9 @@ func Get(ctx context.Context) log.Logger {
 		return v.(log.Logger)
 	}
 
+	if log.DefaultLogger == nil {
+		log.DefaultLogger = log.New(nil)
+	}
 	return log.DefaultLogger
 }
 
