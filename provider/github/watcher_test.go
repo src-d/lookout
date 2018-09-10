@@ -383,9 +383,9 @@ func (s *WatcherTestSuite) TestRemoveRepo() {
 		return nil
 	})
 
-	fmt.Println(atomic.LoadInt32(&callsA), atomic.LoadInt32(&callsB))
-	s.True(atomic.LoadInt32(&callsA) > 2)
-	s.True(atomic.LoadInt32(&callsB) > 2)
+	s.True(atomic.LoadInt32(&callsA) > 10) // check that watching didn't stop
+	s.True(atomic.LoadInt32(&callsB) > 2)  // check that calls were made
+	s.True(atomic.LoadInt32(&callsB) < 10) // check that watching did stop
 	s.EqualError(err, "context deadline exceeded")
 }
 
