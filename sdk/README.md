@@ -1,6 +1,6 @@
 # Lookout Analyzer SDK
 
-An analyzer is a [gRPC](https://grpc.io/) server that implements the [Analyzer service](https://github.com/src-d/lookout-sdk/tree/master/proto/service_analyzer.proto) to receive events from the lookout server.
+An analyzer is a [gRPC](https://grpc.io/) server that implements the [Analyzer service](https://github.com/src-d/lookout-sdk/blob/master/proto/lookout/sdk/service_analyzer.proto) to receive events from the lookout server.
 
 At the same time, an analyzer acts as a gRPC client to access the [Data Server](https://github.com/src-d/lookout-sdk/blob/master/proto/service_data.proto) exposed by the lookout server. This endpoint will provide the necessary source code and [Babelfish Universal Abstract Syntax Trees (UAST)](https://doc.bblf.sh/uast/uast-specification.html). See `LOOKOUT_DATA_SERVER` environment variable below for more details.
 
