@@ -1,3 +1,7 @@
 analyzers:
   - name: Dummy
     disabled: true
+    settings:
+      linters:
+        - name: lll
+          maxLen: 120
