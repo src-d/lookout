@@ -450,7 +450,7 @@ func (s *WatcherTestSuite) TestRemoveClient() {
 		byRepo:    byRepo,
 	}
 
-	w, _ := NewWatcher(pool, &lookout.WatchOptions{})
+	w, _ := NewWatcher(pool)
 
 	// remove client
 	go func() {
