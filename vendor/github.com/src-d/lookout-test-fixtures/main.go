@@ -1,227 +1,220 @@
 package fixtures
 
 import (
+	"encoding/json"
+	"fmt"
+	"path/filepath"
+
+	"github.com/google/go-github/github"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 var fixtures = Fixtures{
 	{
 		Name: "new-go-file-too-long-line",
-		CommitRevision: pb.CommitRevision{
-			Base: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/master",
-				Hash:                  "6a92946068897d0a6f6ffa6457f889163dcc51b5",
-			},
-			Head: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/new_go_file",
-				Hash:                  "f47f238d1734881b17e6000cb9fd01248073c900",
-			},
+		URL: PullRequestURL{
+			Owner:  "src-d",
+			Repo:   "lookout-test-fixtures",
+			Number: 14,
 		},
-		PR: PullRequest{
-			URL: "https://github.com/src-d/lookout-test-fixtures/pull/14",
-		},
+		CurrentRevision: 0,
 	},
 	{
 		Name: "file-delete",
-		CommitRevision: pb.CommitRevision{
-			Base: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/master",
-				Hash:                  "c6e7417ff3b84560f44fe940876494f58e6d68f1",
-			},
-			Head: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/remove_file",
-				Hash:                  "d0b400aab40eff88066fbe9e27f8aa64f5530538",
-			},
+		URL: PullRequestURL{
+			Owner:  "src-d",
+			Repo:   "lookout-test-fixtures",
+			Number: 2,
 		},
-		PR: PullRequest{
-			URL: "https://github.com/src-d/lookout-test-fixtures/pull/2",
-		},
+		CurrentRevision: 0,
 	},
 	{
 		Name: "file-rename",
-		CommitRevision: pb.CommitRevision{
-			Base: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/master",
-				Hash:                  "6a92946068897d0a6f6ffa6457f889163dcc51b5",
-			},
-			Head: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/rename_file",
-				Hash:                  "6221d2fe0bc2148debfa8d3c8c92b8c15451920d",
-			},
+		URL: PullRequestURL{
+			Owner:  "src-d",
+			Repo:   "lookout-test-fixtures",
+			Number: 3,
 		},
-		PR: PullRequest{
-			URL: "https://github.com/src-d/lookout-test-fixtures/pull/3",
-		},
+		CurrentRevision: 0,
 	},
 	{
 		Name: "bblfsh-unknown-language",
-		CommitRevision: pb.CommitRevision{
-			Base: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/master",
-				Hash:                  "6a92946068897d0a6f6ffa6457f889163dcc51b5",
-			},
-			Head: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/bblfsh_unknown_lang",
-				Hash:                  "8bc4f2b51be093d261a5ea58e390bc94c1ca3401",
-			},
+		URL: PullRequestURL{
+			Owner:  "src-d",
+			Repo:   "lookout-test-fixtures",
+			Number: 4,
 		},
-		PR: PullRequest{
-			URL: "https://github.com/src-d/lookout-test-fixtures/pull/4",
-		},
+		CurrentRevision: 0,
 	},
 	{
 		Name: "not-ff-merge",
-		CommitRevision: pb.CommitRevision{
-			Base: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/i197-base",
-				Hash:                  "1f5664bfe6a04a33b6de17a4df0b051d7a43b918",
-			},
-			Head: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/i197-head",
-				Hash:                  "5fe468b62112e69bae390051e990271f7b1cc294",
-			},
+		URL: PullRequestURL{
+			Owner:  "src-d",
+			Repo:   "lookout-test-fixtures",
+			Number: 1,
 		},
-		PR: PullRequest{
-			URL: "https://github.com/src-d/lookout-test-fixtures/pull/1",
-		},
+		CurrentRevision: 0,
 	},
 	{
 		Name: "merge-conflict",
-		CommitRevision: pb.CommitRevision{
-			Base: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/master",
-				Hash:                  "6a92946068897d0a6f6ffa6457f889163dcc51b5",
-			},
-			Head: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/merge_conflict",
-				Hash:                  "72745c8f112cff929927dd12a3decf45239c30e2",
-			},
+		URL: PullRequestURL{
+			Owner:  "src-d",
+			Repo:   "lookout-test-fixtures",
+			Number: 7,
 		},
-		PR: PullRequest{
-			URL: "https://github.com/src-d/lookout-test-fixtures/pull/7",
-		},
+		CurrentRevision: 0,
 	},
 	{
 		Name: "no-content-changes",
-		CommitRevision: pb.CommitRevision{
-			Base: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/master",
-				Hash:                  "6a92946068897d0a6f6ffa6457f889163dcc51b5",
-			},
-			Head: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/no_changes",
-				Hash:                  "db7473f2d158b05550c7424f249840ad30f43dc2",
-			},
+		URL: PullRequestURL{
+			Owner:  "src-d",
+			Repo:   "lookout-test-fixtures",
+			Number: 8,
 		},
-		PR: PullRequest{
-			URL: "https://github.com/src-d/lookout-test-fixtures/pull/8",
-		},
+		CurrentRevision: 0,
 	},
 	{
 		Name: "config-empty",
-		CommitRevision: pb.CommitRevision{
-			Base: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/master",
-				Hash:                  "6a92946068897d0a6f6ffa6457f889163dcc51b5",
-			},
-			Head: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/config_empty",
-				Hash:                  "8a3e52d451483fe50fefe801f5b7715fce82d4f1",
-			},
+		URL: PullRequestURL{
+			Owner:  "src-d",
+			Repo:   "lookout-test-fixtures",
+			Number: 10,
 		},
-		PR: PullRequest{
-			URL: "https://github.com/src-d/lookout-test-fixtures/pull/10",
-		},
+		CurrentRevision: 0,
 	},
 	{
 		Name: "config-unknown-analyzer",
-		CommitRevision: pb.CommitRevision{
-			Base: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/master",
-				Hash:                  "6a92946068897d0a6f6ffa6457f889163dcc51b5",
-			},
-			Head: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/config_unknown_analyzer",
-				Hash:                  "f125c7577f200c4498df840f518c96dc68396266",
-			},
+		URL: PullRequestURL{
+			Owner:  "src-d",
+			Repo:   "lookout-test-fixtures",
+			Number: 11,
 		},
-		PR: PullRequest{
-			URL: "https://github.com/src-d/lookout-test-fixtures/pull/11",
-		},
+		CurrentRevision: 0,
 	},
 	{
 		Name: "submodule-add",
-		CommitRevision: pb.CommitRevision{
-			Base: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/master",
-				Hash:                  "6a92946068897d0a6f6ffa6457f889163dcc51b5",
-			},
-			Head: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/submodule_add",
-				Hash:                  "689355891e2ce74e37439574bf1b0af46c9428ed",
-			},
+		URL: PullRequestURL{
+			Owner:  "src-d",
+			Repo:   "lookout-test-fixtures",
+			Number: 12,
 		},
-		PR: PullRequest{
-			URL: "https://github.com/src-d/lookout-test-fixtures/pull/12",
-		},
+		CurrentRevision: 0,
 	},
 	{
 		Name: "submodule-update",
-		CommitRevision: pb.CommitRevision{
-			Base: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/master",
-				Hash:                  "6a92946068897d0a6f6ffa6457f889163dcc51b5",
-			},
-			Head: pb.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/src-d/lookout-test-fixtures",
-				ReferenceName:         "refs/heads/submodule_update",
-				Hash:                  "88560a7f9a4e54f7a8d83313dad6be31cb986d2f",
-			},
+		URL: PullRequestURL{
+			Owner:  "src-d",
+			Repo:   "lookout-test-fixtures",
+			Number: 13,
 		},
-		PR: PullRequest{
-			URL: "https://github.com/src-d/lookout-test-fixtures/pull/13",
-		},
+		CurrentRevision: 0,
 	},
 }
 
-// PullRequest is a struct with information about pull request
-type PullRequest struct {
-	URL string
-	// add recorded responses here later?
+// PullRequestURL is a struct with information about a pull request URL:
+// github.com/<Owner>/<Repo>/pull/<Number>
+type PullRequestURL struct {
+	Owner  string
+	Repo   string
+	Number int
 }
 
 // Fixture is struct for a test case
 type Fixture struct {
-	Name           string
-	CommitRevision pb.CommitRevision
-	PR             PullRequest
+	Name string
+	URL  PullRequestURL
+	// There can be more than one revision of the fixture, but it should have
+	// files for 0..CurrentRevision
+	CurrentRevision int
 }
 
-// Fixtures is a list of fixtures
+// GetRevision returns a copy of this Fixture at a different revision
+func (f Fixture) GetRevision(revision int) *Fixture {
+	copy := f
+	copy.CurrentRevision = revision
+
+	return &copy
+}
+
+// GetRevisions returns all this Fixture revisions, ordered from 0 to CurrentRevision
+func (f Fixture) GetRevisions() []*Fixture {
+	list := make([]*Fixture, f.CurrentRevision+1)
+	for v := 0; v <= f.CurrentRevision; v++ {
+		list[v] = f.GetRevision(v)
+	}
+
+	return list
+}
+
+// GetPR returns the fixture saved from the github.Client.PullRequests.Get
+// output
+func (f Fixture) GetPR() *github.PullRequest {
+	filename := f.FilenamePR(f.CurrentRevision)
+	data, err := Asset(filename)
+	if err != nil {
+		panic(fmt.Sprintf("unexpected error while loading %s: %s", filename, err.Error()))
+	}
+
+	var pr github.PullRequest
+	err = json.Unmarshal(data, &pr)
+	if err != nil {
+		panic(fmt.Sprintf("unexpected error while unmarshalling %s: %s", filename, err.Error()))
+	}
+
+	return &pr
+}
+
+// GetCommitsComparison returns the fixture saved from the
+// github.Client.Repositories.CompareCommits output
+func (f Fixture) GetCommitsComparison() (*github.CommitsComparison, error) {
+	filename := f.FilenameCC(f.CurrentRevision)
+	data, err := Asset(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	var cc github.CommitsComparison
+	err = json.Unmarshal(data, &cc)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cc, nil
+}
+
+// GetCommitRevision builds a pb.CommitRevision from this fixture's GetPR()
+func (f Fixture) GetCommitRevision() *pb.CommitRevision {
+	pr := f.GetPR()
+
+	return &pb.CommitRevision{
+		Base: pb.ReferencePointer{
+			InternalRepositoryURL: pr.GetHTMLURL(),
+			ReferenceName:         plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", pr.GetBase().GetRef())),
+			Hash:                  pr.GetBase().GetSHA(),
+		},
+		Head: pb.ReferencePointer{
+			InternalRepositoryURL: pr.GetHTMLURL(),
+			ReferenceName:         plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", pr.GetHead().GetRef())),
+			Hash:                  pr.GetHead().GetSHA(),
+		},
+	}
+}
+
+func (f Fixture) FilenamePR(revision int) string {
+	return filepath.FromSlash(fmt.Sprintf("fixtures/%s.%s.pr-%d-v%d.json", f.URL.Owner, f.URL.Repo, f.URL.Number, revision))
+}
+
+func (f Fixture) FilenameCC(revision int) string {
+	return filepath.FromSlash(fmt.Sprintf("fixtures/%s.%s.pr-%d-v%d-compare.json", f.URL.Owner, f.URL.Repo, f.URL.Number, revision))
+}
+
+// Fixtures is a list of fixtures. If a fixture has more than one revision the
+// most recent one is used
 type Fixtures []*Fixture
 
-// GetByName returns fixture by name
+// GetByName returns fixture by name. If the fixture has more than one revision
+// the most recent one is used
 func (g Fixtures) GetByName(name string) *Fixture {
 	for _, f := range g {
 		if f.Name == name {
