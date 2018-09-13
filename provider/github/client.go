@@ -16,10 +16,38 @@ import (
 	log "gopkg.in/src-d/go-log.v1"
 )
 
+// ClientPoolEventType type of the change in ClientPool
+type ClientPoolEventType string
+
+const (
+	// ClientPoolEventAdd happens when new client is added in the pool
+	ClientPoolEventAdd ClientPoolEventType = "add"
+	// ClientPoolEventRemove happens when client is removed from the pool
+	ClientPoolEventRemove ClientPoolEventType = "remove"
+)
+
+// ClientPoolEvent defines change in ClientPool
+type ClientPoolEvent struct {
+	Type   ClientPoolEventType
+	Client *Client
+}
+
 // ClientPool holds mapping of repositories to clients
 type ClientPool struct {
 	byClients map[*Client][]*lookout.RepositoryInfo
 	byRepo    map[string]*Client
+
+	// Changes notification channel
+	Changes chan ClientPoolEvent
+}
+
+// NewClientPool creates new pool of clients with repositories
+func NewClientPool() *ClientPool {
+	return &ClientPool{
+		byClients: make(map[*Client][]*lookout.RepositoryInfo),
+		byRepo:    make(map[string]*Client),
+		Changes:   make(chan ClientPoolEvent),
+	}
 }
 
 // Clients returns map[Client]RepositoryInfo
@@ -41,6 +69,79 @@ func (p *ClientPool) Repos() []string {
 	}
 
 	return rps
+}
+
+// ReposByClient returns list of repositories by client
+func (p *ClientPool) ReposByClient(c *Client) []*lookout.RepositoryInfo {
+	return p.byClients[c]
+}
+
+// Update updates list of repositories for a client
+func (p *ClientPool) Update(c *Client, newRepos []*lookout.RepositoryInfo) {
+	if len(newRepos) == 0 {
+		p.RemoveClient(c)
+		return
+	}
+
+	repos, ok := p.byClients[c]
+	if !ok {
+		for _, r := range newRepos {
+			p.byRepo[r.FullName] = c
+		}
+
+		p.byClients[c] = newRepos
+
+		p.Changes <- ClientPoolEvent{
+			Type:   ClientPoolEventAdd,
+			Client: c,
+		}
+		return
+	}
+
+	// delete old repos
+	var reposAfterDelete []*lookout.RepositoryInfo
+	for _, repo := range repos {
+		found := false
+		for _, newRepo := range newRepos {
+			if repo == newRepo {
+				found = true
+				break
+			}
+		}
+
+		if found {
+			reposAfterDelete = append(reposAfterDelete, repo)
+		} else {
+			delete(p.byRepo, repo.FullName)
+		}
+	}
+	p.byClients[c] = reposAfterDelete
+
+	// add new repos
+	for _, newRepo := range newRepos {
+		if _, ok := p.byRepo[newRepo.FullName]; ok {
+			continue
+		}
+
+		p.byRepo[newRepo.FullName] = c
+		p.byClients[c] = append(p.byClients[c], newRepo)
+	}
+}
+
+// RemoveClient removes client from the pool and notifies about it
+func (p *ClientPool) RemoveClient(c *Client) {
+	p.Changes <- ClientPoolEvent{
+		Type:   ClientPoolEventRemove,
+		Client: c,
+	}
+
+	for repo, client := range p.byRepo {
+		if client == c {
+			delete(p.byRepo, repo)
+		}
+	}
+
+	delete(p.byClients, c)
 }
 
 // Client is a wrapper for github.Client that supports cache and provides rate limit information

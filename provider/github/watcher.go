@@ -37,12 +37,15 @@ var (
 
 type Watcher struct {
 	pool *ClientPool
+	// maps clients to functions that stop watching the client
+	stopFuncs map[*Client]func()
 }
 
 // NewWatcher returns a new
 func NewWatcher(pool *ClientPool) (*Watcher, error) {
 	return &Watcher{
-		pool: pool,
+		pool:      pool,
+		stopFuncs: make(map[*Client]func()),
 	}, nil
 }
 
@@ -53,12 +56,14 @@ func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	// channel for error from watch loops
 	errCh := make(chan error)
 
-	for client, repos := range w.pool.Clients() {
-		go w.watchLoop(ctx, client, repos, w.processRepoPRs, cb, errCh)
-		go w.watchLoop(ctx, client, repos, w.processRepoEvents, cb, errCh)
+	for client := range w.pool.Clients() {
+		w.startClientLoops(ctx, client, cb, errCh)
 	}
+
+	go w.listenForChanges(ctx, cb, errCh)
 
 	select {
 	case <-ctx.Done():
@@ -71,6 +76,43 @@ func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
 	}
 }
 
+func (w *Watcher) listenForChanges(ctx context.Context, cb lookout.EventHandler, errCh chan error) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case change := <-w.pool.Changes:
+			switch change.Type {
+			case ClientPoolEventAdd:
+				w.startClientLoops(ctx, change.Client, cb, errCh)
+			case ClientPoolEventRemove:
+				w.stopFuncs[change.Client]()
+			default:
+				errCh <- fmt.Errorf("unknown type of event from client pool %s", change.Type)
+			}
+		}
+	}
+}
+
+func (w *Watcher) startClientLoops(
+	ctx context.Context,
+	client *Client,
+	cb lookout.EventHandler,
+	errCh chan error,
+) {
+	stopCh := make(chan bool)
+
+	w.stopFuncs[client] = func() {
+		// send event 2 times to stop both goroutines
+		stopCh <- true
+		stopCh <- true
+		close(stopCh)
+	}
+
+	go w.watchLoop(ctx, client, w.processRepoPRs, cb, errCh, stopCh)
+	go w.watchLoop(ctx, client, w.processRepoEvents, cb, errCh, stopCh)
+}
+
 type requestFun func(context.Context,
 	*Client,
 	*lookout.RepositoryInfo,
@@ -79,13 +121,13 @@ type requestFun func(context.Context,
 func (w *Watcher) watchLoop(
 	ctx context.Context,
 	c *Client,
-	repos []*lookout.RepositoryInfo,
 	requestFun requestFun,
 	cb lookout.EventHandler,
 	errCh chan error,
+	stopCh chan bool,
 ) {
 	for {
-		for _, repo := range repos {
+		for _, repo := range w.pool.ReposByClient(c) {
 			categoryInterval, err := requestFun(ctx, c, repo, cb)
 
 			if err != nil {
@@ -100,6 +142,8 @@ func (w *Watcher) watchLoop(
 
 			select {
 			case <-ctx.Done():
+				return
+			case <-stopCh:
 				return
 			case <-time.After(interval):
 				continue
