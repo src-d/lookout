@@ -727,6 +727,7 @@
     "gopkg.in/src-d/go-billy.v4",
     "gopkg.in/src-d/go-billy.v4/memfs",
     "gopkg.in/src-d/go-billy.v4/osfs",
+    "gopkg.in/src-d/go-billy.v4/util",
     "gopkg.in/src-d/go-errors.v1",
     "gopkg.in/src-d/go-git-fixtures.v3",
     "gopkg.in/src-d/go-git.v4",
