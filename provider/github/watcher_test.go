@@ -303,11 +303,11 @@ func (s *WatcherTestSuite) TestCustomMinInterval() {
 	repo, _ := vcsurl.Parse("github.com/mock/test")
 
 	pool := &ClientPool{
-		Changes: make(chan ClientPoolEvent),
 		byClients: map[*Client][]*lookout.RepositoryInfo{
 			client: []*lookout.RepositoryInfo{repo},
 		},
 		byRepo: map[string]*Client{"mock/test": client},
+		subs:   make(map[chan ClientPoolEvent]bool),
 	}
 
 	w, err := NewWatcher(pool)
@@ -445,9 +445,9 @@ func (s *WatcherTestSuite) TestRemoveClient() {
 	}
 
 	pool := &ClientPool{
-		Changes:   make(chan ClientPoolEvent),
 		byClients: byClients,
 		byRepo:    byRepo,
+		subs:      make(map[chan ClientPoolEvent]bool),
 	}
 
 	w, _ := NewWatcher(pool)
@@ -506,8 +506,8 @@ func newTestPool(s suite.Suite, repoURLs []string, githubURL *url.URL, cache *ca
 	}
 
 	return &ClientPool{
-		Changes:   make(chan ClientPoolEvent),
 		byClients: byClients,
 		byRepo:    byRepo,
+		subs:      make(map[chan ClientPoolEvent]bool),
 	}
 }

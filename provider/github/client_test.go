@@ -12,11 +12,6 @@ func TestClientPoolUpdate(t *testing.T) {
 	require := require.New(t)
 
 	p := NewClientPool()
-	// read from channel to unblock it
-	go func() {
-		for _ = range p.Changes {
-		}
-	}()
 
 	// add new client
 	firstClient := &Client{}
@@ -108,11 +103,6 @@ func TestClientPoolMultipleDeleteRepos(t *testing.T) {
 	require := require.New(t)
 
 	p := NewClientPool()
-	// read from channel to unblock it
-	go func() {
-		for _ = range p.Changes {
-		}
-	}()
 
 	// add new client
 	client := &Client{}

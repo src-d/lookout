@@ -77,11 +77,14 @@ func (w *Watcher) Watch(ctx context.Context, cb lookout.EventHandler) error {
 }
 
 func (w *Watcher) listenForChanges(ctx context.Context, cb lookout.EventHandler, errCh chan error) {
+	ch := make(chan ClientPoolEvent)
+	w.pool.Subscribe(ch)
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case change := <-w.pool.Changes:
+		case change := <-ch:
 			ctxlog.Get(ctx).
 				With(log.Fields{"type": change.Type}).
 				Debugf("New event from the client pool")

@@ -37,8 +37,7 @@ type ClientPool struct {
 	byClients map[*Client][]*lookout.RepositoryInfo
 	byRepo    map[string]*Client
 
-	// Changes notification channel
-	Changes chan ClientPoolEvent
+	subs map[chan ClientPoolEvent]bool
 }
 
 // NewClientPool creates new pool of clients with repositories
@@ -46,7 +45,7 @@ func NewClientPool() *ClientPool {
 	return &ClientPool{
 		byClients: make(map[*Client][]*lookout.RepositoryInfo),
 		byRepo:    make(map[string]*Client),
-		Changes:   make(chan ClientPoolEvent, 500), // add some reasonable buffer
+		subs:      make(map[chan ClientPoolEvent]bool),
 	}
 }
 
@@ -91,10 +90,11 @@ func (p *ClientPool) Update(c *Client, newRepos []*lookout.RepositoryInfo) {
 
 		p.byClients[c] = newRepos
 
-		p.Changes <- ClientPoolEvent{
+		p.notify(ClientPoolEvent{
 			Type:   ClientPoolEventAdd,
 			Client: c,
-		}
+		})
+
 		return
 	}
 
@@ -130,10 +130,10 @@ func (p *ClientPool) Update(c *Client, newRepos []*lookout.RepositoryInfo) {
 
 // RemoveClient removes client from the pool and notifies about it
 func (p *ClientPool) RemoveClient(c *Client) {
-	p.Changes <- ClientPoolEvent{
+	p.notify(ClientPoolEvent{
 		Type:   ClientPoolEventRemove,
 		Client: c,
-	}
+	})
 
 	for repo, client := range p.byRepo {
 		if client == c {
@@ -142,6 +142,26 @@ func (p *ClientPool) RemoveClient(c *Client) {
 	}
 
 	delete(p.byClients, c)
+}
+
+// Subscribe allows to subscribe to changes in the pool
+func (p *ClientPool) Subscribe(ch chan ClientPoolEvent) {
+	p.subs[ch] = true
+}
+
+// Unsubscribe stops sending changes to the channel
+func (p *ClientPool) Unsubscribe(ch chan ClientPoolEvent) {
+	delete(p.subs, ch)
+}
+
+func (p *ClientPool) notify(e ClientPoolEvent) {
+	for ch := range p.subs {
+		// use non-blocking send
+		select {
+		case ch <- e:
+		default:
+		}
+	}
 }
 
 // Client is a wrapper for github.Client that supports cache and provides rate limit information
