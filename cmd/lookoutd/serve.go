@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 
 	"github.com/src-d/lookout"
@@ -50,9 +51,11 @@ type ServeCommand struct {
 	DryRun      bool   `long:"dry-run" env:"LOOKOUT_DRY_RUN" description:"analyze repositories and log the result without posting code reviews to GitHub"`
 	Library     string `long:"library" default:"/tmp/lookout" env:"LOOKOUT_LIBRARY" description:"path to the lookout library"`
 	Provider    string `long:"provider" default:"github" env:"LOOKOUT_PROVIDER" description:"provider name: github, json"`
+	ProbesAddr  string `long:"probes-addr" default:"0.0.0.0:8090" env:"LOOKOUT_PROBES_ADDRESS" description:"TCP address to bind the health probe endpoints"`
 
-	analyzers map[string]lookout.AnalyzerClient
-	pool      *github.ClientPool
+	analyzers      map[string]lookout.AnalyzerClient
+	pool           *github.ClientPool
+	probeReadiness bool
 }
 
 // Config holds the main configuration
@@ -71,6 +74,8 @@ type RepoConfig struct {
 }
 
 func (c *ServeCommand) Execute(args []string) error {
+	c.initHealthProbes()
+
 	var conf Config
 	configData, err := ioutil.ReadFile(c.ConfigFile)
 	if err != nil {
@@ -135,6 +140,8 @@ func (c *ServeCommand) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
+
+	c.probeReadiness = true
 
 	ctx := context.Background()
 	return server.NewServer(watcher, poster, dataHandler.FileGetter, analyzers, eventOp, commentsOp).Run(ctx)
@@ -374,4 +381,35 @@ func (c *ServeCommand) initDB() (*sql.DB, error) {
 	log.With(log.Fields{"db-version": dbVersion}).Debugf("the DB version is up to date")
 	log.Infof("connection with the DB established")
 	return db, nil
+}
+
+func (c *ServeCommand) initHealthProbes() {
+	livenessPath := "/health/liveness"
+	http.HandleFunc(livenessPath, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		w.Write([]byte("ok"))
+	})
+
+	readinessPath := "/health/readiness"
+	http.HandleFunc(readinessPath, func(w http.ResponseWriter, r *http.Request) {
+		if c.probeReadiness {
+			w.WriteHeader(200)
+			w.Write([]byte("ok"))
+		} else {
+			w.WriteHeader(500)
+			w.Write([]byte("starting up"))
+		}
+	})
+
+	go func() {
+		log.With(log.Fields{
+			"addr":  c.ProbesAddr,
+			"paths": []string{livenessPath, readinessPath},
+		}).Debugf("listening health probe HTTP requests")
+
+		err := http.ListenAndServe(c.ProbesAddr, nil)
+		if err != nil {
+			log.Errorf(err, "ListenAndServe failed")
+		}
+	}()
 }
