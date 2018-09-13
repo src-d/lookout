@@ -1,12 +1,14 @@
 package git
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"regexp"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/util/ctxlog"
 
 	enry "gopkg.in/src-d/enry.v1"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -223,7 +225,7 @@ func NewChangeFilterScanner(scanner lookout.ChangeScanner, include, exclude stri
 }
 
 // NewFileFilterScanner creates new FnFileScanner
-func NewFileFilterScanner(scanner lookout.FileScanner, include, exclude string) *lookout.FnFileScanner {
+func NewFileFilterScanner(ctx context.Context, scanner lookout.FileScanner, include, exclude string) *lookout.FnFileScanner {
 	filter := regexpFilter{
 		includePatternRaw: include,
 		excludePatternRaw: exclude,
@@ -237,6 +239,7 @@ func NewFileFilterScanner(scanner lookout.FileScanner, include, exclude string) 
 
 type blobAdder struct {
 	tree *object.Tree
+	ctx  context.Context
 }
 
 func (b *blobAdder) Fn(f *lookout.File) (bool, error) {
@@ -250,7 +253,10 @@ func (b *blobAdder) Fn(f *lookout.File) (bool, error) {
 
 	of, err := b.tree.File(f.Path)
 	if err != nil {
-		log.Warningf("skipping - cannot get file:'%v', %v", f.Path, err)
+		ctxlog.Get(b.ctx).With(log.Fields{
+			"path": f.Path,
+			"err":  err,
+		}).Warningf("skipping - cannot get file")
 		return true, nil
 	}
 
@@ -270,8 +276,8 @@ func (b *blobAdder) Fn(f *lookout.File) (bool, error) {
 }
 
 // NewFileBlobScanner creates new FnFileScanner
-func NewFileBlobScanner(scanner lookout.FileScanner, tree *object.Tree) *lookout.FnFileScanner {
-	adder := blobAdder{tree}
+func NewFileBlobScanner(ctx context.Context, scanner lookout.FileScanner, tree *object.Tree) *lookout.FnFileScanner {
+	adder := blobAdder{tree, ctx}
 	return &lookout.FnFileScanner{
 		Scanner: scanner,
 		Fn:      adder.Fn,
@@ -279,9 +285,9 @@ func NewFileBlobScanner(scanner lookout.FileScanner, tree *object.Tree) *lookout
 }
 
 // NewChangeBlobScanner creates new FnChangeScanner
-func NewChangeBlobScanner(scanner lookout.ChangeScanner, base, head *object.Tree) *lookout.FnChangeScanner {
-	baseAdder := blobAdder{base}
-	headAdder := blobAdder{head}
+func NewChangeBlobScanner(ctx context.Context, scanner lookout.ChangeScanner, base, head *object.Tree) *lookout.FnChangeScanner {
+	baseAdder := blobAdder{base, ctx}
+	headAdder := blobAdder{head, ctx}
 
 	fn := func(ch *lookout.Change) (bool, error) {
 		skip, err := baseAdder.Fn(ch.Base)
@@ -318,7 +324,7 @@ func NewChangeExcludeVendorScanner(scanner lookout.ChangeScanner) *lookout.FnCha
 }
 
 // NewFileExcludeVendorScanner creates new FnFileScanner
-func NewFileExcludeVendorScanner(scanner lookout.FileScanner) *lookout.FnFileScanner {
+func NewFileExcludeVendorScanner(ctx context.Context, scanner lookout.FileScanner) *lookout.FnFileScanner {
 	return &lookout.FnFileScanner{
 		Scanner: scanner,
 		Fn:      filterVendor,

@@ -43,10 +43,7 @@ func (s *Server) Run(ctx context.Context) error {
 	errCh := make(chan error, 1)
 	for {
 		go func() {
-			// FIXME(max): we most probably want to change interface of EventHandler instead of it
-			err := s.watcher.Watch(ctx, func(e lookout.Event) error {
-				return s.handleEvent(ctx, e)
-			})
+			err := s.watcher.Watch(ctx, s.handleEvent)
 			errCh <- err
 		}()
 

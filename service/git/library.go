@@ -1,6 +1,7 @@
 package git
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/util/ctxlog"
 
 	"gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-errors.v1"
@@ -15,7 +17,6 @@ import (
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/storage"
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
-	log "gopkg.in/src-d/go-log.v1"
 )
 
 var (
@@ -36,7 +37,7 @@ func NewLibrary(fs billy.Filesystem) *Library {
 
 // GetOrInit get the requested repository based on the given URL, or inits a
 // new repository.
-func (l *Library) GetOrInit(url *lookout.RepositoryInfo) (
+func (l *Library) GetOrInit(ctx context.Context, url *lookout.RepositoryInfo) (
 	*git.Repository, error) {
 	has, err := l.Has(url)
 	if err != nil {
@@ -44,15 +45,15 @@ func (l *Library) GetOrInit(url *lookout.RepositoryInfo) (
 	}
 
 	if has {
-		return l.Get(url)
+		return l.Get(ctx, url)
 	}
 
-	return l.Init(url)
+	return l.Init(ctx, url)
 }
 
 // Init inits a new repository for the given URL.
-func (l *Library) Init(url *lookout.RepositoryInfo) (*git.Repository, error) {
-	log.Infof("creating local repository for: %s", url.CloneURL)
+func (l *Library) Init(ctx context.Context, url *lookout.RepositoryInfo) (*git.Repository, error) {
+	ctxlog.Get(ctx).Infof("creating local repository for: %s", url.CloneURL)
 	l.m.Lock()
 	defer l.m.Unlock()
 
@@ -106,7 +107,7 @@ func (l *Library) Has(url *lookout.RepositoryInfo) (bool, error) {
 }
 
 // Get get the requested repository based on the given URL.
-func (l *Library) Get(url *lookout.RepositoryInfo) (*git.Repository, error) {
+func (l *Library) Get(ctx context.Context, url *lookout.RepositoryInfo) (*git.Repository, error) {
 	r, err := l.get(url)
 
 	// it can happen if the repository in a broken state

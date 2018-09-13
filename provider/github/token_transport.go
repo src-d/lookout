@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/bradleyfalzon/ghinstallation"
-	"github.com/google/go-github/github"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/cache"
+	"github.com/src-d/lookout/util/ctxlog"
+
+	"github.com/bradleyfalzon/ghinstallation"
+	"github.com/google/go-github/github"
 	vcsurl "gopkg.in/sourcegraph/go-vcsurl.v1"
 	log "gopkg.in/src-d/go-log.v1"
 )
@@ -45,10 +47,9 @@ func NewClientPoolFromTokens(urlToConfig map[string]ClientConfig, cache *cache.V
 	byRepo := make(map[string]*Client, len(urlToConfig))
 	for conf, repos := range byConfig {
 		client := NewClient(&roundTripper{
-			Log:      log.DefaultLogger,
 			User:     conf.User,
 			Password: conf.Token,
-		}, cache, log.DefaultLogger, conf.MinInterval)
+		}, cache, conf.MinInterval)
 
 		if _, ok := byClients[client]; !ok {
 			byClients[client] = []*lookout.RepositoryInfo{}
@@ -109,7 +110,7 @@ func NewClientPoolInstallations(
 
 		// TODO (carlosms): hardcoded, take from config
 		watchMinInterval := ""
-		iClient := NewClient(itr, cache, log.DefaultLogger, watchMinInterval)
+		iClient := NewClient(itr, cache, watchMinInterval)
 
 		ghRepos, _, err := iClient.Apps.ListRepos(context.TODO(), &github.ListOptions{})
 		if err != nil {
@@ -145,14 +146,13 @@ func NewClientPoolInstallations(
 }
 
 type roundTripper struct {
-	Log      log.Logger
 	Base     http.RoundTripper
 	User     string
 	Password string
 }
 
 func (t *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	t.Log.With(log.Fields{
+	ctxlog.Get(req.Context()).With(log.Fields{
 		"url":  req.URL.String(),
 		"user": t.User,
 	}).Debugf("http request")

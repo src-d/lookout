@@ -14,8 +14,10 @@ type LogOptions struct {
 	Verbose        bool   `long:"verbose" short:"v" description:"enable verbose logging"`
 }
 
+var _ initializer = &LogOptions{}
+
 // Init initializes the default logger factory.
-func (c *LogOptions) init(app *App) error {
+func (c *LogOptions) init(app *App) {
 	if c.Verbose {
 		c.LogLevel = "debug"
 	}
@@ -29,6 +31,4 @@ func (c *LogOptions) init(app *App) error {
 	log.DefaultFactory.ApplyToLogrus()
 
 	log.DefaultLogger = log.New(log.Fields{"app": app.Name})
-
-	return nil
 }

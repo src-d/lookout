@@ -7,10 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/go-github/github"
-	"github.com/gregjones/httpcache"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/cache"
+	"github.com/src-d/lookout/util/ctxlog"
+
+	"github.com/google/go-github/github"
+	"github.com/gregjones/httpcache"
 	log "gopkg.in/src-d/go-log.v1"
 )
 
@@ -50,10 +52,9 @@ type Client struct {
 }
 
 // NewClient creates new Client
-func NewClient(t http.RoundTripper, cache *cache.ValidableCache, l log.Logger, watchMinInterval string) *Client {
+func NewClient(t http.RoundTripper, cache *cache.ValidableCache, watchMinInterval string) *Client {
 	limitRT := &limitRoundTripper{
 		Base: t,
-		Log:  l,
 	}
 
 	cachedT := httpcache.NewTransport(cache)
@@ -64,7 +65,7 @@ func NewClient(t http.RoundTripper, cache *cache.ValidableCache, l log.Logger, w
 	if watchMinInterval != "" {
 		d, err := time.ParseDuration(watchMinInterval)
 		if err != nil {
-			l.Errorf(err, "can't parse min interval")
+			log.Errorf(err, "can't parse min interval %q", watchMinInterval)
 		} else {
 			interval = d
 		}
@@ -143,7 +144,6 @@ func pollCategory(path string) pollLimitCategory {
 
 type limitRoundTripper struct {
 	Base http.RoundTripper
-	Log  log.Logger
 
 	// rateLimits for the client as determined by the most recent API calls.
 	rateLimits [categories]github.Rate
@@ -207,7 +207,7 @@ func (t *limitRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 	t.rateLimits[category(req.URL.Path)] = rate
 	t.rateMu.Unlock()
 
-	t.Log.With(logFields).Debugf("http request to %s", req.URL.Path)
+	ctxlog.Get(req.Context()).With(logFields).Debugf("http request to %s", req.URL.Path)
 
 	return resp, err
 }

@@ -384,7 +384,7 @@ func (w *WatcherMock) Watch(ctx context.Context, e lookout.EventHandler) error {
 }
 
 func (w *WatcherMock) Send(e lookout.Event) error {
-	return w.handler(e)
+	return w.handler(context.Background(), e)
 }
 
 var _ lookout.Poster = &PosterMock{}

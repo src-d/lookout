@@ -11,7 +11,6 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
-	log "gopkg.in/src-d/go-log.v1"
 )
 
 // Service implements data service interface on top of go-git
@@ -33,8 +32,8 @@ var ErrRefValidation = errors.NewKind("reference %v does not have a %s")
 
 // validateReferences checks if all the References have enough information to clone a repo.
 // Validation of the reference name is optional.
-func validateReferences(validateRefName bool, refs ...*lookout.ReferencePointer) error {
-	log.Infof("validating refs: %v, validateRefName: %v", refs, validateRefName)
+func validateReferences(ctx context.Context, validateRefName bool, refs ...*lookout.ReferencePointer) error {
+	ctxlog.Get(ctx).Infof("validating refs: %v, validateRefName: %v", refs, validateRefName)
 	for _, ref := range refs {
 		if nil == ref {
 			continue
@@ -57,7 +56,7 @@ func validateReferences(validateRefName bool, refs ...*lookout.ReferencePointer)
 // GetChanges returns a ChangeScanner that scans all changes according to the request.
 func (r *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 	lookout.ChangeScanner, error) {
-	err := validateReferences(true, req.Base, req.Head)
+	err := validateReferences(ctx, true, req.Base, req.Head)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +84,7 @@ func (r *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 	}
 
 	if req.WantContents {
-		scanner = NewChangeBlobScanner(scanner, base, head)
+		scanner = NewChangeBlobScanner(ctx, scanner, base, head)
 	}
 
 	return scanner, nil
@@ -94,7 +93,7 @@ func (r *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 // GetFiles returns a FilesScanner that scans all files according to the request.
 func (r *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (
 	lookout.FileScanner, error) {
-	err := validateReferences(false, req.Revision)
+	err := validateReferences(ctx, false, req.Revision)
 	if err != nil {
 		return nil, err
 	}
@@ -108,16 +107,16 @@ func (r *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (
 	scanner = NewTreeScanner(tree)
 
 	if req.IncludePattern != "" || req.ExcludePattern != "" {
-		scanner = NewFileFilterScanner(scanner,
+		scanner = NewFileFilterScanner(ctx, scanner,
 			req.IncludePattern, req.ExcludePattern)
 	}
 
 	if req.ExcludeVendored {
-		scanner = NewFileExcludeVendorScanner(scanner)
+		scanner = NewFileExcludeVendorScanner(ctx, scanner)
 	}
 
 	if req.WantContents {
-		scanner = NewFileBlobScanner(scanner, tree)
+		scanner = NewFileBlobScanner(ctx, scanner, tree)
 	}
 
 	return scanner, nil

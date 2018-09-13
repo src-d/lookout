@@ -281,7 +281,7 @@ func (c *ServeCommand) startAnalyzer(conf lookout.AnalyzerConfig) (lookout.Analy
 		return nil, err
 	}
 
-	go grpchelper.LogConnStatusChanges(ctx, log.With(log.Fields{
+	go grpchelper.LogConnStatusChanges(ctx, log.DefaultLogger.With(log.Fields{
 		"analyzer": conf.Name,
 		"addr":     conf.Addr,
 	}), conn)
@@ -371,7 +371,7 @@ func (c *ServeCommand) initDB() (*sql.DB, error) {
 				"Use '%s migrate' to upgrade your database", dbVersion, version, build, maxVersion, name)
 	}
 
-	log.Debugf("the DB version is up to date, %v", dbVersion)
+	log.With(log.Fields{"db-version": dbVersion}).Debugf("the DB version is up to date")
 	log.Infof("connection with the DB established")
 	return db, nil
 }

@@ -45,7 +45,7 @@ func (s *WatcherTestSuite) TestWatch() {
 
 	expectedTypes := []pb.EventType{pb.PushEventType, pb.ReviewEventType}
 
-	err = w.Watch(ctx, func(e lookout.Event) error {
+	err = w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
 		s.Equal(expectedTypes[events], e.Type())
 		s.Equal("http://github.com/foo/bar", e.Revision().Base.InternalRepositoryURL)
 
@@ -67,7 +67,7 @@ func (s *WatcherTestSuite) TestWatch_WrongEvent() {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	err = w.Watch(ctx, func(e lookout.Event) error {
+	err = w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
 		events++
 		return nil
 	})
@@ -86,7 +86,7 @@ func (s *WatcherTestSuite) TestWatch_BadJSON() {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	err = w.Watch(ctx, func(e lookout.Event) error {
+	err = w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
 		events++
 		return nil
 	})
@@ -103,7 +103,7 @@ func (s *WatcherTestSuite) TestWatch_WithError() {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	err = w.Watch(ctx, func(e lookout.Event) error {
+	err = w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
 		s.Equal(pb.PushEventType, e.Type())
 		s.Equal("http://github.com/foo/bar", e.Revision().Base.InternalRepositoryURL)
 		return fmt.Errorf("foo")
