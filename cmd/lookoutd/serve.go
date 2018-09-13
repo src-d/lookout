@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/provider/github"
@@ -31,6 +32,8 @@ import (
 	"gopkg.in/src-d/go-log.v1"
 	yaml "gopkg.in/yaml.v2"
 )
+
+var installationsSyncInterval = time.Hour
 
 func init() {
 	if _, err := app.AddCommand("serve", "run server", "",
@@ -228,13 +231,22 @@ func (c *ServeCommand) initProviderGithubApp(conf Config) error {
 	}
 
 	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
-	pool, err := github.NewClientPoolInstallations(cache, conf.Providers.Github)
-
+	insts, err := github.NewInstallations(conf.Providers.Github.AppID, conf.Providers.Github.PrivateKey, cache)
 	if err != nil {
 		return err
 	}
 
-	c.pool = pool
+	c.pool = insts.Pool
+
+	go func() {
+		for {
+			if err := insts.Sync(); err != nil {
+				log.Errorf(err, "can't sync installations with github")
+			}
+			time.Sleep(installationsSyncInterval)
+		}
+	}()
+
 	return nil
 }
 

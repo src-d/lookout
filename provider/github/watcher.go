@@ -82,6 +82,10 @@ func (w *Watcher) listenForChanges(ctx context.Context, cb lookout.EventHandler,
 		case <-ctx.Done():
 			return
 		case change := <-w.pool.Changes:
+			ctxlog.Get(ctx).
+				With(log.Fields{"type": change.Type}).
+				Debugf("New event from the client pool")
+
 			switch change.Type {
 			case ClientPoolEventAdd:
 				w.startClientLoops(ctx, change.Client, cb, errCh)
@@ -100,6 +104,14 @@ func (w *Watcher) startClientLoops(
 	cb lookout.EventHandler,
 	errCh chan error,
 ) {
+	repoNames := make([]string, 0)
+	for _, repo := range w.pool.ReposByClient(client) {
+		repoNames = append(repoNames, repo.FullName)
+	}
+	ctxlog.Get(ctx).With(log.Fields{
+		"repositories": repoNames,
+	}).Infof("start github client loop")
+
 	stopCh := make(chan bool)
 
 	w.stopFuncs[client] = func() {

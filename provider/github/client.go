@@ -46,7 +46,7 @@ func NewClientPool() *ClientPool {
 	return &ClientPool{
 		byClients: make(map[*Client][]*lookout.RepositoryInfo),
 		byRepo:    make(map[string]*Client),
-		Changes:   make(chan ClientPoolEvent),
+		Changes:   make(chan ClientPoolEvent, 500), // add some reasonable buffer
 	}
 }
 
