@@ -54,7 +54,7 @@ func (suite *DummyIntegrationSuite) TestReviewDontPost() {
 		ReviewEvent: &lookout.ReviewEvent{
 			InternalID:     "2",
 			Number:         1,
-			CommitRevision: longLineFixture.CommitRevision,
+			CommitRevision: *longLineFixture.GetCommitRevision(),
 		},
 	}
 
@@ -68,7 +68,7 @@ func (suite *DummyIntegrationSuite) TestWrongRevision() {
 		ReviewEvent: &lookout.ReviewEvent{
 			InternalID:     "3",
 			Number:         3,
-			CommitRevision: longLineFixture.CommitRevision,
+			CommitRevision: *longLineFixture.GetCommitRevision(),
 		},
 	}
 	// change hashes to incorrect ones
@@ -83,7 +83,7 @@ func (suite *DummyIntegrationSuite) TestSuccessPush() {
 	pushEvent := jsonPushEvent{
 		PushEvent: &lookout.PushEvent{
 			InternalID:     "1",
-			CommitRevision: longLineFixture.CommitRevision,
+			CommitRevision: *longLineFixture.GetCommitRevision(),
 		},
 	}
 	suite.sendEvent(pushEvent.String())

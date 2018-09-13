@@ -51,7 +51,7 @@ var successEvent = &jsonReviewEvent{
 	ReviewEvent: &lookout.ReviewEvent{
 		InternalID:     "1",
 		Number:         1,
-		CommitRevision: longLineFixture.CommitRevision,
+		CommitRevision: *longLineFixture.GetCommitRevision(),
 	},
 }
 
