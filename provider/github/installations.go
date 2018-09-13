@@ -18,7 +18,6 @@ type Installations struct {
 	privateKey string
 	appClient  *github.Client
 
-	// FIXME can we get rid of it here?
 	cache *cache.ValidableCache
 
 	// [installationID]installationClient
