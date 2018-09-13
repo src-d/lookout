@@ -36,8 +36,10 @@ type ClientPoolEvent struct {
 type ClientPool struct {
 	byClients map[*Client][]*lookout.RepositoryInfo
 	byRepo    map[string]*Client
+	mutex     sync.Mutex
 
-	subs map[chan ClientPoolEvent]bool
+	subs      map[chan ClientPoolEvent]bool
+	subsMutex sync.Mutex
 }
 
 // NewClientPool creates new pool of clients with repositories
@@ -51,11 +53,25 @@ func NewClientPool() *ClientPool {
 
 // Clients returns map[Client]RepositoryInfo
 func (p *ClientPool) Clients() map[*Client][]*lookout.RepositoryInfo {
-	return p.byClients
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	// Create the target map
+	copyMap := make(map[*Client][]*lookout.RepositoryInfo, len(p.byClients))
+
+	// Copy from the original map to the target map
+	for key, value := range p.byClients {
+		copyMap[key] = value
+	}
+
+	return copyMap
 }
 
 // Client returns client, ok by username and repository name
 func (p *ClientPool) Client(username, repo string) (*Client, bool) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	c, ok := p.byRepo[username+"/"+repo]
 	return c, ok
 }
@@ -72,6 +88,9 @@ func (p *ClientPool) Repos() []string {
 
 // ReposByClient returns list of repositories by client
 func (p *ClientPool) ReposByClient(c *Client) []*lookout.RepositoryInfo {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	return p.byClients[c]
 }
 
@@ -81,6 +100,9 @@ func (p *ClientPool) Update(c *Client, newRepos []*lookout.RepositoryInfo) {
 		p.RemoveClient(c)
 		return
 	}
+
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 
 	repos, ok := p.byClients[c]
 	if !ok {
@@ -130,6 +152,9 @@ func (p *ClientPool) Update(c *Client, newRepos []*lookout.RepositoryInfo) {
 
 // RemoveClient removes client from the pool and notifies about it
 func (p *ClientPool) RemoveClient(c *Client) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	p.notify(ClientPoolEvent{
 		Type:   ClientPoolEventRemove,
 		Client: c,
@@ -146,15 +171,24 @@ func (p *ClientPool) RemoveClient(c *Client) {
 
 // Subscribe allows to subscribe to changes in the pool
 func (p *ClientPool) Subscribe(ch chan ClientPoolEvent) {
+	p.subsMutex.Lock()
+	defer p.subsMutex.Unlock()
+
 	p.subs[ch] = true
 }
 
 // Unsubscribe stops sending changes to the channel
 func (p *ClientPool) Unsubscribe(ch chan ClientPoolEvent) {
+	p.subsMutex.Lock()
+	defer p.subsMutex.Unlock()
+
 	delete(p.subs, ch)
 }
 
 func (p *ClientPool) notify(e ClientPoolEvent) {
+	p.subsMutex.Lock()
+	defer p.subsMutex.Unlock()
+
 	for ch := range p.subs {
 		// use non-blocking send
 		select {
