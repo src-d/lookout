@@ -344,7 +344,7 @@ func (s *WatcherTestSuite) TestAddRepo() {
 		w.pool.Update(c, append(w.pool.ReposByClient(c), repo))
 	}()
 
-	err := w.Watch(ctx, func(e lookout.Event) error {
+	err := w.Watch(ctx, func(context.Context, lookout.Event) error {
 		return nil
 	})
 
@@ -379,7 +379,7 @@ func (s *WatcherTestSuite) TestRemoveRepo() {
 		w.pool.Update(c, repos)
 	}()
 
-	err := w.Watch(ctx, func(e lookout.Event) error {
+	err := w.Watch(ctx, func(context.Context, lookout.Event) error {
 		return nil
 	})
 
@@ -409,7 +409,7 @@ func (s *WatcherTestSuite) TestAddClient() {
 		w.pool.Update(c, []*lookout.RepositoryInfo{repo})
 	}()
 
-	err := w.Watch(ctx, func(e lookout.Event) error {
+	err := w.Watch(ctx, func(context.Context, lookout.Event) error {
 		return nil
 	})
 
@@ -458,7 +458,7 @@ func (s *WatcherTestSuite) TestRemoveClient() {
 		pool.RemoveClient(client2)
 	}()
 
-	err := w.Watch(ctx, func(e lookout.Event) error {
+	err := w.Watch(ctx, func(context.Context, lookout.Event) error {
 		return nil
 	})
 

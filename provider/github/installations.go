@@ -126,7 +126,7 @@ func (t *Installations) createClient(installationID int64) (*Client, error) {
 
 	// TODO (carlosms): hardcoded, take from config
 	watchMinInterval := ""
-	return NewClient(itr, t.cache, log.DefaultLogger, watchMinInterval), nil
+	return NewClient(itr, t.cache, watchMinInterval), nil
 }
 
 func (t *Installations) getRepos(iClient *Client) ([]*lookout.RepositoryInfo, error) {
