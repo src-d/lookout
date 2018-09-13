@@ -11,7 +11,7 @@ It includes a curl-style binary `lookout-sdk` that allows to trigger Analyzers d
 # Installation
 
 ```bash
-$ go get github.com/src-d/lookout
+$ go get github.com/src-d/lookout/...
 ```
 
 # Dependencies
