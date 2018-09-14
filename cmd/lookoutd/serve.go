@@ -174,6 +174,8 @@ func (c *ServeCommand) logConfig(conf Config) {
 	log.With(log.Fields{
 		"options": lt.Sdump(cCp),
 		"conf":    lt.Sdump(confCp),
+		"version": version,
+		"build":   build,
 	}).Infof("starting %s", name)
 }
 
