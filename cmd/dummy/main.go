@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/dummy"
@@ -22,9 +23,12 @@ type ServeCommand struct {
 	DataServer       string `long:"data-server" default:"ipv4://localhost:10301" env:"LOOKOUT_DATA_SERVER" description:"gRPC URL of the data server"`
 	RequestUAST      bool   `long:"uast" env:"LOOKOUT_REQUEST_UAST" description:"analyzer will request UAST from the data server"`
 	RequestFilesPush bool   `long:"files" env:"LOOKOUT_REQUEST_FILES" description:"on push events the analyzer will request files from HEAD, and return comments"`
+	ProbesAddr       string `long:"probes-addr" default:"0.0.0.0:8091" env:"LOOKOUT_ANALYZER_PROBES_ADDRESS" description:"TCP address to bind the health probe endpoints"`
 }
 
 func (c *ServeCommand) Execute(args []string) error {
+	c.initHealthProbes()
+
 	var err error
 	c.DataServer, err = grpchelper.ToGoGrpcAddress(c.DataServer)
 	if err != nil {
@@ -58,6 +62,33 @@ func (c *ServeCommand) Execute(args []string) error {
 
 	log.Infof("server has started on '%s'", c.Analyzer)
 	return server.Serve(lis)
+}
+
+func (c *ServeCommand) initHealthProbes() {
+	livenessPath := "/health/liveness"
+	http.HandleFunc(livenessPath, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		w.Write([]byte("ok"))
+	})
+
+	readinessPath := "/health/readiness"
+	http.HandleFunc(readinessPath, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		w.Write([]byte("ok"))
+
+	})
+
+	go func() {
+		log.With(log.Fields{
+			"addr":  c.ProbesAddr,
+			"paths": []string{livenessPath, readinessPath},
+		}).Debugf("listening health probe HTTP requests")
+
+		err := http.ListenAndServe(c.ProbesAddr, nil)
+		if err != nil {
+			log.Errorf(err, "ListenAndServe failed")
+		}
+	}()
 }
 
 func main() {
