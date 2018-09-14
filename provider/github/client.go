@@ -78,6 +78,9 @@ func (p *ClientPool) Client(username, repo string) (*Client, bool) {
 
 // Repos returns list of repositories in the pool
 func (p *ClientPool) Repos() []string {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	var rps []string
 	for r := range p.byRepo {
 		rps = append(rps, r)
