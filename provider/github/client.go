@@ -16,31 +16,189 @@ import (
 	log "gopkg.in/src-d/go-log.v1"
 )
 
+// ClientPoolEventType type of the change in ClientPool
+type ClientPoolEventType string
+
+const (
+	// ClientPoolEventAdd happens when new client is added in the pool
+	ClientPoolEventAdd ClientPoolEventType = "add"
+	// ClientPoolEventRemove happens when client is removed from the pool
+	ClientPoolEventRemove ClientPoolEventType = "remove"
+)
+
+// ClientPoolEvent defines change in ClientPool
+type ClientPoolEvent struct {
+	Type   ClientPoolEventType
+	Client *Client
+}
+
 // ClientPool holds mapping of repositories to clients
 type ClientPool struct {
 	byClients map[*Client][]*lookout.RepositoryInfo
 	byRepo    map[string]*Client
+	mutex     sync.Mutex
+
+	subs      map[chan ClientPoolEvent]bool
+	subsMutex sync.Mutex
+}
+
+// NewClientPool creates new pool of clients with repositories
+func NewClientPool() *ClientPool {
+	return &ClientPool{
+		byClients: make(map[*Client][]*lookout.RepositoryInfo),
+		byRepo:    make(map[string]*Client),
+		subs:      make(map[chan ClientPoolEvent]bool),
+	}
 }
 
 // Clients returns map[Client]RepositoryInfo
 func (p *ClientPool) Clients() map[*Client][]*lookout.RepositoryInfo {
-	return p.byClients
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	// Create the target map
+	copyMap := make(map[*Client][]*lookout.RepositoryInfo, len(p.byClients))
+
+	// Copy from the original map to the target map
+	for key, value := range p.byClients {
+		copyMap[key] = value
+	}
+
+	return copyMap
 }
 
 // Client returns client, ok by username and repository name
 func (p *ClientPool) Client(username, repo string) (*Client, bool) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	c, ok := p.byRepo[username+"/"+repo]
 	return c, ok
 }
 
 // Repos returns list of repositories in the pool
 func (p *ClientPool) Repos() []string {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	var rps []string
 	for r := range p.byRepo {
 		rps = append(rps, r)
 	}
 
 	return rps
+}
+
+// ReposByClient returns list of repositories by client
+func (p *ClientPool) ReposByClient(c *Client) []*lookout.RepositoryInfo {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	return p.byClients[c]
+}
+
+// Update updates list of repositories for a client
+func (p *ClientPool) Update(c *Client, newRepos []*lookout.RepositoryInfo) {
+	if len(newRepos) == 0 {
+		p.RemoveClient(c)
+		return
+	}
+
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	repos, ok := p.byClients[c]
+	if !ok {
+		for _, r := range newRepos {
+			p.byRepo[r.FullName] = c
+		}
+
+		p.byClients[c] = newRepos
+
+		p.notify(ClientPoolEvent{
+			Type:   ClientPoolEventAdd,
+			Client: c,
+		})
+
+		return
+	}
+
+	// delete old repos
+	var reposAfterDelete []*lookout.RepositoryInfo
+	for _, repo := range repos {
+		found := false
+		for _, newRepo := range newRepos {
+			if repo == newRepo {
+				found = true
+				break
+			}
+		}
+
+		if found {
+			reposAfterDelete = append(reposAfterDelete, repo)
+		} else {
+			delete(p.byRepo, repo.FullName)
+		}
+	}
+	p.byClients[c] = reposAfterDelete
+
+	// add new repos
+	for _, newRepo := range newRepos {
+		if _, ok := p.byRepo[newRepo.FullName]; ok {
+			continue
+		}
+
+		p.byRepo[newRepo.FullName] = c
+		p.byClients[c] = append(p.byClients[c], newRepo)
+	}
+}
+
+// RemoveClient removes client from the pool and notifies about it
+func (p *ClientPool) RemoveClient(c *Client) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	p.notify(ClientPoolEvent{
+		Type:   ClientPoolEventRemove,
+		Client: c,
+	})
+
+	for repo, client := range p.byRepo {
+		if client == c {
+			delete(p.byRepo, repo)
+		}
+	}
+
+	delete(p.byClients, c)
+}
+
+// Subscribe allows to subscribe to changes in the pool
+func (p *ClientPool) Subscribe(ch chan ClientPoolEvent) {
+	p.subsMutex.Lock()
+	defer p.subsMutex.Unlock()
+
+	p.subs[ch] = true
+}
+
+// Unsubscribe stops sending changes to the channel
+func (p *ClientPool) Unsubscribe(ch chan ClientPoolEvent) {
+	p.subsMutex.Lock()
+	defer p.subsMutex.Unlock()
+
+	delete(p.subs, ch)
+}
+
+func (p *ClientPool) notify(e ClientPoolEvent) {
+	p.subsMutex.Lock()
+	defer p.subsMutex.Unlock()
+
+	for ch := range p.subs {
+		// use non-blocking send
+		select {
+		case ch <- e:
+		default:
+		}
+	}
 }
 
 // Client is a wrapper for github.Client that supports cache and provides rate limit information

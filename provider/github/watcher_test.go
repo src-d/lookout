@@ -307,6 +307,7 @@ func (s *WatcherTestSuite) TestCustomMinInterval() {
 			client: []*lookout.RepositoryInfo{repo},
 		},
 		byRepo: map[string]*Client{"mock/test": client},
+		subs:   make(map[chan ClientPoolEvent]bool),
 	}
 
 	w, err := NewWatcher(pool)
@@ -320,6 +321,150 @@ func (s *WatcherTestSuite) TestCustomMinInterval() {
 
 	s.EqualValues(globalTimeout/clientMinInterval, atomic.LoadInt32(&pullCalls))
 	s.EqualValues(globalTimeout/clientMinInterval, atomic.LoadInt32(&eventCalls))
+	s.EqualError(err, "context deadline exceeded")
+}
+
+func (s *WatcherTestSuite) TestAddRepo() {
+	var callsA, callsB int32
+
+	s.mux.HandleFunc("/repos/mock/test-a/pulls", pullsHandler(&callsA))
+	s.mux.HandleFunc("/repos/mock/test-a/events", eventsHandler(&callsA))
+	s.mux.HandleFunc("/repos/mock/test-b/pulls", pullsHandler(&callsB))
+	s.mux.HandleFunc("/repos/mock/test-b/events", eventsHandler(&callsB))
+
+	ctx, cancel := context.WithTimeout(context.TODO(), minInterval*10)
+	defer cancel()
+
+	w := s.newWatcher([]string{"github.com/mock/test-a"})
+	// add new repo
+	go func() {
+		time.Sleep(minInterval) // make sure we add new repo after some calls were done already
+		c, _ := w.pool.Client("mock", "test-a")
+		repo, _ := vcsurl.Parse("github.com/mock/test-b")
+		w.pool.Update(c, append(w.pool.ReposByClient(c), repo))
+	}()
+
+	err := w.Watch(ctx, func(context.Context, lookout.Event) error {
+		return nil
+	})
+
+	s.True(atomic.LoadInt32(&callsA) > 2)
+	s.True(atomic.LoadInt32(&callsB) > 2)
+	s.EqualError(err, "context deadline exceeded")
+}
+
+func (s *WatcherTestSuite) TestRemoveRepo() {
+	var callsA, callsB int32
+
+	s.mux.HandleFunc("/repos/mock/test-a/pulls", pullsHandler(&callsA))
+	s.mux.HandleFunc("/repos/mock/test-a/events", eventsHandler(&callsA))
+	s.mux.HandleFunc("/repos/mock/test-b/pulls", pullsHandler(&callsB))
+	s.mux.HandleFunc("/repos/mock/test-b/events", eventsHandler(&callsB))
+
+	ctx, cancel := context.WithTimeout(context.TODO(), minInterval*20)
+	defer cancel()
+
+	w := s.newWatcher([]string{"github.com/mock/test-a", "github.com/mock/test-b"})
+	// remove repo
+	go func() {
+		time.Sleep(minInterval * 5) // make sure we add new repo after some calls were done already
+		c, _ := w.pool.Client("mock", "test-a")
+		var repos []*lookout.RepositoryInfo
+		for _, r := range w.pool.ReposByClient(c) {
+			if r.FullName == "mock/test-a" {
+				repos = append(repos, r)
+				break
+			}
+		}
+		w.pool.Update(c, repos)
+	}()
+
+	err := w.Watch(ctx, func(context.Context, lookout.Event) error {
+		return nil
+	})
+
+	s.True(atomic.LoadInt32(&callsA) > 10) // check that watching didn't stop
+	s.True(atomic.LoadInt32(&callsB) > 2)  // check that calls were made
+	s.True(atomic.LoadInt32(&callsB) < 10) // check that watching did stop
+	s.EqualError(err, "context deadline exceeded")
+}
+
+func (s *WatcherTestSuite) TestAddClient() {
+	var callsA, callsB int32
+
+	s.mux.HandleFunc("/repos/mock/test-a/pulls", pullsHandler(&callsA))
+	s.mux.HandleFunc("/repos/mock/test-a/events", eventsHandler(&callsA))
+	s.mux.HandleFunc("/repos/mock/test-b/pulls", pullsHandler(&callsB))
+	s.mux.HandleFunc("/repos/mock/test-b/events", eventsHandler(&callsB))
+
+	ctx, cancel := context.WithTimeout(context.TODO(), minInterval*10)
+	defer cancel()
+
+	w := s.newWatcher([]string{"github.com/mock/test-a"})
+	// add new client
+	go func() {
+		time.Sleep(minInterval) // make sure we add new repo after some calls were done already
+		c := newClient(s.githubURL, s.cache)
+		repo, _ := vcsurl.Parse("github.com/mock/test-b")
+		w.pool.Update(c, []*lookout.RepositoryInfo{repo})
+	}()
+
+	err := w.Watch(ctx, func(context.Context, lookout.Event) error {
+		return nil
+	})
+
+	s.True(atomic.LoadInt32(&callsA) > 2)
+	s.True(atomic.LoadInt32(&callsB) > 2)
+	s.EqualError(err, "context deadline exceeded")
+}
+
+func (s *WatcherTestSuite) TestRemoveClient() {
+	var callsA, callsB int32
+
+	s.mux.HandleFunc("/repos/mock/test-a/pulls", pullsHandler(&callsA))
+	s.mux.HandleFunc("/repos/mock/test-a/events", eventsHandler(&callsA))
+	s.mux.HandleFunc("/repos/mock/test-b/pulls", pullsHandler(&callsB))
+	s.mux.HandleFunc("/repos/mock/test-b/events", eventsHandler(&callsB))
+
+	ctx, cancel := context.WithTimeout(context.TODO(), minInterval*20)
+	defer cancel()
+
+	// construct watcher
+	repo1, _ := vcsurl.Parse("github.com/mock/test-a")
+	repo2, _ := vcsurl.Parse("github.com/mock/test-b")
+
+	client1 := newClient(s.githubURL, s.cache)
+	client2 := newClient(s.githubURL, s.cache)
+	byClients := map[*Client][]*lookout.RepositoryInfo{
+		client1: []*lookout.RepositoryInfo{repo1},
+		client2: []*lookout.RepositoryInfo{repo2},
+	}
+	byRepo := map[string]*Client{
+		repo1.FullName: client1,
+		repo2.FullName: client2,
+	}
+
+	pool := &ClientPool{
+		byClients: byClients,
+		byRepo:    byRepo,
+		subs:      make(map[chan ClientPoolEvent]bool),
+	}
+
+	w, _ := NewWatcher(pool)
+
+	// remove client
+	go func() {
+		time.Sleep(minInterval * 5) // make sure we add new repo after some calls were done already
+		pool.RemoveClient(client2)
+	}()
+
+	err := w.Watch(ctx, func(context.Context, lookout.Event) error {
+		return nil
+	})
+
+	s.True(atomic.LoadInt32(&callsA) > 10) // check that we didn't stop watching
+	s.True(atomic.LoadInt32(&callsB) > 2)  // check that we did some calls
+	s.True(atomic.LoadInt32(&callsB) < 20) // check that we stopped watching
 	s.EqualError(err, "context deadline exceeded")
 }
 
@@ -337,10 +482,15 @@ func (t *NoopTransport) Get(repo string) http.RoundTripper {
 	return nil
 }
 
-func newTestPool(s suite.Suite, repoURLs []string, githubURL *url.URL, cache *cache.ValidableCache) *ClientPool {
+func newClient(githubURL *url.URL, cache *cache.ValidableCache) *Client {
 	client := NewClient(nil, cache, "")
 	client.BaseURL = githubURL
 	client.UploadURL = githubURL
+	return client
+}
+
+func newTestPool(s suite.Suite, repoURLs []string, githubURL *url.URL, cache *cache.ValidableCache) *ClientPool {
+	client := newClient(githubURL, cache)
 
 	byClients := map[*Client][]*lookout.RepositoryInfo{
 		client: []*lookout.RepositoryInfo{},
@@ -358,5 +508,6 @@ func newTestPool(s suite.Suite, repoURLs []string, githubURL *url.URL, cache *ca
 	return &ClientPool{
 		byClients: byClients,
 		byRepo:    byRepo,
+		subs:      make(map[chan ClientPoolEvent]bool),
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/provider/github"
@@ -57,6 +58,8 @@ type ServeCommand struct {
 	pool           *github.ClientPool
 	probeReadiness bool
 }
+
+var defaultInstallationsSyncInterval = time.Hour
 
 // Config holds the main configuration
 type Config struct {
@@ -233,15 +236,32 @@ func (c *ServeCommand) initProviderGithubApp(conf Config) error {
 	if conf.Providers.Github.AppID == 0 {
 		return fmt.Errorf("missing GitHub App ID in config")
 	}
+	installationsSyncInterval := defaultInstallationsSyncInterval
+	if conf.Providers.Github.InstallationSyncInterval != "" {
+		var err error
+		installationsSyncInterval, err = time.ParseDuration(conf.Providers.Github.InstallationSyncInterval)
+		if err != nil {
+			return fmt.Errorf("can't parse sync interval: %s", err)
+		}
+	}
 
 	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
-	pool, err := github.NewClientPoolInstallations(cache, conf.Providers.Github)
-
+	insts, err := github.NewInstallations(conf.Providers.Github.AppID, conf.Providers.Github.PrivateKey, cache)
 	if err != nil {
 		return err
 	}
 
-	c.pool = pool
+	c.pool = insts.Pool
+
+	go func() {
+		for {
+			if err := insts.Sync(); err != nil {
+				log.Errorf(err, "can't sync installations with github")
+			}
+			time.Sleep(installationsSyncInterval)
+		}
+	}()
+
 	return nil
 }
 
