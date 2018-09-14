@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"encoding/json"
+
 	"gopkg.in/src-d/go-log.v1"
 )
 
@@ -22,6 +24,14 @@ func (c *LogOptions) init(app *App) {
 		c.LogLevel = "debug"
 	}
 
+	if c.LogFields == "" {
+		bytes, err := json.Marshal(log.Fields{"app": app.Name})
+		if err != nil {
+			panic(err)
+		}
+		c.LogFields = string(bytes)
+	}
+
 	log.DefaultFactory = &log.LoggerFactory{
 		Level:       c.LogLevel,
 		Format:      c.LogFormat,
@@ -30,5 +40,5 @@ func (c *LogOptions) init(app *App) {
 	}
 	log.DefaultFactory.ApplyToLogrus()
 
-	log.DefaultLogger = log.New(log.Fields{"app": app.Name})
+	log.DefaultLogger = log.New(nil)
 }
