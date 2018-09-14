@@ -89,12 +89,3 @@ dry-run: $(CONFIG_FILE)
 	go run cmd/lookoutd/*.go serve --dry-run
 $(CONFIG_FILE):
 	cp "$(CONFIG_FILE).tpl" $(CONFIG_FILE)
-
-# TODO: remove when https://github.com/src-d/ci/pull/84 is merged
-.PHONY: godep
-GODEP ?= $(CI_PATH)/dep
-godep:
-	export INSTALL_DIRECTORY=$(CI_PATH) ; \
-	test -f $(GODEP) || \
-		curl https://raw.githubusercontent.com/golang/dep/master/install.sh | bash ; \
-	$(GODEP) ensure -v
