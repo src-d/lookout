@@ -6,16 +6,17 @@ import (
 	"io"
 	"testing"
 
-	"github.com/src-d/lookout/util/cmdtest"
-
+	fixtures "github.com/src-d/lookout-test-fixtures"
 	"github.com/stretchr/testify/suite"
 )
 
 type BblfshIntegrationSuite struct {
-	cmdtest.IntegrationSuite
+	SdkIntegrationSuite
 }
 
 func (suite *BblfshIntegrationSuite) SetupSuite() {
+	suite.SdkIntegrationSuite.SetupSuite()
+
 	suite.StoppableCtx()
 	suite.StartDummy("--uast", "--files")
 }
@@ -26,26 +27,35 @@ func (suite *BblfshIntegrationSuite) TearDownSuite() {
 
 func (suite *BblfshIntegrationSuite) RunReview() io.Reader {
 	return suite.RunCli("review", "ipv4://localhost:10302",
-		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
-		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
+		"--git-dir="+suite.gitPath,
+		"--from="+logLineRevision.Base.Hash,
+		"--to="+logLineRevision.Head.Hash)
 }
 
 func (suite *BblfshIntegrationSuite) RunPush() io.Reader {
 	return suite.RunCli("push", "ipv4://localhost:10302",
-		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
-		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
+		"--git-dir="+suite.gitPath,
+		"--from="+logLineRevision.Base.Hash,
+		"--to="+logLineRevision.Head.Hash)
 }
 
 func (suite *BblfshIntegrationSuite) TestReviewNoBblfshError() {
 	r := suite.RunCli("review", "ipv4://localhost:10302",
 		"--bblfshd=ipv4://localhost:0000",
-		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
-		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
+		"--git-dir="+suite.gitPath,
+		"--from="+logLineRevision.Base.Hash,
+		"--to="+logLineRevision.Head.Hash)
 	suite.GrepTrue(r, "WantUAST isn't allowed")
 }
 
 func (suite *BblfshIntegrationSuite) TestReviewNoUASTWarning() {
-	r := suite.RunReview()
+	fixture := fixtures.GetByName("bblfsh-unknown-language")
+	rv := fixture.GetCommitRevision()
+
+	r := suite.RunCli("push", "ipv4://localhost:10302",
+		"--git-dir="+suite.gitPath,
+		"--from="+rv.Base.Hash,
+		"--to="+rv.Head.Hash)
 	suite.GrepTrue(r, "The file doesn't have UAST")
 }
 
@@ -62,13 +72,20 @@ func (suite *BblfshIntegrationSuite) TestReviewLanguage() {
 func (suite *BblfshIntegrationSuite) TestPushNoBblfshError() {
 	r := suite.RunCli("push", "ipv4://localhost:10302",
 		"--bblfshd=ipv4://localhost:0000",
-		"--from=66924f49aa9987273a137857c979ee5f0e709e30",
-		"--to=2c9f56bcb55be47cf35d40d024ec755399f699c7")
+		"--git-dir="+suite.gitPath,
+		"--from="+logLineRevision.Base.Hash,
+		"--to="+logLineRevision.Head.Hash)
 	suite.GrepTrue(r, "WantUAST isn't allowed")
 }
 
 func (suite *BblfshIntegrationSuite) TestPushNoUASTWarning() {
-	r := suite.RunPush()
+	fixture := fixtures.GetByName("bblfsh-unknown-language")
+	rv := fixture.GetCommitRevision()
+
+	r := suite.RunCli("push", "ipv4://localhost:10302",
+		"--git-dir="+suite.gitPath,
+		"--from="+rv.Base.Hash,
+		"--to="+rv.Head.Hash)
 	suite.GrepTrue(r, "The file doesn't have UAST")
 }
 
