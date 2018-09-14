@@ -9,6 +9,7 @@ providers:
     # See https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
     # app_id: 1234
     # private_key: ./key.pem
+    # installation_sync_interval: 1h
 
 repositories:
   - url: github.com/src-d/lookout

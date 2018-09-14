@@ -33,8 +33,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var installationsSyncInterval = time.Hour
-
 func init() {
 	if _, err := app.AddCommand("serve", "run server", "",
 		&ServeCommand{}); err != nil {
@@ -57,6 +55,8 @@ type ServeCommand struct {
 	analyzers map[string]lookout.AnalyzerClient
 	pool      *github.ClientPool
 }
+
+var defaultInstallationsSyncInterval = time.Hour
 
 // Config holds the main configuration
 type Config struct {
@@ -228,6 +228,14 @@ func (c *ServeCommand) initProviderGithubApp(conf Config) error {
 	}
 	if conf.Providers.Github.AppID == 0 {
 		return fmt.Errorf("missing GitHub App ID in config")
+	}
+	installationsSyncInterval := defaultInstallationsSyncInterval
+	if conf.Providers.Github.InstallationSyncInterval != "" {
+		var err error
+		installationsSyncInterval, err = time.ParseDuration(conf.Providers.Github.InstallationSyncInterval)
+		if err != nil {
+			return fmt.Errorf("can't parse sync interval: %s", err)
+		}
 	}
 
 	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
