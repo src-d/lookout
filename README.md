@@ -10,7 +10,9 @@ It includes a curl-style binary `lookout-sdk` that allows to trigger Analyzers d
 
 # Installation
 
-`go get github.com/src-d/lookout`
+```bash
+$ go get github.com/src-d/lookout/...
+```
 
 # Dependencies
 
@@ -30,24 +32,24 @@ To trigger the analysis on an actual pull request of a GitHub repository you wil
 Run:
 
 ```bash
-GITHUB_USER=<user> GITHUB_TOKEN=<token> REPO=github.com/<user>/<name> docker-compose up
+$ GITHUB_USER=<user> GITHUB_TOKEN=<token> REPO=github.com/<user>/<name> docker-compose up
 ```
 
 ## Without Docker
 
 1. Run dependencies manually or using docker-compose:
     ```bash
-    docker-compose up bblfsh postgres
+    $ docker-compose up bblfsh postgres
     ```
 1. Initialize the database. This command will work for the PostgreSQL created by docker-compose, use `-h` to see other options.
     ```bash
-    lookoutd migrate
+    $ lookoutd migrate
     ```
 1. Start an analyzer
 Any of the analyzers or a default dummy one, included in this repository
-    ```
-    go build -o analyzer ./cmd/dummy
-    ./analyzer serve
+    ```bash
+    $ go build -o analyzer ./cmd/dummy
+    $ ./analyzer serve
     ```
 1. Start a lookout server
     1. With posting analysis results on GitHub
