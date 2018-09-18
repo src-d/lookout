@@ -12,6 +12,9 @@ type ReviewEvent struct {
 	kallax.Model `pk:"id"`
 	ID           kallax.ULID
 	Status       EventStatus
+	// temporary column for migration
+	// should be removed in #259
+	OldInternalID string
 
 	// can't be pointer or kallax panics
 	lookout.ReviewEvent `kallax:",inline"`

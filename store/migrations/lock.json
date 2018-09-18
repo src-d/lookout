@@ -169,6 +169,14 @@
           "Unique": false
         },
         {
+          "Name": "old_internal_id",
+          "Type": "text",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
           "Name": "provider",
           "Type": "text",
           "PrimaryKey": false,

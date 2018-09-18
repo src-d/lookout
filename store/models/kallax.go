@@ -1071,6 +1071,8 @@ func (r *ReviewEvent) ColumnAddress(col string) (interface{}, error) {
 		return (*kallax.ULID)(&r.ID), nil
 	case "status":
 		return (*string)(&r.Status), nil
+	case "old_internal_id":
+		return &r.OldInternalID, nil
 	case "provider":
 		return &r.ReviewEvent.Provider, nil
 	case "internal_id":
@@ -1110,6 +1112,8 @@ func (r *ReviewEvent) Value(col string) (interface{}, error) {
 		return r.ID, nil
 	case "status":
 		return (string)(r.Status), nil
+	case "old_internal_id":
+		return r.OldInternalID, nil
 	case "provider":
 		return r.ReviewEvent.Provider, nil
 	case "internal_id":
@@ -1503,6 +1507,12 @@ func (q *ReviewEventQuery) FindByID(v ...kallax.ULID) *ReviewEventQuery {
 // the Status property is equal to the passed value.
 func (q *ReviewEventQuery) FindByStatus(v EventStatus) *ReviewEventQuery {
 	return q.Where(kallax.Eq(Schema.ReviewEvent.Status, v))
+}
+
+// FindByOldInternalID adds a new filter to the query that will require that
+// the OldInternalID property is equal to the passed value.
+func (q *ReviewEventQuery) FindByOldInternalID(v string) *ReviewEventQuery {
+	return q.Where(kallax.Eq(Schema.ReviewEvent.OldInternalID, v))
 }
 
 // FindByProvider adds a new filter to the query that will require that
@@ -2145,6 +2155,7 @@ type schemaReviewEvent struct {
 	*kallax.BaseSchema
 	ID             kallax.SchemaField
 	Status         kallax.SchemaField
+	OldInternalID  kallax.SchemaField
 	Provider       kallax.SchemaField
 	InternalID     kallax.SchemaField
 	CreatedAt      kallax.SchemaField
@@ -2318,6 +2329,7 @@ var Schema = &schema{
 			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("status"),
+			kallax.NewSchemaField("old_internal_id"),
 			kallax.NewSchemaField("provider"),
 			kallax.NewSchemaField("internal_id"),
 			kallax.NewSchemaField("created_at"),
@@ -2332,13 +2344,14 @@ var Schema = &schema{
 			kallax.NewSchemaField("head"),
 			kallax.NewSchemaField("review_target_id"),
 		),
-		ID:          kallax.NewSchemaField("id"),
-		Status:      kallax.NewSchemaField("status"),
-		Provider:    kallax.NewSchemaField("provider"),
-		InternalID:  kallax.NewSchemaField("internal_id"),
-		CreatedAt:   kallax.NewSchemaField("created_at"),
-		UpdatedAt:   kallax.NewSchemaField("updated_at"),
-		IsMergeable: kallax.NewSchemaField("is_mergeable"),
+		ID:            kallax.NewSchemaField("id"),
+		Status:        kallax.NewSchemaField("status"),
+		OldInternalID: kallax.NewSchemaField("old_internal_id"),
+		Provider:      kallax.NewSchemaField("provider"),
+		InternalID:    kallax.NewSchemaField("internal_id"),
+		CreatedAt:     kallax.NewSchemaField("created_at"),
+		UpdatedAt:     kallax.NewSchemaField("updated_at"),
+		IsMergeable:   kallax.NewSchemaField("is_mergeable"),
 		Source: &schemaReviewEventSource{
 			BaseSchemaField:       kallax.NewSchemaField("source").(*kallax.BaseSchemaField),
 			InternalRepositoryURL: kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "source", "internal_repository_url"),
