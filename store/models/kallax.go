@@ -44,6 +44,8 @@ func (r *Comment) ColumnAddress(col string) (interface{}, error) {
 		return &r.Comment.Text, nil
 	case "confidence":
 		return &r.Comment.Confidence, nil
+	case "analyzer":
+		return &r.Analyzer, nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in Comment: %s", col)
@@ -69,6 +71,8 @@ func (r *Comment) Value(col string) (interface{}, error) {
 		return r.Comment.Text, nil
 	case "confidence":
 		return r.Comment.Confidence, nil
+	case "analyzer":
+		return r.Analyzer, nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in Comment: %s", col)
@@ -450,6 +454,12 @@ func (q *CommentQuery) FindByText(v string) *CommentQuery {
 // the Confidence property is equal to the passed value.
 func (q *CommentQuery) FindByConfidence(cond kallax.ScalarCond, v uint32) *CommentQuery {
 	return q.Where(cond(Schema.Comment.Confidence, v))
+}
+
+// FindByAnalyzer adds a new filter to the query that will require that
+// the Analyzer property is equal to the passed value.
+func (q *CommentQuery) FindByAnalyzer(v string) *CommentQuery {
+	return q.Where(kallax.Eq(Schema.Comment.Analyzer, v))
 }
 
 // CommentResultSet is the set of results returned by a query to the
@@ -1085,6 +1095,8 @@ func (r *ReviewEvent) ColumnAddress(col string) (interface{}, error) {
 		return types.JSON(&r.ReviewEvent.CommitRevision.Base), nil
 	case "head":
 		return types.JSON(&r.ReviewEvent.CommitRevision.Head), nil
+	case "review_target_id":
+		return types.Nullable(kallax.VirtualColumn("review_target_id", r, new(kallax.ULID))), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in ReviewEvent: %s", col)
@@ -1122,6 +1134,12 @@ func (r *ReviewEvent) Value(col string) (interface{}, error) {
 		return types.JSON(r.ReviewEvent.CommitRevision.Base), nil
 	case "head":
 		return types.JSON(r.ReviewEvent.CommitRevision.Head), nil
+	case "review_target_id":
+		v := r.Model.VirtualColumn(col)
+		if v == nil {
+			return nil, kallax.ErrEmptyVirtualColumn
+		}
+		return v, nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in ReviewEvent: %s", col)
@@ -1131,12 +1149,30 @@ func (r *ReviewEvent) Value(col string) (interface{}, error) {
 // NewRelationshipRecord returns a new record for the relatiobship in the given
 // field.
 func (r *ReviewEvent) NewRelationshipRecord(field string) (kallax.Record, error) {
-	return nil, fmt.Errorf("kallax: model ReviewEvent has no relationships")
+	switch field {
+	case "ReviewTarget":
+		return new(ReviewTarget), nil
+
+	}
+	return nil, fmt.Errorf("kallax: model ReviewEvent has no relationship %s", field)
 }
 
 // SetRelationship sets the given relationship in the given field.
 func (r *ReviewEvent) SetRelationship(field string, rel interface{}) error {
-	return fmt.Errorf("kallax: model ReviewEvent has no relationships")
+	switch field {
+	case "ReviewTarget":
+		val, ok := rel.(*ReviewTarget)
+		if !ok {
+			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship ReviewTarget", rel)
+		}
+		if !val.GetID().IsEmpty() {
+			r.ReviewTarget = val
+		}
+
+		return nil
+
+	}
+	return fmt.Errorf("kallax: model ReviewEvent has no relationship %s", field)
 }
 
 // ReviewEventStore is the entity to access the records of the type ReviewEvent
@@ -1178,6 +1214,20 @@ func (s *ReviewEventStore) DisableCacher() *ReviewEventStore {
 	return &ReviewEventStore{s.Store.DisableCacher()}
 }
 
+func (s *ReviewEventStore) inverseRecords(record *ReviewEvent) []modelSaveFunc {
+	var result []modelSaveFunc
+
+	if record.ReviewTarget != nil && !record.ReviewTarget.IsSaving() {
+		record.AddVirtualColumn("review_target_id", record.ReviewTarget.GetID())
+		result = append(result, func(store *kallax.Store) error {
+			_, err := (&ReviewTargetStore{store}).Save(record.ReviewTarget)
+			return err
+		})
+	}
+
+	return result
+}
+
 // Insert inserts a ReviewEvent in the database. A non-persisted object is
 // required for this operation.
 func (s *ReviewEventStore) Insert(record *ReviewEvent) error {
@@ -1186,6 +1236,24 @@ func (s *ReviewEventStore) Insert(record *ReviewEvent) error {
 
 	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
 	record.UpdatedAt = record.UpdatedAt.Truncate(time.Microsecond)
+
+	inverseRecords := s.inverseRecords(record)
+
+	if len(inverseRecords) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+			for _, r := range inverseRecords {
+				if err := r(s); err != nil {
+					return err
+				}
+			}
+
+			if err := s.Insert(Schema.ReviewEvent.BaseSchema, record); err != nil {
+				return err
+			}
+
+			return nil
+		})
+	}
 
 	return s.Store.Insert(Schema.ReviewEvent.BaseSchema, record)
 }
@@ -1202,6 +1270,30 @@ func (s *ReviewEventStore) Update(record *ReviewEvent, cols ...kallax.SchemaFiel
 
 	record.SetSaving(true)
 	defer record.SetSaving(false)
+
+	inverseRecords := s.inverseRecords(record)
+
+	if len(inverseRecords) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			for _, r := range inverseRecords {
+				if err := r(s); err != nil {
+					return err
+				}
+			}
+
+			updated, err = s.Update(Schema.ReviewEvent.BaseSchema, record, cols...)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+		if err != nil {
+			return 0, err
+		}
+
+		return updated, nil
+	}
 
 	return s.Store.Update(Schema.ReviewEvent.BaseSchema, record, cols...)
 }
@@ -1388,6 +1480,11 @@ func (q *ReviewEventQuery) Where(cond kallax.Condition) *ReviewEventQuery {
 	return q
 }
 
+func (q *ReviewEventQuery) WithReviewTarget() *ReviewEventQuery {
+	q.AddRelation(Schema.ReviewTarget.BaseSchema, "ReviewTarget", kallax.OneToOne, nil)
+	return q
+}
+
 // FindByID adds a new filter to the query that will require that
 // the ID property is equal to one of the passed values; if no passed values,
 // it will do nothing.
@@ -1448,6 +1545,12 @@ func (q *ReviewEventQuery) FindByRepositoryID(cond kallax.ScalarCond, v uint32) 
 // the Number property is equal to the passed value.
 func (q *ReviewEventQuery) FindByNumber(cond kallax.ScalarCond, v uint32) *ReviewEventQuery {
 	return q.Where(cond(Schema.ReviewEvent.Number, v))
+}
+
+// FindByReviewTarget adds a new filter to the query that will require that
+// the foreign key of ReviewTarget is equal to the passed value.
+func (q *ReviewEventQuery) FindByReviewTarget(v kallax.ULID) *ReviewEventQuery {
+	return q.Where(kallax.Eq(Schema.ReviewEvent.ReviewTargetFK, v))
 }
 
 // ReviewEventResultSet is the set of results returned by a query to the
@@ -1558,10 +1661,459 @@ func (rs *ReviewEventResultSet) Close() error {
 	return rs.ResultSet.Close()
 }
 
+// NewReviewTarget returns a new instance of ReviewTarget.
+func NewReviewTarget() (record *ReviewTarget) {
+	return new(ReviewTarget)
+}
+
+// GetID returns the primary key of the model.
+func (r *ReviewTarget) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
+func (r *ReviewTarget) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return (*kallax.ULID)(&r.ID), nil
+	case "provider":
+		return &r.Provider, nil
+	case "internal_id":
+		return &r.InternalID, nil
+	case "repository_id":
+		return &r.RepositoryID, nil
+	case "number":
+		return &r.Number, nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in ReviewTarget: %s", col)
+	}
+}
+
+// Value returns the value of the given column.
+func (r *ReviewTarget) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return r.ID, nil
+	case "provider":
+		return r.Provider, nil
+	case "internal_id":
+		return r.InternalID, nil
+	case "repository_id":
+		return r.RepositoryID, nil
+	case "number":
+		return r.Number, nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in ReviewTarget: %s", col)
+	}
+}
+
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
+func (r *ReviewTarget) NewRelationshipRecord(field string) (kallax.Record, error) {
+	return nil, fmt.Errorf("kallax: model ReviewTarget has no relationships")
+}
+
+// SetRelationship sets the given relationship in the given field.
+func (r *ReviewTarget) SetRelationship(field string, rel interface{}) error {
+	return fmt.Errorf("kallax: model ReviewTarget has no relationships")
+}
+
+// ReviewTargetStore is the entity to access the records of the type ReviewTarget
+// in the database.
+type ReviewTargetStore struct {
+	*kallax.Store
+}
+
+// NewReviewTargetStore creates a new instance of ReviewTargetStore
+// using a SQL database.
+func NewReviewTargetStore(db *sql.DB) *ReviewTargetStore {
+	return &ReviewTargetStore{kallax.NewStore(db)}
+}
+
+// GenericStore returns the generic store of this store.
+func (s *ReviewTargetStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *ReviewTargetStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *ReviewTargetStore) Debug() *ReviewTargetStore {
+	return &ReviewTargetStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *ReviewTargetStore) DebugWith(logger kallax.LoggerFunc) *ReviewTargetStore {
+	return &ReviewTargetStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *ReviewTargetStore) DisableCacher() *ReviewTargetStore {
+	return &ReviewTargetStore{s.Store.DisableCacher()}
+}
+
+// Insert inserts a ReviewTarget in the database. A non-persisted object is
+// required for this operation.
+func (s *ReviewTargetStore) Insert(record *ReviewTarget) error {
+	record.SetSaving(true)
+	defer record.SetSaving(false)
+
+	return s.Store.Insert(Schema.ReviewTarget.BaseSchema, record)
+}
+
+// Update updates the given record on the database. If the columns are given,
+// only these columns will be updated. Otherwise all of them will be.
+// Be very careful with this, as you will have a potentially different object
+// in memory but not on the database.
+// Only writable records can be updated. Writable objects are those that have
+// been just inserted or retrieved using a query with no custom select fields.
+func (s *ReviewTargetStore) Update(record *ReviewTarget, cols ...kallax.SchemaField) (updated int64, err error) {
+	record.SetSaving(true)
+	defer record.SetSaving(false)
+
+	return s.Store.Update(Schema.ReviewTarget.BaseSchema, record, cols...)
+}
+
+// Save inserts the object if the record is not persisted, otherwise it updates
+// it. Same rules of Update and Insert apply depending on the case.
+func (s *ReviewTargetStore) Save(record *ReviewTarget) (updated bool, err error) {
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
+}
+
+// Delete removes the given record from the database.
+func (s *ReviewTargetStore) Delete(record *ReviewTarget) error {
+	return s.Store.Delete(Schema.ReviewTarget.BaseSchema, record)
+}
+
+// Find returns the set of results for the given query.
+func (s *ReviewTargetStore) Find(q *ReviewTargetQuery) (*ReviewTargetResultSet, error) {
+	rs, err := s.Store.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewReviewTargetResultSet(rs), nil
+}
+
+// MustFind returns the set of results for the given query, but panics if there
+// is any error.
+func (s *ReviewTargetStore) MustFind(q *ReviewTargetQuery) *ReviewTargetResultSet {
+	return NewReviewTargetResultSet(s.Store.MustFind(q))
+}
+
+// Count returns the number of rows that would be retrieved with the given
+// query.
+func (s *ReviewTargetStore) Count(q *ReviewTargetQuery) (int64, error) {
+	return s.Store.Count(q)
+}
+
+// MustCount returns the number of rows that would be retrieved with the given
+// query, but panics if there is an error.
+func (s *ReviewTargetStore) MustCount(q *ReviewTargetQuery) int64 {
+	return s.Store.MustCount(q)
+}
+
+// FindOne returns the first row returned by the given query.
+// `ErrNotFound` is returned if there are no results.
+func (s *ReviewTargetStore) FindOne(q *ReviewTargetQuery) (*ReviewTarget, error) {
+	q.Limit(1)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *ReviewTargetStore) FindAll(q *ReviewTargetQuery) ([]*ReviewTarget, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
+}
+
+// MustFindOne returns the first row retrieved by the given query. It panics
+// if there is an error or if there are no rows.
+func (s *ReviewTargetStore) MustFindOne(q *ReviewTargetQuery) *ReviewTarget {
+	record, err := s.FindOne(q)
+	if err != nil {
+		panic(err)
+	}
+	return record
+}
+
+// Reload refreshes the ReviewTarget with the data in the database and
+// makes it writable.
+func (s *ReviewTargetStore) Reload(record *ReviewTarget) error {
+	return s.Store.Reload(Schema.ReviewTarget.BaseSchema, record)
+}
+
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *ReviewTargetStore) Transaction(callback func(*ReviewTargetStore) error) error {
+	if callback == nil {
+		return kallax.ErrInvalidTxCallback
+	}
+
+	return s.Store.Transaction(func(store *kallax.Store) error {
+		return callback(&ReviewTargetStore{store})
+	})
+}
+
+// ReviewTargetQuery is the object used to create queries for the ReviewTarget
+// entity.
+type ReviewTargetQuery struct {
+	*kallax.BaseQuery
+}
+
+// NewReviewTargetQuery returns a new instance of ReviewTargetQuery.
+func NewReviewTargetQuery() *ReviewTargetQuery {
+	return &ReviewTargetQuery{
+		BaseQuery: kallax.NewBaseQuery(Schema.ReviewTarget.BaseSchema),
+	}
+}
+
+// Select adds columns to select in the query.
+func (q *ReviewTargetQuery) Select(columns ...kallax.SchemaField) *ReviewTargetQuery {
+	if len(columns) == 0 {
+		return q
+	}
+	q.BaseQuery.Select(columns...)
+	return q
+}
+
+// SelectNot excludes columns from being selected in the query.
+func (q *ReviewTargetQuery) SelectNot(columns ...kallax.SchemaField) *ReviewTargetQuery {
+	q.BaseQuery.SelectNot(columns...)
+	return q
+}
+
+// Copy returns a new identical copy of the query. Remember queries are mutable
+// so make a copy any time you need to reuse them.
+func (q *ReviewTargetQuery) Copy() *ReviewTargetQuery {
+	return &ReviewTargetQuery{
+		BaseQuery: q.BaseQuery.Copy(),
+	}
+}
+
+// Order adds order clauses to the query for the given columns.
+func (q *ReviewTargetQuery) Order(cols ...kallax.ColumnOrder) *ReviewTargetQuery {
+	q.BaseQuery.Order(cols...)
+	return q
+}
+
+// BatchSize sets the number of items to fetch per batch when there are 1:N
+// relationships selected in the query.
+func (q *ReviewTargetQuery) BatchSize(size uint64) *ReviewTargetQuery {
+	q.BaseQuery.BatchSize(size)
+	return q
+}
+
+// Limit sets the max number of items to retrieve.
+func (q *ReviewTargetQuery) Limit(n uint64) *ReviewTargetQuery {
+	q.BaseQuery.Limit(n)
+	return q
+}
+
+// Offset sets the number of items to skip from the result set of items.
+func (q *ReviewTargetQuery) Offset(n uint64) *ReviewTargetQuery {
+	q.BaseQuery.Offset(n)
+	return q
+}
+
+// Where adds a condition to the query. All conditions added are concatenated
+// using a logical AND.
+func (q *ReviewTargetQuery) Where(cond kallax.Condition) *ReviewTargetQuery {
+	q.BaseQuery.Where(cond)
+	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
+func (q *ReviewTargetQuery) FindByID(v ...kallax.ULID) *ReviewTargetQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.ReviewTarget.ID, values...))
+}
+
+// FindByProvider adds a new filter to the query that will require that
+// the Provider property is equal to the passed value.
+func (q *ReviewTargetQuery) FindByProvider(v string) *ReviewTargetQuery {
+	return q.Where(kallax.Eq(Schema.ReviewTarget.Provider, v))
+}
+
+// FindByInternalID adds a new filter to the query that will require that
+// the InternalID property is equal to the passed value.
+func (q *ReviewTargetQuery) FindByInternalID(v string) *ReviewTargetQuery {
+	return q.Where(kallax.Eq(Schema.ReviewTarget.InternalID, v))
+}
+
+// FindByRepositoryID adds a new filter to the query that will require that
+// the RepositoryID property is equal to the passed value.
+func (q *ReviewTargetQuery) FindByRepositoryID(cond kallax.ScalarCond, v uint32) *ReviewTargetQuery {
+	return q.Where(cond(Schema.ReviewTarget.RepositoryID, v))
+}
+
+// FindByNumber adds a new filter to the query that will require that
+// the Number property is equal to the passed value.
+func (q *ReviewTargetQuery) FindByNumber(cond kallax.ScalarCond, v uint32) *ReviewTargetQuery {
+	return q.Where(cond(Schema.ReviewTarget.Number, v))
+}
+
+// ReviewTargetResultSet is the set of results returned by a query to the
+// database.
+type ReviewTargetResultSet struct {
+	ResultSet kallax.ResultSet
+	last      *ReviewTarget
+	lastErr   error
+}
+
+// NewReviewTargetResultSet creates a new result set for rows of the type
+// ReviewTarget.
+func NewReviewTargetResultSet(rs kallax.ResultSet) *ReviewTargetResultSet {
+	return &ReviewTargetResultSet{ResultSet: rs}
+}
+
+// Next fetches the next item in the result set and returns true if there is
+// a next item.
+// The result set is closed automatically when there are no more items.
+func (rs *ReviewTargetResultSet) Next() bool {
+	if !rs.ResultSet.Next() {
+		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
+		return false
+	}
+
+	var record kallax.Record
+	record, rs.lastErr = rs.ResultSet.Get(Schema.ReviewTarget.BaseSchema)
+	if rs.lastErr != nil {
+		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*ReviewTarget)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *ReviewTarget")
+			rs.last = nil
+		}
+	}
+
+	return true
+}
+
+// Get retrieves the last fetched item from the result set and the last error.
+func (rs *ReviewTargetResultSet) Get() (*ReviewTarget, error) {
+	return rs.last, rs.lastErr
+}
+
+// ForEach iterates over the complete result set passing every record found to
+// the given callback. It is possible to stop the iteration by returning
+// `kallax.ErrStop` in the callback.
+// Result set is always closed at the end.
+func (rs *ReviewTargetResultSet) ForEach(fn func(*ReviewTarget) error) error {
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return err
+		}
+
+		if err := fn(record); err != nil {
+			if err == kallax.ErrStop {
+				return rs.Close()
+			}
+
+			return err
+		}
+	}
+	return nil
+}
+
+// All returns all records on the result set and closes the result set.
+func (rs *ReviewTargetResultSet) All() ([]*ReviewTarget, error) {
+	var result []*ReviewTarget
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, nil
+}
+
+// One returns the first record on the result set and closes the result set.
+func (rs *ReviewTargetResultSet) One() (*ReviewTarget, error) {
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// Err returns the last error occurred.
+func (rs *ReviewTargetResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *ReviewTargetResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 type schema struct {
-	Comment     *schemaComment
-	PushEvent   *schemaPushEvent
-	ReviewEvent *schemaReviewEvent
+	Comment      *schemaComment
+	PushEvent    *schemaPushEvent
+	ReviewEvent  *schemaReviewEvent
+	ReviewTarget *schemaReviewTarget
 }
 
 type schemaComment struct {
@@ -1572,6 +2124,7 @@ type schemaComment struct {
 	Line          kallax.SchemaField
 	Text          kallax.SchemaField
 	Confidence    kallax.SchemaField
+	Analyzer      kallax.SchemaField
 }
 
 type schemaPushEvent struct {
@@ -1590,20 +2143,30 @@ type schemaPushEvent struct {
 
 type schemaReviewEvent struct {
 	*kallax.BaseSchema
-	ID            kallax.SchemaField
-	Status        kallax.SchemaField
-	Provider      kallax.SchemaField
-	InternalID    kallax.SchemaField
-	CreatedAt     kallax.SchemaField
-	UpdatedAt     kallax.SchemaField
-	IsMergeable   kallax.SchemaField
-	Source        *schemaReviewEventSource
-	Merge         *schemaReviewEventMerge
-	Configuration *schemaReviewEventConfiguration
-	RepositoryID  kallax.SchemaField
-	Number        kallax.SchemaField
-	Base          *schemaReviewEventBase
-	Head          *schemaReviewEventHead
+	ID             kallax.SchemaField
+	Status         kallax.SchemaField
+	Provider       kallax.SchemaField
+	InternalID     kallax.SchemaField
+	CreatedAt      kallax.SchemaField
+	UpdatedAt      kallax.SchemaField
+	IsMergeable    kallax.SchemaField
+	Source         *schemaReviewEventSource
+	Merge          *schemaReviewEventMerge
+	Configuration  *schemaReviewEventConfiguration
+	RepositoryID   kallax.SchemaField
+	Number         kallax.SchemaField
+	Base           *schemaReviewEventBase
+	Head           *schemaReviewEventHead
+	ReviewTargetFK kallax.SchemaField
+}
+
+type schemaReviewTarget struct {
+	*kallax.BaseSchema
+	ID           kallax.SchemaField
+	Provider     kallax.SchemaField
+	InternalID   kallax.SchemaField
+	RepositoryID kallax.SchemaField
+	Number       kallax.SchemaField
 }
 
 type schemaPushEventBase struct {
@@ -1615,7 +2178,10 @@ type schemaPushEventBase struct {
 
 type schemaPushEventConfiguration struct {
 	*kallax.BaseSchemaField
-	Fields kallax.SchemaField
+	Fields               kallax.SchemaField
+	XXX_NoUnkeyedLiteral kallax.SchemaField
+	XXX_unrecognized     kallax.SchemaField
+	XXX_sizecache        kallax.SchemaField
 }
 
 type schemaPushEventHead struct {
@@ -1634,7 +2200,10 @@ type schemaReviewEventBase struct {
 
 type schemaReviewEventConfiguration struct {
 	*kallax.BaseSchemaField
-	Fields kallax.SchemaField
+	Fields               kallax.SchemaField
+	XXX_NoUnkeyedLiteral kallax.SchemaField
+	XXX_unrecognized     kallax.SchemaField
+	XXX_sizecache        kallax.SchemaField
 }
 
 type schemaReviewEventHead struct {
@@ -1677,6 +2246,7 @@ var Schema = &schema{
 			kallax.NewSchemaField("line"),
 			kallax.NewSchemaField("text"),
 			kallax.NewSchemaField("confidence"),
+			kallax.NewSchemaField("analyzer"),
 		),
 		ID:            kallax.NewSchemaField("id"),
 		ReviewEventFK: kallax.NewSchemaField("review_event_id"),
@@ -1684,6 +2254,7 @@ var Schema = &schema{
 		Line:          kallax.NewSchemaField("line"),
 		Text:          kallax.NewSchemaField("text"),
 		Confidence:    kallax.NewSchemaField("confidence"),
+		Analyzer:      kallax.NewSchemaField("analyzer"),
 	},
 	PushEvent: &schemaPushEvent{
 		BaseSchema: kallax.NewBaseSchema(
@@ -1714,8 +2285,11 @@ var Schema = &schema{
 		Commits:         kallax.NewSchemaField("commits"),
 		DistinctCommits: kallax.NewSchemaField("distinct_commits"),
 		Configuration: &schemaPushEventConfiguration{
-			BaseSchemaField: kallax.NewSchemaField("configuration").(*kallax.BaseSchemaField),
-			Fields:          kallax.NewJSONSchemaKey(kallax.JSONAny, "push_event", "configuration", "fields"),
+			BaseSchemaField:      kallax.NewSchemaField("configuration").(*kallax.BaseSchemaField),
+			Fields:               kallax.NewJSONSchemaKey(kallax.JSONAny, "push_event", "configuration", "fields"),
+			XXX_NoUnkeyedLiteral: kallax.NewJSONSchemaKey(kallax.JSONAny, "push_event", "configuration", "-"),
+			XXX_unrecognized:     kallax.NewJSONSchemaArray("push_event", "configuration", "-"),
+			XXX_sizecache:        kallax.NewJSONSchemaKey(kallax.JSONInt, "push_event", "configuration", "-"),
 		},
 		Base: &schemaPushEventBase{
 			BaseSchemaField:       kallax.NewSchemaField("base").(*kallax.BaseSchemaField),
@@ -1735,7 +2309,9 @@ var Schema = &schema{
 			"review_event",
 			"__reviewevent",
 			kallax.NewSchemaField("id"),
-			kallax.ForeignKeys{},
+			kallax.ForeignKeys{
+				"ReviewTarget": kallax.NewForeignKey("review_target_id", true),
+			},
 			func() kallax.Record {
 				return new(ReviewEvent)
 			},
@@ -1754,6 +2330,7 @@ var Schema = &schema{
 			kallax.NewSchemaField("number"),
 			kallax.NewSchemaField("base"),
 			kallax.NewSchemaField("head"),
+			kallax.NewSchemaField("review_target_id"),
 		),
 		ID:          kallax.NewSchemaField("id"),
 		Status:      kallax.NewSchemaField("status"),
@@ -1775,8 +2352,11 @@ var Schema = &schema{
 			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "merge", "hash"),
 		},
 		Configuration: &schemaReviewEventConfiguration{
-			BaseSchemaField: kallax.NewSchemaField("configuration").(*kallax.BaseSchemaField),
-			Fields:          kallax.NewJSONSchemaKey(kallax.JSONAny, "review_event", "configuration", "fields"),
+			BaseSchemaField:      kallax.NewSchemaField("configuration").(*kallax.BaseSchemaField),
+			Fields:               kallax.NewJSONSchemaKey(kallax.JSONAny, "review_event", "configuration", "fields"),
+			XXX_NoUnkeyedLiteral: kallax.NewJSONSchemaKey(kallax.JSONAny, "review_event", "configuration", "-"),
+			XXX_unrecognized:     kallax.NewJSONSchemaArray("review_event", "configuration", "-"),
+			XXX_sizecache:        kallax.NewJSONSchemaKey(kallax.JSONInt, "review_event", "configuration", "-"),
 		},
 		RepositoryID: kallax.NewSchemaField("repository_id"),
 		Number:       kallax.NewSchemaField("number"),
@@ -1792,5 +2372,28 @@ var Schema = &schema{
 			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "head", "reference_name"),
 			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "head", "hash"),
 		},
+		ReviewTargetFK: kallax.NewSchemaField("review_target_id"),
+	},
+	ReviewTarget: &schemaReviewTarget{
+		BaseSchema: kallax.NewBaseSchema(
+			"review_target",
+			"__reviewtarget",
+			kallax.NewSchemaField("id"),
+			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(ReviewTarget)
+			},
+			false,
+			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("provider"),
+			kallax.NewSchemaField("internal_id"),
+			kallax.NewSchemaField("repository_id"),
+			kallax.NewSchemaField("number"),
+		),
+		ID:           kallax.NewSchemaField("id"),
+		Provider:     kallax.NewSchemaField("provider"),
+		InternalID:   kallax.NewSchemaField("internal_id"),
+		RepositoryID: kallax.NewSchemaField("repository_id"),
+		Number:       kallax.NewSchemaField("number"),
 	},
 }
