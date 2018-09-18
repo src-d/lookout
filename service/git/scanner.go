@@ -171,6 +171,10 @@ func (s *regexpFilter) OnStart() error {
 }
 
 func (s *regexpFilter) Fn(f *lookout.File) (bool, error) {
+	if f == nil {
+		return true, nil
+	}
+
 	if !s.matchInclude(f.Path) {
 		return true, nil
 	}

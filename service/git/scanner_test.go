@@ -148,6 +148,46 @@ func (s *ScannerSuite) TestFilterExcludeOne() {
 	}
 }
 
+// TestFilterDeletedFiles triggers https://github.com/src-d/lookout/issues/261
+func (s *ScannerSuite) TestFilterDeletedFiles() {
+	fixtures := []filterScannerFixture{
+		{},
+		{IncludePattern: ".*"},
+		{ExcludePattern: `\.gitignore`},
+		{IncludePattern: ".*", ExcludePattern: `\.gitignore`},
+	}
+
+	for i, fixture := range s.changeFixtures(fixtures) {
+		head := s.getCommit(s.Basic.Head)
+		headTree, err := head.Tree()
+		s.Require().NoError(err)
+
+		parent, err := head.Parent(0)
+		s.Require().NoError(err)
+		parentTree, err := parent.Tree()
+		s.Require().NoError(err)
+
+		s.T().Run(fmt.Sprintf("change case %d", i), func(t *testing.T) {
+			require := require.New(t)
+
+			cs := NewChangeFilterScanner(
+				// head and parent inverted to force a test case with a deleted file
+				NewDiffTreeScanner(headTree, parentTree),
+				fixture.IncludePattern, fixture.ExcludePattern,
+			)
+
+			var changes []*lookout.Change
+			for cs.Next() {
+				changes = append(changes, cs.Change())
+			}
+
+			require.False(cs.Next())
+			require.NoError(cs.Err())
+			require.NoError(cs.Close())
+		})
+	}
+}
+
 func (s *ScannerSuite) changeFixtures(fs []filterScannerFixture) []*lookout.ChangesRequest {
 	res := make([]*lookout.ChangesRequest, len(fs), len(fs))
 	for i, f := range fs {
