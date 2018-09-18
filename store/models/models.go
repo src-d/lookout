@@ -3,6 +3,7 @@ package models
 //go:generate kallax gen
 
 import (
+	"github.com/gogo/protobuf/types"
 	"github.com/src-d/lookout"
 	kallax "gopkg.in/src-d/go-kallax.v1"
 )
@@ -16,14 +17,30 @@ type ReviewEvent struct {
 	// should be removed in #259
 	OldInternalID string
 
-	// can't be pointer or kallax panics
-	lookout.ReviewEvent `kallax:",inline"`
+	// those fields can change with each push
+	IsMergeable   bool
+	Source        lookout.ReferencePointer
+	Merge         lookout.ReferencePointer
+	Configuration types.Struct
+	Base          lookout.ReferencePointer
+	Head          lookout.ReferencePointer
 
+	// static part of review
 	ReviewTarget *ReviewTarget `fk:",inverse"`
 }
 
 func newReviewEvent(e *lookout.ReviewEvent) *ReviewEvent {
-	return &ReviewEvent{ID: kallax.NewULID(), Status: EventStatusNew, ReviewEvent: *e}
+	return &ReviewEvent{
+		ID:            kallax.NewULID(),
+		Status:        EventStatusNew,
+		OldInternalID: e.InternalID,
+		IsMergeable:   e.IsMergeable,
+		Source:        e.Source,
+		Merge:         e.Merge,
+		Configuration: e.Configuration,
+		Base:          e.Base,
+		Head:          e.Head,
+	}
 }
 
 // ReviewTarget is a persisted model for a pull request

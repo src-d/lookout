@@ -1107,30 +1107,18 @@ func (r *ReviewEvent) ColumnAddress(col string) (interface{}, error) {
 		return (*string)(&r.Status), nil
 	case "old_internal_id":
 		return &r.OldInternalID, nil
-	case "provider":
-		return &r.ReviewEvent.Provider, nil
-	case "internal_id":
-		return &r.ReviewEvent.InternalID, nil
-	case "created_at":
-		return &r.ReviewEvent.CreatedAt, nil
-	case "updated_at":
-		return &r.ReviewEvent.UpdatedAt, nil
 	case "is_mergeable":
-		return &r.ReviewEvent.IsMergeable, nil
+		return &r.IsMergeable, nil
 	case "source":
-		return types.JSON(&r.ReviewEvent.Source), nil
+		return types.JSON(&r.Source), nil
 	case "merge":
-		return types.JSON(&r.ReviewEvent.Merge), nil
+		return types.JSON(&r.Merge), nil
 	case "configuration":
-		return types.JSON(&r.ReviewEvent.Configuration), nil
-	case "repository_id":
-		return &r.ReviewEvent.RepositoryID, nil
-	case "number":
-		return &r.ReviewEvent.Number, nil
+		return types.JSON(&r.Configuration), nil
 	case "base":
-		return types.JSON(&r.ReviewEvent.CommitRevision.Base), nil
+		return types.JSON(&r.Base), nil
 	case "head":
-		return types.JSON(&r.ReviewEvent.CommitRevision.Head), nil
+		return types.JSON(&r.Head), nil
 	case "review_target_id":
 		return types.Nullable(kallax.VirtualColumn("review_target_id", r, new(kallax.ULID))), nil
 
@@ -1148,30 +1136,18 @@ func (r *ReviewEvent) Value(col string) (interface{}, error) {
 		return (string)(r.Status), nil
 	case "old_internal_id":
 		return r.OldInternalID, nil
-	case "provider":
-		return r.ReviewEvent.Provider, nil
-	case "internal_id":
-		return r.ReviewEvent.InternalID, nil
-	case "created_at":
-		return r.ReviewEvent.CreatedAt, nil
-	case "updated_at":
-		return r.ReviewEvent.UpdatedAt, nil
 	case "is_mergeable":
-		return r.ReviewEvent.IsMergeable, nil
+		return r.IsMergeable, nil
 	case "source":
-		return types.JSON(r.ReviewEvent.Source), nil
+		return types.JSON(r.Source), nil
 	case "merge":
-		return types.JSON(r.ReviewEvent.Merge), nil
+		return types.JSON(r.Merge), nil
 	case "configuration":
-		return types.JSON(r.ReviewEvent.Configuration), nil
-	case "repository_id":
-		return r.ReviewEvent.RepositoryID, nil
-	case "number":
-		return r.ReviewEvent.Number, nil
+		return types.JSON(r.Configuration), nil
 	case "base":
-		return types.JSON(r.ReviewEvent.CommitRevision.Base), nil
+		return types.JSON(r.Base), nil
 	case "head":
-		return types.JSON(r.ReviewEvent.CommitRevision.Head), nil
+		return types.JSON(r.Head), nil
 	case "review_target_id":
 		v := r.Model.VirtualColumn(col)
 		if v == nil {
@@ -1272,9 +1248,6 @@ func (s *ReviewEventStore) Insert(record *ReviewEvent) error {
 	record.SetSaving(true)
 	defer record.SetSaving(false)
 
-	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
-	record.UpdatedAt = record.UpdatedAt.Truncate(time.Microsecond)
-
 	inverseRecords := s.inverseRecords(record)
 
 	if len(inverseRecords) > 0 {
@@ -1303,9 +1276,6 @@ func (s *ReviewEventStore) Insert(record *ReviewEvent) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *ReviewEventStore) Update(record *ReviewEvent, cols ...kallax.SchemaField) (updated int64, err error) {
-	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
-	record.UpdatedAt = record.UpdatedAt.Truncate(time.Microsecond)
-
 	record.SetSaving(true)
 	defer record.SetSaving(false)
 
@@ -1549,46 +1519,10 @@ func (q *ReviewEventQuery) FindByOldInternalID(v string) *ReviewEventQuery {
 	return q.Where(kallax.Eq(Schema.ReviewEvent.OldInternalID, v))
 }
 
-// FindByProvider adds a new filter to the query that will require that
-// the Provider property is equal to the passed value.
-func (q *ReviewEventQuery) FindByProvider(v string) *ReviewEventQuery {
-	return q.Where(kallax.Eq(Schema.ReviewEvent.Provider, v))
-}
-
-// FindByInternalID adds a new filter to the query that will require that
-// the InternalID property is equal to the passed value.
-func (q *ReviewEventQuery) FindByInternalID(v string) *ReviewEventQuery {
-	return q.Where(kallax.Eq(Schema.ReviewEvent.InternalID, v))
-}
-
-// FindByCreatedAt adds a new filter to the query that will require that
-// the CreatedAt property is equal to the passed value.
-func (q *ReviewEventQuery) FindByCreatedAt(cond kallax.ScalarCond, v time.Time) *ReviewEventQuery {
-	return q.Where(cond(Schema.ReviewEvent.CreatedAt, v))
-}
-
-// FindByUpdatedAt adds a new filter to the query that will require that
-// the UpdatedAt property is equal to the passed value.
-func (q *ReviewEventQuery) FindByUpdatedAt(cond kallax.ScalarCond, v time.Time) *ReviewEventQuery {
-	return q.Where(cond(Schema.ReviewEvent.UpdatedAt, v))
-}
-
 // FindByIsMergeable adds a new filter to the query that will require that
 // the IsMergeable property is equal to the passed value.
 func (q *ReviewEventQuery) FindByIsMergeable(v bool) *ReviewEventQuery {
 	return q.Where(kallax.Eq(Schema.ReviewEvent.IsMergeable, v))
-}
-
-// FindByRepositoryID adds a new filter to the query that will require that
-// the RepositoryID property is equal to the passed value.
-func (q *ReviewEventQuery) FindByRepositoryID(cond kallax.ScalarCond, v uint32) *ReviewEventQuery {
-	return q.Where(cond(Schema.ReviewEvent.RepositoryID, v))
-}
-
-// FindByNumber adds a new filter to the query that will require that
-// the Number property is equal to the passed value.
-func (q *ReviewEventQuery) FindByNumber(cond kallax.ScalarCond, v uint32) *ReviewEventQuery {
-	return q.Where(cond(Schema.ReviewEvent.Number, v))
 }
 
 // FindByReviewTarget adds a new filter to the query that will require that
@@ -2226,16 +2160,10 @@ type schemaReviewEvent struct {
 	ID             kallax.SchemaField
 	Status         kallax.SchemaField
 	OldInternalID  kallax.SchemaField
-	Provider       kallax.SchemaField
-	InternalID     kallax.SchemaField
-	CreatedAt      kallax.SchemaField
-	UpdatedAt      kallax.SchemaField
 	IsMergeable    kallax.SchemaField
 	Source         *schemaReviewEventSource
 	Merge          *schemaReviewEventMerge
 	Configuration  *schemaReviewEventConfiguration
-	RepositoryID   kallax.SchemaField
-	Number         kallax.SchemaField
 	Base           *schemaReviewEventBase
 	Head           *schemaReviewEventHead
 	ReviewTargetFK kallax.SchemaField
@@ -2406,16 +2334,10 @@ var Schema = &schema{
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("status"),
 			kallax.NewSchemaField("old_internal_id"),
-			kallax.NewSchemaField("provider"),
-			kallax.NewSchemaField("internal_id"),
-			kallax.NewSchemaField("created_at"),
-			kallax.NewSchemaField("updated_at"),
 			kallax.NewSchemaField("is_mergeable"),
 			kallax.NewSchemaField("source"),
 			kallax.NewSchemaField("merge"),
 			kallax.NewSchemaField("configuration"),
-			kallax.NewSchemaField("repository_id"),
-			kallax.NewSchemaField("number"),
 			kallax.NewSchemaField("base"),
 			kallax.NewSchemaField("head"),
 			kallax.NewSchemaField("review_target_id"),
@@ -2423,43 +2345,37 @@ var Schema = &schema{
 		ID:            kallax.NewSchemaField("id"),
 		Status:        kallax.NewSchemaField("status"),
 		OldInternalID: kallax.NewSchemaField("old_internal_id"),
-		Provider:      kallax.NewSchemaField("provider"),
-		InternalID:    kallax.NewSchemaField("internal_id"),
-		CreatedAt:     kallax.NewSchemaField("created_at"),
-		UpdatedAt:     kallax.NewSchemaField("updated_at"),
 		IsMergeable:   kallax.NewSchemaField("is_mergeable"),
 		Source: &schemaReviewEventSource{
 			BaseSchemaField:       kallax.NewSchemaField("source").(*kallax.BaseSchemaField),
-			InternalRepositoryURL: kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "source", "internal_repository_url"),
-			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "source", "reference_name"),
-			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "source", "hash"),
+			InternalRepositoryURL: kallax.NewJSONSchemaKey(kallax.JSONText, "source", "internal_repository_url"),
+			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "source", "reference_name"),
+			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "source", "hash"),
 		},
 		Merge: &schemaReviewEventMerge{
 			BaseSchemaField:       kallax.NewSchemaField("merge").(*kallax.BaseSchemaField),
-			InternalRepositoryURL: kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "merge", "internal_repository_url"),
-			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "merge", "reference_name"),
-			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "merge", "hash"),
+			InternalRepositoryURL: kallax.NewJSONSchemaKey(kallax.JSONText, "merge", "internal_repository_url"),
+			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "merge", "reference_name"),
+			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "merge", "hash"),
 		},
 		Configuration: &schemaReviewEventConfiguration{
 			BaseSchemaField:      kallax.NewSchemaField("configuration").(*kallax.BaseSchemaField),
-			Fields:               kallax.NewJSONSchemaKey(kallax.JSONAny, "review_event", "configuration", "fields"),
-			XXX_NoUnkeyedLiteral: kallax.NewJSONSchemaKey(kallax.JSONAny, "review_event", "configuration", "-"),
-			XXX_unrecognized:     kallax.NewJSONSchemaArray("review_event", "configuration", "-"),
-			XXX_sizecache:        kallax.NewJSONSchemaKey(kallax.JSONInt, "review_event", "configuration", "-"),
+			Fields:               kallax.NewJSONSchemaKey(kallax.JSONAny, "configuration", "fields"),
+			XXX_NoUnkeyedLiteral: kallax.NewJSONSchemaKey(kallax.JSONAny, "configuration", "-"),
+			XXX_unrecognized:     kallax.NewJSONSchemaArray("configuration", "-"),
+			XXX_sizecache:        kallax.NewJSONSchemaKey(kallax.JSONInt, "configuration", "-"),
 		},
-		RepositoryID: kallax.NewSchemaField("repository_id"),
-		Number:       kallax.NewSchemaField("number"),
 		Base: &schemaReviewEventBase{
 			BaseSchemaField:       kallax.NewSchemaField("base").(*kallax.BaseSchemaField),
-			InternalRepositoryURL: kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "base", "internal_repository_url"),
-			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "base", "reference_name"),
-			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "base", "hash"),
+			InternalRepositoryURL: kallax.NewJSONSchemaKey(kallax.JSONText, "base", "internal_repository_url"),
+			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "base", "reference_name"),
+			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "base", "hash"),
 		},
 		Head: &schemaReviewEventHead{
 			BaseSchemaField:       kallax.NewSchemaField("head").(*kallax.BaseSchemaField),
-			InternalRepositoryURL: kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "head", "internal_repository_url"),
-			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "head", "reference_name"),
-			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "review_event", "head", "hash"),
+			InternalRepositoryURL: kallax.NewJSONSchemaKey(kallax.JSONText, "head", "internal_repository_url"),
+			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "head", "reference_name"),
+			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "head", "hash"),
 		},
 		ReviewTargetFK: kallax.NewSchemaField("review_target_id"),
 	},
