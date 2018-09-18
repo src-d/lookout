@@ -343,7 +343,7 @@ func (s *Server) post(ctx context.Context, e lookout.Event, comments []lookout.A
 
 	for _, cg := range comments {
 		for _, c := range cg.Comments {
-			if err := s.commentOp.Save(ctx, e, c); err != nil {
+			if err := s.commentOp.Save(ctx, e, c, cg.Config.Name); err != nil {
 				ctxlog.Get(ctx).Errorf(err, "can't save comment")
 			}
 		}

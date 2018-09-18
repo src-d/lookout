@@ -168,13 +168,13 @@ func NewDBCommentOperator(c *models.CommentStore, r *models.ReviewEventStore) *D
 var _ CommentOperator = &DBCommentOperator{}
 
 // Save implements EventOperator interface
-func (o *DBCommentOperator) Save(ctx context.Context, e lookout.Event, c *lookout.Comment) error {
+func (o *DBCommentOperator) Save(ctx context.Context, e lookout.Event, c *lookout.Comment, analyzerName string) error {
 	ev, ok := e.(*lookout.ReviewEvent)
 	if !ok {
 		return fmt.Errorf("comments can belong only to review event but %v is given", e.Type())
 	}
 
-	return o.save(ctx, ev, c)
+	return o.save(ctx, ev, c, analyzerName)
 }
 
 // Posted implements EventOperator interface
@@ -187,7 +187,7 @@ func (o *DBCommentOperator) Posted(ctx context.Context, e lookout.Event, c *look
 	return o.posted(ctx, ev, c)
 }
 
-func (o *DBCommentOperator) save(ctx context.Context, e *lookout.ReviewEvent, c *lookout.Comment) error {
+func (o *DBCommentOperator) save(ctx context.Context, e *lookout.ReviewEvent, c *lookout.Comment, analyzerName string) error {
 	q := models.NewReviewEventQuery().
 		FindByProvider(e.Provider).
 		FindByInternalID(e.InternalID)
@@ -198,6 +198,7 @@ func (o *DBCommentOperator) save(ctx context.Context, e *lookout.ReviewEvent, c 
 	}
 
 	m := models.NewComment(r, c)
+	m.Analyzer = analyzerName
 	_, err = o.store.Save(m)
 	return err
 }
