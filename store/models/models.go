@@ -23,7 +23,7 @@ func newReviewEvent(e *lookout.ReviewEvent) *ReviewEvent {
 	return &ReviewEvent{ID: kallax.NewULID(), Status: EventStatusNew, ReviewEvent: *e}
 }
 
-// ReviewTarget is a persisted for a pull request
+// ReviewTarget is a persisted model for a pull request
 type ReviewTarget struct {
 	kallax.Model `pk:"id"`
 	ID           kallax.ULID
@@ -31,6 +31,16 @@ type ReviewTarget struct {
 	InternalID   string
 	RepositoryID uint32
 	Number       uint32
+}
+
+func newReviewTarget(e *lookout.ReviewEvent) *ReviewTarget {
+	return &ReviewTarget{
+		ID:           kallax.NewULID(),
+		Provider:     e.Provider,
+		InternalID:   e.InternalID,
+		RepositoryID: e.RepositoryID,
+		Number:       e.Number,
+	}
 }
 
 // PushEvent is a persisted model for review event

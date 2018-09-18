@@ -1662,8 +1662,8 @@ func (rs *ReviewEventResultSet) Close() error {
 }
 
 // NewReviewTarget returns a new instance of ReviewTarget.
-func NewReviewTarget() (record *ReviewTarget) {
-	return new(ReviewTarget)
+func NewReviewTarget(e *pb.ReviewEvent) (record *ReviewTarget) {
+	return newReviewTarget(e)
 }
 
 // GetID returns the primary key of the model.
