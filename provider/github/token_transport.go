@@ -57,10 +57,7 @@ func NewClientPoolFromTokens(urlToConfig map[string]ClientConfig, cache *cache.V
 		}
 	}
 
-	pool := &ClientPool{
-		byClients: byClients,
-		byRepo:    byRepo,
-	}
+	pool := newClientPoolFromClients(byClients, byRepo)
 	return pool, nil
 }
 
