@@ -51,6 +51,19 @@ func NewClientPool() *ClientPool {
 	}
 }
 
+// newClientPoolFromClients creates a new pool of clients based on the given
+// clients and repositories
+func newClientPoolFromClients(
+	byClients map[*Client][]*lookout.RepositoryInfo,
+	byRepo map[string]*Client) *ClientPool {
+
+	return &ClientPool{
+		byClients: byClients,
+		byRepo:    byRepo,
+		subs:      make(map[chan ClientPoolEvent]bool),
+	}
+}
+
 // Clients returns map[Client]RepositoryInfo
 func (p *ClientPool) Clients() map[*Client][]*lookout.RepositoryInfo {
 	p.mutex.Lock()
