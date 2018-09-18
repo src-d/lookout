@@ -30,6 +30,8 @@ func newReviewEvent(e *lookout.ReviewEvent) *ReviewEvent {
 type ReviewTarget struct {
 	kallax.Model `pk:"id"`
 	ID           kallax.ULID
+	kallax.Timestamps
+
 	Provider     string
 	InternalID   string
 	RepositoryID uint32
@@ -63,8 +65,9 @@ func newPushEvent(e *lookout.PushEvent) *PushEvent {
 // Comment is a persisted model for comment
 type Comment struct {
 	kallax.Model `pk:"id"`
-	ID           kallax.ULID
-	ReviewEvent  *ReviewEvent `fk:",inverse"`
+	kallax.Timestamps
+	ID          kallax.ULID
+	ReviewEvent *ReviewEvent `fk:",inverse"`
 
 	lookout.Comment `kallax:",inline"`
 	Analyzer        string

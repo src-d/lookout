@@ -34,6 +34,10 @@ func (r *Comment) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return (*kallax.ULID)(&r.ID), nil
+	case "created_at":
+		return &r.Timestamps.CreatedAt, nil
+	case "updated_at":
+		return &r.Timestamps.UpdatedAt, nil
 	case "review_event_id":
 		return types.Nullable(kallax.VirtualColumn("review_event_id", r, new(kallax.ULID))), nil
 	case "file":
@@ -57,6 +61,10 @@ func (r *Comment) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return r.ID, nil
+	case "created_at":
+		return r.Timestamps.CreatedAt, nil
+	case "updated_at":
+		return r.Timestamps.UpdatedAt, nil
 	case "review_event_id":
 		v := r.Model.VirtualColumn(col)
 		if v == nil {
@@ -167,6 +175,13 @@ func (s *CommentStore) Insert(record *Comment) error {
 	record.SetSaving(true)
 	defer record.SetSaving(false)
 
+	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
+	record.UpdatedAt = record.UpdatedAt.Truncate(time.Microsecond)
+
+	if err := record.BeforeSave(); err != nil {
+		return err
+	}
+
 	inverseRecords := s.inverseRecords(record)
 
 	if len(inverseRecords) > 0 {
@@ -195,8 +210,15 @@ func (s *CommentStore) Insert(record *Comment) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *CommentStore) Update(record *Comment, cols ...kallax.SchemaField) (updated int64, err error) {
+	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
+	record.UpdatedAt = record.UpdatedAt.Truncate(time.Microsecond)
+
 	record.SetSaving(true)
 	defer record.SetSaving(false)
+
+	if err := record.BeforeSave(); err != nil {
+		return 0, err
+	}
 
 	inverseRecords := s.inverseRecords(record)
 
@@ -424,6 +446,18 @@ func (q *CommentQuery) FindByID(v ...kallax.ULID) *CommentQuery {
 		values[i] = val
 	}
 	return q.Where(kallax.In(Schema.Comment.ID, values...))
+}
+
+// FindByCreatedAt adds a new filter to the query that will require that
+// the CreatedAt property is equal to the passed value.
+func (q *CommentQuery) FindByCreatedAt(cond kallax.ScalarCond, v time.Time) *CommentQuery {
+	return q.Where(cond(Schema.Comment.CreatedAt, v))
+}
+
+// FindByUpdatedAt adds a new filter to the query that will require that
+// the UpdatedAt property is equal to the passed value.
+func (q *CommentQuery) FindByUpdatedAt(cond kallax.ScalarCond, v time.Time) *CommentQuery {
+	return q.Where(cond(Schema.Comment.UpdatedAt, v))
 }
 
 // FindByReviewEvent adds a new filter to the query that will require that
@@ -1686,6 +1720,10 @@ func (r *ReviewTarget) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return (*kallax.ULID)(&r.ID), nil
+	case "created_at":
+		return &r.Timestamps.CreatedAt, nil
+	case "updated_at":
+		return &r.Timestamps.UpdatedAt, nil
 	case "provider":
 		return &r.Provider, nil
 	case "internal_id":
@@ -1705,6 +1743,10 @@ func (r *ReviewTarget) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return r.ID, nil
+	case "created_at":
+		return r.Timestamps.CreatedAt, nil
+	case "updated_at":
+		return r.Timestamps.UpdatedAt, nil
 	case "provider":
 		return r.Provider, nil
 	case "internal_id":
@@ -1775,6 +1817,13 @@ func (s *ReviewTargetStore) Insert(record *ReviewTarget) error {
 	record.SetSaving(true)
 	defer record.SetSaving(false)
 
+	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
+	record.UpdatedAt = record.UpdatedAt.Truncate(time.Microsecond)
+
+	if err := record.BeforeSave(); err != nil {
+		return err
+	}
+
 	return s.Store.Insert(Schema.ReviewTarget.BaseSchema, record)
 }
 
@@ -1785,8 +1834,15 @@ func (s *ReviewTargetStore) Insert(record *ReviewTarget) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *ReviewTargetStore) Update(record *ReviewTarget, cols ...kallax.SchemaField) (updated int64, err error) {
+	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
+	record.UpdatedAt = record.UpdatedAt.Truncate(time.Microsecond)
+
 	record.SetSaving(true)
 	defer record.SetSaving(false)
+
+	if err := record.BeforeSave(); err != nil {
+		return 0, err
+	}
 
 	return s.Store.Update(Schema.ReviewTarget.BaseSchema, record, cols...)
 }
@@ -1987,6 +2043,18 @@ func (q *ReviewTargetQuery) FindByID(v ...kallax.ULID) *ReviewTargetQuery {
 	return q.Where(kallax.In(Schema.ReviewTarget.ID, values...))
 }
 
+// FindByCreatedAt adds a new filter to the query that will require that
+// the CreatedAt property is equal to the passed value.
+func (q *ReviewTargetQuery) FindByCreatedAt(cond kallax.ScalarCond, v time.Time) *ReviewTargetQuery {
+	return q.Where(cond(Schema.ReviewTarget.CreatedAt, v))
+}
+
+// FindByUpdatedAt adds a new filter to the query that will require that
+// the UpdatedAt property is equal to the passed value.
+func (q *ReviewTargetQuery) FindByUpdatedAt(cond kallax.ScalarCond, v time.Time) *ReviewTargetQuery {
+	return q.Where(cond(Schema.ReviewTarget.UpdatedAt, v))
+}
+
 // FindByProvider adds a new filter to the query that will require that
 // the Provider property is equal to the passed value.
 func (q *ReviewTargetQuery) FindByProvider(v string) *ReviewTargetQuery {
@@ -2129,6 +2197,8 @@ type schema struct {
 type schemaComment struct {
 	*kallax.BaseSchema
 	ID            kallax.SchemaField
+	CreatedAt     kallax.SchemaField
+	UpdatedAt     kallax.SchemaField
 	ReviewEventFK kallax.SchemaField
 	File          kallax.SchemaField
 	Line          kallax.SchemaField
@@ -2174,6 +2244,8 @@ type schemaReviewEvent struct {
 type schemaReviewTarget struct {
 	*kallax.BaseSchema
 	ID           kallax.SchemaField
+	CreatedAt    kallax.SchemaField
+	UpdatedAt    kallax.SchemaField
 	Provider     kallax.SchemaField
 	InternalID   kallax.SchemaField
 	RepositoryID kallax.SchemaField
@@ -2252,6 +2324,8 @@ var Schema = &schema{
 			},
 			false,
 			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("created_at"),
+			kallax.NewSchemaField("updated_at"),
 			kallax.NewSchemaField("review_event_id"),
 			kallax.NewSchemaField("file"),
 			kallax.NewSchemaField("line"),
@@ -2260,6 +2334,8 @@ var Schema = &schema{
 			kallax.NewSchemaField("analyzer"),
 		),
 		ID:            kallax.NewSchemaField("id"),
+		CreatedAt:     kallax.NewSchemaField("created_at"),
+		UpdatedAt:     kallax.NewSchemaField("updated_at"),
 		ReviewEventFK: kallax.NewSchemaField("review_event_id"),
 		File:          kallax.NewSchemaField("file"),
 		Line:          kallax.NewSchemaField("line"),
@@ -2398,12 +2474,16 @@ var Schema = &schema{
 			},
 			false,
 			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("created_at"),
+			kallax.NewSchemaField("updated_at"),
 			kallax.NewSchemaField("provider"),
 			kallax.NewSchemaField("internal_id"),
 			kallax.NewSchemaField("repository_id"),
 			kallax.NewSchemaField("number"),
 		),
 		ID:           kallax.NewSchemaField("id"),
+		CreatedAt:    kallax.NewSchemaField("created_at"),
+		UpdatedAt:    kallax.NewSchemaField("updated_at"),
 		Provider:     kallax.NewSchemaField("provider"),
 		InternalID:   kallax.NewSchemaField("internal_id"),
 		RepositoryID: kallax.NewSchemaField("repository_id"),
