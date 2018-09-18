@@ -59,6 +59,7 @@ func (o *DBEventOperator) saveReview(ctx context.Context, e *lookout.ReviewEvent
 	m, err := o.getReview(ctx, e)
 	if err == kallax.ErrNotFound {
 		m = models.NewReviewEvent(e)
+		m.OldInternalID = e.InternalID
 		target, err := o.getOrCreateReviewTarget(ctx, e)
 		if err != nil {
 			return models.EventStatusNew, err
