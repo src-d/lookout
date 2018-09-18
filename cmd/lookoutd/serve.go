@@ -107,6 +107,7 @@ func (c *ServeCommand) Execute(args []string) error {
 	reviewStore := models.NewReviewEventStore(db)
 	eventOp := store.NewDBEventOperator(
 		reviewStore,
+		models.NewReviewTargetStore(db),
 		models.NewPushEventStore(db),
 	)
 	commentsOp := store.NewDBCommentOperator(

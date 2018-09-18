@@ -12,13 +12,18 @@ import (
 
 // DBEventOperator operates on event database store
 type DBEventOperator struct {
-	reviewsStore *models.ReviewEventStore
-	pushStore    *models.PushEventStore
+	reviewsStore      *models.ReviewEventStore
+	reviewTargetStore *models.ReviewTargetStore
+	pushStore         *models.PushEventStore
 }
 
 // NewDBEventOperator creates new DBEventOperator using kallax as storage
-func NewDBEventOperator(r *models.ReviewEventStore, p *models.PushEventStore) *DBEventOperator {
-	return &DBEventOperator{r, p}
+func NewDBEventOperator(
+	r *models.ReviewEventStore,
+	rt *models.ReviewTargetStore,
+	p *models.PushEventStore,
+) *DBEventOperator {
+	return &DBEventOperator{r, rt, p}
 }
 
 var _ EventOperator = &DBEventOperator{}
@@ -53,7 +58,15 @@ func (o *DBEventOperator) UpdateStatus(ctx context.Context, e lookout.Event, sta
 func (o *DBEventOperator) saveReview(ctx context.Context, e *lookout.ReviewEvent) (models.EventStatus, error) {
 	m, err := o.getReview(ctx, e)
 	if err == kallax.ErrNotFound {
-		return models.EventStatusNew, o.reviewsStore.Insert(models.NewReviewEvent(e))
+		m = models.NewReviewEvent(e)
+		target, err := o.getOrCreateReviewTarget(ctx, e)
+		if err != nil {
+			return models.EventStatusNew, err
+		}
+
+		m.ReviewTarget = target
+		// kallax will save both event and target models
+		return models.EventStatusNew, o.reviewsStore.Insert(m)
 	}
 	if err != nil {
 		return models.EventStatusNew, err
@@ -85,6 +98,23 @@ func (o *DBEventOperator) getReview(ctx context.Context, e *lookout.ReviewEvent)
 		FindByInternalID(e.InternalID)
 
 	return o.reviewsStore.FindOne(q)
+}
+
+func (o *DBEventOperator) getReviewTarget(ctx context.Context, e *lookout.ReviewEvent) (*models.ReviewTarget, error) {
+	q := models.NewReviewTargetQuery().
+		FindByProvider(e.Provider).
+		FindByInternalID(e.InternalID)
+
+	return o.reviewTargetStore.FindOne(q)
+}
+
+func (o *DBEventOperator) getOrCreateReviewTarget(ctx context.Context, e *lookout.ReviewEvent) (*models.ReviewTarget, error) {
+	m, err := o.getReviewTarget(ctx, e)
+	if err == kallax.ErrNotFound {
+		return models.NewReviewTarget(e), nil
+	}
+
+	return m, err
 }
 
 func (o *DBEventOperator) savePush(ctx context.Context, e *lookout.PushEvent) (models.EventStatus, error) {
