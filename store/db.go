@@ -93,10 +93,25 @@ func (o *DBEventOperator) updateReviewStatus(ctx context.Context, e *lookout.Rev
 }
 
 func (o *DBEventOperator) getReview(ctx context.Context, e *lookout.ReviewEvent) (*models.ReviewEvent, error) {
-	q := models.NewReviewEventQuery().
-		WithReviewTarget().
-		Where(kallax.Eq(models.Schema.ReviewTarget.Provider, e.Provider)).
-		FindByOldInternalID(e.InternalID)
+	// select with joins don't work in kallax
+	// https://github.com/src-d/go-kallax/issues/250
+	//
+	// q := models.NewReviewEventQuery().
+	// 	WithReviewTarget().
+	// 	Where(kallax.Eq(models.Schema.ReviewTarget.Provider, e.Provider)).
+	// 	FindByOldInternalID(e.InternalID)
+	//
+	// use 2 queries instead
+
+	qTarget := models.NewReviewTargetQuery().
+		FindByProvider(e.Provider).
+		FindByInternalID(e.InternalID)
+	target, err := o.reviewTargetStore.FindOne(qTarget)
+	if err != nil {
+		return nil, err
+	}
+
+	q := models.NewReviewEventQuery().FindByReviewTarget(target.ID)
 
 	return o.reviewsStore.FindOne(q)
 }
@@ -157,13 +172,18 @@ func (o *DBEventOperator) getPush(ctx context.Context, e *lookout.PushEvent) (*m
 
 // DBCommentOperator operates on comments database store
 type DBCommentOperator struct {
-	store        *models.CommentStore
-	reviewsStore *models.ReviewEventStore
+	store             *models.CommentStore
+	reviewsStore      *models.ReviewEventStore
+	reviewTargetStore *models.ReviewTargetStore
 }
 
 // NewDBCommentOperator creates new DBCommentOperator using kallax as storage
-func NewDBCommentOperator(c *models.CommentStore, r *models.ReviewEventStore) *DBCommentOperator {
-	return &DBCommentOperator{c, r}
+func NewDBCommentOperator(
+	c *models.CommentStore,
+	r *models.ReviewEventStore,
+	rt *models.ReviewTargetStore,
+) *DBCommentOperator {
+	return &DBCommentOperator{c, r, rt}
 }
 
 var _ CommentOperator = &DBCommentOperator{}
@@ -189,10 +209,25 @@ func (o *DBCommentOperator) Posted(ctx context.Context, e lookout.Event, c *look
 }
 
 func (o *DBCommentOperator) save(ctx context.Context, e *lookout.ReviewEvent, c *lookout.Comment, analyzerName string) error {
-	q := models.NewReviewEventQuery().
-		WithReviewTarget().
-		Where(kallax.Eq(models.Schema.ReviewTarget.Provider, e.Provider)).
-		FindByOldInternalID(e.InternalID)
+	// select with joins don't work in kallax
+	// https://github.com/src-d/go-kallax/issues/250
+	//
+	// q := models.NewReviewEventQuery().
+	// 	WithReviewTarget().
+	// 	Where(kallax.Eq(models.Schema.ReviewTarget.Provider, e.Provider)).
+	// 	FindByOldInternalID(e.InternalID)
+	//
+	// use 2 queries instead
+
+	qTarget := models.NewReviewTargetQuery().
+		FindByProvider(e.Provider).
+		FindByInternalID(e.InternalID)
+	target, err := o.reviewTargetStore.FindOne(qTarget)
+	if err != nil {
+		return err
+	}
+
+	q := models.NewReviewEventQuery().FindByReviewTarget(target.ID)
 
 	r, err := o.reviewsStore.FindOne(q)
 	if err != nil {
@@ -206,12 +241,28 @@ func (o *DBCommentOperator) save(ctx context.Context, e *lookout.ReviewEvent, c 
 }
 
 func (o *DBCommentOperator) posted(ctx context.Context, e *lookout.ReviewEvent, c *lookout.Comment) (bool, error) {
-	reviewIdsQ := models.NewReviewEventQuery().
-		WithReviewTarget().
-		Where(kallax.Eq(models.Schema.ReviewTarget.Provider, e.Provider)).
-		Where(kallax.Eq(models.Schema.ReviewTarget.RepositoryID, e.RepositoryID)).
-		Where(kallax.Eq(models.Schema.ReviewTarget.Number, e.Number)).
-		Select(models.Schema.ReviewEvent.ID)
+	// select with joins don't work in kallax
+	// https://github.com/src-d/go-kallax/issues/250
+	//
+	// reviewIdsQ := models.NewReviewEventQuery().
+	// 	WithReviewTarget().
+	// 	Where(kallax.Eq(models.Schema.ReviewTarget.Provider, e.Provider)).
+	// 	Where(kallax.Eq(models.Schema.ReviewTarget.RepositoryID, e.RepositoryID)).
+	// 	Where(kallax.Eq(models.Schema.ReviewTarget.Number, e.Number)).
+	// 	Select(models.Schema.ReviewEvent.ID)
+	//
+	// use 2 queries instead
+
+	qTarget := models.NewReviewTargetQuery().
+		FindByProvider(e.Provider).
+		FindByRepositoryID(kallax.Eq, e.RepositoryID).
+		FindByNumber(kallax.Eq, e.Number)
+	target, err := o.reviewTargetStore.FindOne(qTarget)
+	if err != nil {
+		return false, err
+	}
+
+	reviewIdsQ := models.NewReviewEventQuery().FindByReviewTarget(target.ID)
 
 	reviews, err := o.reviewsStore.FindAll(reviewIdsQ)
 	if err != nil {
