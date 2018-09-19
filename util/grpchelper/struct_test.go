@@ -99,3 +99,73 @@ func TestToStruct(t *testing.T) {
 	st := grpchelper.ToPBStruct(inputMap)
 	require.Equal(expectedSt, st)
 }
+
+func TestToStructMapInterfaceInterface(t *testing.T) {
+	require := require.New(t)
+
+	inputMap := map[string]interface{}{
+		"map": map[interface{}]interface{}{
+			"field1": "val",
+		},
+	}
+
+	expectedSt := &types.Struct{
+		Fields: map[string]*types.Value{
+			"map": &types.Value{
+				Kind: &types.Value_StructValue{
+					StructValue: &types.Struct{
+						Fields: map[string]*types.Value{
+							"field1": &types.Value{
+								Kind: &types.Value_StringValue{
+									StringValue: "val",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	st := grpchelper.ToPBStruct(inputMap)
+	require.Equal(expectedSt, st)
+}
+
+func TestToStructSliceInterfaceWithMap(t *testing.T) {
+	require := require.New(t)
+
+	inputMap := map[string]interface{}{
+		"array": []interface{}{map[interface{}]interface{}{
+			"field1": "val",
+		}},
+	}
+
+	expectedSt := &types.Struct{
+		Fields: map[string]*types.Value{
+			"array": &types.Value{
+				Kind: &types.Value_ListValue{
+					ListValue: &types.ListValue{
+						Values: []*types.Value{
+							&types.Value{
+								Kind: &types.Value_StructValue{
+									StructValue: &types.Struct{
+										Fields: map[string]*types.Value{
+											"field1": &types.Value{
+												Kind: &types.Value_StringValue{
+													StringValue: "val",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	st := grpchelper.ToPBStruct(inputMap)
+	require.Equal(expectedSt, st)
+}
