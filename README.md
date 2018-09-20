@@ -15,7 +15,7 @@ A service for assisted code review, that allows running custom code Analyzers on
 $ go get github.com/src-d/lookout/...
 ```
 
-It will globally install `lookoutd`, `lookout-sdk` and `dummy`.
+It will globally install `lookoutd`, `lookout-sdk`, and `dummy`.
 
 
 ## Dependencies
@@ -39,7 +39,7 @@ To trigger the analysis on any pull request of a GitHub repository you will need
 
 Using [Docker Compose](https://docs.docker.com/compose) you can use the provided [`docker-compose.yml`](docker-compose.yml) config file to start **lookout**, its dependencies (**bblfsh** and **PostgreSQL**) and the `dummy` analyzer which will add some stats to the watched pull requests.
 
-To do so, just clone this repository, or download [`docker-compose.yml`](docker-compose.yml).
+To do so, just clone this repository or download [`docker-compose.yml`](docker-compose.yml).
 
 Create the `config.yml` file in the same directory than the `docker-compose.yml` one, and run from there:
 
@@ -49,7 +49,7 @@ $ GITHUB_USER=<user> GITHUB_TOKEN=<token> REPO=github.com/<user>/<name> docker-c
 
 ## Running lookout from binaries
 
-Following these steps you will be able to run separately the **lookout** dependencies, analyzers and the server itself.
+Following these, steps you will be able to run separately the **lookout** dependencies, analyzers and the server itself.
 
 1. Run the [dependencies](#dependencies) manually or using docker-compose; if you prefer doing it straightforward, just run:
 
@@ -58,7 +58,7 @@ Following these steps you will be able to run separately the **lookout** depende
     ```
 
 1. Initialize the database.<br />
-    The following command will work for the PostgreSQL created by `docker-compose` as explained above; otherwise you might need to define the use connection string to PostgreSQL database; use `-h` to see other options.
+    The following command will work for the PostgreSQL created by `docker-compose` as explained above; otherwise, you might need to define the use connection string to PostgreSQL database; use `-h` to see other options.
 
     ```bash
     $ lookoutd migrate
@@ -71,7 +71,7 @@ Following these steps you will be able to run separately the **lookout** depende
     $ dummy serve
     ```
 
-1. Copy the [`config.yml.tpl`](config.yml.tpl) into `config.yml` and add the URLs of the repositories to be watched. (take a look into [configuration and GitHub autentication](docs/configuration.md) for more details about **lookout** configuration)
+1. Copy the [`config.yml.tpl`](config.yml.tpl) into `config.yml` and add the URLs of the repositories to be watched. (take a look into [configuration and GitHub authentication](docs/configuration.md) for more details about **lookout** configuration)
 
 1. Start **lookout** server<br />
     If you want to post the analysis results on GitHub, run:
@@ -89,7 +89,7 @@ Following these steps you will be able to run separately the **lookout** depende
 
 # Contribute
 
-[Contributions](https://github.com/src-d/lookout/issues) are more than welcome, if you are interested please take a look to our [Contributing Guidelines](docs/CONTRIBUTING.md).
+[Contributions](https://github.com/src-d/lookout/issues) are more than welcome, if you are interested please take a look at our [Contributing Guidelines](docs/CONTRIBUTING.md).
 
 You have more information on how to run it locally for [development purposes here](docs/CONTRIBUTING.md#development).
 
