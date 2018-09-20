@@ -141,6 +141,12 @@ func toValue(v reflect.Value) *types.Value {
 		for _, k := range keys {
 			if k.Kind() == reflect.String {
 				fields[k.String()] = toValue(v.MapIndex(k))
+			} else if k.Kind() == reflect.Interface {
+				ik := k.Interface()
+				sk, ok := ik.(string)
+				if ok {
+					fields[sk] = toValue(v.MapIndex(k))
+				}
 			}
 		}
 		if len(fields) == 0 {
@@ -153,6 +159,8 @@ func toValue(v reflect.Value) *types.Value {
 				},
 			},
 		}
+	case reflect.Interface:
+		return ToValue(v.Interface())
 	default:
 		return &types.Value{
 			Kind: &types.Value_StringValue{
