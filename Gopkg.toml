@@ -64,9 +64,10 @@
   name = "gopkg.in/src-d/enry.v1"
   version = "1.6.4"
 
+# go-queue does not work with the latest release, v1.2.0
 [[constraint]]
   name = "github.com/satori/go.uuid"
-  version = "1.2.0"
+  branch = "master"
 
 [[constraint]]
   name = "gopkg.in/src-d/go-kallax.v1"
