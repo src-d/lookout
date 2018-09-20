@@ -1119,6 +1119,10 @@ func (r *ReviewEvent) ColumnAddress(col string) (interface{}, error) {
 		return types.JSON(&r.Base), nil
 	case "head":
 		return types.JSON(&r.Head), nil
+	case "created_at":
+		return &r.CreatedAt, nil
+	case "updated_at":
+		return &r.UpdatedAt, nil
 	case "review_target_id":
 		return types.Nullable(kallax.VirtualColumn("review_target_id", r, new(kallax.ULID))), nil
 
@@ -1148,6 +1152,10 @@ func (r *ReviewEvent) Value(col string) (interface{}, error) {
 		return types.JSON(r.Base), nil
 	case "head":
 		return types.JSON(r.Head), nil
+	case "created_at":
+		return r.CreatedAt, nil
+	case "updated_at":
+		return r.UpdatedAt, nil
 	case "review_target_id":
 		v := r.Model.VirtualColumn(col)
 		if v == nil {
@@ -1248,6 +1256,9 @@ func (s *ReviewEventStore) Insert(record *ReviewEvent) error {
 	record.SetSaving(true)
 	defer record.SetSaving(false)
 
+	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
+	record.UpdatedAt = record.UpdatedAt.Truncate(time.Microsecond)
+
 	inverseRecords := s.inverseRecords(record)
 
 	if len(inverseRecords) > 0 {
@@ -1276,6 +1287,9 @@ func (s *ReviewEventStore) Insert(record *ReviewEvent) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *ReviewEventStore) Update(record *ReviewEvent, cols ...kallax.SchemaField) (updated int64, err error) {
+	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
+	record.UpdatedAt = record.UpdatedAt.Truncate(time.Microsecond)
+
 	record.SetSaving(true)
 	defer record.SetSaving(false)
 
@@ -1523,6 +1537,18 @@ func (q *ReviewEventQuery) FindByOldInternalID(v string) *ReviewEventQuery {
 // the IsMergeable property is equal to the passed value.
 func (q *ReviewEventQuery) FindByIsMergeable(v bool) *ReviewEventQuery {
 	return q.Where(kallax.Eq(Schema.ReviewEvent.IsMergeable, v))
+}
+
+// FindByCreatedAt adds a new filter to the query that will require that
+// the CreatedAt property is equal to the passed value.
+func (q *ReviewEventQuery) FindByCreatedAt(cond kallax.ScalarCond, v time.Time) *ReviewEventQuery {
+	return q.Where(cond(Schema.ReviewEvent.CreatedAt, v))
+}
+
+// FindByUpdatedAt adds a new filter to the query that will require that
+// the UpdatedAt property is equal to the passed value.
+func (q *ReviewEventQuery) FindByUpdatedAt(cond kallax.ScalarCond, v time.Time) *ReviewEventQuery {
+	return q.Where(cond(Schema.ReviewEvent.UpdatedAt, v))
 }
 
 // FindByReviewTarget adds a new filter to the query that will require that
@@ -2166,6 +2192,8 @@ type schemaReviewEvent struct {
 	Configuration  *schemaReviewEventConfiguration
 	Base           *schemaReviewEventBase
 	Head           *schemaReviewEventHead
+	CreatedAt      kallax.SchemaField
+	UpdatedAt      kallax.SchemaField
 	ReviewTargetFK kallax.SchemaField
 }
 
@@ -2340,6 +2368,8 @@ var Schema = &schema{
 			kallax.NewSchemaField("configuration"),
 			kallax.NewSchemaField("base"),
 			kallax.NewSchemaField("head"),
+			kallax.NewSchemaField("created_at"),
+			kallax.NewSchemaField("updated_at"),
 			kallax.NewSchemaField("review_target_id"),
 		),
 		ID:            kallax.NewSchemaField("id"),
@@ -2377,6 +2407,8 @@ var Schema = &schema{
 			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "head", "reference_name"),
 			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "head", "hash"),
 		},
+		CreatedAt:      kallax.NewSchemaField("created_at"),
+		UpdatedAt:      kallax.NewSchemaField("updated_at"),
 		ReviewTargetFK: kallax.NewSchemaField("review_target_id"),
 	},
 	ReviewTarget: &schemaReviewTarget{

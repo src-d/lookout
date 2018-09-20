@@ -3,6 +3,8 @@ package models
 //go:generate kallax gen
 
 import (
+	"time"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/src-d/lookout"
 	kallax "gopkg.in/src-d/go-kallax.v1"
@@ -24,6 +26,8 @@ type ReviewEvent struct {
 	Configuration types.Struct
 	Base          lookout.ReferencePointer
 	Head          lookout.ReferencePointer
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 
 	// static part of review
 	ReviewTarget *ReviewTarget `fk:",inverse"`
@@ -40,6 +44,8 @@ func newReviewEvent(e *lookout.ReviewEvent) *ReviewEvent {
 		Configuration: e.Configuration,
 		Base:          e.Base,
 		Head:          e.Head,
+		CreatedAt:     e.CreatedAt,
+		UpdatedAt:     e.UpdatedAt,
 	}
 }
 
