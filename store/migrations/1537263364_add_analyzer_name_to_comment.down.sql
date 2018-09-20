@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE comment DROP COLUMN analyzer;
+
+COMMIT;

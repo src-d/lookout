@@ -12,13 +12,40 @@ type ReviewEvent struct {
 	kallax.Model `pk:"id"`
 	ID           kallax.ULID
 	Status       EventStatus
+	// temporary column for migration
+	// should be removed in #259
+	OldInternalID string
 
 	// can't be pointer or kallax panics
 	lookout.ReviewEvent `kallax:",inline"`
+
+	ReviewTarget *ReviewTarget `fk:",inverse"`
 }
 
 func newReviewEvent(e *lookout.ReviewEvent) *ReviewEvent {
 	return &ReviewEvent{ID: kallax.NewULID(), Status: EventStatusNew, ReviewEvent: *e}
+}
+
+// ReviewTarget is a persisted model for a pull request
+type ReviewTarget struct {
+	kallax.Model `pk:"id"`
+	ID           kallax.ULID
+	kallax.Timestamps
+
+	Provider     string
+	InternalID   string
+	RepositoryID uint32
+	Number       uint32
+}
+
+func newReviewTarget(e *lookout.ReviewEvent) *ReviewTarget {
+	return &ReviewTarget{
+		ID:           kallax.NewULID(),
+		Provider:     e.Provider,
+		InternalID:   e.InternalID,
+		RepositoryID: e.RepositoryID,
+		Number:       e.Number,
+	}
 }
 
 // PushEvent is a persisted model for review event
@@ -38,10 +65,12 @@ func newPushEvent(e *lookout.PushEvent) *PushEvent {
 // Comment is a persisted model for comment
 type Comment struct {
 	kallax.Model `pk:"id"`
-	ID           kallax.ULID
-	ReviewEvent  *ReviewEvent `fk:",inverse"`
+	kallax.Timestamps
+	ID          kallax.ULID
+	ReviewEvent *ReviewEvent `fk:",inverse"`
 
 	lookout.Comment `kallax:",inline"`
+	Analyzer        string
 }
 
 func newComment(r *ReviewEvent, c *lookout.Comment) *Comment {

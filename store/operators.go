@@ -18,7 +18,7 @@ type EventOperator interface {
 // CommentOperator manages persistence of Comments
 type CommentOperator interface {
 	// Save persists Comment in a store
-	Save(context.Context, lookout.Event, *lookout.Comment) error
+	Save(context.Context, lookout.Event, *lookout.Comment, string) error
 	// Posted checks if a comment was already posted for review
 	Posted(context.Context, lookout.Event, *lookout.Comment) (bool, error)
 }
@@ -44,7 +44,7 @@ type NoopCommentOperator struct{}
 var _ CommentOperator = &NoopCommentOperator{}
 
 // Save implements EventOperator interface and does nothing
-func (o *NoopCommentOperator) Save(context.Context, lookout.Event, *lookout.Comment) error {
+func (o *NoopCommentOperator) Save(context.Context, lookout.Event, *lookout.Comment, string) error {
 	return nil
 }
 

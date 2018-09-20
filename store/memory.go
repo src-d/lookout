@@ -56,7 +56,7 @@ func NewMemCommentOperator() *MemCommentOperator {
 var _ CommentOperator = &MemCommentOperator{}
 
 // Save implements EventOperator interface
-func (o *MemCommentOperator) Save(ctx context.Context, e lookout.Event, c *lookout.Comment) error {
+func (o *MemCommentOperator) Save(ctx context.Context, e lookout.Event, c *lookout.Comment, analyzerName string) error {
 	re := e.(*lookout.ReviewEvent)
 	o.comments[re.Number] = append(o.comments[re.Number], c)
 

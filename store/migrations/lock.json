@@ -12,6 +12,22 @@
           "Unique": false
         },
         {
+          "Name": "created_at",
+          "Type": "timestamptz",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "updated_at",
+          "Type": "timestamptz",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
           "Name": "review_event_id",
           "Type": "uuid",
           "PrimaryKey": false,
@@ -49,6 +65,14 @@
         {
           "Name": "confidence",
           "Type": "bigint",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "analyzer",
+          "Type": "text",
           "PrimaryKey": false,
           "Reference": null,
           "NotNull": true,
@@ -161,6 +185,14 @@
           "Unique": false
         },
         {
+          "Name": "old_internal_id",
+          "Type": "text",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
           "Name": "provider",
           "Type": "text",
           "PrimaryKey": false,
@@ -251,6 +283,78 @@
         {
           "Name": "head",
           "Type": "jsonb",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "review_target_id",
+          "Type": "uuid",
+          "PrimaryKey": false,
+          "Reference": {
+            "Table": "review_target",
+            "Column": "id"
+          },
+          "NotNull": false,
+          "Unique": false
+        }
+      ]
+    },
+    {
+      "Name": "review_target",
+      "Columns": [
+        {
+          "Name": "id",
+          "Type": "uuid",
+          "PrimaryKey": true,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "created_at",
+          "Type": "timestamptz",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "updated_at",
+          "Type": "timestamptz",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "provider",
+          "Type": "text",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "internal_id",
+          "Type": "text",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "repository_id",
+          "Type": "bigint",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "number",
+          "Type": "bigint",
           "PrimaryKey": false,
           "Reference": null,
           "NotNull": true,
