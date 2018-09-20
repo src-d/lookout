@@ -105,14 +105,16 @@ func (c *ServeCommand) Execute(args []string) error {
 	}
 
 	reviewStore := models.NewReviewEventStore(db)
+	reviewTargetStore := models.NewReviewTargetStore(db)
 	eventOp := store.NewDBEventOperator(
 		reviewStore,
-		models.NewReviewTargetStore(db),
+		reviewTargetStore,
 		models.NewPushEventStore(db),
 	)
 	commentsOp := store.NewDBCommentOperator(
 		models.NewCommentStore(db),
 		reviewStore,
+		reviewTargetStore,
 	)
 
 	analyzers := make(map[string]lookout.Analyzer)
