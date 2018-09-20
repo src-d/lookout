@@ -193,38 +193,6 @@
           "Unique": false
         },
         {
-          "Name": "provider",
-          "Type": "text",
-          "PrimaryKey": false,
-          "Reference": null,
-          "NotNull": true,
-          "Unique": false
-        },
-        {
-          "Name": "internal_id",
-          "Type": "text",
-          "PrimaryKey": false,
-          "Reference": null,
-          "NotNull": true,
-          "Unique": false
-        },
-        {
-          "Name": "created_at",
-          "Type": "timestamptz",
-          "PrimaryKey": false,
-          "Reference": null,
-          "NotNull": true,
-          "Unique": false
-        },
-        {
-          "Name": "updated_at",
-          "Type": "timestamptz",
-          "PrimaryKey": false,
-          "Reference": null,
-          "NotNull": true,
-          "Unique": false
-        },
-        {
           "Name": "is_mergeable",
           "Type": "boolean",
           "PrimaryKey": false,
@@ -257,22 +225,6 @@
           "Unique": false
         },
         {
-          "Name": "repository_id",
-          "Type": "bigint",
-          "PrimaryKey": false,
-          "Reference": null,
-          "NotNull": true,
-          "Unique": false
-        },
-        {
-          "Name": "number",
-          "Type": "bigint",
-          "PrimaryKey": false,
-          "Reference": null,
-          "NotNull": true,
-          "Unique": false
-        },
-        {
           "Name": "base",
           "Type": "jsonb",
           "PrimaryKey": false,
@@ -283,6 +235,22 @@
         {
           "Name": "head",
           "Type": "jsonb",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "created_at",
+          "Type": "timestamptz",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "updated_at",
+          "Type": "timestamptz",
           "PrimaryKey": false,
           "Reference": null,
           "NotNull": true,
