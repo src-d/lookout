@@ -1,7 +1,9 @@
 Configurating lookout
 ===
 
-Global server configuration is stored in `config.yml`, but you can specify the config file to parse with `--config=PATH_TO_FILE`. Its main structure is:
+Global server configuration is stored in `config.yml` at the root directory of **lookout**. You can ask `lookoutd` to load any other config file with `--config=PATH_TO_FILE`.
+
+The main structure of `config.yml` is:
 
 ```yml
 providers:
@@ -16,7 +18,7 @@ analyzers:
 
 # Github provider
 
-Under `providers.github` key you can configure how lookout will connect with GitHub. 
+The `providers.github` key configures how **lookout** will connect with GitHub. 
 
 ```yml
 providers:
@@ -27,12 +29,12 @@ providers:
     # installation_sync_interval: 1h
 ```
 
-For more information about the `comment_footer` key, see how to [add a custom message to the posted comments](#custom-footer)
+`comment_footer` key defines a format-string that will be used for custom messages for every message posted on GitHub; see how to [add a custom message to the posted comments](#custom-footer)
 
 <a id=basic-auth></a>
 ## Authentication with GitHub
 
-To trigger the analysis on any pull request of a GitHub repository you will need a valid way to authenticate **lookout**.
+It is needed to define a valid way to authenticate **lookout** with GitHub to post the analysis on any pull request of a GitHub repository.
 
 The default method to authenticate with GitHub is using [GitHub access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/), and pass the user and the token to `lookoutd`:
 
@@ -46,7 +48,7 @@ Instead of using a GitHub username and token you can use **lookout** as a [GitHu
 
 To do so, you must also unset any environment variable or option for the GitHub username and token authentication.
 
-You need to create a GitHub App following the [documentation about creating a GitHub app](https://developer.github.com/apps/building-github-apps/creating-a-github-app/),  then download a private key following the [documentation about authenticating with GitHub Apps](https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/) and set the following fields in your `config.yml` file:
+You need to create a GitHub App following the [documentation about creating a GitHub app](https://developer.github.com/apps/building-github-apps/creating-a-github-app/), then download a private key following the [documentation about authenticating with GitHub Apps](https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/) and set the following fields in your `config.yml` file:
 
 ```yml
 providers:
@@ -56,9 +58,7 @@ providers:
     installation_sync_interval: 1h
 ```
 
-**note**
-
-When using this authentication method the repositories to analyze are retrieved automatically from the GitHub installations, so `repositories` list from `config.yml` is ignored.
+When it is used the GitHub App authentication method, the repositories to analyze are retrieved automatically from the GitHub installations, so `repositories` list from `config.yml` is ignored.
 
 The update interval is defined by `installation_sync_interval`.
 
@@ -81,6 +81,8 @@ repositories:
 
 If you're using [Authentication as a GitHub App](#github-app), the list of repositories to be watched will be taken from the GitHub installations.
 
+Due to the [bug#277](https://github.com/src-d/lookout/issues/277) **lookout** can parse only public repositories.
+
 
 # Analyzers
 
@@ -91,19 +93,30 @@ analyzers:
   - name: Example name # required, unique name of the analyzer
     addr: ipv4://localhost:10302 # required, gRPC address
     disabled: false # optional, false by default
-    feedback: http://example.com/analyzer # url to link in the comment_footer. For example, to open a new GitHub issue
+    feedback: http://example.com/analyzer # url to link in the comment_footer
     settings: # optional, this field is sent to analyzer "as is"
         threshold: 0.8
 ```
 
+`feedback` key contains the url used in the custom footer added to any message posted on GitHub; see how to [add a custom message to the posted comments](#custom-footer)
+
 <a id=custom-footer></a>
 ## Add a custom message to the posted comments
 
-You can configure lookout to add a custom message to every comment that each analyzer returns. This custom message will be created passing the value of `feedback` key defined fot this analyzer, to the format-string defined by `providers.github.comment_footer`. If any of both is not defined, the custom message won't be added.
+You can configure **lookout** to add a custom message to every comment that each analyzer returns. This custom message will be created following the rule:
+```
+Sprinf(providers.github.comment_footer, feedback)
+```
+If any of both is not defined, the custom message won't be added.
+
+example:
+```text
+If you have feedback about this comment, please, [tell us](mailto:feedback@lookout.com)
+```
 
 ## Customize an analyzer from the repository
 
-It's possible to override Analyzers configuration for a particular repository. To do that `.lookout.yml` must be present in the root of that repository.
+It's possible to override Analyzers configuration for a particular repository. The new configuration to apply for certain repository will be fetched from `.lookout.yml` file at the root directory of that repository.
 
 Example:
 ```yml
@@ -115,14 +128,12 @@ analyzers:
         mode: confident
 ```
 
-The `name` of the analyzer must be the same in the `.lookout.yml` config file as in **lookout** server configuration, otherwise itn will be ignored.
+The analyzer to configure must be identified with the same `name` in the `.lookout.yml` config file as in **lookout** server configuration, otherwise it will be ignored.
 
-The repository can disable any analyzer, but it can not purpose new analyzers nor enable those that are disabled in the **lookout** server.
+The repository can disable any analyzer, but it can not require new analyzers nor enable those that are disabled in the **lookout** server.
 
-The `setings` for each analyzer in the `.lookout.yml` config file will be merged with the **lookout** server configuration following these rules:
+The `settings` for each analyzer in the `.lookout.yml` config file will be merged with the **lookout** configuration following these rules:
 
 - Objects are deep merged
 - Arrays are replaced
 - Null value replaces object
-
-
