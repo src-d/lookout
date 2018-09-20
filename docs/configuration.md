@@ -8,11 +8,11 @@ The main structure of `config.yml` is:
 ```yml
 providers:
     github:
-        # configuration of github provider
+        # configuration of GitHub provider
 repositories:
     # list of repositories to watch and user/token if needed
 analyzers:
-    # list of named analizers
+    # list of named analyzers
 ```
 
 
@@ -38,8 +38,8 @@ It is needed to define a valid way to authenticate **lookout** with GitHub to po
 
 The default method to authenticate with GitHub is using [GitHub access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/), and pass the user and the token to `lookoutd`:
 
-- user: `github-user` argument or `GITHUB_USER` enviroment variable,
-- token: `github-token` argument or `GITHUB_TOKEN` enviroment variable,
+- user: `github-user` argument or `GITHUB_USER` environment variable,
+- token: `github-token` argument or `GITHUB_TOKEN` environment variable,
 
 <a id=github-app></a>
 ### Authentication as a GitHub App
@@ -98,14 +98,14 @@ analyzers:
         threshold: 0.8
 ```
 
-`feedback` key contains the url used in the custom footer added to any message posted on GitHub; see how to [add a custom message to the posted comments](#custom-footer)
+`feedback` key contains the URL used in the custom footer added to any message posted on GitHub; see how to [add a custom message to the posted comments](#custom-footer)
 
 <a id=custom-footer></a>
 ## Add a custom message to the posted comments
 
 You can configure **lookout** to add a custom message to every comment that each analyzer returns. This custom message will be created following the rule:
 ```
-Sprinf(providers.github.comment_footer, feedback)
+sprinf(providers.github.comment_footer, feedback)
 ```
 If any of both is not defined, the custom message won't be added.
 
@@ -116,7 +116,7 @@ If you have feedback about this comment, please, [tell us](mailto:feedback@looko
 
 ## Customize an analyzer from the repository
 
-It's possible to override Analyzers configuration for a particular repository. The new configuration to apply for certain repository will be fetched from `.lookout.yml` file at the root directory of that repository.
+It's possible to override Analyzers configuration for a particular repository. The new configuration to apply for any certain repository will be fetched from `.lookout.yml` file at the root directory of that repository.
 
 Example:
 ```yml
@@ -128,7 +128,7 @@ analyzers:
         mode: confident
 ```
 
-The analyzer to configure must be identified with the same `name` in the `.lookout.yml` config file as in **lookout** server configuration, otherwise it will be ignored.
+The analyzer to configure must be identified with the same `name` in the `.lookout.yml` config file as in **lookout** server configuration, otherwise, it will be ignored.
 
 The repository can disable any analyzer, but it can not require new analyzers nor enable those that are disabled in the **lookout** server.
 
