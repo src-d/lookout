@@ -22,4 +22,10 @@ WHERE
     review_event.number = review_target.number AND
     review_event.review_target_id IS null;
 
+/* add default values to old columns, because we don't write them anymore and they can't be null */
+ALTER TABLE ONLY review_event ALTER COLUMN "provider" SET DEFAULT '';
+ALTER TABLE ONLY review_event ALTER COLUMN "internal_id" SET DEFAULT '';
+ALTER TABLE ONLY review_event ALTER COLUMN "repository_id" SET DEFAULT 0;
+ALTER TABLE ONLY review_event ALTER COLUMN "number" SET DEFAULT 0;
+
 COMMIT;
