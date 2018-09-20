@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/google/go-github/github"
 	"github.com/gregjones/httpcache"
 	"github.com/src-d/lookout"
@@ -607,4 +609,61 @@ func intptr(v int) *int {
 
 func int64ptr(v int64) *int64 {
 	return &v
+}
+
+func TestSplitReview(t *testing.T) {
+	require := require.New(t)
+
+	n := 2
+
+	rw := &github.PullRequestReviewRequest{
+		Event: strptr(commentEvent),
+		Body:  strptr("body"),
+	}
+
+	rw.Comments = []*github.DraftReviewComment{
+		{Body: strptr("comment1")},
+	}
+
+	r := splitReview(rw, n)
+	require.Len(r, 1)
+	require.Equal([]*github.PullRequestReviewRequest{rw}, r)
+
+	rw.Comments = []*github.DraftReviewComment{
+		{Body: strptr("comment1")},
+		{Body: strptr("comment2")},
+		{Body: strptr("comment3")},
+	}
+
+	r = splitReview(rw, n)
+	require.Len(r, 2)
+	require.Equal([]*github.PullRequestReviewRequest{
+		{
+			Event: strptr(commentEvent),
+			Body:  strptr(""),
+			Comments: []*github.DraftReviewComment{
+				{Body: strptr("comment1")},
+				{Body: strptr("comment2")},
+			},
+		},
+		{
+			Event: strptr(commentEvent),
+			Body:  strptr("body"),
+			Comments: []*github.DraftReviewComment{
+				{Body: strptr("comment3")},
+			},
+		},
+	}, r)
+
+	rw.Comments = []*github.DraftReviewComment{
+		{Body: strptr("comment1")},
+		{Body: strptr("comment2")},
+		{Body: strptr("comment3")},
+		{Body: strptr("comment4")},
+		{Body: strptr("comment5")},
+		{Body: strptr("comment6")},
+	}
+
+	r = splitReview(rw, n)
+	require.Len(r, 3)
 }
