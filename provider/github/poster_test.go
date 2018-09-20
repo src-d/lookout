@@ -146,8 +146,9 @@ func (s *PosterTestSuite) TestPostOK() {
 		s.NoError(err)
 
 		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
-			Body:  strptr("Global comment\n\nAnother global comment"),
-			Event: strptr(commentEvent),
+			CommitID: &mockEvent.Head.Hash,
+			Body:     strptr("Global comment\n\nAnother global comment"),
+			Event:    strptr(commentEvent),
 			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
 				Path:     strptr("main.go"),
 				Body:     strptr("File comment"),
@@ -183,8 +184,9 @@ func (s *PosterTestSuite) TestPostFooter() {
 		s.NoError(err)
 
 		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
-			Body:  strptr("Global comment\n\nTo post feedback go to https://foo.bar/feedback\n\nAnother global comment\n\nTo post feedback go to https://foo.bar/feedback"),
-			Event: strptr(commentEvent),
+			CommitID: &mockEvent.Head.Hash,
+			Body:     strptr("Global comment\n\nTo post feedback go to https://foo.bar/feedback\n\nAnother global comment\n\nTo post feedback go to https://foo.bar/feedback"),
+			Event:    strptr(commentEvent),
 			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
 				Path:     strptr("main.go"),
 				Body:     strptr("File comment\n\nTo post feedback go to https://foo.bar/feedback"),
@@ -296,8 +298,9 @@ func (s *PosterTestSuite) TestPostOutOfRange() {
 		s.NoError(err)
 
 		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
-			Body:  strptr(""),
-			Event: strptr(commentEvent),
+			CommitID: &mockEvent.Head.Hash,
+			Body:     strptr(""),
+			Event:    strptr(commentEvent),
 			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
 				Path:     strptr("main.go"),
 				Position: intptr(1),
@@ -393,8 +396,9 @@ func (s *PosterTestSuite) TestPostOutOfRangeAndBody() {
 		s.NoError(err)
 
 		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
-			Body:  strptr("Body comment"),
-			Event: strptr(commentEvent),
+			CommitID: &mockEvent.Head.Hash,
+			Body:     strptr("Body comment"),
+			Event:    strptr(commentEvent),
 		})
 		s.JSONEq(string(expected), string(body))
 
@@ -445,8 +449,9 @@ func (s *PosterTestSuite) TestPostOKAndWrongFile() {
 		s.NoError(err)
 
 		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
-			Body:  strptr("Global comment\n\nAnother global comment"),
-			Event: strptr(commentEvent),
+			CommitID: &mockEvent.Head.Hash,
+			Body:     strptr("Global comment\n\nAnother global comment"),
+			Event:    strptr(commentEvent),
 			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
 				Path:     strptr("main.go"),
 				Body:     strptr("File comment"),

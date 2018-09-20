@@ -86,7 +86,7 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 	}
 
 	dl := newDiffLines(cc)
-	review, err := p.createReviewRequest(ctx, aCommentsList, dl)
+	review, err := p.createReviewRequest(ctx, aCommentsList, dl, e.Head.Hash)
 	if errNoComments.Is(err) {
 		ctxlog.Get(ctx).Debugf("skipping posting analysis, there are no comments")
 		return nil
@@ -160,11 +160,12 @@ var (
 func (p *Poster) createReviewRequest(
 	ctx context.Context,
 	aCommentsList []lookout.AnalyzerComments,
-	dl *diffLines) (*github.PullRequestReviewRequest, error) {
+	dl *diffLines,
+	commitID string,
+) (*github.PullRequestReviewRequest, error) {
 	req := &github.PullRequestReviewRequest{
-		// TODO: Add CommitID of HEAD to ensure that comments are attached to
-		//       the right lines.
-		Event: &commentEvent,
+		CommitID: &commitID,
+		Event:    &commentEvent,
 	}
 
 	logger := ctxlog.Get(ctx)
