@@ -81,8 +81,13 @@ func (c *PushCommand) Execute(args []string) error {
 		commits++
 	}
 
+	id, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+
 	err = srv.HandlePush(context.TODO(), &lookout.PushEvent{
-		InternalID: uuid.NewV4().String(),
+		InternalID: id.String(),
 		CreatedAt:  time.Now(),
 		Commits:    commits,
 		CommitRevision: lookout.CommitRevision{

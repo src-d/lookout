@@ -60,8 +60,13 @@ func (c *ReviewCommand) Execute(args []string) error {
 		},
 	}, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
 
+	id, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+
 	err = srv.HandleReview(context.TODO(), &lookout.ReviewEvent{
-		InternalID:  uuid.NewV4().String(),
+		InternalID:  id.String(),
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 		IsMergeable: true,
