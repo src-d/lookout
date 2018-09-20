@@ -57,6 +57,7 @@ pipeline:
   helm_deploy_stg:
     <<: *helm_deploy
     prefix: STG
+    timeout: 900
     secrets: [ STG_API_SERVER, STG_KUBERNETES_TOKEN ]
     values: image.lookout.tag=commit-${DRONE_COMMIT_SHA:0:7}
     values_files: [.helm-staging.yml]
