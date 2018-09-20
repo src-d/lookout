@@ -14,7 +14,7 @@ this project follows the guidelines described below.
 
 ## Build
 
-You can separatelly build the binaries provided by **lookout**; the binaries will be stored under `build/bin` directory.
+You can separately build the binaries provided by **lookout**; the binaries will be stored under `build/bin` directory.
 
 **server**:
 ```bash
@@ -66,6 +66,6 @@ $ make test-json
 
 ## Dummy Analyzer Release
 
-To publish the dummy analyzer container you need to create a tag with the `dummy` prefix, e.g. `dummy-v0.0.1`. Please note this this doesn't require to do a GitHub release, we just need the Git tag.
+To publish the dummy analyzer container you need to create a tag with the `dummy` prefix, e.g. `dummy-v0.0.1`. Please note this doesn't require to do a GitHub release, we just need the Git tag.
 
 A normal release tag will not publish this container.
