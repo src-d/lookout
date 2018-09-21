@@ -140,13 +140,13 @@ func TestServerPersistedReview(t *testing.T) {
 	require.Len(comments, 0)
 }
 
-func TestServerPersistedComment(t *testing.T) {
+func TestServerIncrementalReview(t *testing.T) {
 	require := require.New(t)
 
 	watcher := &WatcherMock{}
 	poster := &PosterMock{}
 	fileGetter := &FileGetterMock{}
-	client := &AnalyzerClientMock{}
+	client := &AnalyzerSameCommentClient{}
 	analyzers := map[string]lookout.Analyzer{
 		"mock": lookout.Analyzer{
 			Client: client,
@@ -167,10 +167,9 @@ func TestServerPersistedComment(t *testing.T) {
 	// reset client
 	client.PopReviewEvents()
 
-	// send new event once again but with the same number
-	newEvent := correctReviewEvent
-	newEvent.InternalID = "new-id"
-	err = watcher.Send(&newEvent)
+	// send event with the same id but different sha1
+	reviewEvent.Head.Hash = "new-sha"
+	err = watcher.Send(reviewEvent)
 	require.Nil(err)
 
 	// should call analyzer
@@ -472,6 +471,33 @@ func makeComment(from, to lookout.ReferencePointer) *lookout.Comment {
 	return &lookout.Comment{
 		Text: fmt.Sprintf("%s > %s", from.Hash, to.Hash),
 	}
+}
+
+type AnalyzerSameCommentClient struct {
+	reviewEvents []*lookout.ReviewEvent
+}
+
+func (a *AnalyzerSameCommentClient) NotifyReviewEvent(ctx context.Context, in *lookout.ReviewEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
+	a.reviewEvents = append(a.reviewEvents, in)
+	return &lookout.EventResponse{
+		Comments: []*lookout.Comment{
+			{Text: "some-text"},
+		},
+	}, nil
+}
+
+func (a *AnalyzerSameCommentClient) NotifyPushEvent(ctx context.Context, in *lookout.PushEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
+	return &lookout.EventResponse{
+		Comments: []*lookout.Comment{
+			{Text: "some-text"},
+		},
+	}, nil
+}
+
+func (a *AnalyzerSameCommentClient) PopReviewEvents() []*lookout.ReviewEvent {
+	res := a.reviewEvents[:]
+	a.reviewEvents = []*lookout.ReviewEvent{}
+	return res
 }
 
 type NoopFileScanner struct {

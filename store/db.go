@@ -93,25 +93,7 @@ func (o *DBEventOperator) updateReviewStatus(ctx context.Context, e *lookout.Rev
 }
 
 func (o *DBEventOperator) getReview(ctx context.Context, e *lookout.ReviewEvent) (*models.ReviewEvent, error) {
-	// select with joins don't work in kallax
-	// https://github.com/src-d/go-kallax/issues/250
-	//
-	// q := models.NewReviewEventQuery().
-	// 	WithReviewTarget().
-	// 	Where(kallax.Eq(models.Schema.ReviewTarget.Provider, e.Provider)).
-	// 	FindByOldInternalID(e.InternalID)
-	//
-	// use 2 queries instead
-
-	qTarget := models.NewReviewTargetQuery().
-		FindByProvider(e.Provider).
-		FindByInternalID(e.InternalID)
-	target, err := o.reviewTargetStore.FindOne(qTarget)
-	if err != nil {
-		return nil, err
-	}
-
-	q := models.NewReviewEventQuery().FindByReviewTarget(target.ID)
+	q := models.NewReviewEventQuery().FindByInternalID(e.ID().String())
 
 	return o.reviewsStore.FindOne(q)
 }
@@ -209,25 +191,7 @@ func (o *DBCommentOperator) Posted(ctx context.Context, e lookout.Event, c *look
 }
 
 func (o *DBCommentOperator) save(ctx context.Context, e *lookout.ReviewEvent, c *lookout.Comment, analyzerName string) error {
-	// select with joins don't work in kallax
-	// https://github.com/src-d/go-kallax/issues/250
-	//
-	// q := models.NewReviewEventQuery().
-	// 	WithReviewTarget().
-	// 	Where(kallax.Eq(models.Schema.ReviewTarget.Provider, e.Provider)).
-	// 	FindByOldInternalID(e.InternalID)
-	//
-	// use 2 queries instead
-
-	qTarget := models.NewReviewTargetQuery().
-		FindByProvider(e.Provider).
-		FindByInternalID(e.InternalID)
-	target, err := o.reviewTargetStore.FindOne(qTarget)
-	if err != nil {
-		return err
-	}
-
-	q := models.NewReviewEventQuery().FindByReviewTarget(target.ID)
+	q := models.NewReviewEventQuery().FindByInternalID(e.ID().String())
 
 	r, err := o.reviewsStore.FindOne(q)
 	if err != nil {
@@ -243,27 +207,21 @@ func (o *DBCommentOperator) save(ctx context.Context, e *lookout.ReviewEvent, c 
 func (o *DBCommentOperator) posted(ctx context.Context, e *lookout.ReviewEvent, c *lookout.Comment) (bool, error) {
 	// select with joins don't work in kallax
 	// https://github.com/src-d/go-kallax/issues/250
-	//
-	// reviewIdsQ := models.NewReviewEventQuery().
-	// 	WithReviewTarget().
-	// 	Where(kallax.Eq(models.Schema.ReviewTarget.Provider, e.Provider)).
-	// 	Where(kallax.Eq(models.Schema.ReviewTarget.RepositoryID, e.RepositoryID)).
-	// 	Where(kallax.Eq(models.Schema.ReviewTarget.Number, e.Number)).
-	// 	Select(models.Schema.ReviewEvent.ID)
-	//
-	// use 2 queries instead
 
+	// get review target (pull request)
 	qTarget := models.NewReviewTargetQuery().
 		FindByProvider(e.Provider).
-		FindByRepositoryID(kallax.Eq, e.RepositoryID).
-		FindByNumber(kallax.Eq, e.Number)
+		FindByInternalID(e.InternalID).
+		Select(models.Schema.ReviewTarget.ID)
 	target, err := o.reviewTargetStore.FindOne(qTarget)
 	if err != nil {
 		return false, err
 	}
 
-	reviewIdsQ := models.NewReviewEventQuery().FindByReviewTarget(target.ID)
-
+	// get all review events for this target (pull request)
+	reviewIdsQ := models.NewReviewEventQuery().
+		FindByReviewTarget(target.ID).
+		Select(models.Schema.ReviewEvent.ID)
 	reviews, err := o.reviewsStore.FindAll(reviewIdsQ)
 	if err != nil {
 		return false, err
@@ -274,6 +232,7 @@ func (o *DBCommentOperator) posted(ctx context.Context, e *lookout.ReviewEvent, 
 		reviewIds[i] = r.ID
 	}
 
+	// make sure we didn't post such comment in any of previous events
 	q := models.NewCommentQuery().
 		Where(kallax.In(models.Schema.Comment.ReviewEventFK, reviewIds...)).
 		FindByFile(c.File).
