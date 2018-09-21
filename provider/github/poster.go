@@ -13,6 +13,13 @@ import (
 	log "gopkg.in/src-d/go-log.v1"
 )
 
+// Github doesn't allow to post more than 32 comments in 1 review
+// returning "was submitted too quickly"
+// with 32 comments they got posted by GH return 502 Server Error
+// issue: https://github.com/src-d/lookout/issues/264
+// issue in go-github: https://github.com/google/go-github/issues/540
+var batchReviewComments = 30
+
 var (
 	// ErrGitHubAPI signals an error while making a request to the GitHub API.
 	ErrGitHubAPI = errors.NewKind("github api error")
@@ -95,12 +102,49 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 		return err
 	}
 
-	_, resp, err = client.PullRequests.CreateReview(ctx, owner, repo, pr, review)
-	if err = p.handleAPIError(resp, err); err != nil {
-		return err
+	for _, req := range splitReview(review, batchReviewComments) {
+		_, resp, err = client.PullRequests.CreateReview(ctx, owner, repo, pr, req)
+		if err = p.handleAPIError(resp, err); err != nil {
+			return err
+		}
 	}
 
 	return nil
+}
+
+func splitReview(review *github.PullRequestReviewRequest, n int) []*github.PullRequestReviewRequest {
+	if len(review.Comments) <= n {
+		return []*github.PullRequestReviewRequest{review}
+	}
+
+	var result []*github.PullRequestReviewRequest
+	comments := review.Comments
+	// set body only to the last review
+	emptyBody := ""
+
+	for len(comments) > n {
+		result = append(result, &github.PullRequestReviewRequest{
+			CommitID: review.CommitID,
+			Event:    review.Event,
+			Body:     &emptyBody,
+			Comments: comments[:n],
+		})
+
+		comments = comments[n:]
+	}
+
+	if len(comments) > 0 {
+		result = append(result, &github.PullRequestReviewRequest{
+			CommitID: review.CommitID,
+			Event:    review.Event,
+			Body:     &emptyBody,
+			Comments: comments,
+		})
+	}
+
+	result[len(result)-1].Body = review.Body
+
+	return result
 }
 
 func (p *Poster) validatePR(
