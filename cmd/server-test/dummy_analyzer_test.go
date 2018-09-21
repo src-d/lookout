@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/src-d/lookout"
+	fixtures "github.com/src-d/lookout-test-fixtures"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -46,21 +47,46 @@ func (suite *DummyIntegrationSuite) TestSkipReview() {
 	suite.GrepTrue(suite.r, `event successfully processed, skipping...`)
 }
 
-func (suite *DummyIntegrationSuite) TestReviewDontPost() {
-	suite.sendEvent(successJSON)
-	suite.GrepTrue(suite.r, `status=success`)
+func (suite *DummyIntegrationSuite) TestReviewDontPostSameComment() {
+	fixture := fixtures.GetByName("incremental-pr")
 
-	newEventForSuccessPREvent := &jsonReviewEvent{
+	rev0Event := &jsonReviewEvent{
 		ReviewEvent: &lookout.ReviewEvent{
-			InternalID:     "2",
+			InternalID:     "some-id",
 			Number:         1,
-			CommitRevision: *longLineFixture.GetCommitRevision(),
+			CommitRevision: *fixture.GetRevision(0).GetCommitRevision(),
 		},
 	}
 
-	suite.sendEvent(newEventForSuccessPREvent.String())
+	suite.sendEvent(rev0Event.String())
+	suite.GrepTrue(suite.r, `{"analyzer-name":"Dummy","file":"dummy.go","line":5,"text":"This line exceeded`)
+	suite.GrepTrue(suite.r, `status=success`)
+
+	rev1Event := &jsonReviewEvent{
+		ReviewEvent: &lookout.ReviewEvent{
+			InternalID:     "some-id",
+			Number:         1,
+			CommitRevision: *fixture.GetRevision(1).GetCommitRevision(),
+		},
+	}
+
+	suite.sendEvent(rev1Event.String())
 	suite.GrepTrue(suite.r, "processing pull request")
-	suite.GrepAndNot(suite.r, `status=success`, `posting analysis`)
+
+	found, buf := suite.Grep(suite.r, `status=success`)
+	suite.Require().Truef(found, "'%s' not found in:\n%s", `status=success`, buf.String())
+
+	st := buf.String()
+
+	suite.Require().Contains(
+		st,
+		`{"analyzer-name":"Dummy","file":"dummy.go","text":"The file has increased`,
+	)
+
+	suite.Require().NotContains(
+		st,
+		`{"analyzer-name":"Dummy","file":"dummy.go","line":5,"text":"This line exceeded`,
+	)
 }
 
 func (suite *DummyIntegrationSuite) TestWrongRevision() {
