@@ -1105,6 +1105,8 @@ func (r *ReviewEvent) ColumnAddress(col string) (interface{}, error) {
 		return (*kallax.ULID)(&r.ID), nil
 	case "status":
 		return (*string)(&r.Status), nil
+	case "internal_id":
+		return &r.InternalID, nil
 	case "old_internal_id":
 		return &r.OldInternalID, nil
 	case "is_mergeable":
@@ -1138,6 +1140,8 @@ func (r *ReviewEvent) Value(col string) (interface{}, error) {
 		return r.ID, nil
 	case "status":
 		return (string)(r.Status), nil
+	case "internal_id":
+		return r.InternalID, nil
 	case "old_internal_id":
 		return r.OldInternalID, nil
 	case "is_mergeable":
@@ -1525,6 +1529,12 @@ func (q *ReviewEventQuery) FindByID(v ...kallax.ULID) *ReviewEventQuery {
 // the Status property is equal to the passed value.
 func (q *ReviewEventQuery) FindByStatus(v EventStatus) *ReviewEventQuery {
 	return q.Where(kallax.Eq(Schema.ReviewEvent.Status, v))
+}
+
+// FindByInternalID adds a new filter to the query that will require that
+// the InternalID property is equal to the passed value.
+func (q *ReviewEventQuery) FindByInternalID(v string) *ReviewEventQuery {
+	return q.Where(kallax.Eq(Schema.ReviewEvent.InternalID, v))
 }
 
 // FindByOldInternalID adds a new filter to the query that will require that
@@ -2185,6 +2195,7 @@ type schemaReviewEvent struct {
 	*kallax.BaseSchema
 	ID             kallax.SchemaField
 	Status         kallax.SchemaField
+	InternalID     kallax.SchemaField
 	OldInternalID  kallax.SchemaField
 	IsMergeable    kallax.SchemaField
 	Source         *schemaReviewEventSource
@@ -2361,6 +2372,7 @@ var Schema = &schema{
 			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("status"),
+			kallax.NewSchemaField("internal_id"),
 			kallax.NewSchemaField("old_internal_id"),
 			kallax.NewSchemaField("is_mergeable"),
 			kallax.NewSchemaField("source"),
@@ -2374,6 +2386,7 @@ var Schema = &schema{
 		),
 		ID:            kallax.NewSchemaField("id"),
 		Status:        kallax.NewSchemaField("status"),
+		InternalID:    kallax.NewSchemaField("internal_id"),
 		OldInternalID: kallax.NewSchemaField("old_internal_id"),
 		IsMergeable:   kallax.NewSchemaField("is_mergeable"),
 		Source: &schemaReviewEventSource{
