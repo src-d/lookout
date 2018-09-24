@@ -1,7 +1,6 @@
 app:
   lookout:
     logLevel: debug
-    secretName: lookout-github-credentials
     dbConnectionString: postgres://lookout:lookout@lookout-postgresql:5432/lookout?sslmode=disable
     bblfshdConnectionString: ipv4://lookout-bblfshd-bblfshd:9432
 
@@ -19,6 +18,9 @@ repositories:
 
 providers:
   github:
+    app_id: 17877
+    private_key: private-key.pem
+    secretName: lookout-staging-github-key
     comment_footer: "_If you have feedback about this comment, please, [tell us](%s)._"
 
 analyzers:
