@@ -30,3 +30,6 @@ analyzers:
   - name: gometalint-analyzer
     addr: ipv4://lookout-gometalint-analyzer:10303
     feedback: https://github.com/src-d/lookout-gometalint-analyzer/issues/new
+  - name: sonarcheck-analyzer
+    addr: ipv4://lookout-sonarcheck-analyzer:10304
+    feedback: https://github.com/src-d/lookout-sonarcheck-analyzer/issues/new
