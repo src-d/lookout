@@ -19,7 +19,7 @@ repositories:
 providers:
   github:
     app_id: 17877
-    private_key: private-key.pem
+    private_key: /local/lookout/private-key.pem
     secretName: lookout-staging-github-key
     comment_footer: "_If you have feedback about this comment, please, [tell us](%s)._"
 
