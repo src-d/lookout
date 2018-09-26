@@ -89,3 +89,9 @@ dry-run: $(CONFIG_FILE)
 	go run cmd/lookoutd/*.go serve --dry-run
 $(CONFIG_FILE):
 	cp "$(CONFIG_FILE).tpl" $(CONFIG_FILE)
+
+.PHONY: toc
+toc:
+	wget https://raw.githubusercontent.com/ekalinin/github-markdown-toc/master/gh-md-toc
+	chmod a+x gh-md-toc
+	./gh-md-toc --insert README.md

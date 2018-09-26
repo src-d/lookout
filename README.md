@@ -8,57 +8,81 @@ lookout
 
 A service for assisted code review, that allows running custom code Analyzers on pull requests.
 
+# Table of Contents
 
-# Installation
+<!--ts-->
+   * [Configuring lookout](#configuring-lookout)
+   * [Usage](#usage)
+      * [Running lookout with docker-compose](#running-lookout-with-docker-compose)
+      * [Running lookout from Binaries](#running-lookout-from-binaries)
+         * [Installation](#installation)
+         * [Dependencies](#dependencies)
+         * [Quickstart](#quickstart)
+   * [SDK for Analyzer Developers](#sdk-for-analyzer-developers)
+   * [Development](#development)
+      * [Build](#build)
+      * [Code generation](#code-generation)
+      * [Testing](#testing)
+      * [Dummy Analyzer Release](#dummy-analyzer-release)
+   * [Contribute](#contribute)
+   * [Code of Conduct](#code-of-conduct)
+   * [License](#license)
+<!--te-->
+
+# Configuring lookout
+
+Please refer to the [**Configuring lookout guide**](docs/configuration.md) for documentation for the `config.yml` file.
+
+# Usage
+
+## Running lookout with docker-compose
+
+Using [Docker Compose](https://docs.docker.com/compose) you can use the provided [`docker-compose.yml`](docker-compose.yml) config file to start **lookout**, its dependencies (**bblfsh** and **PostgreSQL**) and the `dummy` analyzer which will add some stats to the watched pull requests.
+
+To do so, clone this repository or download [`docker-compose.yml`](docker-compose.yml).
+
+Create the `config.yml` file in the same directory where `docker-compose.yml` is, and run:
+
+```bash
+$ docker-compose pull
+$ GITHUB_USER=<user> GITHUB_TOKEN=<token> docker-compose up --force-recreate
+```
+
+If you need to restart the database to a clean state, you can do so with:
+```bash
+$ docker rm lookout_postgres_1
+```
+
+## Running lookout from Binaries
+
+### Installation
+
+The following command will install the binaries `lookoutd`, `lookout-sdk`, and `dummy`.
 
 ```bash
 $ go get github.com/src-d/lookout/...
 ```
+### Dependencies
 
-It will globally install `lookoutd`, `lookout-sdk`, and `dummy`.
+**lookout** needs a running instance of:
 
+* [bblfshd](https://github.com/bblfsh/bblfshd) to parse files into [UAST](https://doc.bblf.sh/uast/uast-specification.html).
+* [PostgreSQL](https://www.postgresql.org).
 
-## Dependencies
+You will also need to configure external Analyzers, that will perform the actual processing of the pull requests. You may use the included `dummy` Analyzer for testing purposes.
 
-**lookout** will run custom Analyzers to perform the analysis of the PR.
-It also needs a running instance of:
+### Quickstart
 
-* [bblfshd](https://github.com/bblfsh/bblfshd) to parse files into [UAST](https://doc.bblf.sh/uast/uast-specification.html)
-* [PostgreSQL](https://www.postgresql.org) to store the analysis events and logs
+Following these steps you will be able to run separately the **lookout** dependencies, analyzers and the server itself.
 
-
-# Usage
-
-The **lookout** configuration is defined by the `config.yml` file; you can use the template [`config.yml.tpl`](config.yml.tpl) to create your own config file. You will find more information about it in the [docs about how to configure lookout](docs/configuration.md)
-
-
-To trigger the analysis on any pull request of a GitHub repository you will need a GitHub authentication as it is described in the [docs about how to authenticate with GitHub](docs/configuration.md#basic-auth)
-
-
-## With docker-compose
-
-Using [Docker Compose](https://docs.docker.com/compose) you can use the provided [`docker-compose.yml`](docker-compose.yml) config file to start **lookout**, its dependencies (**bblfsh** and **PostgreSQL**) and the `dummy` analyzer which will add some stats to the watched pull requests.
-
-To do so, just clone this repository or download [`docker-compose.yml`](docker-compose.yml).
-
-Create the `config.yml` file in the same directory than the `docker-compose.yml` one, and run from there:
-
-```bash
-$ GITHUB_USER=<user> GITHUB_TOKEN=<token> REPO=github.com/<user>/<name> docker-compose up
-```
-
-## Running lookout from binaries
-
-Following these, steps you will be able to run separately the **lookout** dependencies, analyzers and the server itself.
-
-1. Run the [dependencies](#dependencies) manually or using docker-compose; if you prefer doing it straightforward, just run:
+1. Run the [dependencies](#dependencies) manually or using docker-compose, executing:
 
     ```bash
     $ docker-compose up bblfsh postgres
     ```
 
 1. Initialize the database.<br />
-    The following command will work for the PostgreSQL created by `docker-compose` as explained above; otherwise, you might need to define the use connection string to PostgreSQL database; use `-h` to see other options.
+    This command will work for the PostgreSQL created by docker-compose, use `-h` to see other options.
 
     ```bash
     $ lookoutd migrate
@@ -71,7 +95,7 @@ Following these, steps you will be able to run separately the **lookout** depend
     $ dummy serve
     ```
 
-1. Copy the [`config.yml.tpl`](config.yml.tpl) into `config.yml` and add the URLs of the repositories to be watched. (take a look into [configuration and GitHub authentication](docs/configuration.md) for more details about **lookout** configuration)
+1. Copy the [`config.yml.tpl`](config.yml.tpl) into `config.yml` and add the URLs of the repositories to be watched. Take a look at [configuration and GitHub authentication](docs/configuration.md) for more details about **lookout** configuration.
 
 1. Start **lookout** server<br />
     If you want to post the analysis results on GitHub, run:
@@ -86,21 +110,82 @@ Following these, steps you will be able to run separately the **lookout** depend
     $ lookoutd serve --dry-run
     ```
 
+# SDK for Analyzer Developers
+
+If you are developing an Analyzer, please check the [SDK documentation](sdk/README.md).
+
+# Development
+
+## Build
+
+You can separately build the binaries provided by **lookout**; the binaries will be stored under `build/bin` directory.
+
+**server**:
+```bash
+$ make build
+```
+
+**lookout-sdk**:
+```bash
+$ make -f Makefile.sdk build
+```
+
+**dummy** analyzer:
+```bash
+$ make -f Makefile.dummy build
+```
+
+## Code generation
+
+To generate go code from [kallax](https://github.com/src-d/go-kallax) models, run:
+
+```bash
+$ go generate ./...
+```
+
+To update [go-bindata](https://github.com/jteeuwen/go-bindata) with the new migration files:
+
+```bash
+$ kallax migrate --input ./store/models/ --out ./store/migrations --name <name>
+$ make dependencies
+$ make bindata
+```
+
+## Testing
+
+For unit-tests run:
+```bash
+$ make test
+```
+
+For `lookout-sdk` integration tests (`-short` will skip tests that require bblfsh):
+```bash
+$ make test-sdk
+$ make test-sdk-short
+```
+
+For `lookoutd serve` integration tests:
+```bash
+$ make test-json
+```
+
+## Dummy Analyzer Release
+
+[Dummy analyzer](./cmd/dummy) is a simple analyzer implementation example. It is part of the lookout codebase but it's release cycle is managed independently from main one.
+
+To release a new version and publish the dummy analyzer container you need to create a tag with the `dummy` prefix, e.g. `dummy-v0.0.1`. Please note this doesn't require to do a GitHub release, we just need the Git tag.
+
+A normal release tag will not publish this container.
+
 
 # Contribute
 
-[Contributions](https://github.com/src-d/lookout/issues) are more than welcome, if you are interested please take a look at our [Contributing Guidelines](docs/CONTRIBUTING.md).
-
-You have more information on how to run it locally for [development purposes here](docs/CONTRIBUTING.md#development).
-
-If you are developing an Analyzer, please check [SDK documentation](sdk/README.md).
-
+[Contributions](https://github.com/src-d/lookout/issues) are more than welcome, if you are interested please take a look at our [Contributing Guidelines](./CONTRIBUTING.md).
 
 # Code of Conduct
 
 All activities under source{d} projects are governed by the
 [source{d} code of conduct](https://github.com/src-d/guide/blob/master/.github/CODE_OF_CONDUCT.md).
-
 
 # License
 Affero GPL v3.0, see [LICENSE](LICENSE).
