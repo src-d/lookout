@@ -63,6 +63,8 @@ jobs:
     - name: 'Generated code'
       script:
         - make dependencies
+        - go generate ./...
+        - make no-changes-in-commit
         - kallax migrate --input ./store/models/ --out ./store/migrations --name test-changes
         - make no-changes-in-commit
         - make bindata
