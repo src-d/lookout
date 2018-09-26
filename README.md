@@ -57,11 +57,8 @@ $ docker rm lookout_postgres_1
 
 ### Installation
 
-The following command will install the binaries `lookoutd`, `lookout-sdk`, and `dummy`.
+Go to the [lookout releases page](https://github.com/src-d/lookout/releases) and download the latest `lookoutd` and `dummy` binaries from there.
 
-```bash
-$ go get github.com/src-d/lookout/...
-```
 ### Dependencies
 
 **lookout** needs a running instance of:
