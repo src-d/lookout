@@ -1,125 +1,191 @@
-# lookout [![Build Status](https://travis-ci.org/src-d/lookout.svg)](https://travis-ci.org/src-d/lookout) [![GoDoc](https://godoc.org/gopkg.in/src-d/lookout?status.svg)](https://godoc.org/github.com/src-d/lookout)
+lookout
+[![Build Status](https://travis-ci.org/src-d/lookout.svg)](https://travis-ci.org/src-d/lookout)
+[![GoDoc](https://godoc.org/gopkg.in/src-d/lookout?status.svg)](https://godoc.org/github.com/src-d/lookout)
+[![Code Coverage](https://codecov.io/github/src-d/lookout/coverage.svg)](https://codecov.io/github/src-d/lookout)
+[![Go Report Card](https://goreportcard.com/badge/github.com/src-d/lookout)](https://goreportcard.com/report/github.com/src-d/lookout)
+![development](https://svg-badge.appspot.com/badge/stability/development?color=D6604A)
+=======
 
 A service for assisted code review, that allows running custom code Analyzers on pull requests.
 
-# SDK
+# Table of Contents
 
-If you are developing an Analyzer, please check [SDK documentation](./sdk/README.md).
+<!--ts-->
+   * [Configuring lookout](#configuring-lookout)
+   * [Usage](#usage)
+      * [Running lookout with docker-compose](#running-lookout-with-docker-compose)
+      * [Running lookout from Binaries](#running-lookout-from-binaries)
+         * [Installation](#installation)
+         * [Dependencies](#dependencies)
+         * [Quickstart](#quickstart)
+   * [SDK for Analyzer Developers](#sdk-for-analyzer-developers)
+   * [Development](#development)
+      * [Build](#build)
+      * [Code generation](#code-generation)
+      * [Testing](#testing)
+      * [Dummy Analyzer Release](#dummy-analyzer-release)
+   * [Contribute](#contribute)
+   * [Code of Conduct](#code-of-conduct)
+   * [License](#license)
+<!--te-->
 
-It includes a curl-style binary `lookout-sdk` that allows to trigger Analyzers directly, without launching a full lookout server.
+# Configuring lookout
 
-# Installation
+Please refer to the [**Configuring lookout guide**](docs/configuration.md) for documentation for the `config.yml` file.
+
+# Usage
+
+## Running lookout with docker-compose
+
+Using [Docker Compose](https://docs.docker.com/compose) you can use the provided [`docker-compose.yml`](docker-compose.yml) config file to start **lookout**, its dependencies (**bblfsh** and **PostgreSQL**) and the `dummy` analyzer which will add some stats to the watched pull requests.
+
+To do so, clone this repository or download [`docker-compose.yml`](docker-compose.yml).
+
+Create the `config.yml` file in the same directory where `docker-compose.yml` is, and run:
+
+```bash
+$ docker-compose pull
+$ GITHUB_USER=<user> GITHUB_TOKEN=<token> docker-compose up --force-recreate
+```
+
+If you need to restart the database to a clean state, you can do so with:
+```bash
+$ docker rm lookout_postgres_1
+```
+
+## Running lookout from Binaries
+
+### Installation
+
+The following command will install the binaries `lookoutd`, `lookout-sdk`, and `dummy`.
 
 ```bash
 $ go get github.com/src-d/lookout/...
 ```
+### Dependencies
 
-# Dependencies
+**lookout** needs a running instance of:
 
-The included [`./docker-compose.yml`](./docker-compose.yml) allows to start all dependencies using [Docker Compose](https://docs.docker.com/compose/) 
+* [bblfshd](https://github.com/bblfsh/bblfshd) to parse files into [UAST](https://doc.bblf.sh/uast/uast-specification.html).
+* [PostgreSQL](https://www.postgresql.org).
 
-* [bblfshd](https://github.com/bblfsh/bblfshd), on `localhost:9432`
-* [PostgreSQL](https://www.postgresql.org/), on `localhost:5432` password `postgres`
+You will also need to configure external Analyzers, that will perform the actual processing of the pull requests. You may use the included `dummy` Analyzer for testing purposes.
 
-Clone the repository, or download [`./docker-compose.yml`](./docker-compose.yml)
+### Quickstart
 
-# Usage
+Following these steps you will be able to run separately the **lookout** dependencies, analyzers and the server itself.
 
-To trigger the analysis on an actual pull request of a GitHub repository you will need [GitHub access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/).
+1. Run the [dependencies](#dependencies) manually or using docker-compose, executing:
 
-## With Docker
-
-Run:
-
-```bash
-$ GITHUB_USER=<user> GITHUB_TOKEN=<token> REPO=github.com/<user>/<name> docker-compose up
-```
-
-## Without Docker
-
-1. Run dependencies manually or using docker-compose:
     ```bash
     $ docker-compose up bblfsh postgres
     ```
-1. Initialize the database. This command will work for the PostgreSQL created by docker-compose, use `-h` to see other options.
+
+1. Initialize the database.<br />
+    This command will work for the PostgreSQL created by docker-compose, use `-h` to see other options.
+
     ```bash
     $ lookoutd migrate
     ```
-1. Start an analyzer
-Any of the analyzers or a default dummy one, included in this repository
+
+1. Start an analyzer before running **lookout**.<br />
+    You can use the *dummy* one as it is provided by this repository; to do so just run:
+
     ```bash
-    $ go build -o analyzer ./cmd/dummy
-    $ ./analyzer serve
+    $ dummy serve
     ```
-1. Start a lookout server
-    1. With posting analysis results on GitHub
-        - Obtain [GitHub access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
-        - Run `lookoutd serve --github-token <token> --github-user <user> <repository>`
-    1. Without posting analysis results (only printing)
-        - `lookoutd serve --dry-run <repository>`
 
+1. Copy the [`config.yml.tpl`](config.yml.tpl) into `config.yml` and add the URLs of the repositories to be watched. Take a look at [configuration and GitHub authentication](docs/configuration.md) for more details about **lookout** configuration.
 
-# Configuration file
+1. Start **lookout** server<br />
+    If you want to post the analysis results on GitHub, run:
 
-Global server configuration is stored in `config.yml`:
+    ```bash
+    $ lookoutd serve --github-token <token> --github-user <user>
+    ```
 
-```yml
-analyzers:
-  - name: Example name # required, unique name of the analyzer
-    addr: ipv4://localhost:10302 # required, gRPC address
-    disabled: false # optional, false by default
-    settings: # optional, this field is sent to analyzer "as is"
-        threshold: 0.8
+    If you want to avoid posting the analysis results on GitHub, and only print them, run:
+
+    ```bash
+    $ lookoutd serve --dry-run
+    ```
+
+# SDK for Analyzer Developers
+
+If you are developing an Analyzer, please check the [SDK documentation](sdk/README.md).
+
+# Development
+
+## Build
+
+You can separately build the binaries provided by **lookout**; the binaries will be stored under `build/bin` directory.
+
+**server**:
+```bash
+$ make build
 ```
 
-It's possible to override Analyzers configuration for a particular repository.
-To do that `.lookout.yml` must be present in the root of that repository.
-
-Example:
-```yml
-analyzers:
-  - name: Example name # must be the same as in server configuration, unknown names will be ignored
-    disabled: true # local configuration can only disable analyzer, not enable
-    settings: # settings for an analyzer will be merged with a global one
-        threshold: 0.9
-        mode: confident
+**lookout-sdk**:
+```bash
+$ make -f Makefile.sdk build
 ```
 
-Merging rules:
-- Objects are deep merged
-- Arrays are replaced
-- Null value replaces object
-
-# Authenticate as a GitHub App
-
-Instead of using a GitHub username and token you can use lookout as a [GitHub App](https://developer.github.com/apps/about-apps/).
-
-You need to create a new GitHub App following the [GitHub documentation](https://developer.github.com/apps/building-github-apps/creating-a-github-app/). Then download a private key ([see how here](https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/)) and set the following fields in your `config.yml` file:
-
-```yml
-providers:
-  github:
-    app_id: 1234
-    private_key: ./key.pem
+**dummy** analyzer:
+```bash
+$ make -f Makefile.dummy build
 ```
 
-You should also unset any environment variable or option for the GitHub username and token authentication.
+## Code generation
 
-_Note_: This authentication method is still under development. There are some caveats you should be aware of:
+To generate go code from [kallax](https://github.com/src-d/go-kallax) models, run:
 
-When using this authentication method the repositories to analyze are retrieved from the GitHub installations.
-This means that the positional argument for `lookoutd serve` is ignored. You should also be aware that the list of repositories is retrieved only once when the server starts.
+```bash
+$ go generate ./...
+```
+
+To update [go-bindata](https://github.com/jteeuwen/go-bindata) with the new migration files:
+
+```bash
+$ kallax migrate --input ./store/models/ --out ./store/migrations --name <name>
+$ make dependencies
+$ make bindata
+```
+
+## Testing
+
+For unit-tests run:
+```bash
+$ make test
+```
+
+For `lookout-sdk` integration tests (`-short` will skip tests that require bblfsh):
+```bash
+$ make test-sdk
+$ make test-sdk-short
+```
+
+For `lookoutd serve` integration tests:
+```bash
+$ make test-json
+```
+
+## Dummy Analyzer Release
+
+[Dummy analyzer](./cmd/dummy) is a simple analyzer implementation example. It is part of the lookout codebase but it's release cycle is managed independently from main one.
+
+To release a new version and publish the dummy analyzer container you need to create a tag with the `dummy` prefix, e.g. `dummy-v0.0.1`. Please note this doesn't require to do a GitHub release, we just need the Git tag.
+
+A normal release tag will not publish this container.
+
 
 # Contribute
 
-[Contributions](https://github.com/src-d/lookout/issues) are more than welcome, if you are interested please take a look to
-our [Contributing Guidelines](CONTRIBUTING.md).
+[Contributions](https://github.com/src-d/lookout/issues) are more than welcome, if you are interested please take a look at our [Contributing Guidelines](./CONTRIBUTING.md).
 
 # Code of Conduct
 
-All activities under source{d} projects are governed by the [source{d} code of conduct](https://github.com/src-d/guide/blob/master/.github/CODE_OF_CONDUCT.md).
+All activities under source{d} projects are governed by the
+[source{d} code of conduct](https://github.com/src-d/guide/blob/master/.github/CODE_OF_CONDUCT.md).
 
 # License
 Affero GPL v3.0, see [LICENSE](LICENSE).
-
-SDK package in `./sdk` is released under the terms of the [Apache License v2.0](./sdk/LICENSE)
