@@ -23,7 +23,7 @@ services:
     ports:
       - "10302:10302"
   bblfsh:
-    image: "bblfsh/bblfshd:v2.5.0"
+    image: "bblfsh/bblfshd:v2.7.2"
     privileged: true
     ports:
       - "9432:9432"
