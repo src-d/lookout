@@ -73,7 +73,10 @@ jobs:
         - make no-changes-in-commit
     - name: 'linux packages'
       stage: release
-      script: PKG_OS="linux" make -f Makefile.sdk packages
+      script:
+        - PKG_OS="linux" make packages
+        - PKG_OS="linux" make -f Makefile.sdk packages
+        - PKG_OS="linux" make -f Makefile.dummy packages
       deploy: &deploy_anchor
         provider: releases
         api_key: $GITHUB_TOKEN
@@ -87,7 +90,10 @@ jobs:
       os: osx
       osx_image: xcode9.4
       before_install: skip
-      script: PKG_OS="darwin" make -f Makefile.sdk packages
+      script:
+        - PKG_OS="darwin" make packages
+        - PKG_OS="darwin" make -f Makefile.sdk packages
+        - PKG_OS="darwin" make -f Makefile.dummy packages
       deploy: *deploy_anchor
     - name: 'push image to Docker Hub'
       stage: release
