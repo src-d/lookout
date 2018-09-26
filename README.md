@@ -14,6 +14,14 @@ It includes a curl-style binary `lookout-sdk` that allows to trigger Analyzers d
 $ go get github.com/src-d/lookout/...
 ```
 
+To get the particular lookout version run the following:
+```bash
+$ cd $GOPATH/src/github.com/src-d/lookout
+$ git fetch origin
+$ git checkout v0.1.4 # use the tag of the version you need
+$ go install ./cmd/lookoutd
+```
+
 # Dependencies
 
 The included [`./docker-compose.yml`](./docker-compose.yml) allows to start all dependencies using [Docker Compose](https://docs.docker.com/compose/) 
@@ -54,16 +62,22 @@ Any of the analyzers or a default dummy one, included in this repository
 1. Start a lookout server
     1. With posting analysis results on GitHub
         - Obtain [GitHub access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
-        - Run `lookoutd serve --github-token <token> --github-user <user> <repository>`
+        - Run `lookoutd serve --github-token <token> --github-user <user>`
     1. Without posting analysis results (only printing)
-        - `lookoutd serve --dry-run <repository>`
+        - `lookoutd serve --dry-run`
 
+If you need to restart from empty database run before regular start
+```bash
+$ docker rm lookout_bblfsh_1 lookout_postgres_1
+```
 
 # Configuration file
 
 Global server configuration is stored in `config.yml`:
 
 ```yml
+repositories: # repositories list to track
+  - url: github.com/src-d/lookout
 analyzers:
   - name: Example name # required, unique name of the analyzer
     addr: ipv4://localhost:10302 # required, gRPC address
