@@ -59,7 +59,7 @@ type ServeCommand struct {
 	probeReadiness bool
 }
 
-var defaultInstallationsSyncInterval = time.Hour
+var defaultInstallationsSyncInterval = 5 * time.Minute
 
 // Config holds the main configuration
 type Config struct {

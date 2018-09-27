@@ -22,6 +22,7 @@ providers:
     private_key: /local/lookout/private-key.pem
     secretName: lookout-staging-github-key
     comment_footer: "_If you have feedback about this comment, please, [tell us](%s)._"
+    installation_sync_interval: 5m
 
 analyzers:
   - name: style-analyzer
