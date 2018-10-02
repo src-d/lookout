@@ -117,6 +117,7 @@ This is a list of the available analyzers for lookout:
 | [style-analyzer](https://github.com/src-d/style-analyzer) | Code style analyzer | development |
 | [gometalint](https://github.com/src-d/lookout-gometalint-analyzer) | Reports [gometalinter](https://github.com/alecthomas/gometalinter) results on pull requests | testing and demo |
 | [sonarcheck](https://github.com/src-d/lookout-sonarcheck-analyzer) | An analyzer that uses [bblfsh UAST](https://doc.bblf.sh/uast/uast-specification.html) and [sonar-checks](https://github.com/bblfsh/sonar-checks) to process pull requests | testing and demo |
+| [terraform](https://github.com/meyskens/lookout-terraform-analyzer) | An analyzer that checks if [Terraform](https://github.com/hashicorp/terraform/) files are correctly formatted | usable |
 
 
 # SDK for Analyzer Developers
