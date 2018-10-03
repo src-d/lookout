@@ -24,10 +24,12 @@ func (a *Analyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent
 	*lookout.EventResponse, error) {
 
 	changes, err := a.DataClient.GetChanges(ctx, &lookout.ChangesRequest{
-		Base:         &e.CommitRevision.Base,
-		Head:         &e.CommitRevision.Head,
-		WantContents: true,
-		WantUAST:     a.RequestUAST,
+		Base:           &e.CommitRevision.Base,
+		Head:           &e.CommitRevision.Head,
+		WantContents:   true,
+		WantUAST:       a.RequestUAST,
+		IncludePattern: ".*",
+		ExcludePattern: "^should-never-match$",
 	})
 	if err != nil {
 		return nil, err
@@ -62,6 +64,8 @@ func (a *Analyzer) NotifyPushEvent(ctx context.Context, e *lookout.PushEvent) (*
 		ExcludeVendored: true,
 		WantContents:    true,
 		WantUAST:        a.RequestUAST,
+		IncludePattern:  ".*",
+		ExcludePattern:  "^should-never-match$",
 	})
 	if err != nil {
 		return nil, err
