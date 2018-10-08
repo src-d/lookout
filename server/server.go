@@ -334,14 +334,14 @@ func (s *Server) post(ctx context.Context, e lookout.Event, comments []lookout.A
 	}
 
 	ctxlog.Get(ctx).With(log.Fields{
-		"comments": len(comments),
+		"comments": len(filtered),
 	}).Infof("posting analysis")
 
-	if err := s.poster.Post(ctx, e, comments); err != nil {
+	if err := s.poster.Post(ctx, e, filtered); err != nil {
 		return err
 	}
 
-	for _, cg := range comments {
+	for _, cg := range filtered {
 		for _, c := range cg.Comments {
 			if err := s.commentOp.Save(ctx, e, c, cg.Config.Name); err != nil {
 				ctxlog.Get(ctx).Errorf(err, "can't save comment")

@@ -353,11 +353,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:313f28a34f37549b32190249f548c2a9045a5ae9ce4e04848cbe6c8cf07fd64b"
+  digest = "1:dcb5082ac724ad044a5f7e2aa7b594ad5458e4a575b04a1403f83ba7e2e4975c"
   name = "github.com/src-d/lookout-test-fixtures"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "07bb25745b17f456e2cf398735cc69675f5a19b9"
+  revision = "a0d9d29bb3b4ea591c388037a2e27aa1ef9a2c1e"
 
 [[projects]]
   digest = "1:60a46e2410edbf02b419f833372dd1d24d7aa1b916a990a7370e792fada1eadd"
@@ -662,12 +662,12 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:18661ccbef715e27b35007615f4b9d0d2a8b075369ce82b5442d9fe8eb3a21d8"
+  digest = "1:e532b733db09e0d561bd3d10a3c50198234aee2ff289211f3c1f6f44d9aeaf1f"
   name = "gopkg.in/src-d/lookout-sdk.v0"
   packages = ["pb"]
   pruneopts = "NUT"
-  revision = "f438ebe2f0a971d5faa3ca5b998f5d2db698e8f9"
-  version = "v0.0.4"
+  revision = "d1dc995edc5d1f7f3e7810cf21f466c6b1f82407"
+  version = "v0.1.0"
 
 [[projects]]
   digest = "1:20d5d24cfd1dac53cbf730d5c9861c0792c68ae547e67fc16fa0ed0660481b0a"

@@ -6,19 +6,18 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"gopkg.in/sourcegraph/go-vcsurl.v1"
 )
 
 type EventID [20]byte
 
-// ComputeEventID compute the hash for a given provider and content.
-func ComputeEventID(provider, content string) EventID {
+// ComputeEventID compute the hash for a given list of strings.
+func ComputeEventID(content ...string) EventID {
 	var id EventID
 	h := sha1.New()
-	h.Write([]byte(provider))
-	h.Write([]byte("|"))
-	h.Write([]byte(content))
+	h.Write([]byte(strings.Join(content, "|")))
 	copy(id[:], h.Sum(nil))
 	return id
 }
@@ -42,7 +41,7 @@ const (
 
 // ID honors the Event interface.
 func (e *ReviewEvent) ID() EventID {
-	return ComputeEventID(e.Provider, e.InternalID)
+	return ComputeEventID(e.Provider, e.InternalID, e.Head.Hash)
 }
 
 // Type honors the Event interface.

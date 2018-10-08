@@ -45,12 +45,12 @@ func (o *MemEventOperator) UpdateStatus(ctx context.Context, e lookout.Event, s 
 
 // MemCommentOperator satisfies CommentOperator interface but does nothing
 type MemCommentOperator struct {
-	comments map[uint32][]*lookout.Comment
+	comments map[string][]*lookout.Comment
 }
 
 // NewMemCommentOperator creates new MemCommentOperator
 func NewMemCommentOperator() *MemCommentOperator {
-	return &MemCommentOperator{comments: make(map[uint32][]*lookout.Comment)}
+	return &MemCommentOperator{comments: make(map[string][]*lookout.Comment)}
 }
 
 var _ CommentOperator = &MemCommentOperator{}
@@ -58,7 +58,7 @@ var _ CommentOperator = &MemCommentOperator{}
 // Save implements EventOperator interface
 func (o *MemCommentOperator) Save(ctx context.Context, e lookout.Event, c *lookout.Comment, analyzerName string) error {
 	re := e.(*lookout.ReviewEvent)
-	o.comments[re.Number] = append(o.comments[re.Number], c)
+	o.comments[re.InternalID] = append(o.comments[re.InternalID], c)
 
 	return nil
 }
@@ -67,7 +67,7 @@ func (o *MemCommentOperator) Save(ctx context.Context, e lookout.Event, c *looko
 func (o *MemCommentOperator) Posted(ctx context.Context, e lookout.Event, c *lookout.Comment) (bool, error) {
 	re := e.(*lookout.ReviewEvent)
 
-	comments, ok := o.comments[re.Number]
+	comments, ok := o.comments[re.InternalID]
 	if !ok {
 		return false, nil
 	}

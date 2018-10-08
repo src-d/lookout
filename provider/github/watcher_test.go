@@ -78,7 +78,7 @@ var emptyArrayHandler = func(w http.ResponseWriter, r *http.Request) {
 }
 
 const (
-	pullID = "fd84071093b69f9aac25fb5dfeea1a870e3e19cf"
+	pullID = "7a8cee8938180f1013aab53f688faff31c622c1a"
 	pushID = "d1f57cc4e520766576c5f1d9e7655aeea5fbccfa"
 )
 
@@ -279,7 +279,7 @@ func (s *WatcherTestSuite) TestWatchLimit() {
 	w := s.newWatcher([]string{"github.com/mock/test"})
 	err := w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
 		prEvents++
-		s.Equal("fd84071093b69f9aac25fb5dfeea1a870e3e19cf", e.ID().String())
+		s.Equal(pullID, e.ID().String())
 
 		return nil
 	})
