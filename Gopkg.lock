@@ -666,7 +666,8 @@
   name = "gopkg.in/src-d/lookout-sdk.v0"
   packages = ["pb"]
   pruneopts = "NUT"
-  revision = "e06a088af4fe40561700c057c5dacd46e23b2abe"
+  revision = "d1dc995edc5d1f7f3e7810cf21f466c6b1f82407"
+  version = "v0.1.0"
 
 [[projects]]
   digest = "1:20d5d24cfd1dac53cbf730d5c9861c0792c68ae547e67fc16fa0ed0660481b0a"

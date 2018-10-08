@@ -74,9 +74,7 @@
 
 [[constraint]]
   name = "gopkg.in/src-d/lookout-sdk.v0"
-  # there is no release of sdk with new ID for review events yet
-  # version = "0.0.4"
-  revision = "e06a088af4fe40561700c057c5dacd46e23b2abe"
+  version = "0.1.0"
 
 [[constraint]]
   name = "github.com/sanity-io/litter"
