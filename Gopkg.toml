@@ -87,3 +87,7 @@
 [[constraint]]
   branch = "master"
   name = "github.com/src-d/lookout-test-fixtures"
+
+[[constraint]]
+  name = "gopkg.in/src-d/go-queue.v1"
+  version = "1.0.3"
