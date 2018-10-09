@@ -54,6 +54,7 @@ Both `lookout-sdk push` and `lookout-sdk review` can be configured with environm
 | `GIT_DIR` | `--git-dir=` | path to the Git directory to analyze | `.` _(current dir)_ |
 | | `--from=` | name of the base revision for event | `HEAD^` |
 | | `--to=` | name of the head revision for event | `HEAD` |
+| | `--config-json=` | arbitrary JSON configuration for request to an analyzer | |
 
 ### NotifyReviewEvent
 
