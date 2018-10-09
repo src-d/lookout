@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/service/bblfsh"
 	"github.com/src-d/lookout/service/enry"
@@ -28,6 +30,7 @@ type EventCommand struct {
 	GitDir     string `long:"git-dir" default:"." env:"GIT_DIR" description:"path to the .git directory to analyze"`
 	RevFrom    string `long:"from" default:"HEAD^" description:"name of the base revision for event"`
 	RevTo      string `long:"to" default:"HEAD" description:"name of the head revision for event"`
+	ConfigJSON string `long:"config-json" description:"arbitrary JSON configuration for request to an analyzer"`
 	Args       struct {
 		Analyzer string `positional-arg-name:"analyzer" description:"gRPC URL of the analyzer to use"`
 	} `positional-args:"yes" required:"yes"`
@@ -161,6 +164,24 @@ func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
 	}
 
 	return lookout.NewAnalyzerClient(conn), nil
+}
+
+func (c *EventCommand) parseConfig() (types.Struct, error) {
+	if c.ConfigJSON == "" {
+		return types.Struct{}, nil
+	}
+
+	var conf map[string]interface{}
+	if err := json.Unmarshal([]byte(c.ConfigJSON), &conf); err != nil {
+		return types.Struct{}, fmt.Errorf("Can't parse config-json option: %s", err)
+	}
+
+	st := grpchelper.ToPBStruct(conf)
+	if st == nil {
+		return types.Struct{}, nil
+	}
+
+	return *st, nil
 }
 
 func getCommitHashByRev(r *gogit.Repository, revName string) (string, error) {
