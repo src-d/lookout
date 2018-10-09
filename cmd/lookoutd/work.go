@@ -6,21 +6,21 @@ import (
 
 	"github.com/src-d/lookout/server"
 	"github.com/src-d/lookout/util/cli"
-	"github.com/src-d/lookout/util/ctxlog"
 )
 
 func init() {
-	if _, err := app.AddCommand("serve", "run a standalone server", "",
-		&ServeCommand{}); err != nil {
+	if _, err := app.AddCommand("work", "run a worker for a distributed environment", "",
+		&WorkCommand{}); err != nil {
 		panic(err)
 	}
 }
 
-type ServeCommand struct {
+type WorkCommand struct {
 	queueConsumerCommand
+	cli.QueueOptions
 }
 
-func (c *ServeCommand) Execute(args []string) error {
+func (c *WorkCommand) Execute(args []string) error {
 	c.initHealthProbes()
 
 	conf, err := c.initConfig()
@@ -59,17 +59,7 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
-	watcher, err := c.initWatcher(conf)
-	if err != nil {
-		return err
-	}
-
-	qOpt := cli.QueueOptions{
-		Queue:  "mem-queue",
-		Broker: "memory://",
-	}
-
-	err = qOpt.InitQueue()
+	err = c.InitQueue()
 	if err != nil {
 		return err
 	}
@@ -79,23 +69,5 @@ func (c *ServeCommand) Execute(args []string) error {
 
 	c.probeReadiness = true
 
-	deqErrCh := make(chan error, 1)
-	enqErrCh := make(chan error, 1)
-
-	go func() {
-		deqErrCh <- c.runEventDequeuer(ctx, qOpt, server)
-	}()
-
-	go func() {
-		enqErrCh <- c.runEventEnqueuer(ctx, qOpt, watcher)
-	}()
-
-	select {
-	case err := <-deqErrCh:
-		ctxlog.Get(ctx).Errorf(err, "error from the event dequeuer")
-		return err
-	case err := <-enqErrCh:
-		ctxlog.Get(ctx).Errorf(err, "error from the event enqueuer")
-		return err
-	}
+	return c.runEventDequeuer(ctx, c.QueueOptions, server)
 }

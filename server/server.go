@@ -24,7 +24,6 @@ type reqSent func(client lookout.AnalyzerClient, settings map[string]interface{}
 
 // Server implements glue between providers / data-server / analyzers
 type Server struct {
-	watcher    lookout.Watcher
 	poster     lookout.Poster
 	fileGetter lookout.FileGetter
 	analyzers  map[string]lookout.Analyzer
@@ -33,37 +32,18 @@ type Server struct {
 }
 
 // NewServer creates new Server
-func NewServer(w lookout.Watcher, p lookout.Poster, fileGetter lookout.FileGetter,
+func NewServer(p lookout.Poster, fileGetter lookout.FileGetter,
 	analyzers map[string]lookout.Analyzer, eventOp store.EventOperator, commentOp store.CommentOperator) *Server {
-	return &Server{w, p, fileGetter, analyzers, eventOp, commentOp}
+	return &Server{p, fileGetter, analyzers, eventOp, commentOp}
 }
 
-// Run starts server
-func (s *Server) Run(ctx context.Context) error {
-	errCh := make(chan error, 1)
-	for {
-		go func() {
-			err := s.watcher.Watch(ctx, s.handleEvent)
-			errCh <- err
-		}()
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case err := <-errCh:
-			if err != nil {
-				ctxlog.Get(ctx).Errorf(err, "error during watching, restart watching")
-			} else {
-				return nil
-			}
-		}
-	}
-}
-
-func (s *Server) handleEvent(ctx context.Context, e lookout.Event) error {
+// HandleEvent processes the event calling the analyzers, and posting the results
+func (s *Server) HandleEvent(ctx context.Context, e lookout.Event) error {
 	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{
 		"event-type": e.Type(),
 		"event-id":   e.ID().String(),
+		"repo":       e.Revision().Head.InternalRepositoryURL,
+		"head":       e.Revision().Head.ReferenceName,
 	})
 
 	status, err := s.eventOp.Save(ctx, e)
@@ -110,9 +90,7 @@ func (s *Server) handleEvent(ctx context.Context, e lookout.Event) error {
 // HandleReview sends request to analyzers concurrently
 func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent) error {
 	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{
-		"provider":   e.Provider,
-		"repository": e.Head.InternalRepositoryURL,
-		"head":       e.Head.ReferenceName,
+		"provider": e.Provider,
 	})
 	logger.Infof("processing pull request")
 
@@ -153,9 +131,7 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent) error
 // HandlePush sends request to analyzers concurrently
 func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
 	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{
-		"provider":   e.Provider,
-		"repository": e.Head.InternalRepositoryURL,
-		"head":       e.Head.ReferenceName,
+		"provider": e.Provider,
 	})
 	logger.Infof("processing push")
 

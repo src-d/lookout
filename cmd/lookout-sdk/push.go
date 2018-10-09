@@ -57,7 +57,7 @@ func (c *PushCommand) Execute(args []string) error {
 		return err
 	}
 
-	srv := server.NewServer(nil, &server.LogPoster{log.DefaultLogger}, dataSrv.FileGetter, map[string]lookout.Analyzer{
+	srv := server.NewServer(&server.LogPoster{log.DefaultLogger}, dataSrv.FileGetter, map[string]lookout.Analyzer{
 		"test-analyzes": lookout.Analyzer{
 			Client: client,
 		},
