@@ -16,9 +16,6 @@ type ReviewEvent struct {
 	ID           kallax.ULID
 	Status       EventStatus
 	InternalID   string
-	// temporary column for migration
-	// should be removed in #259
-	OldInternalID string
 
 	// those fields can change with each push
 	IsMergeable   bool
@@ -39,7 +36,6 @@ func newReviewEvent(e *lookout.ReviewEvent) *ReviewEvent {
 		ID:            kallax.NewULID(),
 		Status:        EventStatusNew,
 		InternalID:    e.ID().String(),
-		OldInternalID: e.InternalID,
 		IsMergeable:   e.IsMergeable,
 		Source:        e.Source,
 		Merge:         e.Merge,
