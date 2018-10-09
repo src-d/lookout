@@ -193,14 +193,6 @@
           "Unique": false
         },
         {
-          "Name": "old_internal_id",
-          "Type": "text",
-          "PrimaryKey": false,
-          "Reference": null,
-          "NotNull": true,
-          "Unique": false
-        },
-        {
           "Name": "is_mergeable",
           "Type": "boolean",
           "PrimaryKey": false,
