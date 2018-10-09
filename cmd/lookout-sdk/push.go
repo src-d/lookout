@@ -36,6 +36,11 @@ func (c *PushCommand) Execute(args []string) error {
 		return err
 	}
 
+	conf, err := c.parseConfig()
+	if err != nil {
+		return err
+	}
+
 	dataSrv, err := c.makeDataServerHandler()
 	if err != nil {
 		return err
@@ -83,7 +88,8 @@ func (c *PushCommand) Execute(args []string) error {
 		CommitRevision: lookout.CommitRevision{
 			Base: *fromRef,
 			Head: *toRef,
-		}})
+		},
+		Configuration: conf})
 
 	if err != nil {
 		return err
