@@ -55,11 +55,8 @@ func (suite *ErrorAnalyzerIntegrationSuite) SetupTest() {
 
 	suite.StoppableCtx()
 	suite.startAnalyzer(suite.Ctx, &errAnalyzer{})
-	suite.r, suite.w = suite.StartServe("--provider", "json",
-		"-c", "../../fixtures/dummy_config.yml")
 
-	// make sure server started correctly
-	suite.GrepTrue(suite.r, "Starting watcher")
+	suite.r, suite.w = suite.StartLookoutd(dummyConfigFile)
 }
 
 func (suite *ErrorAnalyzerIntegrationSuite) TearDownTest() {

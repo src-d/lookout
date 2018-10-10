@@ -57,7 +57,7 @@ func (c *PushCommand) Execute(args []string) error {
 		return err
 	}
 
-	srv := server.NewServer(nil, &server.LogPoster{log.DefaultLogger}, dataSrv.FileGetter, map[string]lookout.Analyzer{
+	srv := server.NewServer(&server.LogPoster{log.DefaultLogger}, dataSrv.FileGetter, map[string]lookout.Analyzer{
 		"test-analyzes": lookout.Analyzer{
 			Client: client,
 		},
@@ -81,8 +81,13 @@ func (c *PushCommand) Execute(args []string) error {
 		commits++
 	}
 
+	id, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+
 	err = srv.HandlePush(context.TODO(), &lookout.PushEvent{
-		InternalID: uuid.NewV4().String(),
+		InternalID: id.String(),
 		CreatedAt:  time.Now(),
 		Commits:    commits,
 		CommitRevision: lookout.CommitRevision{

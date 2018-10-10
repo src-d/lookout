@@ -177,6 +177,22 @@
   revision = "7e38e58719c33e0d44d585c4ab477a30f8cb82dd"
 
 [[projects]]
+  digest = "1:ebd0081aed1cd0af2f65a362c0ceea985eae9fe72efb28cefb84eca3b98dd3a3"
+  name = "github.com/jpillora/backoff"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "8eab2debe79d12b7bd3d10653910df25fa9552ba"
+  version = "1.0.0"
+
+[[projects]]
+  digest = "1:b8870bf2606dca65dc382f4cb8b7a434f17ff36a915451bda12788e9620be368"
+  name = "github.com/kelseyhightower/envconfig"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "f611eb38b3875cc3bd991ca91c51d06446afa14c"
+  version = "v1.3.0"
+
+[[projects]]
   digest = "1:8021af4dcbd531ae89433c8c3a6520e51064114aaf8eb1724c3cf911c497c9ba"
   name = "github.com/kevinburke/ssh_config"
   packages = ["."]
@@ -307,12 +323,12 @@
   revision = "09e3a73d5b65eac2f14578aec8fb74ee9b4f1a5e"
 
 [[projects]]
-  digest = "1:6bc0652ea6e39e22ccd522458b8bdd8665bf23bdc5a20eec90056e4dc7e273ca"
+  branch = "master"
+  digest = "1:8737b20e873c7cad069dfafd6382659b4cdf9e80359cdc159b8ec464893c932e"
   name = "github.com/satori/go.uuid"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
+  revision = "36e9d2ebbde5e3f13ab2e25625fd453271d6522e"
 
 [[projects]]
   digest = "1:d917313f309bda80d27274d53985bc65651f81a5b66b820749ac7f8ef061fd04"
@@ -358,6 +374,14 @@
   packages = ["."]
   pruneopts = "NUT"
   revision = "a0d9d29bb3b4ea591c388037a2e27aa1ef9a2c1e"
+
+[[projects]]
+  branch = "master"
+  digest = "1:538154cd1551f1df56485310c0edf2f217df9232a11b4a0decd5b390d908dae3"
+  name = "github.com/streadway/amqp"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "70e15c650864f4fc47f5d3c82ea117285480895d"
 
 [[projects]]
   digest = "1:60a46e2410edbf02b419f833372dd1d24d7aa1b916a990a7370e792fada1eadd"
@@ -481,6 +505,24 @@
   version = "v0.3.0"
 
 [[projects]]
+  digest = "1:d905cf8d320c391e840d90ed7f545470cba5de75fc543b19b1193cca52acecbf"
+  name = "google.golang.org/appengine"
+  packages = [
+    ".",
+    "datastore",
+    "internal",
+    "internal/app_identity",
+    "internal/base",
+    "internal/datastore",
+    "internal/log",
+    "internal/modules",
+    "internal/remote_api",
+  ]
+  pruneopts = "NUT"
+  revision = "ae0ab99deb4dc413a2b4bd6c8bdd0eb67f1e4d06"
+  version = "v1.2.0"
+
+[[projects]]
   branch = "master"
   digest = "1:601e63e7d4577f907118bec825902505291918859d223bce015539e79f1160e3"
   name = "google.golang.org/genproto"
@@ -578,6 +620,14 @@
   version = "v4.2.0"
 
 [[projects]]
+  digest = "1:c88b418aec7505bdb7618086f60dc41663d0609e12cc46473fe16039d35bbfd9"
+  name = "gopkg.in/src-d/go-errors.v0"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "6f07baca276330431b44ece8ee84ac98167bc4ea"
+  version = "v0.1.0"
+
+[[projects]]
   digest = "1:e79c76b3315c08c2c9d4d09d308ef2be7e4a4161fdcbe5c56040b3641f21096c"
   name = "gopkg.in/src-d/go-errors.v1"
   packages = ["."]
@@ -662,6 +712,18 @@
   version = "v1.0.1"
 
 [[projects]]
+  digest = "1:2b78a7efa35fc4bba7c099e3a19b54b9c62bfd3dd040786bef0bd90f1a2f0f71"
+  name = "gopkg.in/src-d/go-queue.v1"
+  packages = [
+    ".",
+    "amqp",
+    "memory",
+  ]
+  pruneopts = "NUT"
+  revision = "3eb0eac8758069e896ea90ae8cf8afb41f1dedc8"
+  version = "v1.0.3"
+
+[[projects]]
   digest = "1:e532b733db09e0d561bd3d10a3c50198234aee2ff289211f3c1f6f44d9aeaf1f"
   name = "gopkg.in/src-d/lookout-sdk.v0"
   packages = ["pb"]
@@ -676,6 +738,17 @@
   pruneopts = "NUT"
   revision = "c5f61671513240ddf5563635cc4a90e9f3ae4710"
   version = "v1.0.2"
+
+[[projects]]
+  digest = "1:607fef1a83d1365826cd57a1ea1a10704df5db2fc149e433ec1aacf09b5111ab"
+  name = "gopkg.in/vmihailenco/msgpack.v2"
+  packages = [
+    ".",
+    "codes",
+  ]
+  pruneopts = "NUT"
+  revision = "f4f8982de4ef0de18be76456617cc3f5d8d8141e"
+  version = "v2.9.1"
 
 [[projects]]
   digest = "1:b233ad4ec87ac916e7bf5e678e98a2cb9e8b52f6de6ad3e11834fc7a71b8e3bf"
@@ -711,6 +784,7 @@
     "github.com/jessevdk/go-flags",
     "github.com/jinzhu/copier",
     "github.com/lib/pq",
+    "github.com/pkg/errors",
     "github.com/sanity-io/litter",
     "github.com/satori/go.uuid",
     "github.com/src-d/lookout-test-fixtures",
@@ -742,6 +816,9 @@
     "gopkg.in/src-d/go-kallax.v1",
     "gopkg.in/src-d/go-kallax.v1/types",
     "gopkg.in/src-d/go-log.v1",
+    "gopkg.in/src-d/go-queue.v1",
+    "gopkg.in/src-d/go-queue.v1/amqp",
+    "gopkg.in/src-d/go-queue.v1/memory",
     "gopkg.in/src-d/lookout-sdk.v0/pb",
     "gopkg.in/yaml.v2",
   ]

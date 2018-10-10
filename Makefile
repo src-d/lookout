@@ -7,6 +7,7 @@ DEPENDENCIES = \
 
 # Backend services
 POSTGRESQL_VERSION = 9.6
+RABBITMQ_VERSION=any
 MIGRATIONS_PATH = store/migrations
 
 # Including ci Makefile

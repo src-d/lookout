@@ -47,16 +47,14 @@ jobs:
       script:
         - make prepare-services
         - psql -c 'create database lookout;' -U postgres
-        - make build
-        - ./build/bin/lookoutd migrate
         - make test-json
+        - LOOKOUT_TEST_QUEUE=true make test-json
     - name: 'Lookoutd Integration Tests macOS'
       script:
         - make prepare-services
         - psql -c 'create database lookout;' -U postgres
-        - make build
-        - ./build/lookout_darwin_amd64/lookoutd migrate
         - make test-json
+        - LOOKOUT_TEST_QUEUE=true make test-json
       os: osx
       osx_image: xcode9.4
       before_install: skip

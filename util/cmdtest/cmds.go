@@ -8,10 +8,12 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -59,6 +61,8 @@ func (suite *IntegrationSuite) StartDummy(args ...string) io.Reader {
 
 	args = append([]string{"serve"}, args...)
 
+	fmt.Printf("starting dummy %s\n", strings.Join(args, " "))
+
 	cmd := exec.CommandContext(suite.Ctx, dummyBin, args...)
 	cmd.Stdout = outputWriter
 	cmd.Stderr = outputWriter
@@ -81,31 +85,74 @@ func (suite *IntegrationSuite) StartDummy(args ...string) io.Reader {
 	return tee
 }
 
+// StartLookoutd starts lookoutd serve, or watch and work if the queue testing
+// is enabled
+func (suite *IntegrationSuite) StartLookoutd(configFile string) (io.Reader, io.WriteCloser) {
+	if suite.IsQueueTested() {
+		watcherR, watcherW := suite.StartWatcher("--provider", "json",
+			"-c", configFile)
+
+		workerR, _ := suite.StartWorker("--provider", "json",
+			"-c", configFile)
+
+		// make sure server started correctly
+		suite.GrepTrue(watcherR, "Starting watcher")
+
+		// Write json commands to watcher, write processed output from worker
+		return workerR, watcherW
+	} else {
+		r, w := suite.StartServe("--provider", "json",
+			"-c", configFile)
+
+		// make sure server started correctly
+		suite.GrepTrue(r, "Starting watcher")
+
+		return r, w
+	}
+}
+
 // StartServe starts lookout server with context and optional arguments
 func (suite *IntegrationSuite) StartServe(args ...string) (io.Reader, io.WriteCloser) {
+	args = append([]string{"serve"}, args...)
+	return suite.startLookoutd(args...)
+}
+
+// StartWatcher starts lookoutd watch with context and optional arguments
+func (suite *IntegrationSuite) StartWatcher(args ...string) (io.Reader, io.WriteCloser) {
+	args = append([]string{"watch"}, args...)
+	return suite.startLookoutd(args...)
+}
+
+// StartWorker starts lookoutd work with context and optional arguments
+func (suite *IntegrationSuite) StartWorker(args ...string) (io.Reader, io.WriteCloser) {
+	args = append([]string{"work"}, args...)
+	return suite.startLookoutd(args...)
+}
+
+func (suite *IntegrationSuite) startLookoutd(args ...string) (io.Reader, io.WriteCloser) {
 	require := suite.Require()
 
 	r, outputWriter := io.Pipe()
 	buf := &bytes.Buffer{}
 	tee := io.TeeReader(r, buf)
 
-	args = append([]string{"serve"}, args...)
-
 	cmd := exec.CommandContext(suite.Ctx, lookoutBin, args...)
 	cmd.Stdout = outputWriter
 	cmd.Stderr = outputWriter
 
+	fmt.Printf("starting lookoutd %s\n", strings.Join(args, " "))
+
 	w, err := cmd.StdinPipe()
-	require.NoError(err, "can't start server")
+	require.NoError(err, "can't start lookoutd")
 
 	err = cmd.Start()
-	require.NoError(err, "can't start server")
+	require.NoError(err, "can't start lookoutd")
 
 	go func() {
 		if err := cmd.Wait(); err != nil {
-			// don't print error if analyzer was killed by cancel
+			// don't print error if killed by cancel
 			if suite.Ctx.Err() != context.Canceled {
-				fmt.Println("server exited with error:", err)
+				fmt.Println("lookoutd exited with error:", err)
 				fmt.Printf("output:\n%s", buf.String())
 				// T.Fail cannot be called from a goroutine
 				suite.Stop()
@@ -115,6 +162,19 @@ func (suite *IntegrationSuite) StartServe(args ...string) (io.Reader, io.WriteCl
 	}()
 
 	return tee, w
+}
+
+// IsQueueTested returns true if LOOKOUT_TEST_QUEUE env var is set to true
+func (suite *IntegrationSuite) IsQueueTested() bool {
+	res := false
+	qEnv := os.Getenv("LOOKOUT_TEST_QUEUE")
+	if qEnv != "" {
+		var err error
+		res, err = strconv.ParseBool(qEnv)
+		require.NoError(suite.T(), err, "failed to parse env var LOOKOUT_TEST_QUEUE, it must be a boolean")
+	}
+
+	return res
 }
 
 // RunCli runs lookout subcommand (not a server)
@@ -146,7 +206,7 @@ func (suite *IntegrationSuite) ResetDB() {
 	suite.runQuery(db, "GRANT ALL ON SCHEMA public TO postgres;")
 	suite.runQuery(db, "GRANT ALL ON SCHEMA public TO public;")
 
-	suite.T().Logf("running %s", lookoutBin)
+	fmt.Println("running lookoutd migrate")
 	err = exec.Command(lookoutBin, "migrate").Run()
 	require.NoError(err, "can't migrate DB")
 }

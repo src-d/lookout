@@ -54,14 +54,19 @@ func (c *ReviewCommand) Execute(args []string) error {
 		return err
 	}
 
-	srv := server.NewServer(nil, &server.LogPoster{log.DefaultLogger}, dataSrv.FileGetter, map[string]lookout.Analyzer{
+	srv := server.NewServer(&server.LogPoster{log.DefaultLogger}, dataSrv.FileGetter, map[string]lookout.Analyzer{
 		"test-analyzes": lookout.Analyzer{
 			Client: client,
 		},
 	}, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
 
+	id, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+
 	err = srv.HandleReview(context.TODO(), &lookout.ReviewEvent{
-		InternalID:  uuid.NewV4().String(),
+		InternalID:  id.String(),
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 		IsMergeable: true,

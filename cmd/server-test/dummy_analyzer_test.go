@@ -21,11 +21,8 @@ func (suite *DummyIntegrationSuite) SetupTest() {
 
 	suite.StoppableCtx()
 	suite.StartDummy("--files")
-	suite.r, suite.w = suite.StartServe("--provider", "json",
-		"-c", dummyConfigFile)
 
-	// make sure server started correctly
-	suite.GrepTrue(suite.r, "Starting watcher")
+	suite.r, suite.w = suite.StartLookoutd(dummyConfigFile)
 }
 
 func (suite *DummyIntegrationSuite) TearDownTest() {
