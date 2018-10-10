@@ -18,6 +18,7 @@ A service for assisted code review, that allows running custom code Analyzers on
          * [Installation](#installation)
          * [Dependencies](#dependencies)
          * [Quickstart](#quickstart)
+      * [Running in Distributed Mode](#running-in-distributed-mode)
    * [Available Analyzers](#available-analyzers)
    * [SDK for Analyzer Developers](#sdk-for-analyzer-developers)
    * [Development](#development)
@@ -107,6 +108,12 @@ Following these steps you will be able to run separately the **lookout** depende
     ```bash
     $ lookoutd serve --dry-run
     ```
+
+## Running in Distributed Mode
+
+_Note_: This is a work in progress feature.
+
+Please refer to the [**Running in Distributed Mode guide**](docs/distributed.md) for documentation on the advanced distributed deployment.
 
 # Available Analyzers
 
