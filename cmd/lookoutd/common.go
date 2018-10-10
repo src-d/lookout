@@ -393,8 +393,15 @@ func (c *queueConsumerCommand) initAnalyzers(conf Config) (map[string]lookout.An
 	return analyzers, nil
 }
 
-func (c *lookoutdCommand) runEventEnqueuer(ctx context.Context, qOpt cli.QueueOptions, watcher lookout.Watcher) error {
-	return cli.RunWatcher(ctx, watcher, queue_util.EventEnqueuer(ctx, qOpt.Q))
+func (c *lookoutdCommand) runEventEnqueuer(
+	ctx context.Context,
+	qOpt cli.QueueOptions,
+	watcher lookout.Watcher,
+) error {
+	return cli.RunWatcher(
+		ctx,
+		watcher,
+		lookout.CachedHandler(queue_util.EventEnqueuer(ctx, qOpt.Q)))
 }
 
 func (c *queueConsumerCommand) runEventDequeuer(ctx context.Context, qOpt cli.QueueOptions, server *server.Server) error {
