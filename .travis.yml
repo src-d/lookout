@@ -33,8 +33,8 @@ jobs:
       script: make test-coverage codecov
     - name: 'SDK Integration Tests Linux'
       script:
-        - docker run -d --name bblfshd --privileged -v $HOME/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd:v2.7.2
-        - docker exec -it bblfshd bblfshctl driver install go bblfsh/go-driver:v2.2.0
+        - docker run -d --name bblfshd --privileged -v $HOME/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd:v2.9.0
+        - docker exec -it bblfshd bblfshctl driver install --force go bblfsh/go-driver:v2.2.0
         - make test-sdk
     - name: 'SDK Integration Tests macOS'
       if: NOT type = pull_request
