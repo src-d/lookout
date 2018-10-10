@@ -12,22 +12,39 @@ func init() {
 	queue.Register("memory", func(uri string) (queue.Broker, error) {
 		return New(), nil
 	})
+
+	queue.Register("memoryfinite", func(uri string) (queue.Broker, error) {
+		return NewFinite(true), nil
+	})
 }
 
 // Broker is a in-memory implementation of Broker.
 type Broker struct {
 	queues map[string]queue.Queue
+	finite bool
 }
 
 // New creates a new Broker for an in-memory queue.
 func New() queue.Broker {
-	return &Broker{make(map[string]queue.Queue)}
+	return NewFinite(false)
+}
+
+// NewFinite creates a new Broker for an in-memory queue. The argument
+// specifies if the JobIter stops on EOF or not.
+func NewFinite(finite bool) queue.Broker {
+	return &Broker{
+		queues: make(map[string]queue.Queue),
+		finite: finite,
+	}
 }
 
 // Queue returns the queue with the given name.
 func (b *Broker) Queue(name string) (queue.Queue, error) {
 	if _, ok := b.queues[name]; !ok {
-		b.queues[name] = &Queue{jobs: make([]*queue.Job, 0, 10)}
+		b.queues[name] = &Queue{
+			jobs:   make([]*queue.Job, 0, 10),
+			finite: b.finite,
+		}
 	}
 
 	return b.queues[name], nil
@@ -45,6 +62,7 @@ type Queue struct {
 	sync.RWMutex
 	idx                int
 	publishImmediately bool
+	finite             bool
 }
 
 // Publish publishes a Job to the queue.
@@ -101,13 +119,14 @@ func (q *Queue) Transaction(txcb queue.TxCallback) error {
 
 // Consume implements Queue.  MemoryQueues have infinite advertised window.
 func (q *Queue) Consume(_ int) (queue.JobIter, error) {
-	return &JobIter{q: q, RWMutex: &q.RWMutex}, nil
+	return &JobIter{q: q, RWMutex: &q.RWMutex, finite: q.finite}, nil
 }
 
 // JobIter implements a queue.JobIter interface.
 type JobIter struct {
 	q      *Queue
 	closed bool
+	finite bool
 	*sync.RWMutex
 }
 
@@ -149,12 +168,15 @@ func (i *JobIter) Next() (*queue.Job, error) {
 		}
 
 		j, err := i.next()
-		if err != nil {
-			time.Sleep(1 * time.Second)
-			continue
+		if err == nil {
+			return j, nil
 		}
 
-		return j, nil
+		if err == io.EOF && i.finite {
+			return nil, err
+		}
+
+		time.Sleep(1 * time.Second)
 	}
 }
 
