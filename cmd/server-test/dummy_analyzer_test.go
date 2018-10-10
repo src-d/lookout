@@ -37,6 +37,10 @@ func (suite *DummyIntegrationSuite) TestSuccessReview() {
 }
 
 func (suite *DummyIntegrationSuite) TestSkipReview() {
+	if suite.IsQueueTested() {
+		suite.T().Skip("skipping test, with a queue the watcher will not enqueue repeated jobs")
+	}
+
 	suite.sendEvent(successJSON)
 	suite.GrepTrue(suite.r, `status=success`)
 
