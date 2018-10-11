@@ -36,18 +36,6 @@ func (suite *DummyIntegrationSuite) TestSuccessReview() {
 	suite.GrepTrue(suite.r, `status=success`)
 }
 
-func (suite *DummyIntegrationSuite) TestSkipReview() {
-	if suite.IsQueueTested() {
-		suite.T().Skip("skipping test, with a queue the watcher will not enqueue repeated jobs")
-	}
-
-	suite.sendEvent(successJSON)
-	suite.GrepTrue(suite.r, `status=success`)
-
-	suite.sendEvent(successJSON)
-	suite.GrepTrue(suite.r, `event successfully processed, skipping...`)
-}
-
 func (suite *DummyIntegrationSuite) TestReviewDontPostSameComment() {
 	fixture := fixtures.GetByName("incremental-pr")
 

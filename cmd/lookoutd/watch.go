@@ -44,5 +44,5 @@ func (c *WatchCommand) Execute(args []string) error {
 	c.probeReadiness = true
 
 	ctx := context.Background()
-	return c.runEventEnqueuer(ctx, c.QueueOptions, watcher, true)
+	return c.runEventEnqueuer(ctx, c.QueueOptions, watcher)
 }

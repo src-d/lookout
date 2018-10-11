@@ -87,7 +87,7 @@ func (c *ServeCommand) Execute(args []string) error {
 	}()
 
 	go func() {
-		enqErrCh <- c.runEventEnqueuer(ctx, qOpt, watcher, false)
+		enqErrCh <- c.runEventEnqueuer(ctx, qOpt, watcher)
 	}()
 
 	select {

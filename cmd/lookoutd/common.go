@@ -388,14 +388,11 @@ func (c *lookoutdCommand) runEventEnqueuer(
 	ctx context.Context,
 	qOpt cli.QueueOptions,
 	watcher lookout.Watcher,
-	useCache bool,
 ) error {
-	handler := queue_util.EventEnqueuer(ctx, qOpt.Q)
-	if useCache {
-		handler = lookout.CachedHandler(handler)
-	}
-
-	return cli.RunWatcher(ctx, watcher, handler)
+	return cli.RunWatcher(
+		ctx,
+		watcher,
+		lookout.CachedHandler(queue_util.EventEnqueuer(ctx, qOpt.Q)))
 }
 
 func (c *queueConsumerCommand) runEventDequeuer(ctx context.Context, qOpt cli.QueueOptions, server *server.Server) error {
