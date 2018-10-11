@@ -23,18 +23,10 @@ services:
     ports:
       - "10302:10302"
   bblfsh:
-    image: "bblfsh/bblfshd:v2.7.2"
+    image: "bblfsh/bblfshd:v2.9.0-drivers"
     privileged: true
     ports:
       - "9432:9432"
-    volumes:
-      - type: volume
-        source: drivers
-        target: /var/lib/bblfshd
-    entrypoint: ["/bin/sh"]
-    command:
-    - "-c"
-    - "bblfshd & sleep 1 && bblfshctl driver install --recommended && tail -f /dev/null"
   postgres:
     image: "postgres:alpine"
     restart: always
@@ -43,5 +35,3 @@ services:
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: lookout
-volumes:
-  drivers:
