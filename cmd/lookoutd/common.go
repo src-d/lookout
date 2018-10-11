@@ -80,8 +80,17 @@ func (c *lookoutdCommand) initConfig() (Config, error) {
 	var conf Config
 	configData, err := ioutil.ReadFile(c.ConfigFile)
 	if err != nil {
+		// Special case for #289. When using docker-compose, if 'config.yml' does
+		// not exist the volume will be mounted as an empty directory
+		// named 'config.yml'
+		fi, errStat := os.Stat(c.ConfigFile)
+		if c.ConfigFile == "config.yml" && errStat == nil && fi.IsDir() {
+			return conf, fmt.Errorf("Can't open configuration file. If you are using docker-compose, make sure './config.yml' exists")
+		}
+
 		return conf, fmt.Errorf("Can't open configuration file: %s", err)
 	}
+
 	if err := yaml.Unmarshal([]byte(configData), &conf); err != nil {
 		return conf, fmt.Errorf("Can't parse configuration file: %s", err)
 	}
