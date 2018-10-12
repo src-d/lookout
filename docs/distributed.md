@@ -29,3 +29,10 @@ The `lookoutd watch` and `work` subcommands accept the following options to conf
 | -- | -- | -- | -- |
 | `LOOKOUT_QUEUE`  | `--queue=`  | queue name | `lookout` |
 | `LOOKOUT_BROKER` | `--broker=` | broker service URI | `amqp://localhost:5672` |
+
+You can also adjust the number of events that each _worker_ will process concurrently:
+
+| Env var | Option | Description | Default |
+| -- | -- | -- | -- |
+| `LOOKOUT_WORKERS` | `--workers=` | number of concurrent workers processing events, 0 means the same number as processors | 1  |
+
