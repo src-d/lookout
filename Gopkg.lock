@@ -483,6 +483,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:e0140c0c868c6e0f01c0380865194592c011fe521d6e12d78bfd33e756fe018a"
+  name = "golang.org/x/sync"
+  packages = ["semaphore"]
+  pruneopts = "NUT"
+  revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
+
+[[projects]]
+  branch = "master"
   digest = "1:baa3044d8a33b3cd690c16fd555c5a543f980206cd1a696f7902307f57f911ec"
   name = "golang.org/x/sys"
   packages = [
@@ -796,7 +804,6 @@
     "github.com/jessevdk/go-flags",
     "github.com/jinzhu/copier",
     "github.com/lib/pq",
-    "github.com/pkg/errors",
     "github.com/sanity-io/litter",
     "github.com/satori/go.uuid",
     "github.com/src-d/lookout-test-fixtures",
@@ -804,6 +811,7 @@
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
+    "golang.org/x/sync/semaphore",
     "google.golang.org/grpc",
     "google.golang.org/grpc/connectivity",
     "gopkg.in/bblfsh/sdk.v1/protocol",
