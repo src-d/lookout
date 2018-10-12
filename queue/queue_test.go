@@ -3,6 +3,9 @@ package queue
 import (
 	"context"
 	"io"
+	"strconv"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/src-d/lookout"
@@ -29,8 +32,8 @@ var (
 	}
 )
 
-func initQueue(t *testing.T) queue.Queue {
-	b, err := queue.NewBroker("memoryfinite://")
+func initQueue(t *testing.T, broker string) queue.Queue {
+	b, err := queue.NewBroker(broker)
 	require.NoError(t, err)
 
 	q, err := b.Queue("lookout-test")
@@ -68,7 +71,7 @@ func TestQueueJobCreation(t *testing.T) {
 func TestEnqueuerNoCache(t *testing.T) {
 	// Enqueue the same event twice, dequeue it twice
 
-	q := initQueue(t)
+	q := initQueue(t, "memoryfinite://")
 
 	handler := EventEnqueuer(context.TODO(), q)
 	handler(context.TODO(), &mockEventA)
@@ -90,7 +93,7 @@ func TestEnqueuerNoCache(t *testing.T) {
 func TestEnqueuerCache(t *testing.T) {
 	// Enqueue the same event twice, it should be available to dequeue only once
 
-	q := initQueue(t)
+	q := initQueue(t, "memoryfinite://")
 
 	handler := lookout.CachedHandler(EventEnqueuer(context.TODO(), q))
 	handler(context.TODO(), &mockEventA)
@@ -106,4 +109,78 @@ func TestEnqueuerCache(t *testing.T) {
 	nextOK(t, iter)
 
 	nextEOF(t, iter)
+}
+
+func TestDequeuer(t *testing.T) {
+	q := initQueue(t, "memory://")
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	calls := 0
+	handler := func(context.Context, lookout.Event) error {
+		calls++
+		wg.Done()
+		return nil
+	}
+
+	go RunEventDequeuer(context.TODO(), q, handler, 1)
+
+	assert.Equal(t, 0, calls)
+
+	enq := EventEnqueuer(context.TODO(), q)
+	enq(context.TODO(), &mockEventA)
+	enq(context.TODO(), &mockEventB)
+
+	wg.Wait()
+	assert.Equal(t, 2, calls)
+}
+
+func TestDequeuerConcurrent(t *testing.T) {
+	testCases := []int{1, 2, 13, 150}
+
+	for _, n := range testCases {
+		t.Run(strconv.Itoa(n), func(t *testing.T) {
+			var wg sync.WaitGroup
+			wg.Add(1)
+
+			var called sync.WaitGroup
+
+			var calls int32
+			atomic.StoreInt32(&calls, 0)
+			handler := func(context.Context, lookout.Event) error {
+				atomic.AddInt32(&calls, 1)
+				called.Done()
+				wg.Wait()
+				return nil
+			}
+
+			ctx, cancel := context.WithCancel(context.Background())
+			q := initQueue(t, "memory://")
+			go RunEventDequeuer(ctx, q, handler, n)
+
+			assert.EqualValues(t, 0, atomic.LoadInt32(&calls))
+
+			called.Add(n)
+
+			// Enqueue some jobs, 3 * n of goroutines
+			enq := EventEnqueuer(ctx, q)
+			for i := 0; i < n*3; i++ {
+				enq(ctx, &mockEventA)
+			}
+
+			// The first batch of handler calls should be exactly N
+			called.Wait()
+			assert.EqualValues(t, n, atomic.LoadInt32(&calls))
+
+			// Let the dequeuer go though all the jobs, should be 3*N
+			called.Add(2 * n)
+			wg.Done()
+			called.Wait()
+
+			assert.EqualValues(t, 3*n, atomic.LoadInt32(&calls))
+
+			cancel()
+		})
+	}
 }
