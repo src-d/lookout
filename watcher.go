@@ -3,6 +3,7 @@ package lookout
 import (
 	"context"
 
+	lru "github.com/hashicorp/golang-lru"
 	"gopkg.in/src-d/go-errors.v1"
 )
 
@@ -22,3 +23,28 @@ type Watcher interface {
 
 // EventHandler is the function to be called when a new event happens.
 type EventHandler func(context.Context, Event) error
+
+const cacheSize = 100000
+
+// CachedHandler wraps an EventHandler, keeping a cache to skip successfully
+// processed Events
+func CachedHandler(fn EventHandler) EventHandler {
+	cache, err := lru.New(cacheSize)
+	if err != nil {
+		panic(err)
+	}
+
+	return func(ctx context.Context, e Event) error {
+		if _, ok := cache.Get(e.ID()); ok {
+			return nil
+		}
+
+		err := fn(ctx, e)
+
+		if err == nil {
+			cache.Add(e.ID(), nil)
+		}
+
+		return err
+	}
+}
