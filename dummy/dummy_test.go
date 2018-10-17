@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-git-fixtures.v3"
+	"gopkg.in/src-d/go-git.v4/plumbing/cache"
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 	log "gopkg.in/src-d/go-log.v1"
 )
@@ -42,8 +43,7 @@ func (s *DummySuite) SetupSuite() {
 	fixture := fixtures.Basic().One()
 	s.Basic = fixture
 	fs := fixture.DotGit()
-	sto, err := filesystem.NewStorage(fs)
-	require.NoError(err)
+	sto := filesystem.NewStorage(fs, cache.NewObjectLRU(cache.DefaultMaxSize))
 
 	s.apiServer = grpc.NewServer()
 	server := &lookout.DataServerHandler{

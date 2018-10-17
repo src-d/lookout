@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	fixtures "gopkg.in/src-d/go-git-fixtures.v3"
+	"gopkg.in/src-d/go-git.v4/plumbing/cache"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
@@ -32,8 +33,7 @@ func (s *ServiceSuite) SetupSuite() {
 
 	fixture := fixtures.Basic().One()
 	fs := fixture.DotGit()
-	sto, err := filesystem.NewStorage(fs)
-	require.NoError(err)
+	sto := filesystem.NewStorage(fs, cache.NewObjectLRU(cache.DefaultMaxSize))
 
 	s.Basic = fixture
 	s.Storer = sto
@@ -67,8 +67,7 @@ func (s *ServiceSuite) TestTreeChangesDeleteFile() {
 
 	fixture := fixtures.ByURL("https://github.com/src-d/go-git.git").One()
 	fs := fixture.DotGit()
-	sto, err := filesystem.NewStorage(fs)
-	require.NoError(err)
+	sto := filesystem.NewStorage(fs, cache.NewObjectLRU(cache.DefaultMaxSize))
 
 	dr := NewService(&StorerCommitLoader{sto})
 	resp, err := dr.GetChanges(context.TODO(), &lookout.ChangesRequest{
