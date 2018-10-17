@@ -655,7 +655,7 @@
   version = "v3.1.0"
 
 [[projects]]
-  digest = "1:f83a1e160ab0e7184716c36431aa12ffa7da8016cc9f2c00adc3a2fc77559583"
+  digest = "1:8225fd93ba0a18906b05a2ab52808349968f11a8c9c4be27001c2d10dbf781ef"
   name = "gopkg.in/src-d/go-git.v4"
   packages = [
     ".",
@@ -700,8 +700,8 @@
     "utils/merkletrie/noder",
   ]
   pruneopts = "NUT"
-  revision = "b23570073eaee3489e5e3d666f22ba5cbeb53243"
-  version = "v4.4.1"
+  revision = "cd64b4d630b6c2d2b3d72e9615e14f9d58bb5787"
+  version = "v4.7.1"
 
 [[projects]]
   digest = "1:c1d9b0ec7eca0c5f1b82abe29ec426a94f43b0f1a4641f99ac80af921fe123fe"
@@ -820,6 +820,7 @@
     "gopkg.in/src-d/go-git.v4/plumbing",
     "gopkg.in/src-d/go-git.v4/plumbing/object",
     "gopkg.in/src-d/go-git.v4/plumbing/storer",
+    "gopkg.in/src-d/go-git.v4/plumbing/transport/http",
     "gopkg.in/src-d/go-git.v4/storage",
     "gopkg.in/src-d/go-git.v4/storage/filesystem",
     "gopkg.in/src-d/go-git.v4/utils/binary",
