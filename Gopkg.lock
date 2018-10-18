@@ -723,7 +723,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:81e67057a8a099050b28dae9eaa390d29cdb5e266d84271366c30314c0e93e6a"
+  digest = "1:30a3b11284f8d5d7cd70b69ce248b3b1be42d60925f890041bd8053aa4e84b57"
   name = "gopkg.in/src-d/go-queue.v1"
   packages = [
     ".",
@@ -731,8 +731,8 @@
     "memory",
   ]
   pruneopts = "NUT"
-  revision = "6214d25507193fb3f3f011d29ed75cee98bd84b0"
-  version = "v1.0.4"
+  revision = "a66740343c2e86af43071508783c16b9c5f92319"
+  version = "v1.0.5"
 
 [[projects]]
   digest = "1:e532b733db09e0d561bd3d10a3c50198234aee2ff289211f3c1f6f44d9aeaf1f"
@@ -796,7 +796,6 @@
     "github.com/jessevdk/go-flags",
     "github.com/jinzhu/copier",
     "github.com/lib/pq",
-    "github.com/pkg/errors",
     "github.com/sanity-io/litter",
     "github.com/satori/go.uuid",
     "github.com/src-d/lookout-test-fixtures",
