@@ -1,6 +1,7 @@
 package github
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/src-d/lookout"
@@ -8,6 +9,8 @@ import (
 	"github.com/src-d/lookout/util/ctxlog"
 
 	vcsurl "gopkg.in/sourcegraph/go-vcsurl.v1"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+	githttp "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	log "gopkg.in/src-d/go-log.v1"
 )
 
@@ -42,10 +45,21 @@ func NewClientPoolFromTokens(urlToConfig map[string]ClientConfig, cache *cache.V
 	byClients := make(map[*Client][]*lookout.RepositoryInfo, len(byConfig))
 	byRepo := make(map[string]*Client, len(urlToConfig))
 	for conf, repos := range byConfig {
-		client := NewClient(&roundTripper{
+		rt := &roundTripper{
 			User:     conf.User,
 			Password: conf.Token,
-		}, cache, conf.MinInterval)
+		}
+
+		// Auth must be: https://<token>@github.com/owner/repo.git
+		// Reference: https://blog.github.com/2012-09-21-easier-builds-and-deployments-using-git-over-https-and-oauth/
+		gitAuth := func(ctx context.Context) transport.AuthMethod {
+			return &githttp.BasicAuth{
+				Username: conf.Token,
+				Password: "",
+			}
+		}
+
+		client := NewClient(rt, cache, conf.MinInterval, gitAuth)
 
 		if _, ok := byClients[client]; !ok {
 			byClients[client] = []*lookout.RepositoryInfo{}

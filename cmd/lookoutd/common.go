@@ -326,8 +326,17 @@ func (c *queueConsumerCommand) initDataHandler() (*lookout.DataServerHandler, er
 		return nil, err
 	}
 
+	var authProvider git.AuthProvider
+	if c.Provider == github.Provider {
+		if c.pool == nil {
+			return nil, fmt.Errorf("pool must be initialized with initProvider")
+		}
+
+		authProvider = c.pool
+	}
+
 	lib := git.NewLibrary(osfs.New(c.Library))
-	sync := git.NewSyncer(lib)
+	sync := git.NewSyncer(lib, authProvider)
 	loader := git.NewLibraryCommitLoader(lib, sync)
 
 	gitService := git.NewService(loader)

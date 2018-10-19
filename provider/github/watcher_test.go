@@ -296,7 +296,7 @@ func (s *WatcherTestSuite) TestCustomMinInterval() {
 	s.mux.HandleFunc("/repos/mock/test/events", eventsHandler(&eventCalls))
 
 	clientMinInterval := 200 * time.Millisecond
-	client := NewClient(nil, s.cache, clientMinInterval.String())
+	client := NewClient(nil, s.cache, clientMinInterval.String(), nil)
 	client.BaseURL = s.githubURL
 	client.UploadURL = s.githubURL
 
@@ -483,7 +483,7 @@ func (t *NoopTransport) Get(repo string) http.RoundTripper {
 }
 
 func newClient(githubURL *url.URL, cache *cache.ValidableCache) *Client {
-	client := NewClient(nil, cache, "")
+	client := NewClient(nil, cache, "", nil)
 	client.BaseURL = githubURL
 	client.UploadURL = githubURL
 	return client

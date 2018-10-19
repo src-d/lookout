@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/src-d/lookout"
@@ -66,7 +67,7 @@ func (p *Poster) Post(ctx context.Context, e lookout.Event,
 
 		return p.postPR(ctx, ev, aCommentsList)
 	default:
-		return ErrEventNotSupported.Wrap(fmt.Errorf("unsupported event type"))
+		return ErrEventNotSupported.Wrap(fmt.Errorf("unsupported event type %s", reflect.TypeOf(e)))
 	}
 }
 
@@ -302,7 +303,7 @@ func (p *Poster) Status(ctx context.Context, e lookout.Event, status lookout.Ana
 
 		return p.statusPR(ctx, ev, status)
 	default:
-		return ErrEventNotSupported.Wrap(fmt.Errorf("unsupported event type"))
+		return ErrEventNotSupported.Wrap(fmt.Errorf("unsupported event type %s", reflect.TypeOf(e)))
 	}
 }
 
