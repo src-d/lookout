@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/src-d/lookout"
@@ -55,6 +56,7 @@ type queueConsumerCommand struct {
 	Bblfshd    string `long:"bblfshd" default:"ipv4://localhost:9432" env:"LOOKOUT_BBLFSHD" description:"gRPC URL of the Bblfshd server"`
 	DryRun     bool   `long:"dry-run" env:"LOOKOUT_DRY_RUN" description:"analyze repositories and log the result without posting code reviews to GitHub"`
 	Library    string `long:"library" default:"/tmp/lookout" env:"LOOKOUT_LIBRARY" description:"path to the lookout library"`
+	Workers    int    `long:"workers" env:"LOOKOUT_WORKERS" default:"1" description:"number of concurrent workers processing events, 0 means the same number as processors"`
 
 	analyzers map[string]lookout.AnalyzerClient
 }
@@ -405,5 +407,10 @@ func (c *lookoutdCommand) runEventEnqueuer(
 }
 
 func (c *queueConsumerCommand) runEventDequeuer(ctx context.Context, qOpt cli.QueueOptions, server *server.Server) error {
-	return queue_util.RunEventDequeuer(ctx, qOpt.Q, server.HandleEvent)
+	if c.Workers <= 0 {
+		c.Workers = runtime.NumCPU()
+		log.Infof("option --workers is 0, it will be set to the number of processors: %d", c.Workers)
+	}
+
+	return queue_util.RunEventDequeuer(ctx, qOpt.Q, server.HandleEvent, c.Workers)
 }
