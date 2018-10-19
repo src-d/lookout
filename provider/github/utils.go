@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-github/github"
 	"gopkg.in/sourcegraph/go-vcsurl.v1"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 func castEvent(r *lookout.RepositoryInfo, e *github.Event) (lookout.Event, error) {
@@ -100,7 +101,10 @@ func castPullRequestBranch(ctx context.Context, b *github.PullRequestBranch) loo
 
 	r, err := vcsurl.Parse(b.GetRepo().GetCloneURL())
 	if err != nil {
-		ctxlog.Get(ctx).Warningf("malformed repository URL on pull request branch")
+		ctxlog.Get(ctx).With(log.Fields{
+			"url": b.GetRepo().GetCloneURL()},
+		).Warningf("malformed repository URL on pull request branch")
+
 		return lookout.ReferencePointer{}
 	}
 
