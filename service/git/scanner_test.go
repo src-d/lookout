@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/src-d/go-git-fixtures.v3"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/cache"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
@@ -34,8 +35,7 @@ func (s *ScannerSuite) SetupSuite() {
 
 	fixture := fixtures.Basic().One()
 	fs := fixture.DotGit()
-	sto, err := filesystem.NewStorage(fs)
-	require.NoError(err)
+	sto := filesystem.NewStorage(fs, cache.NewObjectLRU(cache.DefaultMaxSize))
 
 	s.Basic = fixture
 	s.Storer = sto

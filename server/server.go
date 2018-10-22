@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sync"
 
 	"github.com/src-d/lookout"
@@ -40,7 +41,7 @@ func NewServer(p lookout.Poster, fileGetter lookout.FileGetter,
 // HandleEvent processes the event calling the analyzers, and posting the results
 func (s *Server) HandleEvent(ctx context.Context, e lookout.Event) error {
 	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{
-		"event-type": e.Type(),
+		"event-type": reflect.TypeOf(e),
 		"event-id":   e.ID().String(),
 		"repo":       e.Revision().Head.InternalRepositoryURL,
 		"head":       e.Revision().Head.ReferenceName,

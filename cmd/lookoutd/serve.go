@@ -28,6 +28,11 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
+	err = c.initProvider(conf)
+	if err != nil {
+		return err
+	}
+
 	dataHandler, err := c.initDataHandler()
 	if err != nil {
 		return err
@@ -45,11 +50,6 @@ func (c *ServeCommand) Execute(args []string) error {
 	eventOp, commentsOp := c.initDBOperators(db)
 
 	analyzers, err := c.initAnalyzers(conf)
-	if err != nil {
-		return err
-	}
-
-	err = c.initProvider(conf)
 	if err != nil {
 		return err
 	}

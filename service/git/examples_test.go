@@ -7,6 +7,7 @@ import (
 	"github.com/src-d/lookout"
 
 	"gopkg.in/src-d/go-git-fixtures.v3"
+	"gopkg.in/src-d/go-git.v4/plumbing/cache"
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
 
@@ -18,10 +19,7 @@ func Example() {
 
 	fixture := fixtures.Basic().One()
 	fs := fixture.DotGit()
-	storer, err := filesystem.NewStorage(fs)
-	if err != nil {
-		panic(err)
-	}
+	storer := filesystem.NewStorage(fs, cache.NewObjectLRU(cache.DefaultMaxSize))
 
 	// Create the git service with a repository loader that allows it to find
 	// a repository by ID.

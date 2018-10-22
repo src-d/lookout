@@ -1,6 +1,7 @@
 package github
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
@@ -8,11 +9,13 @@ import (
 	"time"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/service/git"
 	"github.com/src-d/lookout/util/cache"
 	"github.com/src-d/lookout/util/ctxlog"
 
 	"github.com/google/go-github/github"
 	"github.com/gregjones/httpcache"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	log "gopkg.in/src-d/go-log.v1"
 )
 
@@ -214,16 +217,36 @@ func (p *ClientPool) notify(e ClientPoolEvent) {
 	}
 }
 
+var _ git.AuthProvider = &ClientPool{}
+
+// GitAuth returns a go-git auth method for a repo
+func (p *ClientPool) GitAuth(ctx context.Context, repoInfo *lookout.RepositoryInfo) transport.AuthMethod {
+	c, ok := p.Client(repoInfo.Username, repoInfo.Name)
+	if !ok {
+		return nil
+	}
+
+	return c.gitAuth(ctx)
+}
+
+type gitAuthFn = func(ctx context.Context) transport.AuthMethod
+
 // Client is a wrapper for github.Client that supports cache and provides rate limit information
 type Client struct {
 	*github.Client
 	cache            *cache.ValidableCache
 	limitRT          *limitRoundTripper
 	watchMinInterval time.Duration
+	gitAuth          gitAuthFn
 }
 
 // NewClient creates new Client
-func NewClient(t http.RoundTripper, cache *cache.ValidableCache, watchMinInterval string) *Client {
+func NewClient(
+	t http.RoundTripper,
+	cache *cache.ValidableCache,
+	watchMinInterval string,
+	gitAuth gitAuthFn,
+) *Client {
 	limitRT := &limitRoundTripper{
 		Base: t,
 	}
@@ -247,6 +270,7 @@ func NewClient(t http.RoundTripper, cache *cache.ValidableCache, watchMinInterva
 		cache:            cache,
 		limitRT:          limitRT,
 		watchMinInterval: interval,
+		gitAuth:          gitAuth,
 	}
 }
 

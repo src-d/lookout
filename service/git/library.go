@@ -14,6 +14,7 @@ import (
 	"gopkg.in/src-d/go-errors.v1"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
+	"gopkg.in/src-d/go-git.v4/plumbing/cache"
 	"gopkg.in/src-d/go-git.v4/storage"
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
@@ -142,7 +143,9 @@ func (l *Library) repositoryStorer(url *lookout.RepositoryInfo) (
 		return nil, err
 	}
 
-	return filesystem.NewStorage(fs)
+	// TODO(carlosms) take cache size from config
+	cache := cache.NewObjectLRU(cache.DefaultMaxSize)
+	return filesystem.NewStorage(fs, cache), nil
 }
 
 func (l *Library) repositoryPath(url *lookout.RepositoryInfo) string {

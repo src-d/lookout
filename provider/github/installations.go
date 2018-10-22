@@ -8,7 +8,10 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/cache"
+	"github.com/src-d/lookout/util/ctxlog"
 	vcsurl "gopkg.in/sourcegraph/go-vcsurl.v1"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+	githttp "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	log "gopkg.in/src-d/go-log.v1"
 )
 
@@ -123,9 +126,24 @@ func (t *Installations) createClient(installationID int64) (*Client, error) {
 		return nil, err
 	}
 
+	// Auth must be: https://x-access-token:<token>@github.com/owner/repo.git
+	// Reference: https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/#http-based-git-access-by-an-installation
+	gitAuth := func(ctx context.Context) transport.AuthMethod {
+		token, err := itr.Token()
+		if err != nil {
+			ctxlog.Get(ctx).Errorf(err, "failed to get an installation access token")
+			return nil
+		}
+
+		return &githttp.BasicAuth{
+			Username: "x-access-token",
+			Password: token,
+		}
+	}
+
 	// TODO (carlosms): hardcoded, take from config
 	watchMinInterval := ""
-	return NewClient(itr, t.cache, watchMinInterval), nil
+	return NewClient(itr, t.cache, watchMinInterval, gitAuth), nil
 }
 
 func (t *Installations) getRepos(iClient *Client) ([]*lookout.RepositoryInfo, error) {
