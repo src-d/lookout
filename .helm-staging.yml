@@ -1,8 +1,14 @@
 app:
   lookout:
     logLevel: debug
-    dbConnectionString: postgres://lookout:lookout@lookout-postgresql:5432/lookout?sslmode=disable
     bblfshdConnectionString: ipv4://lookout-bblfshd-bblfshd:9432
+
+databases:
+  postgres:
+    cloudSQL: true
+    instanceConnectionName: srcd-public-staging:europe-west1:lookout-staging-primary
+    serviceAccountSecret: cloudsql-proxy-credentials
+    connectionDetailsSecret: lookout-postgres-connection-details
 
 nodeSelector:
  lookout:
