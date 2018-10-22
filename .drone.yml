@@ -28,7 +28,7 @@ helm_deploy: &helm_deploy
   helm_repos: srcd-charts=https://src-d.github.io/charts/
   chart: srcd-charts/lookout
   release: lookout
-  tiller_ns: kube-system
+  tiller_ns: lookout
 
 # PIPELINE STEPS
 
