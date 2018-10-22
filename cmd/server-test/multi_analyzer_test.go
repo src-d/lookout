@@ -3,7 +3,9 @@
 package server_test
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -30,24 +32,27 @@ func (suite *MultiDummyIntegrationSuite) TearDownTest() {
 }
 
 func (suite *MultiDummyIntegrationSuite) TestSuccessReview() {
+	var teebuf bytes.Buffer
+	tee := io.TeeReader(suite.r, &teebuf)
+
 	suite.sendEvent(successJSON)
-	suite.GrepTrue(suite.r, "processing pull request")
-	suite.GrepTrue(suite.r, "posting analysis")
-	found, buf := suite.Grep(suite.r, `status=success`)
-	suite.Require().Truef(found, "'%s' not found in:\n%s", `status=success`, buf.String())
+	suite.GrepTrue(tee, "processing pull request")
+	suite.GrepTrue(tee, "posting analysis")
+	found, buf := suite.Grep(tee, `status=success`)
+	suite.Require().Truef(found, "'%s' not found in:\n%s", `status=success`, teebuf.String())
 
 	st := buf.String()
 
 	suite.Require().Contains(
 		st,
 		`{"analyzer-name":"Dummy1","file":"another.go","line":3,"text":"This line exceeded`,
-		fmt.Sprintf("no comments from the first analyzer from %s in '%s'", doubleDummyConfigFile, buf),
+		fmt.Sprintf("no comments from the first analyzer from %s in logs:\n%s", doubleDummyConfigFile, teebuf.String()),
 	)
 
 	suite.Require().Contains(
 		st,
 		`{"analyzer-name":"Dummy2","file":"another.go","line":3,"text":"This line exceeded`,
-		fmt.Sprintf("no comments from the second analyzer from %s in '%s'", doubleDummyConfigFile, buf),
+		fmt.Sprintf("no comments from the second analyzer from %s in logs:\n%s", doubleDummyConfigFile, teebuf.String()),
 	)
 }
 
