@@ -4,6 +4,7 @@ package server_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/src-d/lookout"
 	fixtures "github.com/src-d/lookout-test-fixtures"
@@ -20,12 +21,16 @@ func (suite *DummyIntegrationSuite) SetupTest() {
 	suite.ResetDB()
 
 	suite.StoppableCtx()
-	suite.StartDummy("--files")
-
 	suite.r, suite.w = suite.StartLookoutd(dummyConfigFile)
+
+	suite.StartDummy("--files")
+	suite.GrepTrue(suite.r, `connection state changed to 'READY'`)
 }
 
 func (suite *DummyIntegrationSuite) TearDownTest() {
+	// TODO: for integration tests with RabbitMQ we wait a bit so the queue
+	// is depleted. Ideally this would be done with something similar to ResetDB
+	time.Sleep(5 * time.Second)
 	suite.Stop()
 }
 

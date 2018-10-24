@@ -28,6 +28,8 @@ type IntegrationSuite struct {
 	suite.Suite
 	Ctx  context.Context
 	Stop func()
+
+	logBuf *bytes.Buffer
 }
 
 func init() {
@@ -133,8 +135,8 @@ func (suite *IntegrationSuite) startLookoutd(args ...string) (io.Reader, io.Writ
 	require := suite.Require()
 
 	r, outputWriter := io.Pipe()
-	buf := &bytes.Buffer{}
-	tee := io.TeeReader(r, buf)
+	suite.logBuf = &bytes.Buffer{}
+	tee := io.TeeReader(r, suite.logBuf)
 
 	cmd := exec.CommandContext(suite.Ctx, lookoutBin, args...)
 	cmd.Stdout = outputWriter
@@ -153,7 +155,7 @@ func (suite *IntegrationSuite) startLookoutd(args ...string) (io.Reader, io.Writ
 			// don't print error if killed by cancel
 			if suite.Ctx.Err() != context.Canceled {
 				fmt.Println("lookoutd exited with error:", err)
-				fmt.Printf("output:\n%s", buf.String())
+				fmt.Printf("output:\n%s", suite.logBuf.String())
 				// T.Fail cannot be called from a goroutine
 				suite.Stop()
 				os.Exit(1)

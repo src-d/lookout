@@ -19,8 +19,9 @@ func (s *IntegrationSuite) GrepTrue(r io.Reader, substr string) {
 	if !found {
 		fmt.Printf("'%s' is not found in output:\n", substr)
 		fmt.Println(buf.String())
+		fmt.Printf("\nThe complete command output:\n%s", s.logBuf.String())
 		s.Stop()
-		s.Suite.T().Fail()
+		s.Suite.T().FailNow()
 	}
 }
 
@@ -31,15 +32,17 @@ func (s *IntegrationSuite) GrepAndNot(r io.Reader, substr, noSubstr string) {
 	if !found {
 		fmt.Printf("'%s' is not found in output:\n", substr)
 		fmt.Println(buf.String())
+		fmt.Printf("\nThe complete command output:\n%s", s.logBuf.String())
 		s.Stop()
-		s.Suite.T().Fail()
+		s.Suite.T().FailNow()
 		return
 	}
 	if strings.Contains(buf.String(), noSubstr) {
 		fmt.Printf("'%s' should not be in output:\n", noSubstr)
 		fmt.Println(buf.String())
+		fmt.Printf("\nThe complete command output:\n%s", s.logBuf.String())
 		s.Stop()
-		s.Suite.T().Fail()
+		s.Suite.T().FailNow()
 	}
 }
 

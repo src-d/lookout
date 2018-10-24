@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/grpchelper"
@@ -54,12 +55,16 @@ func (suite *ErrorAnalyzerIntegrationSuite) SetupTest() {
 	suite.ResetDB()
 
 	suite.StoppableCtx()
-	suite.startAnalyzer(suite.Ctx, &errAnalyzer{})
-
 	suite.r, suite.w = suite.StartLookoutd(dummyConfigFile)
+
+	suite.startAnalyzer(suite.Ctx, &errAnalyzer{})
+	suite.GrepTrue(suite.r, `connection state changed to 'READY'`)
 }
 
 func (suite *ErrorAnalyzerIntegrationSuite) TearDownTest() {
+	// TODO: for integration tests with RabbitMQ we wait a bit so the queue
+	// is depleted. Ideally this would be done with something similar to ResetDB
+	time.Sleep(5 * time.Second)
 	suite.Stop()
 }
 
