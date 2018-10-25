@@ -46,7 +46,7 @@ bindata:
 		-modtime 1 \
 		$(MIGRATIONS_PATH)/...
 
-GOTEST_INTEGRATION = $(GOTEST) -tags=integration
+GOTEST_INTEGRATION = $(GOTEST) -parallel 1 -race -tags=integration
 
 # Integration test for sdk client
 .PHONY: test-sdk
