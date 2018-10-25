@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -28,6 +29,7 @@ type IntegrationSuite struct {
 	suite.Suite
 	Ctx  context.Context
 	Stop func()
+	wg   sync.WaitGroup
 
 	logBuf *bytes.Buffer
 }
@@ -51,7 +53,7 @@ func (suite *IntegrationSuite) StoppableCtx() {
 		timeoutCancel()
 		cancel()
 		fmt.Println("stopping services")
-		time.Sleep(time.Second) // go needs a bit of time to kill process
+		suite.wg.Wait()
 	}
 }
 
@@ -68,10 +70,20 @@ func (suite *IntegrationSuite) StartDummy(args ...string) io.Reader {
 	cmd := exec.CommandContext(suite.Ctx, dummyBin, args...)
 	cmd.Stdout = outputWriter
 	cmd.Stderr = outputWriter
+
+	go func() {
+		// cmd.Wait() will not finish until stdout is closed
+		<-suite.Ctx.Done()
+		outputWriter.Close()
+	}()
+
 	err := cmd.Start()
 	suite.Require().NoError(err, "can't start analyzer")
 
+	suite.wg.Add(1)
 	go func() {
+		defer suite.wg.Done()
+
 		if err := cmd.Wait(); err != nil {
 			// don't print error if analyzer was killed by cancel
 			if suite.Ctx.Err() != context.Canceled {
@@ -142,6 +154,12 @@ func (suite *IntegrationSuite) startLookoutd(args ...string) (io.Reader, io.Writ
 	cmd.Stdout = outputWriter
 	cmd.Stderr = outputWriter
 
+	go func() {
+		// cmd.Wait() will not finish until stdout is closed
+		<-suite.Ctx.Done()
+		outputWriter.Close()
+	}()
+
 	fmt.Printf("starting lookoutd %s\n", strings.Join(args, " "))
 
 	w, err := cmd.StdinPipe()
@@ -150,7 +168,10 @@ func (suite *IntegrationSuite) startLookoutd(args ...string) (io.Reader, io.Writ
 	err = cmd.Start()
 	require.NoError(err, "can't start lookoutd")
 
+	suite.wg.Add(1)
 	go func() {
+		defer suite.wg.Done()
+
 		if err := cmd.Wait(); err != nil {
 			// don't print error if killed by cancel
 			if suite.Ctx.Err() != context.Canceled {
