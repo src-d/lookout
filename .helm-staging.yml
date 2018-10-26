@@ -12,11 +12,9 @@ databases:
 
 nodeSelector:
  lookout:
-   srcd.host/type: worker
-
-nodeSelector:
+   srcd.host/app: lookout
  dummyAnalyzer:
-   srcd.host/type: worker
+   srcd.host/app: lookout
 
 repositories:
   - url: github.com/src-d/lookout
