@@ -50,6 +50,7 @@ func (s *IntegrationSuite) GrepAndNot(r io.Reader, substr, noSubstr string) {
 // return result and content that was read
 func (s *IntegrationSuite) Grep(r io.Reader, substr string) (bool, *bytes.Buffer) {
 	buf := &bytes.Buffer{}
+	var found bool
 
 	foundch := make(chan bool, 1)
 	scanner := bufio.NewScanner(r)
@@ -58,18 +59,26 @@ func (s *IntegrationSuite) Grep(r io.Reader, substr string) (bool, *bytes.Buffer
 			t := scanner.Text()
 			fmt.Fprintln(buf, t)
 			if strings.Contains(t, substr) {
-				foundch <- true
+				found = true
 				break
 			}
 		}
 		if err := scanner.Err(); err != nil {
 			fmt.Fprintln(os.Stderr, "reading input:", err)
 		}
+
+		foundch <- found
 	}()
 	select {
 	case <-time.After(GrepTimeout):
-		return false, buf
-	case found := <-foundch:
-		return found, buf
+		fmt.Printf(" >>>> Grep Timeout reached")
+
+		break
+	case found = <-foundch:
 	}
+
+	fmt.Printf("----------------\nGrep called for substr %q. Found: %v. Read:\n%s\n\n", substr, found, buf.String())
+	fmt.Printf("The complete command output so far:\n%s", s.logBuf.String())
+
+	return found, buf
 }
