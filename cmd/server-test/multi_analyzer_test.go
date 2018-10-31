@@ -3,7 +3,6 @@
 package server_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -38,24 +37,14 @@ func (suite *MultiDummyIntegrationSuite) TearDownTest() {
 
 func (suite *MultiDummyIntegrationSuite) TestSuccessReview() {
 	suite.sendEvent(successJSON)
-	suite.GrepTrue(suite.r, "processing pull request")
-	suite.GrepTrue(suite.r, "posting analysis")
-	found, buf := suite.Grep(suite.r, `status=success`)
-	suite.Require().Truef(found, "'%s' not found in:\n%s", `status=success`, buf.String())
 
-	st := buf.String()
-
-	suite.Require().Contains(
-		st,
+	suite.GrepAll(suite.r, []string{
+		"processing pull request",
+		"posting analysis",
 		`{"analyzer-name":"Dummy1","file":"another.go","line":3,"text":"This line exceeded`,
-		fmt.Sprintf("no comments from the first analyzer from %s in '%s'", doubleDummyConfigFile, buf),
-	)
-
-	suite.Require().Contains(
-		st,
 		`{"analyzer-name":"Dummy2","file":"another.go","line":3,"text":"This line exceeded`,
-		fmt.Sprintf("no comments from the second analyzer from %s in '%s'", doubleDummyConfigFile, buf),
-	)
+		`status=success`,
+	})
 }
 
 func TestMultiDummyIntegrationSuite(t *testing.T) {
