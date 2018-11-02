@@ -188,7 +188,7 @@ $ make test-json
 
 ## Dummy Analyzer Release
 
-[Dummy analyzer](./cmd/dummy) is a simple analyzer implementation example. It is part of the lookout codebase but it's release cycle is managed independently from main one.
+[Dummy analyzer](./cmd/dummy) is a simple analyzer implementation example. It is part of the lookout codebase but its release cycle is managed independently from main one.
 
 To release a new version and publish the dummy analyzer container you need to create a tag with the `dummy` prefix, e.g. `dummy-v0.0.1`. Please note this doesn't require to do a GitHub release, we just need the Git tag.
 
