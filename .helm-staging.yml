@@ -13,8 +13,6 @@ databases:
 nodeSelector:
  lookout:
    srcd.host/app: lookout
- dummyAnalyzer:
-   srcd.host/app: lookout
 
 repositories:
   - url: github.com/src-d/lookout
@@ -38,3 +36,11 @@ analyzers:
   - name: sonarcheck-analyzer
     addr: ipv4://lookout-sonarcheck-analyzer:10304
     feedback: https://github.com/src-d/lookout-sonarcheck-analyzer/issues/new
+
+rabbitmq-ha:
+  replicaCount: 1
+  rbac:
+    create: false
+  persistentVolume:
+    enabled: true
+    size: 10Gi
