@@ -3,6 +3,7 @@ package bblfsh
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/ctxlog"
@@ -11,6 +12,8 @@ import (
 	"gopkg.in/bblfsh/sdk.v1/protocol"
 	"gopkg.in/bblfsh/sdk.v1/uast"
 )
+
+var parseTimeout = 10 * time.Second
 
 // Service implements data service interface which adds UAST to the responses
 type Service struct {
@@ -114,7 +117,9 @@ func (s *BaseScanner) parseFile(f *lookout.File) (*uast.Node, error) {
 		Encoding: protocol.UTF8,
 		Language: strings.ToLower(f.Language),
 	}
-	resp, err := s.client.Parse(s.ctx, req)
+	ctx, cancel := context.WithTimeout(s.ctx, parseTimeout)
+	defer cancel()
+	resp, err := s.client.Parse(ctx, req)
 	if err != nil {
 		return nil, err
 	}
