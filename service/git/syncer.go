@@ -19,6 +19,8 @@ import (
 
 const defaultRemoteName = "origin"
 
+var fetchTimeout = 10 * time.Minute
+
 // Syncer syncs the local copy of git repository for a given CommitRevision.
 type Syncer struct {
 	m sync.Map // holds mutexes per repository
@@ -112,6 +114,8 @@ func (s *Syncer) fetch(ctx context.Context, repoInfo *lookout.RepositoryInfo, r 
 	mutex.Lock()
 	defer mutex.Unlock()
 
+	ctx, cancel := context.WithTimeout(ctx, fetchTimeout)
+	defer cancel()
 	err = r.FetchContext(ctx, opts)
 	switch err {
 	case git.NoErrAlreadyUpToDate:
