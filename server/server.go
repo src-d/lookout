@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/store"
@@ -16,12 +17,19 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// maybe we need to make it configurable?
+var analyzerTimeout = 5 * time.Minute
+
 // Config is a server configuration
 type Config struct {
 	Analyzers []lookout.AnalyzerConfig
 }
 
-type reqSent func(client lookout.AnalyzerClient, settings map[string]interface{}) ([]*lookout.Comment, error)
+type reqSent func(
+	ctx context.Context,
+	client lookout.AnalyzerClient,
+	settings map[string]interface{},
+) ([]*lookout.Comment, error)
 
 // Server implements glue between providers / data-server / analyzers
 type Server struct {
@@ -106,7 +114,11 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent) error
 
 	s.status(ctx, e, lookout.PendingAnalysisStatus)
 
-	send := func(a lookout.AnalyzerClient, settings map[string]interface{}) ([]*lookout.Comment, error) {
+	send := func(
+		ctx context.Context,
+		a lookout.AnalyzerClient,
+		settings map[string]interface{},
+	) ([]*lookout.Comment, error) {
 		st := grpchelper.ToPBStruct(settings)
 		if st != nil {
 			e.Configuration = *st
@@ -147,7 +159,11 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
 
 	s.status(ctx, e, lookout.PendingAnalysisStatus)
 
-	send := func(a lookout.AnalyzerClient, settings map[string]interface{}) ([]*lookout.Comment, error) {
+	send := func(
+		ctx context.Context,
+		a lookout.AnalyzerClient,
+		settings map[string]interface{},
+	) ([]*lookout.Comment, error) {
 		st := grpchelper.ToPBStruct(settings)
 		if st != nil {
 			e.Configuration = *st
@@ -233,7 +249,10 @@ func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.
 			})
 
 			settings := mergeSettings(a.Config.Settings, conf[name].Settings)
-			cs, err := send(a.Client, settings)
+
+			ctx, cancel := context.WithTimeout(ctx, analyzerTimeout)
+			defer cancel()
+			cs, err := send(ctx, a.Client, settings)
 			if err != nil {
 				aLogger.Errorf(err, "analysis failed")
 				return
