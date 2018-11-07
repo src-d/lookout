@@ -19,6 +19,8 @@ import (
 	log "gopkg.in/src-d/go-log.v1"
 )
 
+var requestTimeout = 3 * time.Second
+
 // ClientPoolEventType type of the change in ClientPool
 type ClientPoolEventType string
 
@@ -266,7 +268,10 @@ func NewClient(
 	}
 
 	return &Client{
-		Client:           github.NewClient(&http.Client{Transport: cachedT}),
+		Client: github.NewClient(&http.Client{
+			Transport: cachedT,
+			Timeout:   requestTimeout,
+		}),
 		cache:            cache,
 		limitRT:          limitRT,
 		watchMinInterval: interval,
