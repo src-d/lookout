@@ -33,7 +33,7 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
-	dataHandler, err := c.initDataHandler()
+	dataHandler, err := c.initDataHandler(conf)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,10 @@ func (c *ServeCommand) Execute(args []string) error {
 	}
 
 	ctx := context.Background()
-	server := server.NewServer(poster, dataHandler.FileGetter, analyzers, eventOp, commentsOp)
+	server := server.NewServer(
+		poster, dataHandler.FileGetter, analyzers,
+		eventOp, commentsOp,
+		conf.Timeout.AnalyzerReview, conf.Timeout.AnalyzerPush)
 
 	c.probeReadiness = true
 

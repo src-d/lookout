@@ -5,7 +5,7 @@ analyzers:
 
 providers:
   github:
-    comment_footer: "_If you have feedback about this comment, please, [tell us](%s)._"
+    comment_footer: '_If you have feedback about this comment, please, [tell us](%s)._'
     # See https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
     # app_id: 1234
     # private_key: ./key.pem
@@ -17,3 +17,11 @@ repositories:
       # user:
       # token:
       # minInterval: 1m
+
+# configurable timeouts
+# timeout:
+#   analyzer_review:
+#   analyzer_push:
+#   github_request:
+#   git_fetch:
+#   bblfsh_parse:

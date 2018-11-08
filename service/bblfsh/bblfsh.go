@@ -13,24 +13,33 @@ import (
 	"gopkg.in/bblfsh/sdk.v1/uast"
 )
 
-var parseTimeout = 10 * time.Second
-
 // Service implements data service interface which adds UAST to the responses
 type Service struct {
-	changes lookout.ChangeGetter
-	files   lookout.FileGetter
-	client  protocol.ProtocolServiceClient
+	changes      lookout.ChangeGetter
+	files        lookout.FileGetter
+	client       protocol.ProtocolServiceClient
+	parseTimeout time.Duration
 }
 
 var _ lookout.ChangeGetter = &Service{}
 var _ lookout.FileGetter = &Service{}
 
 // NewService creates new bblfsh Service
-func NewService(changes lookout.ChangeGetter, files lookout.FileGetter, conn *grpc.ClientConn) *Service {
+func NewService(
+	changes lookout.ChangeGetter,
+	files lookout.FileGetter,
+	conn *grpc.ClientConn,
+	parseTimeout time.Duration,
+) *Service {
+	if parseTimeout == 0 {
+		parseTimeout = 10 * time.Second
+	}
+
 	return &Service{
-		changes: changes,
-		files:   files,
-		client:  protocol.NewProtocolServiceClient(conn),
+		changes:      changes,
+		files:        files,
+		client:       protocol.NewProtocolServiceClient(conn),
+		parseTimeout: parseTimeout,
 	}
 }
 
@@ -53,8 +62,9 @@ func (s *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 	return &ChangeScanner{
 		underlying: changes,
 		BaseScanner: BaseScanner{
-			ctx:    ctx,
-			client: s.client,
+			ctx:          ctx,
+			client:       s.client,
+			parseTimeout: s.parseTimeout,
 		},
 	}, nil
 }
@@ -78,16 +88,18 @@ func (s *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (look
 	return &FileScanner{
 		underlying: files,
 		BaseScanner: BaseScanner{
-			ctx:    ctx,
-			client: s.client,
+			ctx:          ctx,
+			client:       s.client,
+			parseTimeout: s.parseTimeout,
 		},
 	}, nil
 }
 
 type BaseScanner struct {
-	ctx    context.Context
-	client protocol.ProtocolServiceClient
-	err    error
+	ctx          context.Context
+	client       protocol.ProtocolServiceClient
+	parseTimeout time.Duration
+	err          error
 }
 
 func (s *BaseScanner) processFile(f *lookout.File) error {
@@ -117,7 +129,7 @@ func (s *BaseScanner) parseFile(f *lookout.File) (*uast.Node, error) {
 		Encoding: protocol.UTF8,
 		Language: strings.ToLower(f.Language),
 	}
-	ctx, cancel := context.WithTimeout(s.ctx, parseTimeout)
+	ctx, cancel := context.WithTimeout(s.ctx, s.parseTimeout)
 	defer cancel()
 	resp, err := s.client.Parse(ctx, req)
 	if err != nil {

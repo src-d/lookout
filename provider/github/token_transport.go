@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/cache"
@@ -30,7 +31,11 @@ func (c ClientConfig) IsZero() bool {
 
 // NewClientPoolFromTokens creates new ClientPool based on map[repoURL]ClientConfig
 // later we will need another constructor that would request installations and create pool from it
-func NewClientPoolFromTokens(urlToConfig map[string]ClientConfig, cache *cache.ValidableCache) (*ClientPool, error) {
+func NewClientPoolFromTokens(
+	urlToConfig map[string]ClientConfig,
+	cache *cache.ValidableCache,
+	timeout time.Duration,
+) (*ClientPool, error) {
 	byConfig := make(map[ClientConfig][]*lookout.RepositoryInfo)
 
 	for url, c := range urlToConfig {
@@ -59,7 +64,7 @@ func NewClientPoolFromTokens(urlToConfig map[string]ClientConfig, cache *cache.V
 			}
 		}
 
-		client := NewClient(rt, cache, conf.MinInterval, gitAuth)
+		client := NewClient(rt, cache, conf.MinInterval, gitAuth, timeout)
 
 		if _, ok := byClients[client]; !ok {
 			byClients[client] = []*lookout.RepositoryInfo{}

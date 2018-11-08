@@ -61,7 +61,7 @@ func (s *ServiceSuite) TestChanges() {
 	require := s.Require()
 
 	underlying := &mock.MockChangesService{T: s.T()}
-	srv := NewService(underlying, nil, s.BblfshClient)
+	srv := NewService(underlying, nil, s.BblfshClient, 0)
 	require.NotNil(srv)
 
 	expectedChanges := []*lookout.Change{
@@ -84,11 +84,11 @@ func (s *ServiceSuite) TestChanges() {
 	req := &lookout.ChangesRequest{
 		Base: &lookout.ReferencePointer{
 			InternalRepositoryURL: "repo://myrepo",
-			Hash: "foo",
+			Hash:                  "foo",
 		},
 		Head: &lookout.ReferencePointer{
 			InternalRepositoryURL: "repo://myrepo",
-			Hash: "bar",
+			Hash:                  "bar",
 		},
 		WantUAST: true,
 	}
@@ -133,7 +133,7 @@ func (s *ServiceSuite) TestFiles() {
 	require := s.Require()
 
 	underlying := &mock.MockFilesService{T: s.T()}
-	srv := NewService(nil, underlying, s.BblfshClient)
+	srv := NewService(nil, underlying, s.BblfshClient, 0)
 	require.NotNil(srv)
 
 	expectedFiles := []*lookout.File{
@@ -148,7 +148,7 @@ func (s *ServiceSuite) TestFiles() {
 	req := &lookout.FilesRequest{
 		Revision: &lookout.ReferencePointer{
 			InternalRepositoryURL: "repo://myrepo",
-			Hash: "foo",
+			Hash:                  "foo",
 		},
 		WantUAST: true,
 	}

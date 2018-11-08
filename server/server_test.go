@@ -111,7 +111,7 @@ func TestServerPersistedReview(t *testing.T) {
 		},
 	}
 
-	srv := NewServer(poster, fileGetter, analyzers, store.NewMemEventOperator(), &store.NoopCommentOperator{})
+	srv := NewServer(poster, fileGetter, analyzers, store.NewMemEventOperator(), &store.NoopCommentOperator{}, 0, 0)
 	watcher.Watch(context.TODO(), srv.HandleEvent)
 
 	reviewEvent := &correctReviewEvent
@@ -150,7 +150,7 @@ func TestServerIncrementalReview(t *testing.T) {
 		},
 	}
 
-	srv := NewServer(poster, fileGetter, analyzers, store.NewMemEventOperator(), store.NewMemCommentOperator())
+	srv := NewServer(poster, fileGetter, analyzers, store.NewMemEventOperator(), store.NewMemCommentOperator(), 0, 0)
 	watcher.Watch(context.TODO(), srv.HandleEvent)
 
 	reviewEvent := &correctReviewEvent
@@ -192,7 +192,7 @@ func TestAnalyzerConfigDisabled(t *testing.T) {
 		},
 	}
 
-	srv := NewServer(poster, fileGetter, analyzers, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
+	srv := NewServer(poster, fileGetter, analyzers, &store.NoopEventOperator{}, &store.NoopCommentOperator{}, 0, 0)
 	watcher.Watch(context.TODO(), srv.HandleEvent)
 
 	err := watcher.Send(&correctReviewEvent)
@@ -226,7 +226,7 @@ func TestMergeConfigWithoutLocal(t *testing.T) {
 		},
 	}
 
-	srv := NewServer(poster, fileGetter, analyzers, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
+	srv := NewServer(poster, fileGetter, analyzers, &store.NoopEventOperator{}, &store.NoopCommentOperator{}, 0, 0)
 	watcher.Watch(context.TODO(), srv.HandleEvent)
 
 	err := watcher.Send(&correctReviewEvent)
@@ -258,7 +258,7 @@ func TestMergeConfigWithLocal(t *testing.T) {
 		},
 	}
 
-	srv := NewServer(poster, fileGetter, analyzers, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
+	srv := NewServer(poster, fileGetter, analyzers, &store.NoopEventOperator{}, &store.NoopCommentOperator{}, 0, 0)
 	watcher.Watch(context.TODO(), srv.HandleEvent)
 
 	err := watcher.Send(&correctReviewEvent)
@@ -337,7 +337,7 @@ func setupMockedServer() (*WatcherMock, *PosterMock) {
 		},
 	}
 
-	srv := NewServer(poster, fileGetter, analyzers, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
+	srv := NewServer(poster, fileGetter, analyzers, &store.NoopEventOperator{}, &store.NoopCommentOperator{}, 0, 0)
 	watcher.Watch(context.TODO(), srv.HandleEvent)
 
 	return watcher, poster

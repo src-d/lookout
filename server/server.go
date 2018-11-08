@@ -17,10 +17,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// maybe we need to make it configurable?
-var analyzerReviewTimeout = 5 * time.Minute
-var analyzerPushTimeout = 20 * time.Minute
-
 // Config is a server configuration
 type Config struct {
 	Analyzers []lookout.AnalyzerConfig
@@ -39,12 +35,29 @@ type Server struct {
 	analyzers  map[string]lookout.Analyzer
 	eventOp    store.EventOperator
 	commentOp  store.CommentOperator
+
+	analyzerReviewTimeout time.Duration
+	analyzerPushTimeout   time.Duration
 }
 
 // NewServer creates new Server
-func NewServer(p lookout.Poster, fileGetter lookout.FileGetter,
-	analyzers map[string]lookout.Analyzer, eventOp store.EventOperator, commentOp store.CommentOperator) *Server {
-	return &Server{p, fileGetter, analyzers, eventOp, commentOp}
+func NewServer(
+	p lookout.Poster,
+	fileGetter lookout.FileGetter,
+	analyzers map[string]lookout.Analyzer,
+	eventOp store.EventOperator,
+	commentOp store.CommentOperator,
+	reviewTimeout time.Duration,
+	pushTimeout time.Duration,
+) *Server {
+	if reviewTimeout == 0 {
+		reviewTimeout = 5 * time.Minute
+	}
+	if pushTimeout == 0 {
+		pushTimeout = 30 * time.Minute
+	}
+
+	return &Server{p, fileGetter, analyzers, eventOp, commentOp, reviewTimeout, pushTimeout}
 }
 
 // HandleEvent processes the event calling the analyzers, and posting the results
@@ -125,7 +138,7 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent) error
 			e.Configuration = *st
 		}
 
-		ctx, cancel := context.WithTimeout(ctx, analyzerReviewTimeout)
+		ctx, cancel := context.WithTimeout(ctx, s.analyzerReviewTimeout)
 		defer cancel()
 		resp, err := a.NotifyReviewEvent(ctx, e)
 		if err != nil {
@@ -173,7 +186,7 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
 			e.Configuration = *st
 		}
 
-		ctx, cancel := context.WithTimeout(ctx, analyzerPushTimeout)
+		ctx, cancel := context.WithTimeout(ctx, s.analyzerPushTimeout)
 		defer cancel()
 		resp, err := a.NotifyPushEvent(ctx, e)
 		if err != nil {
