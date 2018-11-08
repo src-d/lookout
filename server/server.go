@@ -18,7 +18,8 @@ import (
 )
 
 // maybe we need to make it configurable?
-var analyzerTimeout = 5 * time.Minute
+var analyzerReviewTimeout = 5 * time.Minute
+var analyzerPushTimeout = 20 * time.Minute
 
 // Config is a server configuration
 type Config struct {
@@ -123,6 +124,9 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent) error
 		if st != nil {
 			e.Configuration = *st
 		}
+
+		ctx, cancel := context.WithTimeout(ctx, analyzerReviewTimeout)
+		defer cancel()
 		resp, err := a.NotifyReviewEvent(ctx, e)
 		if err != nil {
 			return nil, err
@@ -168,6 +172,9 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
 		if st != nil {
 			e.Configuration = *st
 		}
+
+		ctx, cancel := context.WithTimeout(ctx, analyzerPushTimeout)
+		defer cancel()
 		resp, err := a.NotifyPushEvent(ctx, e)
 		if err != nil {
 			return nil, err
@@ -250,8 +257,6 @@ func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.
 
 			settings := mergeSettings(a.Config.Settings, conf[name].Settings)
 
-			ctx, cancel := context.WithTimeout(ctx, analyzerTimeout)
-			defer cancel()
 			cs, err := send(ctx, a.Client, settings)
 			if err != nil {
 				aLogger.Errorf(err, "analysis failed")
