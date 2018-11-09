@@ -54,7 +54,7 @@ func NewClientPoolFromTokens(
 		cachedT := httpcache.NewTransport(cache)
 		cachedT.MarkCachedResponses = true
 
-		rt := &roundTripper{
+		rt := &basicAuthRoundTripper{
 			User:     conf.User,
 			Password: conf.Token,
 			Base:     cachedT,
@@ -85,13 +85,13 @@ func NewClientPoolFromTokens(
 	return pool, nil
 }
 
-type roundTripper struct {
+type basicAuthRoundTripper struct {
 	Base     http.RoundTripper
 	User     string
 	Password string
 }
 
-func (t *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *basicAuthRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctxlog.Get(req.Context()).With(log.Fields{
 		"url":  req.URL.String(),
 		"user": t.User,
@@ -109,4 +109,4 @@ func (t *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	return rt.RoundTrip(req)
 }
 
-var _ http.RoundTripper = &roundTripper{}
+var _ http.RoundTripper = &basicAuthRoundTripper{}
