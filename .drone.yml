@@ -30,6 +30,7 @@ helm_deploy: &helm_deploy
   chart-version: 0.6.1
   release: lookout
   tiller_ns: lookout
+  namespace: lookout
 
 # PIPELINE STEPS
 
