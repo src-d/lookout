@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/store"
@@ -21,7 +22,11 @@ type Config struct {
 	Analyzers []lookout.AnalyzerConfig
 }
 
-type reqSent func(client lookout.AnalyzerClient, settings map[string]interface{}) ([]*lookout.Comment, error)
+type reqSent func(
+	ctx context.Context,
+	client lookout.AnalyzerClient,
+	settings map[string]interface{},
+) ([]*lookout.Comment, error)
 
 // Server implements glue between providers / data-server / analyzers
 type Server struct {
@@ -30,12 +35,29 @@ type Server struct {
 	analyzers  map[string]lookout.Analyzer
 	eventOp    store.EventOperator
 	commentOp  store.CommentOperator
+
+	analyzerReviewTimeout time.Duration
+	analyzerPushTimeout   time.Duration
 }
 
 // NewServer creates new Server
-func NewServer(p lookout.Poster, fileGetter lookout.FileGetter,
-	analyzers map[string]lookout.Analyzer, eventOp store.EventOperator, commentOp store.CommentOperator) *Server {
-	return &Server{p, fileGetter, analyzers, eventOp, commentOp}
+func NewServer(
+	p lookout.Poster,
+	fileGetter lookout.FileGetter,
+	analyzers map[string]lookout.Analyzer,
+	eventOp store.EventOperator,
+	commentOp store.CommentOperator,
+	reviewTimeout time.Duration,
+	pushTimeout time.Duration,
+) *Server {
+	if reviewTimeout == 0 {
+		reviewTimeout = 5 * time.Minute
+	}
+	if pushTimeout == 0 {
+		pushTimeout = 30 * time.Minute
+	}
+
+	return &Server{p, fileGetter, analyzers, eventOp, commentOp, reviewTimeout, pushTimeout}
 }
 
 // HandleEvent processes the event calling the analyzers, and posting the results
@@ -106,11 +128,18 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent) error
 
 	s.status(ctx, e, lookout.PendingAnalysisStatus)
 
-	send := func(a lookout.AnalyzerClient, settings map[string]interface{}) ([]*lookout.Comment, error) {
+	send := func(
+		ctx context.Context,
+		a lookout.AnalyzerClient,
+		settings map[string]interface{},
+	) ([]*lookout.Comment, error) {
 		st := grpchelper.ToPBStruct(settings)
 		if st != nil {
 			e.Configuration = *st
 		}
+
+		ctx, cancel := context.WithTimeout(ctx, s.analyzerReviewTimeout)
+		defer cancel()
 		resp, err := a.NotifyReviewEvent(ctx, e)
 		if err != nil {
 			return nil, err
@@ -147,11 +176,18 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent) error {
 
 	s.status(ctx, e, lookout.PendingAnalysisStatus)
 
-	send := func(a lookout.AnalyzerClient, settings map[string]interface{}) ([]*lookout.Comment, error) {
+	send := func(
+		ctx context.Context,
+		a lookout.AnalyzerClient,
+		settings map[string]interface{},
+	) ([]*lookout.Comment, error) {
 		st := grpchelper.ToPBStruct(settings)
 		if st != nil {
 			e.Configuration = *st
 		}
+
+		ctx, cancel := context.WithTimeout(ctx, s.analyzerPushTimeout)
+		defer cancel()
 		resp, err := a.NotifyPushEvent(ctx, e)
 		if err != nil {
 			return nil, err
@@ -233,7 +269,8 @@ func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.
 			})
 
 			settings := mergeSettings(a.Config.Settings, conf[name].Settings)
-			cs, err := send(a.Client, settings)
+
+			cs, err := send(ctx, a.Client, settings)
 			if err != nil {
 				aLogger.Errorf(err, "analysis failed")
 				return

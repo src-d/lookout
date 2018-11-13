@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
@@ -21,7 +22,8 @@ type Installations struct {
 	privateKey string
 	appClient  *github.Client
 
-	cache *cache.ValidableCache
+	cache         *cache.ValidableCache
+	clientTimeout time.Duration
 
 	// [installationID]installationClient
 	clients map[int64]*Client
@@ -30,7 +32,11 @@ type Installations struct {
 }
 
 // NewInstallations creates a new Installations using the App ID and private key
-func NewInstallations(appID int, privateKey string, cache *cache.ValidableCache) (*Installations, error) {
+func NewInstallations(
+	appID int, privateKey string,
+	cache *cache.ValidableCache,
+	clientTimeout time.Duration,
+) (*Installations, error) {
 	// Use App authorization to list installations
 	appTr, err := ghinstallation.NewAppsTransportKeyFromFile(
 		http.DefaultTransport, appID, privateKey)
@@ -47,12 +53,13 @@ func NewInstallations(appID int, privateKey string, cache *cache.ValidableCache)
 	log.Infof("authorized as GitHub application %q, ID %v", app.GetName(), app.GetID())
 
 	i := &Installations{
-		appID:      appID,
-		privateKey: privateKey,
-		appClient:  appClient,
-		cache:      cache,
-		clients:    make(map[int64]*Client),
-		Pool:       NewClientPool(),
+		appID:         appID,
+		privateKey:    privateKey,
+		appClient:     appClient,
+		cache:         cache,
+		clientTimeout: clientTimeout,
+		clients:       make(map[int64]*Client),
+		Pool:          NewClientPool(),
 	}
 
 	return i, nil
@@ -143,7 +150,7 @@ func (t *Installations) createClient(installationID int64) (*Client, error) {
 
 	// TODO (carlosms): hardcoded, take from config
 	watchMinInterval := ""
-	return NewClient(itr, t.cache, watchMinInterval, gitAuth), nil
+	return NewClient(itr, t.cache, watchMinInterval, gitAuth, t.clientTimeout), nil
 }
 
 func (t *Installations) getRepos(iClient *Client) ([]*lookout.RepositoryInfo, error) {

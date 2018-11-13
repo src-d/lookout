@@ -142,3 +142,18 @@ The `settings` for each analyzer in the `.lookout.yml` config file will be merge
 - Objects are deep merged
 - Arrays are replaced
 - Null value replaces object
+
+### Advanced fine-tuning
+
+Configuration file also provides possibility to change default timeouts.
+
+Below is the list of different timeouts with default values:
+
+```yaml
+timeout:
+  analyzer_review: 5m
+  analyzer_push: 30m
+  github_request: 30s
+  git_fetch: 10m
+  bblfsh_parse: 60s
+```

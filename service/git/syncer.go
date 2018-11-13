@@ -26,6 +26,7 @@ type Syncer struct {
 	l *Library
 
 	authProvider AuthProvider
+	fetchTimeout time.Duration
 }
 
 // AuthProvider is an object that provides go-git auth methods
@@ -35,8 +36,12 @@ type AuthProvider interface {
 }
 
 // NewSyncer returns a Syncer for the given Library. authProvider can be nil
-func NewSyncer(l *Library, authProvider AuthProvider) *Syncer {
-	return &Syncer{l: l, authProvider: authProvider}
+func NewSyncer(l *Library, authProvider AuthProvider, fetchTimeout time.Duration) *Syncer {
+	if fetchTimeout == 0 {
+		fetchTimeout = 10 * time.Minute
+	}
+
+	return &Syncer{l: l, authProvider: authProvider, fetchTimeout: fetchTimeout}
 }
 
 // Sync syncs the local git repository to the given reference pointers.
@@ -112,6 +117,8 @@ func (s *Syncer) fetch(ctx context.Context, repoInfo *lookout.RepositoryInfo, r 
 	mutex.Lock()
 	defer mutex.Unlock()
 
+	ctx, cancel := context.WithTimeout(ctx, s.fetchTimeout)
+	defer cancel()
 	err = r.FetchContext(ctx, opts)
 	switch err {
 	case git.NoErrAlreadyUpToDate:

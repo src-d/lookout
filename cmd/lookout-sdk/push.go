@@ -57,11 +57,15 @@ func (c *PushCommand) Execute(args []string) error {
 		return err
 	}
 
-	srv := server.NewServer(&server.LogPoster{log.DefaultLogger}, dataSrv.FileGetter, map[string]lookout.Analyzer{
-		"test-analyzes": lookout.Analyzer{
-			Client: client,
+	srv := server.NewServer(
+		&server.LogPoster{log.DefaultLogger}, dataSrv.FileGetter,
+		map[string]lookout.Analyzer{
+			"test-analyzes": lookout.Analyzer{
+				Client: client,
+			},
 		},
-	}, &store.NoopEventOperator{}, &store.NoopCommentOperator{})
+		&store.NoopEventOperator{}, &store.NoopCommentOperator{},
+		0, 0)
 
 	log, err := c.repo.Log(&gogit.LogOptions{From: plumbing.NewHash(toRef.Hash)})
 	var commits uint32

@@ -114,7 +114,7 @@ func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, erro
 			files:   dataService,
 		}
 	} else {
-		dataService = bblfsh.NewService(dataService, dataService, bblfshConn)
+		dataService = bblfsh.NewService(dataService, dataService, bblfshConn, 0)
 	}
 
 	dataService = purge.NewService(dataService, dataService)

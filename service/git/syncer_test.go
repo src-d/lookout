@@ -16,7 +16,7 @@ import (
 func TestLibrary_Sync(t *testing.T) {
 	require := require.New(t)
 	library := NewLibrary(memfs.New())
-	syncer := NewSyncer(library, nil)
+	syncer := NewSyncer(library, nil, 0)
 
 	url, _ := vcsurl.Parse("http://github.com/src-d/lookout")
 	err := syncer.Sync(context.TODO(), lookout.ReferencePointer{
@@ -52,7 +52,7 @@ func TestLibrary_Auth(t *testing.T) {
 	require.Equal(0, authCalls)
 
 	library := NewLibrary(memfs.New())
-	syncer := NewSyncer(library, testAuthProvider{})
+	syncer := NewSyncer(library, testAuthProvider{}, 0)
 
 	url, _ := vcsurl.Parse("http://github.com/src-d/lookout")
 	err := syncer.Sync(context.TODO(), lookout.ReferencePointer{

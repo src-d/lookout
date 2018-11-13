@@ -246,6 +246,7 @@ func NewClient(
 	cache *cache.ValidableCache,
 	watchMinInterval string,
 	gitAuth gitAuthFn,
+	timeout time.Duration,
 ) *Client {
 	limitRT := &limitRoundTripper{
 		Base: t,
@@ -265,8 +266,15 @@ func NewClient(
 		}
 	}
 
+	if timeout == 0 {
+		timeout = 30 * time.Second
+	}
+
 	return &Client{
-		Client:           github.NewClient(&http.Client{Transport: cachedT}),
+		Client: github.NewClient(&http.Client{
+			Transport: cachedT,
+			Timeout:   timeout,
+		}),
 		cache:            cache,
 		limitRT:          limitRT,
 		watchMinInterval: interval,

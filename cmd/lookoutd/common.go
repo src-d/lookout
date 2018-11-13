@@ -70,12 +70,22 @@ type Config struct {
 		Github github.ProviderConfig
 	}
 	Repositories []RepoConfig
+	Timeout      TimeoutConfig
 }
 
 // RepoConfig holds configuration for repository, support only github provider
 type RepoConfig struct {
 	URL    string
 	Client github.ClientConfig
+}
+
+// TimeoutConfig holds configuration for timeouts
+type TimeoutConfig struct {
+	AnalyzerReview time.Duration
+	AnalyzerPush   time.Duration
+	GithubRequest  time.Duration
+	GitFetch       time.Duration
+	BblfshParse    time.Duration
 }
 
 func (c *lookoutdCommand) initConfig() (Config, error) {
@@ -187,7 +197,7 @@ func (c *lookoutdCommand) initProviderGithubToken(conf Config) error {
 	}
 
 	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
-	pool, err := github.NewClientPoolFromTokens(repoToConfig, cache)
+	pool, err := github.NewClientPoolFromTokens(repoToConfig, cache, conf.Timeout.GithubRequest)
 	if err != nil {
 		return err
 	}
@@ -213,7 +223,9 @@ func (c *lookoutdCommand) initProviderGithubApp(conf Config) error {
 	}
 
 	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
-	insts, err := github.NewInstallations(conf.Providers.Github.AppID, conf.Providers.Github.PrivateKey, cache)
+	insts, err := github.NewInstallations(
+		conf.Providers.Github.AppID, conf.Providers.Github.PrivateKey,
+		cache, conf.Timeout.GithubRequest)
 	if err != nil {
 		return err
 	}
@@ -314,7 +326,7 @@ func (c *queueConsumerCommand) startAnalyzer(conf lookout.AnalyzerConfig) (looko
 	return lookout.NewAnalyzerClient(conn), nil
 }
 
-func (c *queueConsumerCommand) initDataHandler() (*lookout.DataServerHandler, error) {
+func (c *queueConsumerCommand) initDataHandler(conf Config) (*lookout.DataServerHandler, error) {
 	var err error
 	c.Bblfshd, err = grpchelper.ToGoGrpcAddress(c.Bblfshd)
 	if err != nil {
@@ -336,12 +348,12 @@ func (c *queueConsumerCommand) initDataHandler() (*lookout.DataServerHandler, er
 	}
 
 	lib := git.NewLibrary(osfs.New(c.Library))
-	sync := git.NewSyncer(lib, authProvider)
+	sync := git.NewSyncer(lib, authProvider, conf.Timeout.GitFetch)
 	loader := git.NewLibraryCommitLoader(lib, sync)
 
 	gitService := git.NewService(loader)
 	enryService := enry.NewService(gitService, gitService)
-	bblfshService := bblfsh.NewService(enryService, enryService, bblfshConn)
+	bblfshService := bblfsh.NewService(enryService, enryService, bblfshConn, conf.Timeout.BblfshParse)
 	purgeService := purge.NewService(bblfshService, bblfshService)
 
 	srv := &lookout.DataServerHandler{
