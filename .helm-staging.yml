@@ -27,6 +27,9 @@ providers:
     installation_sync_interval: 5m
 
 analyzers:
+  - name: style-analyzer
+    addr: ipv4://lookout-style-analyzer:2000
+    feedback: https://github.com/src-d/style-analyzer/issues/new
   - name: gometalint-analyzer
     addr: ipv4://lookout-gometalint-analyzer:10303
     feedback: https://github.com/src-d/lookout-gometalint-analyzer/issues/new
