@@ -267,7 +267,7 @@ func NewClient(
 	}
 
 	if timeout == 0 {
-		timeout = 3 * time.Second
+		timeout = 30 * time.Second
 	}
 
 	return &Client{

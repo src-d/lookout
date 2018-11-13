@@ -153,7 +153,7 @@ Below is the list of different timeouts with default values:
 timeout:
   analyzer_review: 5m
   analyzer_push: 30m
-  github_request: 3s
+  github_request: 30s
   git_fetch: 10m
-  bblfsh_parse: 10s
+  bblfsh_parse: 60s
 ```

@@ -32,7 +32,7 @@ func NewService(
 	parseTimeout time.Duration,
 ) *Service {
 	if parseTimeout == 0 {
-		parseTimeout = 10 * time.Second
+		parseTimeout = 60 * time.Second
 	}
 
 	return &Service{
