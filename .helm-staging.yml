@@ -36,6 +36,9 @@ analyzers:
   - name: sonarcheck-analyzer
     addr: ipv4://lookout-sonarcheck-analyzer:10304
     feedback: https://github.com/src-d/lookout-sonarcheck-analyzer/issues/new
+  - name: terraform-analyzer
+    addr: ipv4://lookout-terraform-analyzer:10303
+    feedback: https://github.com/src-d/lookout-terraform-analyzer/issues/new
 
 rabbitmq-ha:
   replicaCount: 1
