@@ -10,6 +10,10 @@ databases:
     serviceAccountSecret: cloudsql-proxy-credentials
     connectionDetailsSecret: lookout-postgres-connection-details
 
+queues:
+  rabbitmq:
+    connectionString: amqp://lookout-rabbitmq-ha:5672
+
 nodeSelector:
  lookout:
    srcd.host/app: lookout
@@ -39,11 +43,3 @@ analyzers:
   - name: terraform-analyzer
     addr: ipv4://lookout-terraform-analyzer:10303
     feedback: https://github.com/src-d/lookout-terraform-analyzer/issues/new
-
-rabbitmq-ha:
-  replicaCount: 1
-  rbac:
-    create: false
-  persistentVolume:
-    enabled: true
-    size: 10Gi
