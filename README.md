@@ -125,7 +125,7 @@ This is a list of the available analyzers for lookout:
 | [gometalint](https://github.com/src-d/lookout-gometalint-analyzer) | Reports [gometalinter](https://github.com/alecthomas/gometalinter) results on pull requests | testing and demo |
 | [sonarcheck](https://github.com/src-d/lookout-sonarcheck-analyzer) | An analyzer that uses [bblfsh UAST](https://doc.bblf.sh/uast/uast-specification.html) and [sonar-checks](https://github.com/bblfsh/sonar-checks) to process pull requests | testing and demo |
 | [terraform](https://github.com/meyskens/lookout-terraform-analyzer) | An analyzer that checks if [Terraform](https://github.com/hashicorp/terraform/) files are correctly formatted | usable |
-| [flake8](https://github.com/src-d/lookout-flake8-analyzer) | Reports [flake8](http://flake8.pycqa.org/en/latest/) files are correctly formatted | testing and demo |
+| [flake8](https://github.com/src-d/lookout-flake8-analyzer) | Reports [flake8](http://flake8.pycqa.org/en/latest/) results on pull requests (for Python) | testing and demo |
 
 
 # SDK for Analyzer Developers
