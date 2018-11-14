@@ -388,11 +388,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:dcb5082ac724ad044a5f7e2aa7b594ad5458e4a575b04a1403f83ba7e2e4975c"
+  digest = "1:36d801c057aadb14b3e7e3a19640199072cb0a9bc194968d622016572777b6b0"
   name = "github.com/src-d/lookout-test-fixtures"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "a0d9d29bb3b4ea591c388037a2e27aa1ef9a2c1e"
+  revision = "6ed9bf1fcf2a2d0ef170646acc041c2926eff51c"
 
 [[projects]]
   branch = "master"
@@ -604,14 +604,6 @@
   revision = "20d25e2804050c1cd24a7eea1e7a6447dd0e74ec"
 
 [[projects]]
-  digest = "1:c43bd09de9553524d9409e0413b91d12ea74fbd4583c9850e6bb4dbbc9228090"
-  name = "gopkg.in/sourcegraph/go-vcsurl.v1"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "6b12603ea6fd7f84b8c90118face09df39ea10c6"
-  version = "v1"
-
-[[projects]]
   digest = "1:d11329b27b0f34c399185531f3232493d7da40f576574da04776812b0a94f66b"
   name = "gopkg.in/src-d/enry.v1"
   packages = [
@@ -743,12 +735,12 @@
   version = "v1.0.5"
 
 [[projects]]
-  digest = "1:e532b733db09e0d561bd3d10a3c50198234aee2ff289211f3c1f6f44d9aeaf1f"
+  digest = "1:3b3519cdc5a47f977761844e20d65f3b6e043a815616fb269e59b600cb92d9d0"
   name = "gopkg.in/src-d/lookout-sdk.v0"
   packages = ["pb"]
   pruneopts = "NUT"
-  revision = "d1dc995edc5d1f7f3e7810cf21f466c6b1f82407"
-  version = "v0.1.0"
+  revision = "df92c36f6ab2e46fbbf541c4c1f470e2c20bd570"
+  version = "v0.1.2"
 
 [[projects]]
   digest = "1:20d5d24cfd1dac53cbf730d5c9861c0792c68ae547e67fc16fa0ed0660481b0a"
@@ -815,7 +807,6 @@
     "google.golang.org/grpc/connectivity",
     "gopkg.in/bblfsh/sdk.v1/protocol",
     "gopkg.in/bblfsh/sdk.v1/uast",
-    "gopkg.in/sourcegraph/go-vcsurl.v1",
     "gopkg.in/src-d/enry.v1",
     "gopkg.in/src-d/go-billy.v4",
     "gopkg.in/src-d/go-billy.v4/memfs",
