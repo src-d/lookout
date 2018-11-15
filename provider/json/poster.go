@@ -28,7 +28,7 @@ func NewPoster(w io.Writer) *Poster {
 
 // Post prints json comments to stdout
 func (p *Poster) Post(ctx context.Context, e lookout.Event,
-	aCommentsList []lookout.AnalyzerComments) error {
+	aCommentsList []lookout.AnalyzerComments, safe bool) error {
 
 	for _, a := range aCommentsList {
 		for _, c := range a.Comments {

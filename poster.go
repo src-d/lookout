@@ -30,7 +30,8 @@ func (st AnalysisStatus) String() string {
 // Poster can post comments about an event.
 type Poster interface {
 	// Post posts comments about an event.
-	Post(context.Context, Event, []AnalyzerComments) error
+	// poster should make sure comments weren't posted before if safe is true
+	Post(ctx context.Context, e Event, cs []AnalyzerComments, safe bool) error
 
 	// Status sends the current analysis status to the provider
 	Status(context.Context, Event, AnalysisStatus) error

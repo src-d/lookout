@@ -50,7 +50,7 @@ func NewPoster(pool *ClientPool, conf ProviderConfig) *Poster {
 // If the event is not a GitHub Pull Request, ErrEventNotSupported is returned.
 // If a GitHub API request fails, ErrGitHubAPI is returned.
 func (p *Poster) Post(ctx context.Context, e lookout.Event,
-	aCommentsList []lookout.AnalyzerComments) error {
+	aCommentsList []lookout.AnalyzerComments, safe bool) error {
 	switch ev := e.(type) {
 	case *lookout.ReviewEvent:
 		if ev.Provider != Provider {
@@ -58,14 +58,14 @@ func (p *Poster) Post(ctx context.Context, e lookout.Event,
 				fmt.Errorf("unsupported provider: %s", ev.Provider))
 		}
 
-		return p.postPR(ctx, ev, aCommentsList)
+		return p.postPR(ctx, ev, aCommentsList, safe)
 	default:
 		return ErrEventNotSupported.Wrap(fmt.Errorf("unsupported event type %s", reflect.TypeOf(e)))
 	}
 }
 
 func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
-	aCommentsList []lookout.AnalyzerComments) error {
+	aCommentsList []lookout.AnalyzerComments, safe bool) error {
 
 	owner, repo, pr, err := p.validatePR(e)
 	if err != nil {
@@ -96,8 +96,7 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 		return err
 	}
 
-	// FIXME pass true here when needed
-	return createReview(ctx, client, owner, repo, pr, review, false)
+	return createReview(ctx, client, owner, repo, pr, review, safe)
 }
 
 func (p *Poster) validatePR(

@@ -80,7 +80,7 @@ func (c *ReviewCommand) Execute(args []string) error {
 			Base: *fromRef,
 			Head: *toRef,
 		},
-		Configuration: conf})
+		Configuration: conf}, false)
 
 	if err != nil {
 		return err

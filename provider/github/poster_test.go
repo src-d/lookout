@@ -165,7 +165,7 @@ func (s *PosterTestSuite) TestPostOK() {
 	})
 
 	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments)
+	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments, false)
 	s.NoError(err)
 
 	s.True(createReviewsCalled)
@@ -211,7 +211,7 @@ func (s *PosterTestSuite) TestPostFooter() {
 			CommentFooter: "To post feedback go to %s",
 		},
 	}
-	err := p.Post(context.Background(), mockEvent, aComments)
+	err := p.Post(context.Background(), mockEvent, aComments, false)
 	s.NoError(err)
 
 	s.True(createReviewsCalled)
@@ -220,7 +220,7 @@ func (s *PosterTestSuite) TestPostFooter() {
 func (s *PosterTestSuite) TestPostBadProvider() {
 	p := &Poster{pool: s.pool}
 
-	err := p.Post(context.Background(), badProviderEvent, mockAnalyzerComments)
+	err := p.Post(context.Background(), badProviderEvent, mockAnalyzerComments, false)
 	s.True(ErrEventNotSupported.Is(err))
 	s.Equal("event not supported: unsupported provider: badprovider", err.Error())
 }
@@ -228,7 +228,7 @@ func (s *PosterTestSuite) TestPostBadProvider() {
 func (s *PosterTestSuite) TestPostBadReferenceNoRepository() {
 	p := &Poster{pool: s.pool}
 
-	err := p.Post(context.Background(), noRepoEvent, mockAnalyzerComments)
+	err := p.Post(context.Background(), noRepoEvent, mockAnalyzerComments, false)
 	s.True(ErrEventNotSupported.Is(err))
 	s.Equal("event not supported: nil repository", err.Error())
 }
@@ -236,7 +236,7 @@ func (s *PosterTestSuite) TestPostBadReferenceNoRepository() {
 func (s *PosterTestSuite) TestPostBadReference() {
 	p := &Poster{pool: s.pool}
 
-	err := p.Post(context.Background(), badReferenceEvent, mockAnalyzerComments)
+	err := p.Post(context.Background(), badReferenceEvent, mockAnalyzerComments, false)
 	s.True(ErrEventNotSupported.Is(err))
 	s.Equal("event not supported: bad PR: BAD", err.Error())
 }
@@ -250,7 +250,7 @@ func (s *PosterTestSuite) TestPostHttpError() {
 	})
 
 	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments)
+	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments, false)
 	s.IsType(ErrGitHubAPI.New(), err)
 }
 
@@ -268,7 +268,7 @@ func (s *PosterTestSuite) TestPostHttpTimeout() {
 	defer cancel()
 
 	p := &Poster{pool: s.pool}
-	err := p.Post(ctx, mockEvent, mockAnalyzerComments)
+	err := p.Post(ctx, mockEvent, mockAnalyzerComments, false)
 	s.IsType(ErrGitHubAPI.New(), err)
 }
 
@@ -281,7 +281,7 @@ func (s *PosterTestSuite) TestPostHttpJSONErr() {
 	})
 
 	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments)
+	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments, false)
 	s.IsType(ErrGitHubAPI.New(), err)
 }
 
@@ -338,7 +338,7 @@ func (s *PosterTestSuite) TestPostOutOfRange() {
 		}}
 
 	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, outRangeAnalyzerComments)
+	err := p.Post(context.Background(), mockEvent, outRangeAnalyzerComments, false)
 	s.NoError(err)
 
 	s.True(createReviewsCalled)
@@ -377,7 +377,7 @@ func (s *PosterTestSuite) TestPostAllOutOfRange() {
 		}}
 
 	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, outRangeAnalyzerComments)
+	err := p.Post(context.Background(), mockEvent, outRangeAnalyzerComments, false)
 	s.NoError(err)
 
 	s.False(createReviewsCalled)
@@ -430,7 +430,7 @@ func (s *PosterTestSuite) TestPostOutOfRangeAndBody() {
 		}}
 
 	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, outRangeAnalyzerComments)
+	err := p.Post(context.Background(), mockEvent, outRangeAnalyzerComments, false)
 	s.NoError(err)
 
 	s.True(createReviewsCalled)
@@ -494,7 +494,7 @@ func (s *PosterTestSuite) TestPostOKAndWrongFile() {
 		}}
 
 	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, customMockAnalyzerComments)
+	err := p.Post(context.Background(), mockEvent, customMockAnalyzerComments, false)
 	s.NoError(err)
 
 	s.True(createReviewsCalled)
