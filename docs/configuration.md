@@ -1,6 +1,6 @@
-# Configuring lookout
+# Configuring Lookout
 
-lookout is configured with the `config.yml` file, you can use the template [`config.yml.tpl`](../config.yml.tpl) to create your own. Use the `lookoutd` option `--config` to set the path to it, or use the default location at `./config.yml`.
+**Lookout** is configured with the `config.yml` file, you can use the template [`config.yml.tpl`](/config.yml.tpl) to create your own. Use the `lookoutd` option `--config` to set the path to it, or use the default location at `./config.yml`.
 
 The main structure of `config.yml` is:
 
@@ -12,12 +12,25 @@ repositories:
     # list of repositories to watch and user/token if needed
 analyzers:
     # list of named analyzers
+timeout:
+    # configuration for the existing timeouts.
 ```
 
+## Quickstart
+
+The most important things you need to configure for a local installation, are:
+
+1. [Repositories](#repositories): add the URLs of the repositories to be watched.
+1. [Analyzers](#analyzers): add the gRPC addresses of the analyzers to be used by Lookout.
+
+For more fine grained configuration, you should pay attention to the following documentation.
+
+
+# config.yml
 
 ## Github Provider
 
-The `providers.github` key configures how **lookout** will connect with GitHub. 
+The `providers.github` key configures how **Lookout** will connect with GitHub.
 
 ```yml
 providers:
@@ -34,19 +47,27 @@ providers:
 <a id=basic-auth></a>
 ### Authentication with GitHub
 
-#### Authentication as a GitHub Account
+**Lookout** needs to authenticate with GitHub. There are two ways to authenticate with GitHub:
 
-lookout needs to authenticate with GitHub. The easiest method for testing purposes is using a [GitHub personal access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/). The token should have the **repo** scope enabled.
+- Using GitHub personal access tokens.
+- Authenticating as a GitHub App.
 
-The credential can then be passed to `lookoutd` as:
+Both are explained below.
 
-- user: `--github-user` argument or `GITHUB_USER` environment variable.
-- token: `--github-token` argument or `GITHUB_TOKEN` environment variable.
+#### Authentication with GitHub personal access tokens
+
+The easiest method for testing purposes is using a [GitHub personal access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/). The token should have the `repo` scope enabled.
+
+The credentials can be passed to `lookoutd`:
+- globally for all watched repositories, using command line arguments or environment variables when running `lookoutd`:
+  - user: `--github-user` argument or `GITHUB_USER` environment variable.
+  - token: `--github-token` argument or `GITHUB_TOKEN` environment variable.
+- per watched repository, following the instructions given by the [Repositories section](#repositories) of this docs.
 
 <a id=github-app></a>
 #### Authentication as a GitHub App
 
-For a production environment you can use **lookout** as a [GitHub App](https://developer.github.com/apps/about-apps/).
+For a production environment, you can use **Lookout** as a [GitHub App](https://developer.github.com/apps/about-apps/).
 
 To do so, you must also unset any environment variable or option for the GitHub username and token authentication.
 
@@ -76,7 +97,9 @@ The minimum watch interval to discover new pull requests and push events is defi
 
 ## Repositories
 
-The list of repositories to be watched by **lookout** is defined by the `repositories` key.
+The list of repositories to be watched by **Lookout** is defined by:
+- the `repositories` field at `config.yml`, or
+- the repositories where the GitHub App is installed if you [authenticated as a GitHub App](#github-app). In that case, the `repositories` field in `config.yml` will be ignored.
 
 The user and token to be used for the Github authentication can be defined per repository; if you do so, it will override the globally passed user and token.
 
@@ -90,11 +113,9 @@ repositories:
       # minInterval: 1m
 ```
 
-If you're using [Authentication as a GitHub App](#github-app), the list of repositories to be watched will be taken from the GitHub installations.
-
 ## Analyzers
 
-Each analyzer to be requested by **lookout** should be defined under `analyzers` key.
+Each analyzer to be requested by **Lookout** should be defined under `analyzers` key.
 
 ```yml
 analyzers:
@@ -111,7 +132,7 @@ analyzers:
 <a id=custom-footer></a>
 ### Add a Custom Message to the Posted Comments
 
-You can configure **lookout** to add a custom message to every comment that each analyzer returns. This custom message will be created following the rule:
+You can configure **Lookout** to add a custom message to every comment that each analyzer returns. This custom message will be created following the rule:
 ```
 sprinf(providers.github.comment_footer, feedback)
 ```
@@ -136,33 +157,35 @@ analyzers:
         mode: confident
 ```
 
-The analyzer to configure must be identified with the same `name` in the `.lookout.yml` config file as in **lookout** server configuration, otherwise, it will be ignored.
+The analyzer to configure must be identified with the same `name` in the `.lookout.yml` config file as in **Lookout** server configuration, otherwise, it will be ignored.
 
-The repository can disable any analyzer, but it cannot define new analyzers nor enable those that are disabled in the **lookout** server.
+The repository can disable any analyzer, but it cannot define new analyzers nor enable those that are disabled in the **Lookout** server.
 
-The `settings` for each analyzer in the `.lookout.yml` config file will be merged with the **lookout** configuration following these rules:
+The `settings` for each analyzer in the `.lookout.yml` config file will be merged with the **Lookout** configuration following these rules:
 
 - Objects are deep merged
 - Arrays are replaced
 - Null value replaces object
 
-### Advanced fine-tuning
+## Timeouts
 
-The configuration file also provides the possibility to change default timeouts.
+The timeouts used by **Lookout** for some operations can be modified or disabled from the `config.yml` file.
 
-Below is the list of different timeouts with their default values:
+If any timeout is set to `0`, there will be no timeout for that process.
+
+Below is the list of different timeouts in **source{d} Lookout**, with their default values:
 
 ```yaml
 # These are the default timeout values. A value of 0 means no timeout
 timeout:
-  # Timeout for an analyzer response to a NotifyReviewEvent
+  # Timeout for an analyzer to reply a NotifyReviewEvent
   analyzer_review: 10m
-  # Timeout for an analyzer response to a NotifyPushEvent
+  # Timeout for an analyzer to reply a NotifyPushEvent
   analyzer_push: 60m
-  # Timeout http requests to the GitHub API
+  # Timeout for HTTP requests to the GitHub API
   github_request: 1m
   # Timeout for Git fetch actions
   git_fetch: 20m
-  # Timeout for parse requests to Bblfsh
+  # Timeout for Bblfsh to reply to a Parse request
   bblfsh_parse: 2m
 ```
