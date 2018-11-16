@@ -40,7 +40,7 @@ func (suite *MultiDummyIntegrationSuite) TestSuccessReview() {
 
 	str := suite.GrepAll(suite.r, []string{
 		"processing pull request",
-		`msg="posting analysis" app=lookoutd comments=4`,
+		`msg="posting analysis" analyzer=Dummy1 app=lookoutd comments=4`,
 		`status=success`,
 	})
 

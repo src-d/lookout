@@ -299,7 +299,7 @@ func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.
 			var result *lookout.AnalyzerComments
 			defer func() { commentsCh <- result }()
 
-			aLogger := ctxlog.Get(ctx).With(log.Fields{
+			ctx, aLogger := ctxlog.WithLogFields(ctx, log.Fields{
 				"analyzer": name,
 			})
 
