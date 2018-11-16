@@ -198,12 +198,12 @@ func (f Fixture) GetCommitRevision() *pb.CommitRevision {
 
 	return &pb.CommitRevision{
 		Base: pb.ReferencePointer{
-			InternalRepositoryURL: pr.GetHTMLURL(),
+			InternalRepositoryURL: pr.GetBase().GetRepo().GetCloneURL(),
 			ReferenceName:         plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", pr.GetBase().GetRef())),
 			Hash:                  pr.GetBase().GetSHA(),
 		},
 		Head: pb.ReferencePointer{
-			InternalRepositoryURL: pr.GetHTMLURL(),
+			InternalRepositoryURL: pr.GetHead().GetRepo().GetCloneURL(),
 			ReferenceName:         plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", pr.GetHead().GetRef())),
 			Hash:                  pr.GetHead().GetSHA(),
 		},

@@ -9,9 +9,9 @@ import (
 	"github.com/src-d/lookout/util/ctxlog"
 
 	"github.com/google/go-github/github"
-	"gopkg.in/sourcegraph/go-vcsurl.v1"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	log "gopkg.in/src-d/go-log.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 func castEvent(r *lookout.RepositoryInfo, e *github.Event) (lookout.Event, error) {
@@ -99,7 +99,7 @@ func castPullRequestBranch(ctx context.Context, b *github.PullRequestBranch) loo
 		return lookout.ReferencePointer{}
 	}
 
-	r, err := vcsurl.Parse(b.GetRepo().GetCloneURL())
+	r, err := pb.ParseRepositoryInfo(b.GetRepo().GetCloneURL())
 	if err != nil {
 		ctxlog.Get(ctx).With(log.Fields{
 			"url": b.GetRepo().GetCloneURL()},
@@ -121,7 +121,7 @@ func extractOwner(ref lookout.ReferencePointer) (owner string, err error) {
 		return
 	}
 
-	owner = ref.Repository().Username
+	owner = ref.Repository().Owner
 	if owner == "" {
 		err = fmt.Errorf("empty owner")
 	}

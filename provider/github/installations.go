@@ -12,10 +12,10 @@ import (
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
 	"github.com/gregjones/httpcache"
-	vcsurl "gopkg.in/sourcegraph/go-vcsurl.v1"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	githttp "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	log "gopkg.in/src-d/go-log.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 // Installations keeps github installations and allows to sync them
@@ -166,7 +166,7 @@ func (t *Installations) getRepos(iClient *Client) ([]*lookout.RepositoryInfo, er
 
 	repos := make([]*lookout.RepositoryInfo, len(ghRepos))
 	for i, ghRepo := range ghRepos {
-		repo, err := vcsurl.Parse(*ghRepo.HTMLURL)
+		repo, err := pb.ParseRepositoryInfo(*ghRepo.HTMLURL)
 		if err != nil {
 			return nil, err
 		}
