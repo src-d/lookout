@@ -3,7 +3,6 @@ package git
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"sync"
 	"time"
 
@@ -59,16 +58,8 @@ func (s *Syncer) Sync(ctx context.Context,
 		}
 	}
 
-	// TODO(carlosms): Do this scheme change in lookout-sdk, ReferencePointer.Repository()
-	// GitHub authentication requires the remote to be https:// instead of git://
 	repoInfo := frp.Repository()
-	if repoInfo.RepoHost == "github.com" {
-		cloneURL, _ := url.Parse(repoInfo.CloneURL)
-		cloneURL.Scheme = "https"
-		repoInfo.CloneURL = cloneURL.String()
-	}
-
-	gitRepo, err := s.l.GetOrInit(ctx, repoInfo)
+	gitRepo, err := s.l.GetOrInit(ctx, frp.Repository())
 	if err != nil {
 		return err
 	}

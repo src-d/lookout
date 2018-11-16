@@ -10,10 +10,10 @@ import (
 	"github.com/src-d/lookout/util/ctxlog"
 
 	"github.com/gregjones/httpcache"
-	vcsurl "gopkg.in/sourcegraph/go-vcsurl.v1"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	githttp "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	log "gopkg.in/src-d/go-log.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 // ClientConfig holds github username, token and watch interval
@@ -40,7 +40,7 @@ func NewClientPoolFromTokens(
 	byConfig := make(map[ClientConfig][]*lookout.RepositoryInfo)
 
 	for url, c := range urlToConfig {
-		repo, err := vcsurl.Parse(url)
+		repo, err := pb.ParseRepositoryInfo(url)
 		if err != nil {
 			return nil, err
 		}

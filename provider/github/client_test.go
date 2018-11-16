@@ -5,7 +5,7 @@ import (
 
 	"github.com/src-d/lookout"
 	"github.com/stretchr/testify/require"
-	vcsurl "gopkg.in/sourcegraph/go-vcsurl.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 func TestClientPoolUpdate(t *testing.T) {
@@ -15,8 +15,8 @@ func TestClientPoolUpdate(t *testing.T) {
 
 	// add new client
 	firstClient := &Client{}
-	info11, _ := vcsurl.Parse("github.com/foo/bar1")
-	info12, _ := vcsurl.Parse("github.com/foo/bar2")
+	info11, _ := pb.ParseRepositoryInfo("github.com/foo/bar1")
+	info12, _ := pb.ParseRepositoryInfo("github.com/foo/bar2")
 	firstClientRepos := []*lookout.RepositoryInfo{
 		info11,
 		info12,
@@ -38,8 +38,8 @@ func TestClientPoolUpdate(t *testing.T) {
 
 	// add one more client
 	secondClient := &Client{}
-	info21, _ := vcsurl.Parse("github.com/bar/foo1")
-	info22, _ := vcsurl.Parse("github.com/bar/foo2")
+	info21, _ := pb.ParseRepositoryInfo("github.com/bar/foo1")
+	info22, _ := pb.ParseRepositoryInfo("github.com/bar/foo2")
 	secondClientRepos := []*lookout.RepositoryInfo{
 		info21,
 		info22,
@@ -60,7 +60,7 @@ func TestClientPoolUpdate(t *testing.T) {
 	require.Equal(secondClientRepos, p.ReposByClient(secondClient))
 
 	// add new repo
-	info13, _ := vcsurl.Parse("github.com/foo/bar3")
+	info13, _ := pb.ParseRepositoryInfo("github.com/foo/bar3")
 	firstClientRepos = append(firstClientRepos, info13)
 
 	p.Update(firstClient, firstClientRepos)
@@ -106,9 +106,9 @@ func TestClientPoolMultipleDeleteRepos(t *testing.T) {
 
 	// add new client
 	client := &Client{}
-	info1, _ := vcsurl.Parse("github.com/foo/bar1")
-	info2, _ := vcsurl.Parse("github.com/foo/bar2")
-	info3, _ := vcsurl.Parse("github.com/foo/bar3")
+	info1, _ := pb.ParseRepositoryInfo("github.com/foo/bar1")
+	info2, _ := pb.ParseRepositoryInfo("github.com/foo/bar2")
+	info3, _ := pb.ParseRepositoryInfo("github.com/foo/bar3")
 	repos := []*lookout.RepositoryInfo{
 		info1,
 		info2,

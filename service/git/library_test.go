@@ -5,14 +5,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gopkg.in/sourcegraph/go-vcsurl.v1"
 	"gopkg.in/src-d/go-billy.v4/memfs"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 func TestLibrary_Has(t *testing.T) {
 	require := require.New(t)
 
-	url, _ := vcsurl.Parse("http://github.com/foo/bar")
+	url, _ := pb.ParseRepositoryInfo("https://github.com/foo/bar")
 	library := NewLibrary(memfs.New())
 	has, err := library.Has(url)
 	require.NoError(err)
@@ -22,7 +22,7 @@ func TestLibrary_Has(t *testing.T) {
 func TestLibrary_Init(t *testing.T) {
 	require := require.New(t)
 
-	url, _ := vcsurl.Parse("http://github.com/foo/bar")
+	url, _ := pb.ParseRepositoryInfo("https://github.com/foo/bar")
 	library := NewLibrary(memfs.New())
 
 	r, err := library.Init(context.Background(), url)
@@ -41,7 +41,7 @@ func TestLibrary_Init(t *testing.T) {
 func TestLibrary_InitExists(t *testing.T) {
 	require := require.New(t)
 
-	url, _ := vcsurl.Parse("http://github.com/foo/bar")
+	url, _ := pb.ParseRepositoryInfo("https://github.com/foo/bar")
 	library := NewLibrary(memfs.New())
 
 	r, err := library.Init(context.Background(), url)
@@ -56,7 +56,7 @@ func TestLibrary_InitExists(t *testing.T) {
 func TestLibrary_Get(t *testing.T) {
 	require := require.New(t)
 
-	url, _ := vcsurl.Parse("http://github.com/foo/bar")
+	url, _ := pb.ParseRepositoryInfo("https://github.com/foo/bar")
 	library := NewLibrary(memfs.New())
 
 	_, err := library.Init(context.Background(), url)
@@ -70,7 +70,7 @@ func TestLibrary_Get(t *testing.T) {
 func TestLibrary_GetOrInit(t *testing.T) {
 	require := require.New(t)
 
-	url, _ := vcsurl.Parse("http://github.com/foo/bar")
+	url, _ := pb.ParseRepositoryInfo("https://github.com/foo/bar")
 	library := NewLibrary(memfs.New())
 
 	r, err := library.GetOrInit(context.Background(), url)

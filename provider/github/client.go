@@ -220,7 +220,7 @@ var _ git.AuthProvider = &ClientPool{}
 
 // GitAuth returns a go-git auth method for a repo
 func (p *ClientPool) GitAuth(ctx context.Context, repoInfo *lookout.RepositoryInfo) transport.AuthMethod {
-	c, ok := p.Client(repoInfo.Username, repoInfo.Name)
+	c, ok := p.Client(repoInfo.Owner, repoInfo.Name)
 	if !ok {
 		return nil
 	}

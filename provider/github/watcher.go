@@ -174,7 +174,7 @@ func (w *Watcher) processRepoPRs(
 	repo *lookout.RepositoryInfo,
 	cb lookout.EventHandler,
 ) (time.Duration, error) {
-	resp, prs, err := w.doPRListRequest(ctx, c, repo.Username, repo.Name)
+	resp, prs, err := w.doPRListRequest(ctx, c, repo.Owner, repo.Name)
 	if ErrGitHubAPI.Is(err) {
 		ctxlog.Get(ctx).With(log.Fields{
 			"repository": repo.FullName, "response": resp,
@@ -196,7 +196,7 @@ func (w *Watcher) processRepoEvents(
 	repo *lookout.RepositoryInfo,
 	cb lookout.EventHandler,
 ) (time.Duration, error) {
-	resp, events, err := w.doEventRequest(ctx, c, repo.Username, repo.Name)
+	resp, events, err := w.doEventRequest(ctx, c, repo.Owner, repo.Name)
 	if ErrGitHubAPI.Is(err) {
 		ctxlog.Get(ctx).With(log.Fields{
 			"repository": repo.FullName, "response": resp,
@@ -224,7 +224,7 @@ func (w *Watcher) handlePrs(ctx context.Context,
 		return nil
 	}
 
-	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{"repo": r.Link()})
+	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{"repo": r.CloneURL})
 
 	for _, e := range prs {
 		ctx, _ := ctxlog.WithLogFields(ctx, log.Fields{
@@ -256,7 +256,7 @@ func (w *Watcher) handleEvents(
 		return nil
 	}
 
-	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{"repo": r.Link()})
+	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{"repo": r.CloneURL})
 
 	for _, e := range events {
 		event, err := w.handleEvent(r, e)

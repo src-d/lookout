@@ -17,7 +17,6 @@ import (
 	"github.com/gregjones/httpcache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	vcsurl "gopkg.in/sourcegraph/go-vcsurl.v1"
 	log "gopkg.in/src-d/go-log.v1"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
@@ -209,7 +208,7 @@ func (s *WatcherTestSuite) TestWatch_HttpError() {
 
 	w := s.newWatcher([]string{"github.com/mock/test", "github.com/mock/test-err"})
 	err := w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
-		s.Equal("git://github.com/mock/test.git", e.Revision().Head.InternalRepositoryURL)
+		s.Equal("https://github.com/mock/test.git", e.Revision().Head.InternalRepositoryURL)
 		return nil
 	})
 
@@ -244,7 +243,7 @@ func (s *WatcherTestSuite) TestWatch_HttpTimeout() {
 
 	w := s.newWatcher([]string{"github.com/mock/test", "github.com/mock/test-err"})
 	err := w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
-		s.Equal("git://github.com/mock/test.git", e.Revision().Head.InternalRepositoryURL)
+		s.Equal("https://github.com/mock/test.git", e.Revision().Head.InternalRepositoryURL)
 		return nil
 	})
 
@@ -334,7 +333,7 @@ func (s *WatcherTestSuite) TestCustomMinInterval() {
 	client.BaseURL = s.githubURL
 	client.UploadURL = s.githubURL
 
-	repo, _ := vcsurl.Parse("github.com/mock/test")
+	repo, _ := pb.ParseRepositoryInfo("github.com/mock/test")
 
 	pool := &ClientPool{
 		byClients: map[*Client][]*lookout.RepositoryInfo{
@@ -374,7 +373,7 @@ func (s *WatcherTestSuite) TestAddRepo() {
 	go func() {
 		time.Sleep(minInterval) // make sure we add new repo after some calls were done already
 		c, _ := w.pool.Client("mock", "test-a")
-		repo, _ := vcsurl.Parse("github.com/mock/test-b")
+		repo, _ := pb.ParseRepositoryInfo("github.com/mock/test-b")
 		w.pool.Update(c, append(w.pool.ReposByClient(c), repo))
 	}()
 
@@ -439,7 +438,7 @@ func (s *WatcherTestSuite) TestAddClient() {
 	go func() {
 		time.Sleep(minInterval) // make sure we add new repo after some calls were done already
 		c := newClient(s.githubURL, s.cache)
-		repo, _ := vcsurl.Parse("github.com/mock/test-b")
+		repo, _ := pb.ParseRepositoryInfo("github.com/mock/test-b")
 		w.pool.Update(c, []*lookout.RepositoryInfo{repo})
 	}()
 
@@ -464,8 +463,8 @@ func (s *WatcherTestSuite) TestRemoveClient() {
 	defer cancel()
 
 	// construct watcher
-	repo1, _ := vcsurl.Parse("github.com/mock/test-a")
-	repo2, _ := vcsurl.Parse("github.com/mock/test-b")
+	repo1, _ := pb.ParseRepositoryInfo("github.com/mock/test-a")
+	repo2, _ := pb.ParseRepositoryInfo("github.com/mock/test-b")
 
 	client1 := newClient(s.githubURL, s.cache)
 	client2 := newClient(s.githubURL, s.cache)

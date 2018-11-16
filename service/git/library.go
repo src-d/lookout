@@ -149,7 +149,7 @@ func (l *Library) repositoryStorer(url *lookout.RepositoryInfo) (
 }
 
 func (l *Library) repositoryPath(url *lookout.RepositoryInfo) string {
-	return fmt.Sprintf("%s/%s", url.RepoHost, url.FullName)
+	return fmt.Sprintf("%s/%s", url.Host, url.FullName)
 }
 
 func (l *Library) recreate(url *lookout.RepositoryInfo) (*git.Repository, error) {
