@@ -14,7 +14,6 @@ import (
 	"github.com/src-d/lookout/util/ctxlog"
 
 	"github.com/google/go-github/github"
-	"github.com/gregjones/httpcache"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	log "gopkg.in/src-d/go-log.v1"
 )
@@ -252,10 +251,6 @@ func NewClient(
 		Base: t,
 	}
 
-	cachedT := httpcache.NewTransport(cache)
-	cachedT.MarkCachedResponses = true
-	cachedT.Transport = limitRT
-
 	interval := minInterval
 	if watchMinInterval != "" {
 		d, err := time.ParseDuration(watchMinInterval)
@@ -272,7 +267,7 @@ func NewClient(
 
 	return &Client{
 		Client: github.NewClient(&http.Client{
-			Transport: cachedT,
+			Transport: limitRT,
 			Timeout:   timeout,
 		}),
 		cache:            cache,

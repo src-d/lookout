@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bradleyfalzon/ghinstallation"
-	"github.com/google/go-github/github"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/cache"
 	"github.com/src-d/lookout/util/ctxlog"
+
+	"github.com/bradleyfalzon/ghinstallation"
+	"github.com/google/go-github/github"
+	"github.com/gregjones/httpcache"
 	vcsurl "gopkg.in/sourcegraph/go-vcsurl.v1"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	githttp "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
@@ -127,7 +129,10 @@ func (t *Installations) removeInstallation(id int64) {
 }
 
 func (t *Installations) createClient(installationID int64) (*Client, error) {
-	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport,
+	cachedT := httpcache.NewTransport(t.cache)
+	cachedT.MarkCachedResponses = true
+
+	itr, err := ghinstallation.NewKeyFromFile(cachedT,
 		t.appID, int(installationID), t.privateKey)
 	if err != nil {
 		return nil, err

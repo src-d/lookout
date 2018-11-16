@@ -102,7 +102,7 @@ func (s *PosterTestSuite) SetupTest() {
 	githubURL, _ := url.Parse(s.server.URL + "/")
 
 	repoURLs := []string{"github.com/foo/bar"}
-	s.pool = newTestPool(s.Suite, repoURLs, githubURL, cache)
+	s.pool = newTestPool(s.Suite, repoURLs, githubURL, cache, false)
 }
 
 func (s *PosterTestSuite) TearDownTest() {

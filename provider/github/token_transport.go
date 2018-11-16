@@ -9,6 +9,7 @@ import (
 	"github.com/src-d/lookout/util/cache"
 	"github.com/src-d/lookout/util/ctxlog"
 
+	"github.com/gregjones/httpcache"
 	vcsurl "gopkg.in/sourcegraph/go-vcsurl.v1"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	githttp "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
@@ -50,9 +51,13 @@ func NewClientPoolFromTokens(
 	byClients := make(map[*Client][]*lookout.RepositoryInfo, len(byConfig))
 	byRepo := make(map[string]*Client, len(urlToConfig))
 	for conf, repos := range byConfig {
+		cachedT := httpcache.NewTransport(cache)
+		cachedT.MarkCachedResponses = true
+
 		rt := &roundTripper{
 			User:     conf.User,
 			Password: conf.Token,
+			Base:     cachedT,
 		}
 
 		// Auth must be: https://<token>@github.com/owner/repo.git
