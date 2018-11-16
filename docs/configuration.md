@@ -1,6 +1,6 @@
 # Configuring lookout
 
-lookout is configured with the `config.yml` file, you can use the template [`config.yml.tpl`](../config.yml.tpl) to create your own. Use the `lookoutd` option `--config` to set the path to it, or use the default location at `./config.yml`.
+lookout is configured with the `config.yml` file, you can use the template [`config.yml.tpl`](/config.yml.tpl) to create your own. Use the `lookoutd` option `--config` to set the path to it, or use the default location at `./config.yml`.
 
 The main structure of `config.yml` is:
 
@@ -12,12 +12,14 @@ repositories:
     # list of repositories to watch and user/token if needed
 analyzers:
     # list of named analyzers
+timeout:
+    # configuration for the existent timeouts.
 ```
 
 
 ## Github Provider
 
-The `providers.github` key configures how **lookout** will connect with GitHub. 
+The `providers.github` key configures how **lookout** will connect with GitHub.
 
 ```yml
 providers:
@@ -38,7 +40,7 @@ providers:
 
 lookout needs to authenticate with GitHub. The easiest method for testing purposes is using a [GitHub personal access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/). The token should have the **repo** scope enabled.
 
-The credential can then be passed to `lookoutd` as:
+The credential can then be also passed to `lookoutd` as:
 
 - user: `--github-user` argument or `GITHUB_USER` environment variable.
 - token: `--github-token` argument or `GITHUB_TOKEN` environment variable.
@@ -46,7 +48,7 @@ The credential can then be passed to `lookoutd` as:
 <a id=github-app></a>
 #### Authentication as a GitHub App
 
-For a production environment you can use **lookout** as a [GitHub App](https://developer.github.com/apps/about-apps/).
+For a production environment, you can use **lookout** as a [GitHub App](https://developer.github.com/apps/about-apps/).
 
 To do so, you must also unset any environment variable or option for the GitHub username and token authentication.
 
@@ -76,7 +78,9 @@ The minimum watch interval to discover new pull requests and push events is defi
 
 ## Repositories
 
-The list of repositories to be watched by **lookout** is defined by the `repositories` key.
+The list of repositories to be watched by **lookout** is defined by:
+- the `repositories` field at `config.yml`, or
+- automatically the GitHub App installation if you [authenticated as a GitHub App](#github-app); in that case, the `repositories` field at `config.yml` will be ignored.
 
 The user and token to be used for the Github authentication can be defined per repository; if you do so, it will override the globally passed user and token.
 
@@ -89,8 +93,6 @@ repositories:
       # token: github-user-token
       # minInterval: 1m
 ```
-
-If you're using [Authentication as a GitHub App](#github-app), the list of repositories to be watched will be taken from the GitHub installations.
 
 ## Analyzers
 
@@ -146,23 +148,25 @@ The `settings` for each analyzer in the `.lookout.yml` config file will be merge
 - Arrays are replaced
 - Null value replaces object
 
-### Advanced fine-tuning
+## Timeouts
 
-The configuration file also provides the possibility to change default timeouts.
+The timeouts used by **lookout** for some operations can be modified or disabled from the `config.yml` file.
 
-Below is the list of different timeouts with their default values:
+If any timeout is set to `0`, there will be no timeout for that process.
+
+Below is the list of different timeouts in **source{d} lookout**, with their default values:
 
 ```yaml
 # These are the default timeout values. A value of 0 means no timeout
 timeout:
-  # Timeout for an analyzer response to a NotifyReviewEvent
+  # Timeout for an analyzer to response a NotifyReviewEvent
   analyzer_review: 10m
-  # Timeout for an analyzer response to a NotifyPushEvent
+  # Timeout for an analyzer to response a NotifyPushEvent
   analyzer_push: 60m
-  # Timeout http requests to the GitHub API
+  # Timeout for an HTTP requests to the GitHub API
   github_request: 1m
   # Timeout for Git fetch actions
   git_fetch: 20m
-  # Timeout for parse requests to Bblfsh
+  # Timeout for Bblfsh to response a Parse request
   bblfsh_parse: 2m
 ```

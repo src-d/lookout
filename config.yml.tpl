@@ -21,13 +21,13 @@ repositories:
 
 # These are the default timeout values. A value of 0 means no timeout
 timeout:
-  # Timeout for an analyzer response to a NotifyReviewEvent
+  # Timeout for an analyzer to response a NotifyReviewEvent
   analyzer_review: 10m
-  # Timeout for an analyzer response to a NotifyPushEvent
+  # Timeout for an analyzer to response a NotifyPushEvent
   analyzer_push: 60m
-  # Timeout http requests to the GitHub API
+  # Timeout for an HTTP requests to the GitHub API
   github_request: 1m
   # Timeout for Git fetch actions
   git_fetch: 20m
-  # Timeout for parse requests to Bblfsh
+  # Timeout for Bblfsh to response a Parse request
   bblfsh_parse: 2m

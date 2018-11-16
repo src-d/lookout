@@ -1,0 +1,350 @@
+<svg id="mermaid-1543840180885" width="100%" xmlns="http://www.w3.org/2000/svg" height="100%" style="max-width:1050px;" viewBox="-50 -10 1050 646"><style>
+
+
+#mermaid-1543840180885 .label {
+  font-family: 'trebuchet ms', verdana, arial;
+  color: #333; }
+
+#mermaid-1543840180885 .node rect,
+#mermaid-1543840180885 .node circle,
+#mermaid-1543840180885 .node ellipse,
+#mermaid-1543840180885 .node polygon {
+  fill: #ECECFF;
+  stroke: #9370DB;
+  stroke-width: 1px; }
+
+#mermaid-1543840180885 .node.clickable {
+  cursor: pointer; }
+
+#mermaid-1543840180885 .arrowheadPath {
+  fill: #333333; }
+
+#mermaid-1543840180885 .edgePath .path {
+  stroke: #333333;
+  stroke-width: 1.5px; }
+
+#mermaid-1543840180885 .edgeLabel {
+  background-color: #e8e8e8; }
+
+#mermaid-1543840180885 .cluster rect {
+  fill: #ffffde !important;
+  stroke: #aaaa33 !important;
+  stroke-width: 1px !important; }
+
+#mermaid-1543840180885 .cluster text {
+  fill: #333; }
+
+#mermaid-1543840180885 div.mermaidTooltip {
+  position: absolute;
+  text-align: center;
+  max-width: 200px;
+  padding: 2px;
+  font-family: 'trebuchet ms', verdana, arial;
+  font-size: 12px;
+  background: #ffffde;
+  border: 1px solid #aaaa33;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 100; }
+
+#mermaid-1543840180885 .actor {
+  stroke: #CCCCFF;
+  fill: #ECECFF; }
+
+#mermaid-1543840180885 text.actor {
+  fill: black;
+  stroke: none; }
+
+#mermaid-1543840180885 .actor-line {
+  stroke: grey; }
+
+#mermaid-1543840180885 .messageLine0 {
+  stroke-width: 1.5;
+  stroke-dasharray: '2 2';
+  marker-end: 'url(#arrowhead)';
+  stroke: #333; }
+
+#mermaid-1543840180885 .messageLine1 {
+  stroke-width: 1.5;
+  stroke-dasharray: '2 2';
+  stroke: #333; }
+
+#mermaid-1543840180885 #arrowhead {
+  fill: #333; }
+
+#mermaid-1543840180885 #crosshead path {
+  fill: #333 !important;
+  stroke: #333 !important; }
+
+#mermaid-1543840180885 .messageText {
+  fill: #333;
+  stroke: none; }
+
+#mermaid-1543840180885 .labelBox {
+  stroke: #CCCCFF;
+  fill: #ECECFF; }
+
+#mermaid-1543840180885 .labelText {
+  fill: black;
+  stroke: none; }
+
+#mermaid-1543840180885 .loopText {
+  fill: black;
+  stroke: none; }
+
+#mermaid-1543840180885 .loopLine {
+  stroke-width: 2;
+  stroke-dasharray: '2 2';
+  marker-end: 'url(#arrowhead)';
+  stroke: #CCCCFF; }
+
+#mermaid-1543840180885 .note {
+  stroke: #aaaa33;
+  fill: #fff5ad; }
+
+#mermaid-1543840180885 .noteText {
+  fill: black;
+  stroke: none;
+  font-family: 'trebuchet ms', verdana, arial;
+  font-size: 14px; }
+
+
+#mermaid-1543840180885 .section {
+  stroke: none;
+  opacity: 0.2; }
+
+#mermaid-1543840180885 .section0 {
+  fill: rgba(102, 102, 255, 0.49); }
+
+#mermaid-1543840180885 .section2 {
+  fill: #fff400; }
+
+#mermaid-1543840180885 .section1,
+#mermaid-1543840180885 .section3 {
+  fill: white;
+  opacity: 0.2; }
+
+#mermaid-1543840180885 .sectionTitle0 {
+  fill: #333; }
+
+#mermaid-1543840180885 .sectionTitle1 {
+  fill: #333; }
+
+#mermaid-1543840180885 .sectionTitle2 {
+  fill: #333; }
+
+#mermaid-1543840180885 .sectionTitle3 {
+  fill: #333; }
+
+#mermaid-1543840180885 .sectionTitle {
+  text-anchor: start;
+  font-size: 11px;
+  text-height: 14px; }
+
+
+#mermaid-1543840180885 .grid .tick {
+  stroke: lightgrey;
+  opacity: 0.3;
+  shape-rendering: crispEdges; }
+
+#mermaid-1543840180885 .grid path {
+  stroke-width: 0; }
+
+
+#mermaid-1543840180885 .today {
+  fill: none;
+  stroke: red;
+  stroke-width: 2px; }
+
+
+
+#mermaid-1543840180885 .task {
+  stroke-width: 2; }
+
+#mermaid-1543840180885 .taskText {
+  text-anchor: middle;
+  font-size: 11px; }
+
+#mermaid-1543840180885 .taskTextOutsideRight {
+  fill: black;
+  text-anchor: start;
+  font-size: 11px; }
+
+#mermaid-1543840180885 .taskTextOutsideLeft {
+  fill: black;
+  text-anchor: end;
+  font-size: 11px; }
+
+
+#mermaid-1543840180885 .taskText0,
+#mermaid-1543840180885 .taskText1,
+#mermaid-1543840180885 .taskText2,
+#mermaid-1543840180885 .taskText3 {
+  fill: white; }
+
+#mermaid-1543840180885 .task0,
+#mermaid-1543840180885 .task1,
+#mermaid-1543840180885 .task2,
+#mermaid-1543840180885 .task3 {
+  fill: #8a90dd;
+  stroke: #534fbc; }
+
+#mermaid-1543840180885 .taskTextOutside0,
+#mermaid-1543840180885 .taskTextOutside2 {
+  fill: black; }
+
+#mermaid-1543840180885 .taskTextOutside1,
+#mermaid-1543840180885 .taskTextOutside3 {
+  fill: black; }
+
+
+#mermaid-1543840180885 .active0,
+#mermaid-1543840180885 .active1,
+#mermaid-1543840180885 .active2,
+#mermaid-1543840180885 .active3 {
+  fill: #bfc7ff;
+  stroke: #534fbc; }
+
+#mermaid-1543840180885 .activeText0,
+#mermaid-1543840180885 .activeText1,
+#mermaid-1543840180885 .activeText2,
+#mermaid-1543840180885 .activeText3 {
+  fill: black !important; }
+
+
+#mermaid-1543840180885 .done0,
+#mermaid-1543840180885 .done1,
+#mermaid-1543840180885 .done2,
+#mermaid-1543840180885 .done3 {
+  stroke: grey;
+  fill: lightgrey;
+  stroke-width: 2; }
+
+#mermaid-1543840180885 .doneText0,
+#mermaid-1543840180885 .doneText1,
+#mermaid-1543840180885 .doneText2,
+#mermaid-1543840180885 .doneText3 {
+  fill: black !important; }
+
+
+#mermaid-1543840180885 .crit0,
+#mermaid-1543840180885 .crit1,
+#mermaid-1543840180885 .crit2,
+#mermaid-1543840180885 .crit3 {
+  stroke: #ff8888;
+  fill: red;
+  stroke-width: 2; }
+
+#mermaid-1543840180885 .activeCrit0,
+#mermaid-1543840180885 .activeCrit1,
+#mermaid-1543840180885 .activeCrit2,
+#mermaid-1543840180885 .activeCrit3 {
+  stroke: #ff8888;
+  fill: #bfc7ff;
+  stroke-width: 2; }
+
+#mermaid-1543840180885 .doneCrit0,
+#mermaid-1543840180885 .doneCrit1,
+#mermaid-1543840180885 .doneCrit2,
+#mermaid-1543840180885 .doneCrit3 {
+  stroke: #ff8888;
+  fill: lightgrey;
+  stroke-width: 2;
+  cursor: pointer;
+  shape-rendering: crispEdges; }
+
+#mermaid-1543840180885 .doneCritText0,
+#mermaid-1543840180885 .doneCritText1,
+#mermaid-1543840180885 .doneCritText2,
+#mermaid-1543840180885 .doneCritText3 {
+  fill: black !important; }
+
+#mermaid-1543840180885 .activeCritText0,
+#mermaid-1543840180885 .activeCritText1,
+#mermaid-1543840180885 .activeCritText2,
+#mermaid-1543840180885 .activeCritText3 {
+  fill: black !important; }
+
+#mermaid-1543840180885 .titleText {
+  text-anchor: middle;
+  font-size: 18px;
+  fill: black; }
+
+#mermaid-1543840180885 g.classGroup text {
+  fill: #9370DB;
+  stroke: none;
+  font-family: 'trebuchet ms', verdana, arial;
+  font-size: 10px; }
+
+#mermaid-1543840180885 g.classGroup rect {
+  fill: #ECECFF;
+  stroke: #9370DB; }
+
+#mermaid-1543840180885 g.classGroup line {
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1543840180885 .classLabel .box {
+  stroke: none;
+  stroke-width: 0;
+  fill: #ECECFF;
+  opacity: 0.5; }
+
+#mermaid-1543840180885 .classLabel .label {
+  fill: #9370DB;
+  font-size: 10px; }
+
+#mermaid-1543840180885 .relation {
+  stroke: #9370DB;
+  stroke-width: 1;
+  fill: none; }
+
+#mermaid-1543840180885 #compositionStart {
+  fill: #9370DB;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1543840180885 #compositionEnd {
+  fill: #9370DB;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1543840180885 #aggregationStart {
+  fill: #ECECFF;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1543840180885 #aggregationEnd {
+  fill: #ECECFF;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1543840180885 #dependencyStart {
+  fill: #9370DB;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1543840180885 #dependencyEnd {
+  fill: #9370DB;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1543840180885 #extensionStart {
+  fill: #9370DB;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1543840180885 #extensionEnd {
+  fill: #9370DB;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1543840180885 .commit-id,
+#mermaid-1543840180885 .commit-msg,
+#mermaid-1543840180885 .branch-label {
+  fill: lightgrey;
+  color: lightgrey; }
+</style><style>#mermaid-1543840180885 {
+    color: rgba(0, 0, 0, 0.65);
+    font: normal normal 400 normal 14px / 21px "Monospaced Number", "Chinese Quote", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }</style><g></g><g><line id="actor874" x1="75" y1="5" x2="75" y2="635" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="0" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="75" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="75" dy="0">GitHub</tspan></text></g><g><line id="actor875" x1="275" y1="5" x2="275" y2="635" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="200" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="275" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="275" dy="0">Server</tspan></text></g><g><line id="actor876" x1="475" y1="5" x2="475" y2="635" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="400" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="475" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="475" dy="0">DataService</tspan></text></g><g><line id="actor877" x1="675" y1="5" x2="675" y2="635" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="600" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="675" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="675" dy="0">Bblfsh</tspan></text></g><g><line id="actor878" x1="875" y1="5" x2="875" y2="635" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="800" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="875" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="875" dy="0">Analyzer</tspan></text></g><defs><marker id="arrowhead" refX="5" refY="2" markerWidth="6" markerHeight="4" orient="auto"><path d="M 0,0 V 4 L6,2 Z"></path></marker></defs><defs><marker id="crosshead" markerWidth="15" markerHeight="8" orient="auto" refX="16" refY="4"><path fill="black" stroke="#000000" stroke-width="1px" d="M 9,2 V 6 L16,4 Z" style="stroke-dasharray: 0, 0;"></path><path fill="none" stroke="#000000" stroke-width="1px" d="M 0,1 L 6,7 M 6,1 L 0,7" style="stroke-dasharray: 0, 0;"></path></marker></defs><g><text x="275" y="118" class="messageText" style="text-anchor: middle;">keep waiting</text><path d="M 275,125 C 335,115 335,155 275,145" class="messageLine0" stroke-width="2" stroke="black" style="fill: none;"></path></g><g><line x1="165" y1="75" x2="385" y2="75" class="loopLine"></line><line x1="385" y1="75" x2="385" y2="165" class="loopLine"></line><line x1="165" y1="165" x2="385" y2="165" class="loopLine"></line><line x1="165" y1="75" x2="165" y2="165" class="loopLine"></line><polygon points="165,75 215,75 215,88 206.6,95 165,95" class="labelBox"></polygon><text x="172.5" y="90" fill="black" class="labelText"><tspan x="172.5" fill="black">loop</tspan></text><text x="275" y="90" fill="black" class="loopText" style="text-anchor: middle;"><tspan x="275" fill="black">[ Healthcheck ]</tspan></text></g><g><text x="175" y="218" class="messageText" style="text-anchor: middle;">Poll: PRs events</text><line x1="275" y1="225" x2="75" y2="225" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><text x="575" y="278" class="messageText" style="text-anchor: middle;">(gRPC) NotifyReviewEvent</text><line x1="275" y1="285" x2="875" y2="285" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="870" y="287" fill="#f4f4f4" stroke="#666" width="10" height="208" rx="0" ry="0"></rect></g><g><text x="672.5" y="313" class="messageText" style="text-anchor: middle;">(gRPC) GetChanges / GetFiles</text><line x1="870" y1="320" x2="475" y2="320" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="470" y="322" fill="#f4f4f4" stroke="#666" width="10" height="138" rx="0" ry="0"></rect></g><g><text x="577.5" y="373" class="messageText" style="text-anchor: middle;">(gRPC) Parse</text><line x1="480" y1="380" x2="675" y2="380" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="670" y="382" fill="#f4f4f4" stroke="#666" width="10" height="33" rx="0" ry="0"></rect></g><g><text x="575" y="408" class="messageText" style="text-anchor: middle;">uast.Node</text><line x1="670" y1="415" x2="480" y2="415" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><line x1="460" y1="330" x2="690" y2="330" class="loopLine"></line><line x1="690" y1="330" x2="690" y2="425" class="loopLine"></line><line x1="460" y1="425" x2="690" y2="425" class="loopLine"></line><line x1="460" y1="330" x2="460" y2="425" class="loopLine"></line><polygon points="460,330 510,330 510,343 501.6,350 460,350" class="labelBox"></polygon><text x="467.5" y="345" fill="black" class="labelText"><tspan x="467.5" fill="black">opt</tspan></text><text x="575" y="345" fill="black" class="loopText" style="text-anchor: middle;"><tspan x="575" fill="black">[ req.WantUAST? ]</tspan></text></g><g><text x="675" y="453" class="messageText" style="text-anchor: middle;">stream of Change / File</text><line x1="480" y1="460" x2="870" y2="460" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><text x="572.5" y="488" class="messageText" style="text-anchor: middle;">Comments</text><line x1="870" y1="495" x2="275" y2="495" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><line x1="265" y1="235" x2="890" y2="235" class="loopLine"></line><line x1="890" y1="235" x2="890" y2="505" class="loopLine"></line><line x1="265" y1="505" x2="890" y2="505" class="loopLine"></line><line x1="265" y1="235" x2="265" y2="505" class="loopLine"></line><polygon points="265,235 315,235 315,248 306.6,255 265,255" class="labelBox"></polygon><text x="272.5" y="250" fill="black" class="labelText"><tspan x="272.5" fill="black">loop</tspan></text><text x="577.5" y="250" fill="black" class="loopText" style="text-anchor: middle;"><tspan x="577.5" fill="black">[ registered Analyzers ]</tspan></text></g><g><text x="175" y="533" class="messageText" style="text-anchor: middle;">Post all comments</text><line x1="275" y1="540" x2="75" y2="540" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><line x1="65" y1="175" x2="900" y2="175" class="loopLine"></line><line x1="900" y1="175" x2="900" y2="550" class="loopLine"></line><line x1="65" y1="550" x2="900" y2="550" class="loopLine"></line><line x1="65" y1="175" x2="65" y2="550" class="loopLine"></line><polygon points="65,175 115,175 115,188 106.6,195 65,195" class="labelBox"></polygon><text x="72.5" y="190" fill="black" class="labelText"><tspan x="72.5" fill="black">loop</tspan></text><text x="482.5" y="190" fill="black" class="loopText" style="text-anchor: middle;"><tspan x="482.5" fill="black">[ registered Repos ]</tspan></text></g><g><rect x="0" y="570" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="75" y="602.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="75" dy="0">GitHub</tspan></text></g><g><rect x="200" y="570" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="275" y="602.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="275" dy="0">Server</tspan></text></g><g><rect x="400" y="570" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="475" y="602.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="475" dy="0">DataService</tspan></text></g><g><rect x="600" y="570" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="675" y="602.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="675" dy="0">Bblfsh</tspan></text></g><g><rect x="800" y="570" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="875" y="602.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="875" dy="0">Analyzer</tspan></text></g></svg>
