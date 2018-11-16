@@ -15,6 +15,7 @@ import (
 	"github.com/src-d/lookout/util/cache"
 
 	"github.com/gregjones/httpcache"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	vcsurl "gopkg.in/sourcegraph/go-vcsurl.v1"
 	log "gopkg.in/src-d/go-log.v1"
@@ -69,6 +70,8 @@ var eventsHandler = func(calls *int32) func(w http.ResponseWriter, r *http.Reque
 		}
 
 		w.Header().Set("etag", etag)
+		w.Header().Set("Vary", "Accept, Authorization, Cookie, X-GitHub-OTP")
+
 		fmt.Fprint(w, `[{"id":"1", "type":"PushEvent", "payload":{"push_id": 1}}]`)
 	}
 }
@@ -83,7 +86,16 @@ const (
 )
 
 func (s *WatcherTestSuite) newWatcher(repoURLs []string) *Watcher {
-	pool := newTestPool(s.Suite, repoURLs, s.githubURL, s.cache)
+	pool := newTestPool(s.Suite, repoURLs, s.githubURL, s.cache, false)
+	w, err := NewWatcher(pool)
+
+	s.NoError(err)
+
+	return w
+}
+
+func (s *WatcherTestSuite) newTokenAuthWatcher(repoURLs []string) *Watcher {
+	pool := newTestPool(s.Suite, repoURLs, s.githubURL, s.cache, true)
 	w, err := NewWatcher(pool)
 
 	s.NoError(err)
@@ -92,38 +104,56 @@ func (s *WatcherTestSuite) newWatcher(repoURLs []string) *Watcher {
 }
 
 func (s *WatcherTestSuite) TestWatch() {
-	var callsA, callsB, events, prEvents, pushEvents int32
+	testCases := []struct {
+		name           string
+		watcherFactory func(repoURLs []string) *Watcher
+	}{
+		{"no auth", s.newWatcher},
+		{"token auth", s.newTokenAuthWatcher},
+	}
 
-	s.mux.HandleFunc("/repos/mock/test-a/pulls", pullsHandler(&callsA))
-	s.mux.HandleFunc("/repos/mock/test-a/events", eventsHandler(&callsA))
-	s.mux.HandleFunc("/repos/mock/test-b/pulls", pullsHandler(&callsB))
-	s.mux.HandleFunc("/repos/mock/test-b/events", eventsHandler(&callsB))
+	for _, tc := range testCases {
+		s.T().Run(tc.name, func(t *testing.T) {
+			assert := assert.New(t)
 
-	ctx, cancel := context.WithTimeout(context.TODO(), minInterval*10)
-	defer cancel()
+			s.SetupTest()
 
-	w := s.newWatcher([]string{"github.com/mock/test-a", "github.com/mock/test-b"})
-	err := w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
-		atomic.AddInt32(&events, 1)
+			var callsA, callsB, events, prEvents, pushEvents int32
 
-		switch e.Type() {
-		case pb.ReviewEventType:
-			prEvents++
-			s.Equal(pullID, e.ID().String())
-		case pb.PushEventType:
-			pushEvents++
-			s.Equal(pushID, e.ID().String())
-		}
+			s.mux.HandleFunc("/repos/mock/test-a/pulls", pullsHandler(&callsA))
+			s.mux.HandleFunc("/repos/mock/test-a/events", eventsHandler(&callsA))
+			s.mux.HandleFunc("/repos/mock/test-b/pulls", pullsHandler(&callsB))
+			s.mux.HandleFunc("/repos/mock/test-b/events", eventsHandler(&callsB))
 
-		return nil
-	})
+			ctx, cancel := context.WithTimeout(context.TODO(), minInterval*10)
+			defer cancel()
 
-	s.True(atomic.LoadInt32(&callsA) > 2)
-	s.True(atomic.LoadInt32(&callsB) > 2)
-	s.EqualValues(4, events)
-	s.EqualValues(2, prEvents)
-	s.EqualValues(2, pushEvents)
-	s.EqualError(err, "context deadline exceeded")
+			w := tc.watcherFactory([]string{"github.com/mock/test-a", "github.com/mock/test-b"})
+			err := w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
+				atomic.AddInt32(&events, 1)
+
+				switch e.Type() {
+				case pb.ReviewEventType:
+					prEvents++
+					assert.Equal(pullID, e.ID().String())
+				case pb.PushEventType:
+					pushEvents++
+					assert.Equal(pushID, e.ID().String())
+				}
+
+				return nil
+			})
+
+			totalA := atomic.LoadInt32(&callsA)
+			totalB := atomic.LoadInt32(&callsB)
+			assert.True(totalA > 2, fmt.Sprintf("callsA expected to be > 2, is %v", totalA))
+			assert.True(totalB > 2, fmt.Sprintf("callsB expected to be > 2, is %v", totalB))
+			assert.EqualValues(4, events)
+			assert.EqualValues(2, prEvents)
+			assert.EqualValues(2, pushEvents)
+			assert.EqualError(err, "context deadline exceeded")
+		})
+	}
 }
 
 func (s *WatcherTestSuite) TestWatch_CallbackError_Pull() {
@@ -296,7 +326,11 @@ func (s *WatcherTestSuite) TestCustomMinInterval() {
 	s.mux.HandleFunc("/repos/mock/test/events", eventsHandler(&eventCalls))
 
 	clientMinInterval := 200 * time.Millisecond
-	client := NewClient(nil, s.cache, clientMinInterval.String(), nil, 0)
+
+	cachedT := httpcache.NewTransport(s.cache)
+	cachedT.MarkCachedResponses = true
+
+	client := NewClient(cachedT, s.cache, clientMinInterval.String(), nil, 0)
 	client.BaseURL = s.githubURL
 	client.UploadURL = s.githubURL
 
@@ -483,31 +517,40 @@ func (t *NoopTransport) Get(repo string) http.RoundTripper {
 }
 
 func newClient(githubURL *url.URL, cache *cache.ValidableCache) *Client {
-	client := NewClient(nil, cache, "", nil, 0)
+	cachedT := httpcache.NewTransport(cache)
+	cachedT.MarkCachedResponses = true
+
+	client := NewClient(cachedT, cache, "", nil, 0)
 	client.BaseURL = githubURL
 	client.UploadURL = githubURL
 	return client
 }
 
-func newTestPool(s suite.Suite, repoURLs []string, githubURL *url.URL, cache *cache.ValidableCache) *ClientPool {
-	client := newClient(githubURL, cache)
+func newTestPool(s suite.Suite, repoURLs []string, githubURL *url.URL, cache *cache.ValidableCache, auth bool) *ClientPool {
+	repoToConfig := make(map[string]ClientConfig, len(repoURLs))
+	config := ClientConfig{}
 
-	byClients := map[*Client][]*lookout.RepositoryInfo{
-		client: []*lookout.RepositoryInfo{},
+	if auth {
+		config.User = "testuser"
+		config.Token = "testtoken"
 	}
-	byRepo := make(map[string]*Client, len(repoURLs))
 
 	for _, url := range repoURLs {
-		repo, err := vcsurl.Parse(url)
-		s.NoError(err)
-
-		byClients[client] = append(byClients[client], repo)
-		byRepo[repo.FullName] = client
+		repoToConfig[url] = config
 	}
 
-	return &ClientPool{
-		byClients: byClients,
-		byRepo:    byRepo,
-		subs:      make(map[chan ClientPoolEvent]bool),
+	pool, err := NewClientPoolFromTokens(repoToConfig, cache, 0)
+	s.NoError(err)
+
+	for client := range pool.byClients {
+		client.BaseURL = githubURL
+		client.UploadURL = githubURL
 	}
+
+	for _, client := range pool.byRepo {
+		client.BaseURL = githubURL
+		client.UploadURL = githubURL
+	}
+
+	return pool
 }

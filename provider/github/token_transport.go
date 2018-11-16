@@ -9,6 +9,7 @@ import (
 	"github.com/src-d/lookout/util/cache"
 	"github.com/src-d/lookout/util/ctxlog"
 
+	"github.com/gregjones/httpcache"
 	vcsurl "gopkg.in/sourcegraph/go-vcsurl.v1"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	githttp "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
@@ -50,9 +51,13 @@ func NewClientPoolFromTokens(
 	byClients := make(map[*Client][]*lookout.RepositoryInfo, len(byConfig))
 	byRepo := make(map[string]*Client, len(urlToConfig))
 	for conf, repos := range byConfig {
-		rt := &roundTripper{
+		cachedT := httpcache.NewTransport(cache)
+		cachedT.MarkCachedResponses = true
+
+		rt := &basicAuthRoundTripper{
 			User:     conf.User,
 			Password: conf.Token,
+			Base:     cachedT,
 		}
 
 		// Auth must be: https://<token>@github.com/owner/repo.git
@@ -80,13 +85,13 @@ func NewClientPoolFromTokens(
 	return pool, nil
 }
 
-type roundTripper struct {
+type basicAuthRoundTripper struct {
 	Base     http.RoundTripper
 	User     string
 	Password string
 }
 
-func (t *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *basicAuthRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctxlog.Get(req.Context()).With(log.Fields{
 		"url":  req.URL.String(),
 		"user": t.User,
@@ -104,4 +109,4 @@ func (t *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	return rt.RoundTrip(req)
 }
 
-var _ http.RoundTripper = &roundTripper{}
+var _ http.RoundTripper = &basicAuthRoundTripper{}
