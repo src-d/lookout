@@ -106,7 +106,7 @@ func (suite *DummyIntegrationSuite) TestSuccessPush() {
 	suite.GrepAll(suite.r, []string{
 		"processing push",
 		"comments can belong only to review event but 1 is given",
-		`status=success`,
+		`status=error`,
 	})
 }
 
