@@ -1,9 +1,11 @@
 package github
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/go-github/github"
+	"github.com/src-d/lookout"
 	"github.com/stretchr/testify/require"
 )
 
@@ -133,4 +135,93 @@ func TestSplitReviewRequest(t *testing.T) {
 
 	r = splitReviewRequest(rw, n)
 	require.Len(r, 3)
+}
+
+func TestConvertCommentsOutOfRange(t *testing.T) {
+	require := require.New(t)
+
+	dl := newDiffLines(&github.CommitsComparison{
+		Files: []github.CommitFile{github.CommitFile{
+			Filename: strptr("main.go"),
+			Patch:    strptr(mockedPatch),
+		}}})
+
+	input := []*lookout.Comment{
+		&lookout.Comment{
+			File: "main.go",
+			Line: 1,
+			Text: "out of range comment before",
+		},
+		&lookout.Comment{
+			Text: "Body comment",
+		},
+		&lookout.Comment{
+			File: "main.go",
+			Line: 3,
+			Text: "Line comment",
+		},
+		&lookout.Comment{
+			File: "main.go",
+			Line: 205,
+			Text: "out of range comment after",
+		}}
+
+	bodyComments, ghComments := convertComments(context.TODO(), input, dl)
+
+	require.Len(bodyComments, 1)
+	require.Len(ghComments, 1)
+
+	require.Equal([]*github.DraftReviewComment{&github.DraftReviewComment{
+		Path:     strptr("main.go"),
+		Position: intptr(1),
+		Body:     strptr("Line comment"),
+	}}, ghComments)
+}
+
+func TestConvertCommentsWrongFile(t *testing.T) {
+	require := require.New(t)
+
+	dl := newDiffLines(&github.CommitsComparison{
+		Files: []github.CommitFile{github.CommitFile{
+			Filename: strptr("main.go"),
+			Patch:    strptr(mockedPatch),
+		}}})
+
+	input := []*lookout.Comment{
+		&lookout.Comment{
+			Text: "Global comment",
+		}, &lookout.Comment{
+			File: "main.go",
+			Text: "File comment",
+		}, &lookout.Comment{
+			File: "main.go",
+			Line: 5,
+			Text: "Line comment",
+		}, &lookout.Comment{
+			Text: "Another global comment",
+		}, &lookout.Comment{
+			File: "file-does-not-exist.txt",
+			Line: 5,
+			Text: "Line comment",
+		}}
+
+	bodyComments, ghComments := convertComments(context.TODO(), input, dl)
+
+	require.Len(bodyComments, 2)
+	require.Len(ghComments, 2)
+
+	require.Equal([]string{
+		"Global comment",
+		"Another global comment",
+	}, bodyComments)
+
+	require.Equal([]*github.DraftReviewComment{&github.DraftReviewComment{
+		Path:     strptr("main.go"),
+		Body:     strptr("File comment"),
+		Position: intptr(1),
+	}, &github.DraftReviewComment{
+		Path:     strptr("main.go"),
+		Position: intptr(3),
+		Body:     strptr("Line comment"),
+	}}, ghComments)
 }
