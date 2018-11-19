@@ -325,6 +325,99 @@ func (s *PosterTestSuite) TestPostOnlyBodyComments() {
 	s.True(createReviewsCalled)
 }
 
+func (s *PosterTestSuite) TestPostSafeOK() {
+	compareCalled := false
+	s.compareHandle(&compareCalled)
+
+	inputComments := []*lookout.Comment{
+		// this comment should be posted
+		{Text: "Global comment"},
+		// this comment should be filtered by single comment
+		{
+			File: "main.go",
+			Text: "File comment",
+		},
+		// this comment should be filtered by merged comment
+		{
+			File: "main.go",
+			Line: 5,
+			Text: "Line comment",
+		},
+		// this comment should be posted
+		{
+			File: "main.go",
+			Line: 5,
+			Text: "Survive comment",
+		},
+	}
+
+	inputAnalyzerComments := []lookout.AnalyzerComments{
+		lookout.AnalyzerComments{
+			Config: lookout.AnalyzerConfig{
+				Name: "mock",
+			},
+			Comments: inputComments,
+		}}
+
+	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews/1/comments", func(w http.ResponseWriter, r *http.Request) {
+		resp := []*github.PullRequestComment{
+			// single comment that should be filtered
+			{
+				Path:     strptr("main.go"),
+				Position: intptr(1),
+				Body:     strptr("File comment"),
+			},
+			// merged comment with footer should also filter
+			{
+				Path:     strptr("main.go"),
+				Position: intptr(3),
+				Body:     strptr("Line comment" + commentsSeparator + "Another line" + footnoteSeparator + "footer here"),
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	createReviewsCalled := false
+	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			resp := []*github.PullRequestReview{
+				{ID: int64ptr(1)},
+			}
+			json.NewEncoder(w).Encode(resp)
+		}
+
+		if r.Method == http.MethodPost {
+			s.False(createReviewsCalled)
+			createReviewsCalled = true
+
+			body, err := ioutil.ReadAll(r.Body)
+			s.NoError(err)
+
+			expected, _ := json.Marshal(&github.PullRequestReviewRequest{
+				CommitID: &mockEvent.Head.Hash,
+				Body:     strptr("Global comment"),
+				Event:    strptr(commentEvent),
+				Comments: []*github.DraftReviewComment{
+					{
+						Path:     strptr("main.go"),
+						Position: intptr(3),
+						Body:     strptr("Survive comment"),
+					},
+				}})
+			s.JSONEq(string(expected), string(body))
+
+			resp := &github.Response{Response: &http.Response{StatusCode: 200}}
+			json.NewEncoder(w).Encode(resp)
+		}
+	})
+
+	p := &Poster{pool: s.pool}
+	err := p.Post(context.Background(), mockEvent, inputAnalyzerComments, true)
+	s.NoError(err)
+
+	s.True(createReviewsCalled)
+}
+
 func (s *PosterTestSuite) TestStatusOK() {
 	createStatusCalled := false
 
