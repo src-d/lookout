@@ -159,19 +159,31 @@ func (t *Installations) createClient(installationID int64) (*Client, error) {
 }
 
 func (t *Installations) getRepos(iClient *Client) ([]*lookout.RepositoryInfo, error) {
-	ghRepos, _, err := iClient.Apps.ListRepos(context.TODO(), &github.ListOptions{})
-	if err != nil {
-		return nil, err
+	var repos []*lookout.RepositoryInfo
+	opts := &github.ListOptions{
+		PerPage: 100,
 	}
 
-	repos := make([]*lookout.RepositoryInfo, len(ghRepos))
-	for i, ghRepo := range ghRepos {
-		repo, err := pb.ParseRepositoryInfo(*ghRepo.HTMLURL)
+	for {
+		ghRepos, resp, err := iClient.Apps.ListRepos(context.TODO(), opts)
 		if err != nil {
 			return nil, err
 		}
 
-		repos[i] = repo
+		for _, ghRepo := range ghRepos {
+			repo, err := pb.ParseRepositoryInfo(*ghRepo.HTMLURL)
+			if err != nil {
+				return nil, err
+			}
+
+			repos = append(repos, repo)
+		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+
+		opts.Page = resp.NextPage
 	}
 
 	return repos, nil
