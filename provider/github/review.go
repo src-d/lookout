@@ -2,11 +2,15 @@ package github
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/google/go-github/github"
+	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/util/ctxlog"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 // TODO(@smacker) maybe we need to take into account commitID somewhere
@@ -22,28 +26,17 @@ const batchReviewComments = 30
 // comments posted on the same line will be merged using this separator
 const commentsSeparator = "\n<!-- lookout comment separator -->\n---\n"
 
-// createReview creates pull request review
-// it handles all no successful cases like:
-// - limit on number of comments in review
-// - merges comments that are made on the same line to reduce number of comments
-// - checks that comments weren't posted already
+// comment can contain footer with link to the analyzer
+const footnoteSeparator = "\n<!-- lookout footnote separator -->\n"
+
+// createReview creates pull request review on github using multiple http calls
+// in case of too many comments
 func createReview(
 	ctx context.Context,
 	client *Client,
 	owner, repo string, number int,
 	req *github.PullRequestReviewRequest,
-	onlyNewComments bool,
 ) error {
-	if onlyNewComments {
-		postedComments, err := getPostedComment(ctx, client, owner, repo, number)
-		if err != nil {
-			return err
-		}
-		req.Comments = filterPostedComments(req.Comments, postedComments)
-	}
-
-	req.Comments = mergeComments(req.Comments)
-
 	requests := splitReviewRequest(req, batchReviewComments)
 	for i, req := range requests {
 		_, resp, err := client.PullRequests.CreateReview(ctx, owner, repo, number, req)
@@ -74,8 +67,10 @@ func filterPostedComments(comments []*github.DraftReviewComment, posted []*githu
 				continue
 			}
 
+			postedBody := removeFootnote(pc.GetBody())
+
 			// posted comment may consist merged comments
-			for _, body := range strings.Split(pc.GetBody(), commentsSeparator) {
+			for _, body := range strings.Split(postedBody, commentsSeparator) {
 				if comment.GetBody() == body {
 					filterOut = true
 					break
@@ -209,4 +204,90 @@ func splitReviewRequest(review *github.PullRequestReviewRequest, n int) []*githu
 	result[len(result)-1].Body = review.Body
 
 	return result
+}
+
+// addFootnote adds footnote link to text of a comment
+func addFootnote(text, tmpl, url string) string {
+	if tmpl == "" || url == "" {
+		return text
+	}
+
+	return text + footnoteSeparator + fmt.Sprintf(tmpl, url)
+}
+
+// removeFootnote removes footnote and returns only text of a comment
+func removeFootnote(text string) string {
+	return strings.SplitN(text, footnoteSeparator, 2)[0]
+}
+
+// convertComments transforms []*lookout.Comment to []*github.DraftReviewComment and list of string for body
+func convertComments(ctx context.Context, cs []*lookout.Comment, dl *diffLines) ([]string, []*github.DraftReviewComment) {
+	var bodyComments []string
+	var comments []*github.DraftReviewComment
+
+	for _, c := range cs {
+		if c.File == "" {
+			bodyComments = append(bodyComments, c.Text)
+			continue
+		}
+
+		if c.Line < 1 {
+			line := 1
+			comment := &github.DraftReviewComment{
+				Path:     &c.File,
+				Position: &line,
+				Body:     &c.Text,
+			}
+			comments = append(comments, comment)
+			continue
+		}
+
+		logger := convertLineLogger(ctx, c)
+		line, err := dl.ConvertLine(c.File, int(c.Line), true)
+		if ErrLineOutOfDiff.Is(err) {
+			logger.Debugf("skipping comment out the diff range")
+			continue
+		}
+
+		if ErrLineNotAddition.Is(err) {
+			logger.Debugf("skipping comment not on an added line (+ in diff)")
+			continue
+		}
+
+		if ErrFileNotFound.Is(err) {
+			logger.Warningf("skipping comment on a file not part of the diff")
+			continue
+		}
+
+		if ErrBadPatch.Is(err) {
+			patch, _ := dl.filePatch(c.File)
+			ctxlog.Get(ctx).With(log.Fields{
+				"file":  c.File,
+				"patch": patch,
+			}).Errorf(err, "skipping comment because the diff could not be parsed")
+			continue
+		}
+
+		if err != nil {
+			convertLineLogger(ctx, c).Errorf(err, "skipping comment because of unknown error")
+			continue
+		}
+
+		comment := &github.DraftReviewComment{
+			Path:     &c.File,
+			Position: &line,
+			Body:     &c.Text,
+		}
+
+		comments = append(comments, comment)
+	}
+
+	return bodyComments, comments
+}
+
+func convertLineLogger(ctx context.Context, c *lookout.Comment) log.Logger {
+	return ctxlog.Get(ctx).With(log.Fields{
+		"file": c.File,
+		"line": c.Line,
+	})
 }

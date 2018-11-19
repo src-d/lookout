@@ -325,29 +325,21 @@ func mergeMaps(global, local map[string]interface{}) map[string]interface{} {
 	return merged
 }
 
-func (s *Server) post(ctx context.Context, e lookout.Event, comments []lookout.AnalyzerComments, safe bool) error {
-	var filtered []lookout.AnalyzerComments
-	for _, cg := range comments {
-		var filteredComments []*lookout.Comment
-		for _, c := range cg.Comments {
-			yes, err := s.commentOp.Posted(ctx, e, c)
-			if err != nil {
-				ctxlog.Get(ctx).Errorf(err, "comment posted check failed")
-			}
-			if yes {
-				continue
-			}
-			filteredComments = append(filteredComments, c)
+func (s *Server) post(ctx context.Context, e lookout.Event, comments lookout.AnalyzerCommentsGroups, safe bool) error {
+	comments, err := comments.Filter(func(c *lookout.Comment) (bool, error) {
+		yes, err := s.commentOp.Posted(ctx, e, c)
+		if err != nil {
+			ctxlog.Get(ctx).Errorf(err, "comment posted check failed")
+			return false, err
 		}
-		if len(filteredComments) > 0 {
-			filtered = append(filtered, lookout.AnalyzerComments{
-				Config:   cg.Config,
-				Comments: filteredComments,
-			})
-		}
+
+		return yes, nil
+	})
+	if err != nil {
+		return err
 	}
 
-	if len(filtered) == 0 {
+	if len(comments) == 0 {
 		return nil
 	}
 
@@ -359,14 +351,14 @@ func (s *Server) post(ctx context.Context, e lookout.Event, comments []lookout.A
 	}
 
 	ctxlog.Get(ctx).With(log.Fields{
-		"comments": len(filtered),
+		"comments": len(comments),
 	}).Infof("posting analysis")
 
-	if err := s.poster.Post(ctx, e, filtered, safe); err != nil {
+	if err := s.poster.Post(ctx, e, comments, safe); err != nil {
 		return err
 	}
 
-	for _, cg := range filtered {
+	for _, cg := range comments {
 		for _, c := range cg.Comments {
 			if err := s.commentOp.Save(ctx, e, c, cg.Config.Name); err != nil {
 				ctxlog.Get(ctx).Errorf(err, "can't save comment")

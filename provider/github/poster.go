@@ -86,8 +86,17 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 		return err
 	}
 
+	// get list of already posted comments from GH in safe mode
+	var postedComments []*github.PullRequestComment
+	if safe {
+		postedComments, err = getPostedComment(ctx, client, owner, repo, pr)
+		if err != nil {
+			return err
+		}
+	}
+
 	dl := newDiffLines(cc)
-	review, err := p.createReviewRequest(ctx, aCommentsList, dl, e.Head.Hash)
+	review, err := p.createReviewRequest(ctx, aCommentsList, dl, e.Head.Hash, postedComments)
 	if errNoComments.Is(err) {
 		ctxlog.Get(ctx).Debugf("skipping posting analysis, there are no comments")
 		return nil
@@ -96,7 +105,7 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 		return err
 	}
 
-	return createReview(ctx, client, owner, repo, pr, review, safe)
+	return createReview(ctx, client, owner, repo, pr, review)
 }
 
 func (p *Poster) validatePR(
@@ -124,100 +133,54 @@ func (p *Poster) validatePR(
 	return
 }
 
-func (p *Poster) addFootnote(aConf lookout.AnalyzerConfig, c *lookout.Comment) string {
-	tmpl := p.conf.CommentFooter
-	url := aConf.Feedback
-
-	if tmpl == "" || url == "" {
-		return c.Text
-	}
-
-	return fmt.Sprintf("%s\n\n%s", c.Text, fmt.Sprintf(tmpl, url))
-}
-
 var (
 	approveEvent        = "APPROVE"
 	requestChangesEvent = "REQUEST_CHANGES"
 	commentEvent        = "COMMENT"
 )
 
+// createReviewRequest creates new github pull request review request
+// postedComments is optional field
 func (p *Poster) createReviewRequest(
 	ctx context.Context,
 	aCommentsList []lookout.AnalyzerComments,
 	dl *diffLines,
 	commitID string,
+	postedComments []*github.PullRequestComment,
 ) (*github.PullRequestReviewRequest, error) {
 	req := &github.PullRequestReviewRequest{
 		CommitID: &commitID,
 		Event:    &commentEvent,
 	}
 
-	logger := ctxlog.Get(ctx)
-
 	var bodyComments []string
+	tmpl := p.conf.CommentFooter
 
 	for _, aComments := range aCommentsList {
-		for _, c := range aComments.Comments {
-			text := p.addFootnote(aComments.Config, c)
+		ctx, _ := ctxlog.WithLogFields(ctx, log.Fields{
+			"analyzer": aComments.Config.Name,
+		})
 
-			if c.File == "" {
-				bodyComments = append(bodyComments, text)
-			} else if c.Line < 1 {
-				line := 1
-				comment := &github.DraftReviewComment{
-					Path:     &c.File,
-					Position: &line,
-					Body:     &text,
-				}
-				req.Comments = append(req.Comments, comment)
-			} else {
-				line, err := dl.ConvertLine(c.File, int(c.Line), true)
-				if ErrLineOutOfDiff.Is(err) {
-					logger.With(log.Fields{
-						"analyzer": aComments.Config.Name,
-						"file":     c.File,
-						"line":     c.Line,
-					}).Debugf("skipping comment out the diff range")
-					continue
-				}
-				if ErrLineNotAddition.Is(err) {
-					logger.With(log.Fields{
-						"analyzer": aComments.Config.Name,
-						"file":     c.File,
-						"line":     c.Line,
-					}).Debugf("skipping comment not on an added line (+ in diff)")
-					continue
-				}
-				if ErrFileNotFound.Is(err) {
-					logger.With(log.Fields{
-						"analyzer": aComments.Config.Name,
-						"file":     c.File,
-						"line":     c.Line,
-					}).Warningf("skipping comment on a file not part of the diff")
-					continue
-				}
-				if ErrBadPatch.Is(err) {
-					patch, _ := dl.filePatch(c.File)
-					logger.With(log.Fields{
-						"analyzer": aComments.Config.Name,
-						"file":     c.File,
-						"patch":    patch,
-					}).Errorf(err, "skipping comment because the diff could not be parsed")
-					continue
-				}
+		url := aComments.Config.Feedback
 
-				if err != nil {
-					return nil, err
-				}
+		forBody, ghComments := convertComments(ctx, aComments.Comments, dl)
 
-				comment := &github.DraftReviewComment{
-					Path:     &c.File,
-					Position: &line,
-					Body:     &text,
-				}
-				req.Comments = append(req.Comments, comment)
-			}
+		if len(postedComments) > 0 {
+			ghComments = filterPostedComments(ghComments, postedComments)
 		}
+
+		ghComments = mergeComments(ghComments)
+
+		for i, c := range ghComments {
+			body := addFootnote(c.GetBody(), tmpl, url)
+			ghComments[i].Body = &body
+		}
+
+		bodyComments = append(
+			bodyComments,
+			addFootnote(strings.Join(forBody, "\n\n"), tmpl, url),
+		)
+		req.Comments = append(req.Comments, ghComments...)
 	}
 
 	body := strings.Join(bodyComments, "\n\n")

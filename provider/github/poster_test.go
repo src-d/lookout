@@ -185,16 +185,16 @@ func (s *PosterTestSuite) TestPostFooter() {
 
 		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
 			CommitID: &mockEvent.Head.Hash,
-			Body:     strptr("Global comment\n\nTo post feedback go to https://foo.bar/feedback\n\nAnother global comment\n\nTo post feedback go to https://foo.bar/feedback"),
+			Body:     strptr("Global comment\n\nAnother global comment" + footnoteSeparator + "To post feedback go to https://foo.bar/feedback"),
 			Event:    strptr(commentEvent),
 			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
 				Path:     strptr("main.go"),
-				Body:     strptr("File comment\n\nTo post feedback go to https://foo.bar/feedback"),
+				Body:     strptr("File comment" + footnoteSeparator + "To post feedback go to https://foo.bar/feedback"),
 				Position: intptr(1),
 			}, &github.DraftReviewComment{
 				Path:     strptr("main.go"),
 				Position: intptr(3),
-				Body:     strptr("Line comment\n\nTo post feedback go to https://foo.bar/feedback"),
+				Body:     strptr("Line comment" + footnoteSeparator + "To post feedback go to https://foo.bar/feedback"),
 			}}})
 		s.JSONEq(string(expected), string(body))
 
