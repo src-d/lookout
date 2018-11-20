@@ -107,7 +107,7 @@ func (suite *IntegrationSuite) StartLookoutd(configFile string) (io.Reader, io.W
 			"-c", configFile)
 
 		workerR, _ := suite.StartWorker("--provider", "json",
-			"-c", configFile)
+			"-c", configFile, "--probes-addr", "0.0.0.0:8091")
 
 		// make sure watcher server started correctly
 		suite.GrepTrue(watcherR, "Starting watcher")
