@@ -71,10 +71,25 @@ func NewInstallations(
 func (t *Installations) Sync() error {
 	log.Infof("syncing installations with github")
 
-	installations, _, err := t.appClient.Apps.ListInstallations(context.TODO(), &github.ListOptions{})
-	if err != nil {
-		return err
+	var installations []*github.Installation
+	opts := &github.ListOptions{
+		PerPage: 100,
 	}
+	for {
+		installs, resp, err := t.appClient.Apps.ListInstallations(context.TODO(), opts)
+		if err != nil {
+			return err
+		}
+
+		installations = append(installations, installs...)
+
+		if resp.NextPage == 0 {
+			break
+		}
+
+		opts.Page = resp.NextPage
+	}
+
 	log.Debugf("found %d installations", len(installations))
 
 	new := make(map[int64]*github.Installation, len(installations))
