@@ -287,6 +287,7 @@ func (c *lookoutdCommand) initHealthProbes() {
 		err := http.ListenAndServe(c.ProbesAddr, nil)
 		if err != nil {
 			log.Errorf(err, "ListenAndServe failed")
+			os.Exit(1)
 		}
 	}()
 }
