@@ -287,6 +287,14 @@
   revision = "3864e76763d94a6df2f9960b16a20a33da9f9a66"
 
 [[projects]]
+  branch = "master"
+  digest = "1:e2962a2cae643693cc9704d8a464665f05c365d276d41005209b8af66c106dfe"
+  name = "github.com/mwitkow/grpc-proxy"
+  packages = ["proxy"]
+  pruneopts = "NUT"
+  revision = "0f1106ef9c766333b9acb4b81e705da4bade7215"
+
+[[projects]]
   digest = "1:592fd1b8b9c8189db56dd6f1fd73f89825c25b6b636032350d4b2b639964520b"
   name = "github.com/oklog/ulid"
   packages = ["."]
@@ -796,6 +804,7 @@
     "github.com/jessevdk/go-flags",
     "github.com/jinzhu/copier",
     "github.com/lib/pq",
+    "github.com/mwitkow/grpc-proxy/proxy",
     "github.com/sanity-io/litter",
     "github.com/satori/go.uuid",
     "github.com/src-d/lookout-test-fixtures",
@@ -804,7 +813,9 @@
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
     "google.golang.org/grpc",
+    "google.golang.org/grpc/codes",
     "google.golang.org/grpc/connectivity",
+    "google.golang.org/grpc/metadata",
     "gopkg.in/bblfsh/sdk.v1/protocol",
     "gopkg.in/bblfsh/sdk.v1/uast",
     "gopkg.in/src-d/enry.v1",
