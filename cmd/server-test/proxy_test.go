@@ -1,4 +1,5 @@
 // +build integration
+// +build bblfsh
 
 package server_test
 
