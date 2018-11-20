@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/src-d/lookout"
@@ -27,8 +28,11 @@ import (
 
 	"github.com/gregjones/httpcache/diskcache"
 	"github.com/jinzhu/copier"
+	"github.com/mwitkow/grpc-proxy/proxy"
 	"github.com/sanity-io/litter"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"gopkg.in/src-d/go-billy.v4/osfs"
 	"gopkg.in/src-d/go-log.v1"
 	yaml "gopkg.in/yaml.v2"
@@ -365,7 +369,32 @@ func (c *queueConsumerCommand) initDataHandler(conf Config) (*lookout.DataServer
 }
 
 func (c *queueConsumerCommand) startServer(srv *lookout.DataServerHandler) error {
-	grpcSrv := grpchelper.NewServer()
+	// bblfsh connection for proxy
+	bblfshConn, err := grpc.DialContext(
+		context.Background(),
+		c.Bblfshd,
+		grpc.WithInsecure(), grpc.WithCodec(proxy.Codec()),
+	)
+	if err != nil {
+		return err
+	}
+
+	// bblfsh proxy director
+	director := func(ctx context.Context, fullMethodName string) (context.Context, *grpc.ClientConn, error) {
+		md, ok := metadata.FromIncomingContext(ctx)
+
+		if ok && strings.HasPrefix(fullMethodName, "/gopkg.in.bblfsh.") {
+			outCtx := metadata.NewOutgoingContext(ctx, md.Copy())
+			return outCtx, bblfshConn, nil
+		}
+
+		return nil, nil, grpc.Errorf(codes.Unimplemented, "Unknown method")
+	}
+
+	grpcSrv := grpchelper.NewServer(
+		grpc.CustomCodec(proxy.Codec()),
+		grpc.UnknownServiceHandler(proxy.TransparentHandler(director)),
+	)
 	lookout.RegisterDataServer(grpcSrv, srv)
 	lis, err := grpchelper.Listen(c.DataServer)
 	if err != nil {
@@ -375,8 +404,10 @@ func (c *queueConsumerCommand) startServer(srv *lookout.DataServerHandler) error
 	go func() {
 		if err := grpcSrv.Serve(lis); err != nil {
 			log.Errorf(err, "data server failed")
+			os.Exit(1)
 		}
 	}()
+
 	return nil
 }
 
