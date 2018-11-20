@@ -109,8 +109,11 @@ func (suite *IntegrationSuite) StartLookoutd(configFile string) (io.Reader, io.W
 		workerR, _ := suite.StartWorker("--provider", "json",
 			"-c", configFile)
 
-		// make sure server started correctly
+		// make sure watcher server started correctly
 		suite.GrepTrue(watcherR, "Starting watcher")
+
+		// make sure worker started correctly
+		suite.GrepTrue(workerR, "connection with the DB established")
 
 		// Write json commands to watcher, write processed output from worker
 		return workerR, watcherW
