@@ -129,7 +129,12 @@ func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, erro
 
 func (c *EventCommand) bindDataServer(srv *lookout.DataServerHandler, serveResult chan error) (*grpc.Server, error) {
 	log.Infof("starting a DataServer at %s", c.DataServer)
-	grpcSrv := grpchelper.NewServer()
+	bblfshGrpcAddr, err := grpchelper.ToGoGrpcAddress(c.Bblfshd)
+	grpcSrv, err := grpchelper.NewBblfshProxyServer(bblfshGrpcAddr)
+	if err != nil {
+		return nil, fmt.Errorf("Can't start bblfsh proxy server: %s", err)
+	}
+
 	lookout.RegisterDataServer(grpcSrv, srv)
 
 	lis, err := grpchelper.Listen(c.DataServer)
