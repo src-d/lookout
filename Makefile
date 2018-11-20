@@ -96,3 +96,11 @@ toc:
 	wget https://raw.githubusercontent.com/ekalinin/github-markdown-toc/master/gh-md-toc
 	chmod a+x gh-md-toc
 	./gh-md-toc --insert README.md
+
+.PHONY: ci-start-bblfsh
+ci-start-bblfsh:
+	docker run -d --name bblfshd --privileged -v $(HOME)/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd:v2.9.0
+	docker exec -it bblfshd bblfshctl driver install --force go bblfsh/go-driver:v2.2.0
+
+.PHONY: ci-integration-dependencies
+ci-integration-dependencies: prepare-services ci-start-bblfsh

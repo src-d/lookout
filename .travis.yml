@@ -33,8 +33,7 @@ jobs:
       script: make test-coverage codecov
     - name: 'SDK Integration Tests Linux'
       script:
-        - docker run -d --name bblfshd --privileged -v $HOME/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd:v2.9.0
-        - docker exec -it bblfshd bblfshctl driver install --force go bblfsh/go-driver:v2.2.0
+        - make ci-start-bblfsh
         - make test-sdk
     - name: 'SDK Integration Tests macOS'
       if: NOT type = pull_request
@@ -45,13 +44,13 @@ jobs:
       before_install: skip
     - name: 'Lookoutd Integration Tests Linux'
       script:
-        - make prepare-services
+        - make ci-integration-dependencies
         - psql -c 'create database lookout;' -U postgres
         - make test-json
         - LOOKOUT_TEST_QUEUE=true make test-json
     - name: 'Lookoutd Integration Tests macOS'
       script:
-        - make prepare-services
+        - make ci-integration-dependencies
         - psql -c 'create database lookout;' -U postgres
         - make test-json
         - LOOKOUT_TEST_QUEUE=true make test-json
