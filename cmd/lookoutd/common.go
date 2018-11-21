@@ -287,6 +287,7 @@ func (c *lookoutdCommand) initHealthProbes() {
 		err := http.ListenAndServe(c.ProbesAddr, nil)
 		if err != nil {
 			log.Errorf(err, "ListenAndServe failed")
+			os.Exit(1)
 		}
 	}()
 }
@@ -365,7 +366,11 @@ func (c *queueConsumerCommand) initDataHandler(conf Config) (*lookout.DataServer
 }
 
 func (c *queueConsumerCommand) startServer(srv *lookout.DataServerHandler) error {
-	grpcSrv := grpchelper.NewServer()
+	grpcSrv, err := grpchelper.NewBblfshProxyServer(c.Bblfshd)
+	if err != nil {
+		return err
+	}
+
 	lookout.RegisterDataServer(grpcSrv, srv)
 	lis, err := grpchelper.Listen(c.DataServer)
 	if err != nil {
@@ -375,8 +380,10 @@ func (c *queueConsumerCommand) startServer(srv *lookout.DataServerHandler) error
 	go func() {
 		if err := grpcSrv.Serve(lis); err != nil {
 			log.Errorf(err, "data server failed")
+			os.Exit(1)
 		}
 	}()
+
 	return nil
 }
 

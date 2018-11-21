@@ -46,7 +46,19 @@ bindata:
 		-modtime 1 \
 		$(MIGRATIONS_PATH)/...
 
-GOTEST_INTEGRATION = $(GOTEST) -parallel 1 -race -tags=integration
+
+GOTEST_INTEGRATION_TAGS_LIST = integration bblfsh
+
+# disable bblfsh on tests on travis mac os
+ifeq ($(TRAVIS),true)
+ifeq ($(OS),Darwin)
+GOTEST_INTEGRATION_TAGS = $(filter-out bblfsh,$(GOTEST_INTEGRATION_TAGS_LIST))
+else
+GOTEST_INTEGRATION_TAGS = $(GOTEST_INTEGRATION_TAGS_LIST)
+endif
+endif
+
+GOTEST_INTEGRATION = $(GOTEST) -parallel 1 -tags='$(GOTEST_INTEGRATION_TAGS)'
 
 # Integration test for sdk client
 .PHONY: test-sdk
@@ -96,3 +108,16 @@ toc:
 	wget https://raw.githubusercontent.com/ekalinin/github-markdown-toc/master/gh-md-toc
 	chmod a+x gh-md-toc
 	./gh-md-toc --insert README.md
+
+.PHONY: ci-start-bblfsh
+ifeq ($(OS),Darwin)
+ci-start-bblfsh:
+	@echo "running bblfsh is unsupported on mac os ci"
+else
+ci-start-bblfsh:
+	docker run -d --name bblfshd --privileged -v $(HOME)/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd:v2.9.0
+	docker exec -it bblfshd bblfshctl driver install --force go bblfsh/go-driver:v2.2.0
+endif
+
+.PHONY: ci-integration-dependencies
+ci-integration-dependencies: prepare-services ci-start-bblfsh
