@@ -10,6 +10,7 @@ providers:
     # app_id: 1234
     # private_key: ./key.pem
     # installation_sync_interval: 1h
+    # watch_min_interval: 2s
 
 repositories:
   - url: github.com/src-d/lookout

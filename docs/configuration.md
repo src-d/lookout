@@ -26,6 +26,7 @@ providers:
     # app_id: 1234
     # private_key: ./key.pem
     # installation_sync_interval: 1h
+    # watch_min_interval: 2s
 ```
 
 `comment_footer` key defines a format-string that will be used for custom messages for every message posted on GitHub; see how to [add a custom message to the posted comments](#custom-footer)
@@ -64,12 +65,14 @@ providers:
     app_id: 1234
     private_key: ./key.pem
     installation_sync_interval: 1h
+    watch_min_interval: 10s
 ```
 
 When the GitHub App authentication method is used, the repositories to analyze are retrieved automatically from the GitHub installations, so `repositories` list from `config.yml` is ignored.
 
-The update interval is defined by `installation_sync_interval`.
+The update interval to discover new installations and repositories is defined by `installation_sync_interval`.
 
+The minimum watch interval to discover new pull requests and push events is defined by `watch_min_interval`.
 
 ## Repositories
 
