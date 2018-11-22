@@ -41,6 +41,7 @@ GO_BUILD_ARGS := -ldflags "$(LD_FLAGS)" -tags "$(GO_BINDATA_TAG)"
 
 # Tools
 BINDATA := go-bindata
+TOC_GENERATOR := $(CI_PATH)/gh-md-toc
 
 .PHONY: bindata
 bindata:
@@ -108,10 +109,13 @@ $(CONFIG_FILE):
 	cp "$(CONFIG_FILE).tpl" $(CONFIG_FILE)
 
 .PHONY: toc
-toc:
-	wget https://raw.githubusercontent.com/ekalinin/github-markdown-toc/master/gh-md-toc
-	chmod a+x gh-md-toc
-	./gh-md-toc --insert README.md
+toc: $(TOC_GENERATOR)
+	$(TOC_GENERATOR) --insert README.md
+	rm -f README.md.orig.* README.md.toc.*
+
+$(TOC_GENERATOR):
+	wget https://raw.githubusercontent.com/ekalinin/github-markdown-toc/master/gh-md-toc -O $(TOC_GENERATOR)
+	chmod a+x $(TOC_GENERATOR)
 
 .PHONY: ci-start-bblfsh
 ifeq ($(OS),Darwin)
