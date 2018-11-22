@@ -137,7 +137,7 @@ func (c *EventCommand) initDataServer(srv *lookout.DataServerHandler) (func() er
 			return fmt.Errorf("Can't resolve bblfsh address '%s': %s", c.Bblfshd, err)
 		}
 
-		grpcSrv, err := grpchelper.NewBblfshProxyServer(bblfshGrpcAddr)
+		grpcSrv, err = grpchelper.NewBblfshProxyServer(bblfshGrpcAddr)
 		if err != nil {
 			return fmt.Errorf("Can't start bblfsh proxy server: %s", err)
 		}
