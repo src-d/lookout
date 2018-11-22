@@ -95,6 +95,8 @@ func (c *WorkCommand) Execute(args []string) error {
 
 	c.probeReadiness = true
 
+	ctxlog.Get(ctx).Infof("Worker started")
+
 	err = <-stopCh
 
 	// stop servers gracefully
