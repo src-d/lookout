@@ -6,6 +6,7 @@ import (
 
 	"github.com/src-d/lookout/server"
 	"github.com/src-d/lookout/util/cli"
+	"github.com/src-d/lookout/util/ctxlog"
 )
 
 func init() {
@@ -21,7 +22,15 @@ type WorkCommand struct {
 }
 
 func (c *WorkCommand) Execute(args []string) error {
-	c.initHealthProbes()
+	ctx, stopCtx := context.WithCancel(context.Background())
+	stopCh := make(chan error, 1)
+
+	go func() {
+		err := c.startHealthProbes()
+		ctxlog.Get(ctx).Errorf(err, "health probes server stopped")
+
+		stopCh <- err
+	}()
 
 	conf, err := c.initConfig()
 	if err != nil {
@@ -35,10 +44,6 @@ func (c *WorkCommand) Execute(args []string) error {
 
 	dataHandler, err := c.initDataHandler(conf)
 	if err != nil {
-		return err
-	}
-
-	if err := c.startServer(dataHandler); err != nil {
 		return err
 	}
 
@@ -64,7 +69,6 @@ func (c *WorkCommand) Execute(args []string) error {
 		return err
 	}
 
-	ctx := context.Background()
 	server := server.NewServer(
 		poster, dataHandler.FileGetter,
 		analyzers,
@@ -72,7 +76,30 @@ func (c *WorkCommand) Execute(args []string) error {
 		conf.Timeout.AnalyzerReview, conf.Timeout.AnalyzerPush,
 	)
 
+	startDataServer, stopDataServer := c.initDataServer(dataHandler)
+	go func() {
+		err := startDataServer()
+		ctxlog.Get(ctx).Errorf(err, "data server stopped")
+		stopCh <- err
+	}()
+
+	go func() {
+		err := c.runEventDequeuer(ctx, c.QueueOptions, server)
+		ctxlog.Get(ctx).Errorf(err, "event dequeuer stopped")
+		stopCh <- err
+	}()
+
+	go func() {
+		stopCh <- stopOnSignal(ctx)
+	}()
+
 	c.probeReadiness = true
 
-	return c.runEventDequeuer(ctx, c.QueueOptions, server)
+	err = <-stopCh
+
+	// stop servers gracefully
+	stopCtx()
+	stopDataServer()
+
+	return err
 }

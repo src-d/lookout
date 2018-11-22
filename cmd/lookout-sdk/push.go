@@ -27,6 +27,8 @@ type PushCommand struct {
 }
 
 func (c *PushCommand) Execute(args []string) error {
+	stopCh := make(chan error, 1)
+
 	if err := c.openRepository(); err != nil {
 		return err
 	}
@@ -41,16 +43,15 @@ func (c *PushCommand) Execute(args []string) error {
 		return err
 	}
 
-	dataSrv, err := c.makeDataServerHandler()
+	dataHandler, err := c.makeDataServerHandler()
 	if err != nil {
 		return err
 	}
 
-	serveResult := make(chan error)
-	grpcSrv, err := c.bindDataServer(dataSrv, serveResult)
-	if err != nil {
-		return err
-	}
+	startDataServer, stopDataServer := c.initDataServer(dataHandler)
+	go func() {
+		stopCh <- startDataServer()
+	}()
 
 	client, err := c.analyzerClient()
 	if err != nil {
@@ -58,7 +59,7 @@ func (c *PushCommand) Execute(args []string) error {
 	}
 
 	srv := server.NewServer(
-		&server.LogPoster{log.DefaultLogger}, dataSrv.FileGetter,
+		&server.LogPoster{log.DefaultLogger}, dataHandler.FileGetter,
 		map[string]lookout.Analyzer{
 			"test-analyzes": lookout.Analyzer{
 				Client: client,
@@ -104,6 +105,7 @@ func (c *PushCommand) Execute(args []string) error {
 		return err
 	}
 
-	grpcSrv.GracefulStop()
-	return <-serveResult
+	stopDataServer()
+
+	return <-stopCh
 }
