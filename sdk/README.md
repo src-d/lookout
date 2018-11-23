@@ -4,6 +4,8 @@ An analyzer is a [gRPC](https://grpc.io/) server that implements the [Analyzer s
 
 At the same time, an analyzer acts as a gRPC client to access the [Data Server](https://github.com/src-d/lookout-sdk/blob/master/proto/service_data.proto) exposed by the lookout server. This endpoint will provide the necessary source code and [Babelfish Universal Abstract Syntax Trees (UAST)](https://doc.bblf.sh/uast/uast-specification.html). See `LOOKOUT_DATA_SERVER` environment variable below for more details.
 
+If your analyzer needs to access the Babelfish API you can point your [Babelfish client](https://docs.sourced.tech/babelfish/using-babelfish/clients) to the same Data Server address (defined by `LOOKOUT_DATA_SERVER`). The lookout server will proxy these gRPC requests to Babelfish.
+
 All the needed `.proto` files are located in the [/sdk directory](https://github.com/src-d/lookout-sdk/tree/master/proto).
 
 ## Code generation
