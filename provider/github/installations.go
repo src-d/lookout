@@ -20,9 +20,10 @@ import (
 
 // Installations keeps github installations and allows to sync them
 type Installations struct {
-	appID      int
-	privateKey string
-	appClient  *github.Client
+	appID            int
+	privateKey       string
+	appClient        *github.Client
+	watchMinInterval string
 
 	cache         *cache.ValidableCache
 	clientTimeout time.Duration
@@ -37,6 +38,7 @@ type Installations struct {
 func NewInstallations(
 	appID int, privateKey string,
 	cache *cache.ValidableCache,
+	watchMinInterval string,
 	clientTimeout time.Duration,
 ) (*Installations, error) {
 	// Use App authorization to list installations
@@ -55,13 +57,14 @@ func NewInstallations(
 	log.Infof("authorized as GitHub application %q, ID %v", app.GetName(), app.GetID())
 
 	i := &Installations{
-		appID:         appID,
-		privateKey:    privateKey,
-		appClient:     appClient,
-		cache:         cache,
-		clientTimeout: clientTimeout,
-		clients:       make(map[int64]*Client),
-		Pool:          NewClientPool(),
+		appID:            appID,
+		privateKey:       privateKey,
+		appClient:        appClient,
+		watchMinInterval: watchMinInterval,
+		cache:            cache,
+		clientTimeout:    clientTimeout,
+		clients:          make(map[int64]*Client),
+		Pool:             NewClientPool(),
 	}
 
 	return i, nil
@@ -168,9 +171,7 @@ func (t *Installations) createClient(installationID int64) (*Client, error) {
 		}
 	}
 
-	// TODO (carlosms): hardcoded, take from config
-	watchMinInterval := ""
-	return NewClient(itr, t.cache, watchMinInterval, gitAuth, t.clientTimeout), nil
+	return NewClient(itr, t.cache, t.watchMinInterval, gitAuth, t.clientTimeout), nil
 }
 
 func (t *Installations) getRepos(iClient *Client) ([]*lookout.RepositoryInfo, error) {

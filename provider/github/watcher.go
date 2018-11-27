@@ -22,6 +22,7 @@ type ProviderConfig struct {
 	PrivateKey               string `yaml:"private_key"`
 	AppID                    int    `yaml:"app_id"`
 	InstallationSyncInterval string `yaml:"installation_sync_interval"`
+	WatchMinInterval         string `yaml:"watch_min_interval"`
 }
 
 // don't call github more often than

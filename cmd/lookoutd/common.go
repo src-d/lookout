@@ -213,6 +213,7 @@ func (c *lookoutdCommand) initProviderGithubApp(conf Config) error {
 	if conf.Providers.Github.AppID == 0 {
 		return fmt.Errorf("missing GitHub App ID in config")
 	}
+
 	installationsSyncInterval := defaultInstallationsSyncInterval
 	if conf.Providers.Github.InstallationSyncInterval != "" {
 		var err error
@@ -225,7 +226,7 @@ func (c *lookoutdCommand) initProviderGithubApp(conf Config) error {
 	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
 	insts, err := github.NewInstallations(
 		conf.Providers.Github.AppID, conf.Providers.Github.PrivateKey,
-		cache, conf.Timeout.GithubRequest)
+		cache, conf.Providers.Github.WatchMinInterval, conf.Timeout.GithubRequest)
 	if err != nil {
 		return err
 	}
