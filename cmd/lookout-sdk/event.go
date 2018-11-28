@@ -127,28 +127,43 @@ func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, erro
 	return srv, nil
 }
 
-func (c *EventCommand) bindDataServer(srv *lookout.DataServerHandler, serveResult chan error) (*grpc.Server, error) {
-	log.Infof("starting a DataServer at %s", c.DataServer)
-	bblfshGrpcAddr, err := grpchelper.ToGoGrpcAddress(c.Bblfshd)
-	if err != nil {
-		return nil, fmt.Errorf("Can't resolve bblfsh address '%s': %s", c.Bblfshd, err)
+type startFunc func() error
+type stopFunc func()
+
+func (c *EventCommand) initDataServer(srv *lookout.DataServerHandler) (startFunc, stopFunc) {
+	var grpcSrv *grpc.Server
+
+	start := func() error {
+		log.Infof("starting a DataServer at %s", c.DataServer)
+		bblfshGrpcAddr, err := grpchelper.ToGoGrpcAddress(c.Bblfshd)
+		if err != nil {
+			return fmt.Errorf("Can't resolve bblfsh address '%s': %s", c.Bblfshd, err)
+		}
+
+		grpcSrv, err = grpchelper.NewBblfshProxyServer(bblfshGrpcAddr)
+		if err != nil {
+			return fmt.Errorf("Can't start bblfsh proxy server: %s", err)
+		}
+
+		lookout.RegisterDataServer(grpcSrv, srv)
+
+		lis, err := grpchelper.Listen(c.DataServer)
+		if err != nil {
+			return fmt.Errorf("Can't start data server at '%s': %s", c.DataServer, err)
+		}
+
+		return grpcSrv.Serve(lis)
 	}
 
-	grpcSrv, err := grpchelper.NewBblfshProxyServer(bblfshGrpcAddr)
-	if err != nil {
-		return nil, fmt.Errorf("Can't start bblfsh proxy server: %s", err)
+	stop := func() {
+		if grpcSrv == nil {
+			return
+		}
+
+		grpcSrv.GracefulStop()
 	}
 
-	lookout.RegisterDataServer(grpcSrv, srv)
-
-	lis, err := grpchelper.Listen(c.DataServer)
-	if err != nil {
-		return nil, fmt.Errorf("Can't start data server at '%s': %s", c.DataServer, err)
-	}
-
-	go func() { serveResult <- grpcSrv.Serve(lis) }()
-
-	return grpcSrv, nil
+	return start, stop
 }
 
 func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {

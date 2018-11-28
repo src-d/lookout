@@ -21,7 +21,15 @@ type ServeCommand struct {
 }
 
 func (c *ServeCommand) Execute(args []string) error {
-	c.initHealthProbes()
+	ctx, stopCtx := context.WithCancel(context.Background())
+	stopCh := make(chan error, 1)
+
+	go func() {
+		err := c.startHealthProbes()
+		ctxlog.Get(ctx).Errorf(err, "health probes server stopped")
+
+		stopCh <- err
+	}()
 
 	conf, err := c.initConfig()
 	if err != nil {
@@ -35,10 +43,6 @@ func (c *ServeCommand) Execute(args []string) error {
 
 	dataHandler, err := c.initDataHandler(conf)
 	if err != nil {
-		return err
-	}
-
-	if err := c.startServer(dataHandler); err != nil {
 		return err
 	}
 
@@ -74,31 +78,41 @@ func (c *ServeCommand) Execute(args []string) error {
 		return err
 	}
 
-	ctx := context.Background()
 	server := server.NewServer(
 		poster, dataHandler.FileGetter, analyzers,
 		eventOp, commentsOp,
 		conf.Timeout.AnalyzerReview, conf.Timeout.AnalyzerPush)
 
+	startDataServer, stopDataServer := c.initDataServer(dataHandler)
+	go func() {
+		err := startDataServer()
+		ctxlog.Get(ctx).Errorf(err, "data server stopped")
+		stopCh <- err
+	}()
+
+	go func() {
+		err := c.runEventDequeuer(ctx, qOpt, server)
+		ctxlog.Get(ctx).Errorf(err, "event dequeuer stopped")
+		stopCh <- err
+	}()
+
+	go func() {
+		err := c.runEventEnqueuer(ctx, qOpt, watcher)
+		ctxlog.Get(ctx).Errorf(err, "event enqueuer stopped")
+		stopCh <- err
+	}()
+
+	go func() {
+		stopCh <- stopOnSignal(ctx)
+	}()
+
 	c.probeReadiness = true
 
-	deqErrCh := make(chan error, 1)
-	enqErrCh := make(chan error, 1)
+	err = <-stopCh
 
-	go func() {
-		deqErrCh <- c.runEventDequeuer(ctx, qOpt, server)
-	}()
+	// stop servers gracefully
+	stopCtx()
+	stopDataServer()
 
-	go func() {
-		enqErrCh <- c.runEventEnqueuer(ctx, qOpt, watcher)
-	}()
-
-	select {
-	case err := <-deqErrCh:
-		ctxlog.Get(ctx).Errorf(err, "error from the event dequeuer")
-		return err
-	case err := <-enqErrCh:
-		ctxlog.Get(ctx).Errorf(err, "error from the event enqueuer")
-		return err
-	}
+	return err
 }

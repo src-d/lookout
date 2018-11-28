@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/signal"
 	"runtime"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/src-d/lookout/store/models"
 	"github.com/src-d/lookout/util/cache"
 	"github.com/src-d/lookout/util/cli"
+	"github.com/src-d/lookout/util/ctxlog"
 	"github.com/src-d/lookout/util/grpchelper"
 
 	"github.com/gregjones/httpcache/diskcache"
@@ -33,6 +35,9 @@ import (
 	"gopkg.in/src-d/go-log.v1"
 	yaml "gopkg.in/yaml.v2"
 )
+
+type startFunc func() error
+type stopFunc func()
 
 // lookoutdCommand represents the common options for serve, watch, work
 type lookoutdCommand struct {
@@ -261,7 +266,7 @@ func (c *lookoutdCommand) initWatcher(conf Config) (lookout.Watcher, error) {
 	}
 }
 
-func (c *lookoutdCommand) initHealthProbes() {
+func (c *lookoutdCommand) startHealthProbes() error {
 	livenessPath := "/health/liveness"
 	http.HandleFunc(livenessPath, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
@@ -279,18 +284,12 @@ func (c *lookoutdCommand) initHealthProbes() {
 		}
 	})
 
-	go func() {
-		log.With(log.Fields{
-			"addr":  c.ProbesAddr,
-			"paths": []string{livenessPath, readinessPath},
-		}).Debugf("listening health probe HTTP requests")
+	log.With(log.Fields{
+		"addr":  c.ProbesAddr,
+		"paths": []string{livenessPath, readinessPath},
+	}).Debugf("listening health probe HTTP requests")
 
-		err := http.ListenAndServe(c.ProbesAddr, nil)
-		if err != nil {
-			log.Errorf(err, "ListenAndServe failed")
-			os.Exit(1)
-		}
-	}()
+	return http.ListenAndServe(c.ProbesAddr, nil)
 }
 
 func (c *queueConsumerCommand) initPoster(conf Config) (lookout.Poster, error) {
@@ -366,26 +365,34 @@ func (c *queueConsumerCommand) initDataHandler(conf Config) (*lookout.DataServer
 	return srv, nil
 }
 
-func (c *queueConsumerCommand) startServer(srv *lookout.DataServerHandler) error {
-	grpcSrv, err := grpchelper.NewBblfshProxyServer(c.Bblfshd)
-	if err != nil {
-		return err
-	}
+func (c *queueConsumerCommand) initDataServer(srv *lookout.DataServerHandler) (startFunc, stopFunc) {
+	var grpcSrv *grpc.Server
 
-	lookout.RegisterDataServer(grpcSrv, srv)
-	lis, err := grpchelper.Listen(c.DataServer)
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		if err := grpcSrv.Serve(lis); err != nil {
-			log.Errorf(err, "data server failed")
-			os.Exit(1)
+	start := func() error {
+		var err error
+		grpcSrv, err = grpchelper.NewBblfshProxyServer(c.Bblfshd)
+		if err != nil {
+			return err
 		}
-	}()
 
-	return nil
+		lookout.RegisterDataServer(grpcSrv, srv)
+		lis, err := grpchelper.Listen(c.DataServer)
+		if err != nil {
+			return err
+		}
+
+		return grpcSrv.Serve(lis)
+	}
+
+	stop := func() {
+		if grpcSrv == nil {
+			return
+		}
+
+		grpcSrv.GracefulStop()
+	}
+
+	return start, stop
 }
 
 func (c *queueConsumerCommand) initDBOperators(db *sql.DB) (*store.DBEventOperator, *store.DBCommentOperator) {
@@ -442,4 +449,14 @@ func (c *queueConsumerCommand) runEventDequeuer(ctx context.Context, qOpt cli.Qu
 	}
 
 	return queue_util.RunEventDequeuer(ctx, qOpt.Q, server.HandleEvent, c.Workers)
+}
+
+func stopOnSignal(ctx context.Context) error {
+	var stopSignalChan = make(chan os.Signal)
+	signal.Notify(stopSignalChan, os.Interrupt)
+	sig := <-stopSignalChan
+
+	ctxlog.Get(ctx).Infof("Signal %s received. Stopping server...", sig)
+
+	return nil
 }

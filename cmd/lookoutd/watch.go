@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/src-d/lookout/util/cli"
+	"github.com/src-d/lookout/util/ctxlog"
 )
 
 func init() {
@@ -19,7 +20,15 @@ type WatchCommand struct {
 }
 
 func (c *WatchCommand) Execute(args []string) error {
-	c.initHealthProbes()
+	ctx, stopCtx := context.WithCancel(context.Background())
+	stopCh := make(chan error, 1)
+
+	go func() {
+		err := c.startHealthProbes()
+		ctxlog.Get(ctx).Errorf(err, "health probes server stopped")
+
+		stopCh <- err
+	}()
 
 	conf, err := c.initConfig()
 	if err != nil {
@@ -41,8 +50,22 @@ func (c *WatchCommand) Execute(args []string) error {
 		return err
 	}
 
+	go func() {
+		err := c.runEventEnqueuer(ctx, c.QueueOptions, watcher)
+		ctxlog.Get(ctx).Errorf(err, "event enqueuer stopped")
+		stopCh <- err
+	}()
+
+	go func() {
+		stopCh <- stopOnSignal(ctx)
+	}()
+
 	c.probeReadiness = true
 
-	ctx := context.Background()
-	return c.runEventEnqueuer(ctx, c.QueueOptions, watcher)
+	err = <-stopCh
+
+	// stop servers gracefully
+	stopCtx()
+
+	return err
 }

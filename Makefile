@@ -48,13 +48,12 @@ bindata:
 
 
 GOTEST_INTEGRATION_TAGS_LIST = integration bblfsh
+GOTEST_INTEGRATION_TAGS = $(GOTEST_INTEGRATION_TAGS_LIST)
 
 # disable bblfsh on tests on travis mac os
 ifeq ($(TRAVIS),true)
 ifeq ($(OS),Darwin)
 GOTEST_INTEGRATION_TAGS = $(filter-out bblfsh,$(GOTEST_INTEGRATION_TAGS_LIST))
-else
-GOTEST_INTEGRATION_TAGS = $(GOTEST_INTEGRATION_TAGS_LIST)
 endif
 endif
 
