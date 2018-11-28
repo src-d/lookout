@@ -11,6 +11,7 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/grpchelper"
 	log "gopkg.in/src-d/go-log.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -38,7 +39,7 @@ func (suite *ErrorAnalyzerIntegrationSuite) startAnalyzer(ctx context.Context, a
 	server := grpchelper.NewServer()
 	lookout.RegisterAnalyzerServer(server, a)
 
-	lis, err := grpchelper.Listen("ipv4://localhost:10302")
+	lis, err := pb.Listen("ipv4://localhost:10302")
 	if err != nil {
 		return err
 	}
