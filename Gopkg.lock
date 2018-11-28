@@ -743,12 +743,12 @@
   version = "v1.0.5"
 
 [[projects]]
-  digest = "1:3b3519cdc5a47f977761844e20d65f3b6e043a815616fb269e59b600cb92d9d0"
+  digest = "1:094e727400f2822152a318bffadc92f6a8ae8591d9f2204cb66a25908fd829ed"
   name = "gopkg.in/src-d/lookout-sdk.v0"
   packages = ["pb"]
   pruneopts = "NUT"
-  revision = "df92c36f6ab2e46fbbf541c4c1f470e2c20bd570"
-  version = "v0.1.2"
+  revision = "25d972a8198fe741dea06ffa579cd0c4412865ab"
+  version = "v0.2.0"
 
 [[projects]]
   digest = "1:20d5d24cfd1dac53cbf730d5c9861c0792c68ae547e67fc16fa0ed0660481b0a"
