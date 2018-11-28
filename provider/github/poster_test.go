@@ -10,8 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/google/go-github/github"
 	"github.com/gregjones/httpcache"
 	"github.com/src-d/lookout"
@@ -167,7 +165,7 @@ func (s *PosterTestSuite) TestPostOK() {
 	})
 
 	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments)
+	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments, false)
 	s.NoError(err)
 
 	s.True(createReviewsCalled)
@@ -187,16 +185,16 @@ func (s *PosterTestSuite) TestPostFooter() {
 
 		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
 			CommitID: &mockEvent.Head.Hash,
-			Body:     strptr("Global comment\n\nTo post feedback go to https://foo.bar/feedback\n\nAnother global comment\n\nTo post feedback go to https://foo.bar/feedback"),
+			Body:     strptr("Global comment\n\nAnother global comment" + footnoteSeparator + "To post feedback go to https://foo.bar/feedback"),
 			Event:    strptr(commentEvent),
 			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
 				Path:     strptr("main.go"),
-				Body:     strptr("File comment\n\nTo post feedback go to https://foo.bar/feedback"),
+				Body:     strptr("File comment" + footnoteSeparator + "To post feedback go to https://foo.bar/feedback"),
 				Position: intptr(1),
 			}, &github.DraftReviewComment{
 				Path:     strptr("main.go"),
 				Position: intptr(3),
-				Body:     strptr("Line comment\n\nTo post feedback go to https://foo.bar/feedback"),
+				Body:     strptr("Line comment" + footnoteSeparator + "To post feedback go to https://foo.bar/feedback"),
 			}}})
 		s.JSONEq(string(expected), string(body))
 
@@ -213,7 +211,7 @@ func (s *PosterTestSuite) TestPostFooter() {
 			CommentFooter: "To post feedback go to %s",
 		},
 	}
-	err := p.Post(context.Background(), mockEvent, aComments)
+	err := p.Post(context.Background(), mockEvent, aComments, false)
 	s.NoError(err)
 
 	s.True(createReviewsCalled)
@@ -222,7 +220,7 @@ func (s *PosterTestSuite) TestPostFooter() {
 func (s *PosterTestSuite) TestPostBadProvider() {
 	p := &Poster{pool: s.pool}
 
-	err := p.Post(context.Background(), badProviderEvent, mockAnalyzerComments)
+	err := p.Post(context.Background(), badProviderEvent, mockAnalyzerComments, false)
 	s.True(ErrEventNotSupported.Is(err))
 	s.Equal("event not supported: unsupported provider: badprovider", err.Error())
 }
@@ -230,7 +228,7 @@ func (s *PosterTestSuite) TestPostBadProvider() {
 func (s *PosterTestSuite) TestPostBadReferenceNoRepository() {
 	p := &Poster{pool: s.pool}
 
-	err := p.Post(context.Background(), noRepoEvent, mockAnalyzerComments)
+	err := p.Post(context.Background(), noRepoEvent, mockAnalyzerComments, false)
 	s.True(ErrEventNotSupported.Is(err))
 	s.Equal("event not supported: nil repository", err.Error())
 }
@@ -238,7 +236,7 @@ func (s *PosterTestSuite) TestPostBadReferenceNoRepository() {
 func (s *PosterTestSuite) TestPostBadReference() {
 	p := &Poster{pool: s.pool}
 
-	err := p.Post(context.Background(), badReferenceEvent, mockAnalyzerComments)
+	err := p.Post(context.Background(), badReferenceEvent, mockAnalyzerComments, false)
 	s.True(ErrEventNotSupported.Is(err))
 	s.Equal("event not supported: bad PR: BAD", err.Error())
 }
@@ -252,7 +250,7 @@ func (s *PosterTestSuite) TestPostHttpError() {
 	})
 
 	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments)
+	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments, false)
 	s.IsType(ErrGitHubAPI.New(), err)
 }
 
@@ -270,7 +268,7 @@ func (s *PosterTestSuite) TestPostHttpTimeout() {
 	defer cancel()
 
 	p := &Poster{pool: s.pool}
-	err := p.Post(ctx, mockEvent, mockAnalyzerComments)
+	err := p.Post(ctx, mockEvent, mockAnalyzerComments, false)
 	s.IsType(ErrGitHubAPI.New(), err)
 }
 
@@ -283,11 +281,11 @@ func (s *PosterTestSuite) TestPostHttpJSONErr() {
 	})
 
 	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments)
+	err := p.Post(context.Background(), mockEvent, mockAnalyzerComments, false)
 	s.IsType(ErrGitHubAPI.New(), err)
 }
 
-func (s *PosterTestSuite) TestPostOutOfRange() {
+func (s *PosterTestSuite) TestPostNoComments() {
 	compareCalled := false
 	s.compareHandle(&compareCalled)
 
@@ -295,97 +293,16 @@ func (s *PosterTestSuite) TestPostOutOfRange() {
 	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
 		s.False(createReviewsCalled)
 		createReviewsCalled = true
-
-		body, err := ioutil.ReadAll(r.Body)
-		s.NoError(err)
-
-		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
-			CommitID: &mockEvent.Head.Hash,
-			Body:     strptr(""),
-			Event:    strptr(commentEvent),
-			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
-				Path:     strptr("main.go"),
-				Position: intptr(1),
-				Body:     strptr("Line comment"),
-			}}})
-		s.JSONEq(string(expected), string(body))
-
-		resp := &github.Response{Response: &http.Response{StatusCode: 200}}
-		json.NewEncoder(w).Encode(resp)
 	})
 
-	outRangeComments := []*lookout.Comment{
-		&lookout.Comment{
-			File: "main.go",
-			Line: 1,
-			Text: "out of range comment before",
-		},
-		&lookout.Comment{
-			File: "main.go",
-			Line: 3,
-			Text: "Line comment",
-		},
-		&lookout.Comment{
-			File: "main.go",
-			Line: 205,
-			Text: "out of range comment after",
-		}}
-
-	outRangeAnalyzerComments := []lookout.AnalyzerComments{
-		lookout.AnalyzerComments{
-			Config: lookout.AnalyzerConfig{
-				Name: "mock",
-			},
-			Comments: outRangeComments,
-		}}
-
 	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, outRangeAnalyzerComments)
-	s.NoError(err)
-
-	s.True(createReviewsCalled)
-}
-
-func (s *PosterTestSuite) TestPostAllOutOfRange() {
-	compareCalled := false
-	s.compareHandle(&compareCalled)
-
-	createReviewsCalled := false
-	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
-		createReviewsCalled = true
-
-		resp := &github.Response{Response: &http.Response{StatusCode: 200}}
-		json.NewEncoder(w).Encode(resp)
-	})
-
-	outRangeComments := []*lookout.Comment{
-		&lookout.Comment{
-			File: "main.go",
-			Line: 1,
-			Text: "out of range comment before",
-		},
-		&lookout.Comment{
-			File: "main.go",
-			Line: 205,
-			Text: "out of range comment after",
-		}}
-
-	outRangeAnalyzerComments := []lookout.AnalyzerComments{
-		lookout.AnalyzerComments{
-			Config: lookout.AnalyzerConfig{
-				Name: "mock",
-			},
-			Comments: outRangeComments,
-		}}
-
-	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, outRangeAnalyzerComments)
+	err := p.Post(context.Background(), mockEvent, []lookout.AnalyzerComments{}, false)
 	s.NoError(err)
 
 	s.False(createReviewsCalled)
 }
 
-func (s *PosterTestSuite) TestPostOutOfRangeAndBody() {
+func (s *PosterTestSuite) TestPostOnlyBodyComments() {
 	compareCalled := false
 	s.compareHandle(&compareCalled)
 
@@ -393,110 +310,109 @@ func (s *PosterTestSuite) TestPostOutOfRangeAndBody() {
 	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
 		s.False(createReviewsCalled)
 		createReviewsCalled = true
-
-		body, err := ioutil.ReadAll(r.Body)
-		s.NoError(err)
-
-		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
-			CommitID: &mockEvent.Head.Hash,
-			Body:     strptr("Body comment"),
-			Event:    strptr(commentEvent),
-		})
-		s.JSONEq(string(expected), string(body))
-
-		resp := &github.Response{Response: &http.Response{StatusCode: 200}}
-		json.NewEncoder(w).Encode(resp)
 	})
 
-	outRangeComments := []*lookout.Comment{
-		&lookout.Comment{
-			File: "main.go",
-			Line: 1,
-			Text: "out of range comment before",
-		},
-		&lookout.Comment{
-			Text: "Body comment",
-		},
-		&lookout.Comment{
-			File: "main.go",
-			Line: 205,
-			Text: "out of range comment after",
-		}}
-
-	outRangeAnalyzerComments := []lookout.AnalyzerComments{
-		lookout.AnalyzerComments{
-			Config: lookout.AnalyzerConfig{
-				Name: "mock",
-			},
-			Comments: outRangeComments,
-		}}
-
 	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, outRangeAnalyzerComments)
+	err := p.Post(context.Background(), mockEvent, []lookout.AnalyzerComments{
+		{
+			Comments: []*lookout.Comment{
+				{Text: "body comment"},
+			},
+		},
+	}, false)
 	s.NoError(err)
 
 	s.True(createReviewsCalled)
 }
 
-func (s *PosterTestSuite) TestPostOKAndWrongFile() {
+func (s *PosterTestSuite) TestPostSafeOK() {
 	compareCalled := false
 	s.compareHandle(&compareCalled)
 
-	createReviewsCalled := false
-	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
-		s.False(createReviewsCalled)
-		createReviewsCalled = true
-
-		body, err := ioutil.ReadAll(r.Body)
-		s.NoError(err)
-
-		expected, _ := json.Marshal(&github.PullRequestReviewRequest{
-			CommitID: &mockEvent.Head.Hash,
-			Body:     strptr("Global comment\n\nAnother global comment"),
-			Event:    strptr(commentEvent),
-			Comments: []*github.DraftReviewComment{&github.DraftReviewComment{
-				Path:     strptr("main.go"),
-				Body:     strptr("File comment"),
-				Position: intptr(1),
-			}, &github.DraftReviewComment{
-				Path:     strptr("main.go"),
-				Position: intptr(3),
-				Body:     strptr("Line comment"),
-			}}})
-		s.JSONEq(string(expected), string(body))
-
-		resp := &github.Response{Response: &http.Response{StatusCode: 200}}
-		json.NewEncoder(w).Encode(resp)
-	})
-
-	customMockComments := []*lookout.Comment{
-		&lookout.Comment{
-			Text: "Global comment",
-		}, &lookout.Comment{
+	inputComments := []*lookout.Comment{
+		// this comment should be posted
+		{Text: "Global comment"},
+		// this comment should be filtered by single comment
+		{
 			File: "main.go",
 			Text: "File comment",
-		}, &lookout.Comment{
+		},
+		// this comment should be filtered by merged comment
+		{
 			File: "main.go",
 			Line: 5,
 			Text: "Line comment",
-		}, &lookout.Comment{
-			Text: "Another global comment",
-		}, &lookout.Comment{
-			File: "file-does-not-exist.txt",
+		},
+		// this comment should be posted
+		{
+			File: "main.go",
 			Line: 5,
-			Text: "Line comment",
-		}}
+			Text: "Survive comment",
+		},
+	}
 
-	customMockAnalyzerComments := []lookout.AnalyzerComments{
+	inputAnalyzerComments := []lookout.AnalyzerComments{
 		lookout.AnalyzerComments{
 			Config: lookout.AnalyzerConfig{
 				Name: "mock",
 			},
-			Comments: customMockComments,
+			Comments: inputComments,
 		}}
 
+	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews/1/comments", func(w http.ResponseWriter, r *http.Request) {
+		resp := []*github.PullRequestComment{
+			// single comment that should be filtered
+			{
+				Path:     strptr("main.go"),
+				Position: intptr(1),
+				Body:     strptr("File comment"),
+			},
+			// merged comment with footer should also filter
+			{
+				Path:     strptr("main.go"),
+				Position: intptr(3),
+				Body:     strptr("Line comment" + commentsSeparator + "Another line" + footnoteSeparator + "footer here"),
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	createReviewsCalled := false
+	s.mux.HandleFunc("/repos/foo/bar/pulls/42/reviews", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			resp := []*github.PullRequestReview{
+				{ID: int64ptr(1)},
+			}
+			json.NewEncoder(w).Encode(resp)
+		}
+
+		if r.Method == http.MethodPost {
+			s.False(createReviewsCalled)
+			createReviewsCalled = true
+
+			body, err := ioutil.ReadAll(r.Body)
+			s.NoError(err)
+
+			expected, _ := json.Marshal(&github.PullRequestReviewRequest{
+				CommitID: &mockEvent.Head.Hash,
+				Body:     strptr("Global comment"),
+				Event:    strptr(commentEvent),
+				Comments: []*github.DraftReviewComment{
+					{
+						Path:     strptr("main.go"),
+						Position: intptr(3),
+						Body:     strptr("Survive comment"),
+					},
+				}})
+			s.JSONEq(string(expected), string(body))
+
+			resp := &github.Response{Response: &http.Response{StatusCode: 200}}
+			json.NewEncoder(w).Encode(resp)
+		}
+	})
+
 	p := &Poster{pool: s.pool}
-	err := p.Post(context.Background(), mockEvent, customMockAnalyzerComments)
+	err := p.Post(context.Background(), mockEvent, inputAnalyzerComments, true)
 	s.NoError(err)
 
 	s.True(createReviewsCalled)
@@ -609,61 +525,4 @@ func intptr(v int) *int {
 
 func int64ptr(v int64) *int64 {
 	return &v
-}
-
-func TestSplitReview(t *testing.T) {
-	require := require.New(t)
-
-	n := 2
-
-	rw := &github.PullRequestReviewRequest{
-		Event: strptr(commentEvent),
-		Body:  strptr("body"),
-	}
-
-	rw.Comments = []*github.DraftReviewComment{
-		{Body: strptr("comment1")},
-	}
-
-	r := splitReview(rw, n)
-	require.Len(r, 1)
-	require.Equal([]*github.PullRequestReviewRequest{rw}, r)
-
-	rw.Comments = []*github.DraftReviewComment{
-		{Body: strptr("comment1")},
-		{Body: strptr("comment2")},
-		{Body: strptr("comment3")},
-	}
-
-	r = splitReview(rw, n)
-	require.Len(r, 2)
-	require.Equal([]*github.PullRequestReviewRequest{
-		{
-			Event: strptr(commentEvent),
-			Body:  strptr(""),
-			Comments: []*github.DraftReviewComment{
-				{Body: strptr("comment1")},
-				{Body: strptr("comment2")},
-			},
-		},
-		{
-			Event: strptr(commentEvent),
-			Body:  strptr("body"),
-			Comments: []*github.DraftReviewComment{
-				{Body: strptr("comment3")},
-			},
-		},
-	}, r)
-
-	rw.Comments = []*github.DraftReviewComment{
-		{Body: strptr("comment1")},
-		{Body: strptr("comment2")},
-		{Body: strptr("comment3")},
-		{Body: strptr("comment4")},
-		{Body: strptr("comment5")},
-		{Body: strptr("comment6")},
-	}
-
-	r = splitReview(rw, n)
-	require.Len(r, 3)
 }

@@ -98,7 +98,7 @@ func (c *PushCommand) Execute(args []string) error {
 			Base: *fromRef,
 			Head: *toRef,
 		},
-		Configuration: conf})
+		Configuration: conf}, false)
 
 	if err != nil {
 		return err

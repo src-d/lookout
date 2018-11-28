@@ -45,3 +45,37 @@ type AnalyzerComments struct {
 	Config   AnalyzerConfig
 	Comments []*Comment
 }
+
+// AnalyzerCommentsGroups list of AnalyzerComments
+type AnalyzerCommentsGroups []AnalyzerComments
+
+// CommentsFilterFn is a function that filters comments
+type CommentsFilterFn func(*Comment) (skip bool, err error)
+
+// Filter filters comments groups using CommentsFilterFn
+func (g AnalyzerCommentsGroups) Filter(fn CommentsFilterFn) ([]AnalyzerComments, error) {
+	var result []AnalyzerComments
+
+	for _, group := range g {
+		var newComments []*Comment
+		for _, c := range group.Comments {
+			skip, err := fn(c)
+			if err != nil {
+				return nil, err
+			}
+
+			if !skip {
+				newComments = append(newComments, c)
+			}
+		}
+
+		if len(newComments) > 0 {
+			result = append(result, AnalyzerComments{
+				Config:   group.Config,
+				Comments: newComments,
+			})
+		}
+	}
+
+	return result, nil
+}

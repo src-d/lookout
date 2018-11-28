@@ -57,7 +57,7 @@ func TestPoster_Post_OK(t *testing.T) {
 		Comments: cs,
 	}}
 
-	err := p.Post(context.Background(), ev, aCommentsList)
+	err := p.Post(context.Background(), ev, aCommentsList, false)
 	require.NoError(err)
 
 	expected := `{"analyzer-name":"mock","text":"This is a global comment"}

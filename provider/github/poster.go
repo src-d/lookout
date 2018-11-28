@@ -14,13 +14,6 @@ import (
 	log "gopkg.in/src-d/go-log.v1"
 )
 
-// Github doesn't allow to post more than 32 comments in 1 review
-// returning "was submitted too quickly"
-// with 32 comments they got posted by GH return 502 Server Error
-// issue: https://github.com/src-d/lookout/issues/264
-// issue in go-github: https://github.com/google/go-github/issues/540
-var batchReviewComments = 30
-
 var (
 	// ErrGitHubAPI signals an error while making a request to the GitHub API.
 	ErrGitHubAPI = errors.NewKind("github api error")
@@ -57,7 +50,7 @@ func NewPoster(pool *ClientPool, conf ProviderConfig) *Poster {
 // If the event is not a GitHub Pull Request, ErrEventNotSupported is returned.
 // If a GitHub API request fails, ErrGitHubAPI is returned.
 func (p *Poster) Post(ctx context.Context, e lookout.Event,
-	aCommentsList []lookout.AnalyzerComments) error {
+	aCommentsList []lookout.AnalyzerComments, safe bool) error {
 	switch ev := e.(type) {
 	case *lookout.ReviewEvent:
 		if ev.Provider != Provider {
@@ -65,14 +58,14 @@ func (p *Poster) Post(ctx context.Context, e lookout.Event,
 				fmt.Errorf("unsupported provider: %s", ev.Provider))
 		}
 
-		return p.postPR(ctx, ev, aCommentsList)
+		return p.postPR(ctx, ev, aCommentsList, safe)
 	default:
 		return ErrEventNotSupported.Wrap(fmt.Errorf("unsupported event type %s", reflect.TypeOf(e)))
 	}
 }
 
 func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
-	aCommentsList []lookout.AnalyzerComments) error {
+	aCommentsList []lookout.AnalyzerComments, safe bool) error {
 
 	owner, repo, pr, err := p.validatePR(e)
 	if err != nil {
@@ -89,12 +82,21 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 	cc, resp, err := client.Repositories.CompareCommits(ctx, owner, repo,
 		e.Base.Hash,
 		e.Head.Hash)
-	if err = p.handleAPIError(resp, err); err != nil {
+	if err = handleAPIError(resp, err); err != nil {
 		return err
 	}
 
+	// get list of already posted comments from GH in safe mode
+	var postedComments []*github.PullRequestComment
+	if safe {
+		postedComments, err = getPostedComment(ctx, client, owner, repo, pr)
+		if err != nil {
+			return err
+		}
+	}
+
 	dl := newDiffLines(cc)
-	review, err := p.createReviewRequest(ctx, aCommentsList, dl, e.Head.Hash)
+	review, err := p.createReviewRequest(ctx, aCommentsList, dl, e.Head.Hash, postedComments)
 	if errNoComments.Is(err) {
 		ctxlog.Get(ctx).Debugf("skipping posting analysis, there are no comments")
 		return nil
@@ -103,49 +105,7 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 		return err
 	}
 
-	for _, req := range splitReview(review, batchReviewComments) {
-		_, resp, err = client.PullRequests.CreateReview(ctx, owner, repo, pr, req)
-		if err = p.handleAPIError(resp, err); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func splitReview(review *github.PullRequestReviewRequest, n int) []*github.PullRequestReviewRequest {
-	if len(review.Comments) <= n {
-		return []*github.PullRequestReviewRequest{review}
-	}
-
-	var result []*github.PullRequestReviewRequest
-	comments := review.Comments
-	// set body only to the last review
-	emptyBody := ""
-
-	for len(comments) > n {
-		result = append(result, &github.PullRequestReviewRequest{
-			CommitID: review.CommitID,
-			Event:    review.Event,
-			Body:     &emptyBody,
-			Comments: comments[:n],
-		})
-
-		comments = comments[n:]
-	}
-
-	if len(comments) > 0 {
-		result = append(result, &github.PullRequestReviewRequest{
-			CommitID: review.CommitID,
-			Event:    review.Event,
-			Body:     &emptyBody,
-			Comments: comments,
-		})
-	}
-
-	result[len(result)-1].Body = review.Body
-
-	return result
+	return createReview(ctx, client, owner, repo, pr, review)
 }
 
 func (p *Poster) validatePR(
@@ -173,112 +133,54 @@ func (p *Poster) validatePR(
 	return
 }
 
-func (p *Poster) handleAPIError(resp *github.Response, err error) error {
-	if err != nil {
-		return ErrGitHubAPI.Wrap(err)
-	}
-
-	if resp.StatusCode == 200 {
-		return nil
-	}
-
-	return ErrGitHubAPI.Wrap(fmt.Errorf("bad HTTP status: %d", resp.StatusCode))
-}
-
-func (p *Poster) addFootnote(aConf lookout.AnalyzerConfig, c *lookout.Comment) string {
-	tmpl := p.conf.CommentFooter
-	url := aConf.Feedback
-
-	if tmpl == "" || url == "" {
-		return c.Text
-	}
-
-	return fmt.Sprintf("%s\n\n%s", c.Text, fmt.Sprintf(tmpl, url))
-}
-
 var (
 	approveEvent        = "APPROVE"
 	requestChangesEvent = "REQUEST_CHANGES"
 	commentEvent        = "COMMENT"
 )
 
+// createReviewRequest creates new github pull request review request
+// postedComments is optional field
 func (p *Poster) createReviewRequest(
 	ctx context.Context,
 	aCommentsList []lookout.AnalyzerComments,
 	dl *diffLines,
 	commitID string,
+	postedComments []*github.PullRequestComment,
 ) (*github.PullRequestReviewRequest, error) {
 	req := &github.PullRequestReviewRequest{
 		CommitID: &commitID,
 		Event:    &commentEvent,
 	}
 
-	logger := ctxlog.Get(ctx)
-
 	var bodyComments []string
+	tmpl := p.conf.CommentFooter
 
 	for _, aComments := range aCommentsList {
-		for _, c := range aComments.Comments {
-			text := p.addFootnote(aComments.Config, c)
+		ctx, _ := ctxlog.WithLogFields(ctx, log.Fields{
+			"analyzer": aComments.Config.Name,
+		})
 
-			if c.File == "" {
-				bodyComments = append(bodyComments, text)
-			} else if c.Line < 1 {
-				line := 1
-				comment := &github.DraftReviewComment{
-					Path:     &c.File,
-					Position: &line,
-					Body:     &text,
-				}
-				req.Comments = append(req.Comments, comment)
-			} else {
-				line, err := dl.ConvertLine(c.File, int(c.Line), true)
-				if ErrLineOutOfDiff.Is(err) {
-					logger.With(log.Fields{
-						"analyzer": aComments.Config.Name,
-						"file":     c.File,
-						"line":     c.Line,
-					}).Debugf("skipping comment out the diff range")
-					continue
-				}
-				if ErrLineNotAddition.Is(err) {
-					logger.With(log.Fields{
-						"analyzer": aComments.Config.Name,
-						"file":     c.File,
-						"line":     c.Line,
-					}).Debugf("skipping comment not on an added line (+ in diff)")
-					continue
-				}
-				if ErrFileNotFound.Is(err) {
-					logger.With(log.Fields{
-						"analyzer": aComments.Config.Name,
-						"file":     c.File,
-						"line":     c.Line,
-					}).Warningf("skipping comment on a file not part of the diff")
-					continue
-				}
-				if ErrBadPatch.Is(err) {
-					patch, _ := dl.filePatch(c.File)
-					logger.With(log.Fields{
-						"analyzer": aComments.Config.Name,
-						"file":     c.File,
-						"patch":    patch,
-					}).Errorf(err, "skipping comment because the diff could not be parsed")
-					continue
-				}
+		url := aComments.Config.Feedback
 
-				if err != nil {
-					return nil, err
-				}
+		forBody, ghComments := convertComments(ctx, aComments.Comments, dl)
 
-				comment := &github.DraftReviewComment{
-					Path:     &c.File,
-					Position: &line,
-					Body:     &text,
-				}
-				req.Comments = append(req.Comments, comment)
-			}
+		if len(postedComments) > 0 {
+			ghComments = filterPostedComments(ghComments, postedComments)
 		}
+
+		ghComments = mergeComments(ghComments)
+
+		for i, c := range ghComments {
+			body := addFootnote(c.GetBody(), tmpl, url)
+			ghComments[i].Body = &body
+		}
+
+		bodyComments = append(
+			bodyComments,
+			addFootnote(strings.Join(forBody, "\n\n"), tmpl, url),
+		)
+		req.Comments = append(req.Comments, ghComments...)
 	}
 
 	body := strings.Join(bodyComments, "\n\n")

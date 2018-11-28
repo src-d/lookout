@@ -363,7 +363,7 @@ type PosterMock struct {
 	status   lookout.AnalysisStatus
 }
 
-func (p *PosterMock) Post(_ context.Context, e lookout.Event, aCommentsList []lookout.AnalyzerComments) error {
+func (p *PosterMock) Post(_ context.Context, e lookout.Event, aCommentsList []lookout.AnalyzerComments, safe bool) error {
 	cs := make([]*lookout.Comment, 0)
 	for _, aComments := range aCommentsList {
 		cs = append(cs, aComments.Comments...)

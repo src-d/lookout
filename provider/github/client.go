@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -247,8 +248,12 @@ func NewClient(
 	gitAuth gitAuthFn,
 	timeout time.Duration,
 ) *Client {
+	fixT := &fixReviewTransport{
+		Transport: t,
+	}
+
 	limitRT := &limitRoundTripper{
-		Base: t,
+		Base: fixT,
 	}
 
 	interval := minInterval
@@ -411,3 +416,15 @@ func (t *limitRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 }
 
 var _ http.RoundTripper = &limitRoundTripper{}
+
+func handleAPIError(resp *github.Response, err error) error {
+	if err != nil {
+		return ErrGitHubAPI.Wrap(err)
+	}
+
+	if resp.StatusCode == 200 {
+		return nil
+	}
+
+	return ErrGitHubAPI.Wrap(fmt.Errorf("bad HTTP status: %d", resp.StatusCode))
+}
