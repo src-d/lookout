@@ -127,7 +127,10 @@ func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, erro
 	return srv, nil
 }
 
-func (c *EventCommand) initDataServer(srv *lookout.DataServerHandler) (func() error, func()) {
+type startFunc func() error
+type stopFunc func()
+
+func (c *EventCommand) initDataServer(srv *lookout.DataServerHandler) (startFunc, stopFunc) {
 	var grpcSrv *grpc.Server
 
 	start := func() error {
