@@ -59,6 +59,9 @@ func (p *Poster) Post(ctx context.Context, e lookout.Event,
 		}
 
 		return p.postPR(ctx, ev, aCommentsList, safe)
+	case *lookout.PushEvent:
+		// Currently we don't post push comments anywhere
+		return nil
 	default:
 		return ErrEventNotSupported.Wrap(fmt.Errorf("unsupported event type %s", reflect.TypeOf(e)))
 	}
@@ -204,6 +207,9 @@ func (p *Poster) Status(ctx context.Context, e lookout.Event, status lookout.Ana
 		}
 
 		return p.statusPR(ctx, ev, status)
+	case *lookout.PushEvent:
+		// Currently we don't post push comments anywhere
+		return nil
 	default:
 		return ErrEventNotSupported.Wrap(fmt.Errorf("unsupported event type %s", reflect.TypeOf(e)))
 	}
