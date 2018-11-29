@@ -10,6 +10,7 @@ import (
 	"github.com/src-d/lookout/util/grpchelper"
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-log.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 var (
@@ -30,7 +31,7 @@ func (c *ServeCommand) Execute(args []string) error {
 	c.initHealthProbes()
 
 	var err error
-	c.DataServer, err = grpchelper.ToGoGrpcAddress(c.DataServer)
+	c.DataServer, err = pb.ToGoGrpcAddress(c.DataServer)
 	if err != nil {
 		return err
 	}
@@ -55,7 +56,7 @@ func (c *ServeCommand) Execute(args []string) error {
 	server := grpchelper.NewServer()
 	lookout.RegisterAnalyzerServer(server, a)
 
-	lis, err := grpchelper.Listen(c.Analyzer)
+	lis, err := pb.Listen(c.Analyzer)
 	if err != nil {
 		return err
 	}

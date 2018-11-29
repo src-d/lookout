@@ -21,6 +21,7 @@ import (
 	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-log.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 type EventCommand struct {
@@ -100,7 +101,7 @@ func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, erro
 	dataService = git.NewService(loader)
 	dataService = enry.NewService(dataService, dataService)
 
-	grpcAddr, err := grpchelper.ToGoGrpcAddress(c.Bblfshd)
+	grpcAddr, err := pb.ToGoGrpcAddress(c.Bblfshd)
 	if err != nil {
 		return nil, fmt.Errorf("Can't resolve bblfsh address '%s': %s", c.Bblfshd, err)
 	}
@@ -135,7 +136,7 @@ func (c *EventCommand) initDataServer(srv *lookout.DataServerHandler) (startFunc
 
 	start := func() error {
 		log.Infof("starting a DataServer at %s", c.DataServer)
-		bblfshGrpcAddr, err := grpchelper.ToGoGrpcAddress(c.Bblfshd)
+		bblfshGrpcAddr, err := pb.ToGoGrpcAddress(c.Bblfshd)
 		if err != nil {
 			return fmt.Errorf("Can't resolve bblfsh address '%s': %s", c.Bblfshd, err)
 		}
@@ -147,7 +148,7 @@ func (c *EventCommand) initDataServer(srv *lookout.DataServerHandler) (startFunc
 
 		lookout.RegisterDataServer(grpcSrv, srv)
 
-		lis, err := grpchelper.Listen(c.DataServer)
+		lis, err := pb.Listen(c.DataServer)
 		if err != nil {
 			return fmt.Errorf("Can't start data server at '%s': %s", c.DataServer, err)
 		}
@@ -170,7 +171,7 @@ func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
 	var err error
 	log.Infof("starting looking for Analyzer at %s", c.Args.Analyzer)
 
-	grpcAddr, err := grpchelper.ToGoGrpcAddress(c.Args.Analyzer)
+	grpcAddr, err := pb.ToGoGrpcAddress(c.Args.Analyzer)
 	if err != nil {
 		return nil, fmt.Errorf("Can't resolve address of analyzer '%s': %s", c.Args.Analyzer, err)
 	}

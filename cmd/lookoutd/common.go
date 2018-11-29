@@ -33,6 +33,7 @@ import (
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-billy.v4/osfs"
 	"gopkg.in/src-d/go-log.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -308,7 +309,7 @@ func (c *queueConsumerCommand) initPoster(conf Config) (lookout.Poster, error) {
 }
 
 func (c *queueConsumerCommand) startAnalyzer(conf lookout.AnalyzerConfig) (lookout.AnalyzerClient, error) {
-	addr, err := grpchelper.ToGoGrpcAddress(conf.Addr)
+	addr, err := pb.ToGoGrpcAddress(conf.Addr)
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +330,7 @@ func (c *queueConsumerCommand) startAnalyzer(conf lookout.AnalyzerConfig) (looko
 
 func (c *queueConsumerCommand) initDataHandler(conf Config) (*lookout.DataServerHandler, error) {
 	var err error
-	c.Bblfshd, err = grpchelper.ToGoGrpcAddress(c.Bblfshd)
+	c.Bblfshd, err = pb.ToGoGrpcAddress(c.Bblfshd)
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +377,7 @@ func (c *queueConsumerCommand) initDataServer(srv *lookout.DataServerHandler) (s
 		}
 
 		lookout.RegisterDataServer(grpcSrv, srv)
-		lis, err := grpchelper.Listen(c.DataServer)
+		lis, err := pb.Listen(c.DataServer)
 		if err != nil {
 			return err
 		}

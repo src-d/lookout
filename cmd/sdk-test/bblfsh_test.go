@@ -116,7 +116,7 @@ func (suite *BblfshIntegrationSuite) TestConnectToDataServer() {
 	server := grpchelper.NewServer()
 	lookout.RegisterAnalyzerServer(server, a)
 
-	lis, err := grpchelper.Listen(bblfshAnalyzerAddr)
+	lis, err := pb.Listen(bblfshAnalyzerAddr)
 	suite.NoError(err)
 
 	go func() {
@@ -145,7 +145,7 @@ var _ lookout.AnalyzerServer = &BbblfshClientAnalyzer{}
 type BbblfshClientAnalyzer struct{}
 
 func (a *BbblfshClientAnalyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent) (*lookout.EventResponse, error) {
-	dataServer, _ := grpchelper.ToGoGrpcAddress("ipv4://localhost:10301")
+	dataServer, _ := pb.ToGoGrpcAddress("ipv4://localhost:10301")
 	bblfshConn, err := grpchelper.DialContext(context.Background(), dataServer, grpc.WithInsecure())
 	if err != nil {
 		return nil, err

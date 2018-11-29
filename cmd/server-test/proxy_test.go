@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"gopkg.in/bblfsh/sdk.v1/protocol"
 	log "gopkg.in/src-d/go-log.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 const emptyConfigFile = "../../fixtures/empty_config.yml"
@@ -36,7 +37,7 @@ func (suite *ProxyIntegrationSuite) TearDownTest() {
 }
 
 func (suite *ProxyIntegrationSuite) TestParseOk() {
-	addr, err := grpchelper.ToGoGrpcAddress("ipv4://localhost:10301")
+	addr, err := pb.ToGoGrpcAddress("ipv4://localhost:10301")
 	suite.NoError(err)
 
 	bblfshConn, err := grpchelper.DialContext(context.Background(), addr, grpc.WithInsecure())
