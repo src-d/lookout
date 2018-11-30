@@ -208,7 +208,7 @@ func splitReviewRequest(review *github.PullRequestReviewRequest, n int) []*githu
 
 // addFootnote adds footnote link to text of a comment
 func addFootnote(text, tmpl, url string) string {
-	if tmpl == "" || url == "" {
+	if text == "" || tmpl == "" || url == "" {
 		return text
 	}
 
