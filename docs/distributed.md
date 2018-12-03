@@ -4,7 +4,7 @@ lookout can be run in a distributed fashion using a [RabbitMQ](https://www.rabbi
 
 The _watcher_ process monitors GitHub pull requests and enqueues jobs for new events. One (or more) _workers_ dequeue jobs as they become available, analyze the pull requests with the help of bblfsh and the analyzers, and post the results as comments.
 
-This deployment still uses the same configuration file as a regular deployment, see the [**Configuring lookout guide**](docs/configuration.md) for more information.
+This deployment still uses the same configuration file as a regular deployment, see the [**Configuring lookout guide**](configuration.md) for more information.
 
 To get started, follow these steps:
 
