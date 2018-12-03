@@ -109,6 +109,15 @@ func (c *lookoutdCommand) initConfig() (Config, error) {
 		return conf, fmt.Errorf("Can't open configuration file: %s", err)
 	}
 
+	// Set default timeouts
+	conf.Timeout = TimeoutConfig{
+		AnalyzerReview: 10 * time.Minute,
+		AnalyzerPush:   60 * time.Minute,
+		GithubRequest:  time.Minute,
+		GitFetch:       20 * time.Minute,
+		BblfshParse:    2 * time.Minute,
+	}
+
 	if err := yaml.Unmarshal([]byte(configData), &conf); err != nil {
 		return conf, fmt.Errorf("Can't parse configuration file: %s", err)
 	}
