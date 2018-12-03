@@ -639,6 +639,14 @@
   version = "v4.2.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:d7584e5306287c1de78a8de5e0d4e76cf556b6db1cc8025571f0d61f2327bc8b"
+  name = "gopkg.in/src-d/go-cli.v0"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "d492247bbc0df2be12b7767179b14ea23430964f"
+
+[[projects]]
   digest = "1:c88b418aec7505bdb7618086f60dc41663d0609e12cc46473fe16039d35bbfd9"
   name = "gopkg.in/src-d/go-errors.v0"
   packages = ["."]
@@ -801,7 +809,6 @@
     "github.com/grpc-ecosystem/go-grpc-middleware",
     "github.com/grpc-ecosystem/go-grpc-middleware/logging",
     "github.com/hashicorp/golang-lru",
-    "github.com/jessevdk/go-flags",
     "github.com/jinzhu/copier",
     "github.com/lib/pq",
     "github.com/mwitkow/grpc-proxy/proxy",
@@ -823,6 +830,7 @@
     "gopkg.in/src-d/go-billy.v4/memfs",
     "gopkg.in/src-d/go-billy.v4/osfs",
     "gopkg.in/src-d/go-billy.v4/util",
+    "gopkg.in/src-d/go-cli.v0",
     "gopkg.in/src-d/go-errors.v1",
     "gopkg.in/src-d/go-git-fixtures.v3",
     "gopkg.in/src-d/go-git.v4",
