@@ -15,9 +15,10 @@ import (
 
 // Service implements data service interface which adds UAST to the responses
 type Service struct {
-	changes      lookout.ChangeGetter
-	files        lookout.FileGetter
-	client       protocol.ProtocolServiceClient
+	changes lookout.ChangeGetter
+	files   lookout.FileGetter
+	client  protocol.ProtocolServiceClient
+	// parseTimeout of zero means no timeout.
 	parseTimeout time.Duration
 }
 
@@ -25,16 +26,13 @@ var _ lookout.ChangeGetter = &Service{}
 var _ lookout.FileGetter = &Service{}
 
 // NewService creates new bblfsh Service
+// A parseTimeout of zero means no timeout.
 func NewService(
 	changes lookout.ChangeGetter,
 	files lookout.FileGetter,
 	conn *grpc.ClientConn,
 	parseTimeout time.Duration,
 ) *Service {
-	if parseTimeout == 0 {
-		parseTimeout = 60 * time.Second
-	}
-
 	return &Service{
 		changes:      changes,
 		files:        files,
@@ -96,8 +94,9 @@ func (s *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (look
 }
 
 type BaseScanner struct {
-	ctx          context.Context
-	client       protocol.ProtocolServiceClient
+	ctx    context.Context
+	client protocol.ProtocolServiceClient
+	// parseTimeout of zero means no timeout.
 	parseTimeout time.Duration
 	err          error
 }
@@ -129,8 +128,14 @@ func (s *BaseScanner) parseFile(f *lookout.File) (*uast.Node, error) {
 		Encoding: protocol.UTF8,
 		Language: strings.ToLower(f.Language),
 	}
-	ctx, cancel := context.WithTimeout(s.ctx, s.parseTimeout)
-	defer cancel()
+
+	ctx := s.ctx
+	if s.parseTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, s.parseTimeout)
+		defer cancel()
+	}
+
 	resp, err := s.client.Parse(ctx, req)
 	if err != nil {
 		return nil, err

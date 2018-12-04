@@ -25,6 +25,7 @@ type Syncer struct {
 	l *Library
 
 	authProvider AuthProvider
+	// fetchTimeout of zero means no timeout.
 	fetchTimeout time.Duration
 }
 
@@ -34,12 +35,9 @@ type AuthProvider interface {
 	GitAuth(ctx context.Context, repoInfo *lookout.RepositoryInfo) transport.AuthMethod
 }
 
-// NewSyncer returns a Syncer for the given Library. authProvider can be nil
+// NewSyncer returns a Syncer for the given Library. authProvider can be nil.
+// A fetchTimeout of zero means no timeout.
 func NewSyncer(l *Library, authProvider AuthProvider, fetchTimeout time.Duration) *Syncer {
-	if fetchTimeout == 0 {
-		fetchTimeout = 10 * time.Minute
-	}
-
 	return &Syncer{l: l, authProvider: authProvider, fetchTimeout: fetchTimeout}
 }
 
@@ -108,8 +106,11 @@ func (s *Syncer) fetch(ctx context.Context, repoInfo *lookout.RepositoryInfo, r 
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	ctx, cancel := context.WithTimeout(ctx, s.fetchTimeout)
-	defer cancel()
+	if s.fetchTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, s.fetchTimeout)
+		defer cancel()
+	}
 	err = r.FetchContext(ctx, opts)
 	switch err {
 	case git.NoErrAlreadyUpToDate:

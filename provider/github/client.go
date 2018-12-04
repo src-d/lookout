@@ -240,7 +240,8 @@ type Client struct {
 	gitAuth          gitAuthFn
 }
 
-// NewClient creates new Client
+// NewClient creates new Client.
+// A timeout of zero means no timeout.
 func NewClient(
 	t http.RoundTripper,
 	cache *cache.ValidableCache,
@@ -264,10 +265,6 @@ func NewClient(
 		} else {
 			interval = d
 		}
-	}
-
-	if timeout == 0 {
-		timeout = 30 * time.Second
 	}
 
 	return &Client{

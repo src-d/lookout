@@ -40,7 +40,8 @@ type Server struct {
 	analyzerPushTimeout   time.Duration
 }
 
-// NewServer creates new Server
+// NewServer creates a new Server with the given configuration. If the Timeouts
+// are zero it means no timeout.
 func NewServer(
 	p lookout.Poster,
 	fileGetter lookout.FileGetter,
@@ -50,13 +51,6 @@ func NewServer(
 	reviewTimeout time.Duration,
 	pushTimeout time.Duration,
 ) *Server {
-	if reviewTimeout == 0 {
-		reviewTimeout = 5 * time.Minute
-	}
-	if pushTimeout == 0 {
-		pushTimeout = 30 * time.Minute
-	}
-
 	return &Server{p, fileGetter, analyzers, eventOp, commentOp, reviewTimeout, pushTimeout}
 }
 
@@ -142,8 +136,12 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent, safeP
 			e.Configuration = *st
 		}
 
-		ctx, cancel := context.WithTimeout(ctx, s.analyzerReviewTimeout)
-		defer cancel()
+		if s.analyzerReviewTimeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, s.analyzerReviewTimeout)
+			defer cancel()
+		}
+
 		resp, err := a.NotifyReviewEvent(ctx, e)
 		if err != nil {
 			return nil, err
@@ -190,8 +188,12 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent, safePosti
 			e.Configuration = *st
 		}
 
-		ctx, cancel := context.WithTimeout(ctx, s.analyzerPushTimeout)
-		defer cancel()
+		if s.analyzerPushTimeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, s.analyzerPushTimeout)
+			defer cancel()
+		}
+
 		resp, err := a.NotifyPushEvent(ctx, e)
 		if err != nil {
 			return nil, err
