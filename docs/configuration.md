@@ -148,15 +148,21 @@ The `settings` for each analyzer in the `.lookout.yml` config file will be merge
 
 ### Advanced fine-tuning
 
-Configuration file also provides possibility to change default timeouts.
+The configuration file also provides the possibility to change default timeouts.
 
-Below is the list of different timeouts with default values:
+Below is the list of different timeouts with their default values:
 
 ```yaml
+# These are the default timeout values. A value of 0 means no timeout
 timeout:
-  analyzer_review: 5m
-  analyzer_push: 30m
-  github_request: 30s
-  git_fetch: 10m
-  bblfsh_parse: 60s
+  # Timeout for an analyzer response to a NotifyReviewEvent
+  analyzer_review: 10m
+  # Timeout for an analyzer response to a NotifyPushEvent
+  analyzer_push: 60m
+  # Timeout http requests to the GitHub API
+  github_request: 1m
+  # Timeout for Git fetch actions
+  git_fetch: 20m
+  # Timeout for parse requests to Bblfsh
+  bblfsh_parse: 2m
 ```
