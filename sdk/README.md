@@ -49,7 +49,6 @@ Both `lookout-sdk push` and `lookout-sdk review` can be configured with environm
 | `LOG_FORMAT`| `--log-format=` | log format (`text` or `json`), defaults to `text` on a terminal and `json` otherwise | |
 | `LOG_FIELDS` | `--log-fields=` | default fields for the logger, specified in json | |
 | `LOG_FORCE_FORMAT` | `--log-force-format` | ignore if it is running on a terminal or not | |
-| | `-v`, `--verbose` | enable verbose logging | |
 | `LOOKOUT_DATA_SERVER`  | `--data-server=` | gRPC URL to bind the data server to | `ipv4://localhost:10301` |
 | `LOOKOUT_BBLFSHD` | `--bblfshd=` | gRPC URL of the Bblfshd server | `ipv4://localhost:9432` |
 | `GIT_DIR` | `--git-dir=` | path to the Git directory to analyze | `.` _(current dir)_ |
