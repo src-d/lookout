@@ -87,11 +87,11 @@ type RepoConfig struct {
 
 // TimeoutConfig holds configuration for timeouts
 type TimeoutConfig struct {
-	AnalyzerReview time.Duration
-	AnalyzerPush   time.Duration
-	GithubRequest  time.Duration
-	GitFetch       time.Duration
-	BblfshParse    time.Duration
+	AnalyzerReview time.Duration `yaml:"analyzer_review"`
+	AnalyzerPush   time.Duration `yaml:"analyzer_push"`
+	GithubRequest  time.Duration `yaml:"github_request"`
+	GitFetch       time.Duration `yaml:"git_fetch"`
+	BblfshParse    time.Duration `yaml:"bblfsh_parse"`
 }
 
 func (c *lookoutdCommand) initConfig() (Config, error) {
