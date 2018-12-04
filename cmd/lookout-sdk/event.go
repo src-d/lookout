@@ -20,7 +20,7 @@ import (
 
 	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-log.v1"
+	log "gopkg.in/src-d/go-log.v1"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
@@ -33,8 +33,8 @@ type EventCommand struct {
 	RevTo      string `long:"to" default:"HEAD" description:"name of the head revision for event"`
 	ConfigJSON string `long:"config-json" description:"arbitrary JSON configuration for request to an analyzer"`
 	Args       struct {
-		Analyzer string `positional-arg-name:"analyzer" description:"gRPC URL of the analyzer to use"`
-	} `positional-args:"yes" required:"yes"`
+		Analyzer string `positional-arg-name:"analyzer" description:"gRPC URL of the analyzer to use (default: ipv4://localhost:9930)"`
+	} `positional-args:"yes"`
 
 	repo *gogit.Repository
 }
@@ -168,6 +168,10 @@ func (c *EventCommand) initDataServer(srv *lookout.DataServerHandler) (startFunc
 }
 
 func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
+	if c.Args.Analyzer == "" {
+		c.Args.Analyzer = "ipv4://localhost:9930"
+	}
+
 	var err error
 	log.Infof("starting looking for Analyzer at %s", c.Args.Analyzer)
 

@@ -21,7 +21,7 @@ services:
     image: "srcd/lookout-dummy-analyzer:latest"
     network_mode: "host"
     ports:
-      - "10302:10302"
+      - "9930:9930"
   bblfsh:
     image: "bblfsh/bblfshd:v2.9.0-drivers"
     privileged: true

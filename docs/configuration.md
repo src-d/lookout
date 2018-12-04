@@ -99,7 +99,7 @@ Each analyzer to be requested by **lookout** should be defined under `analyzers`
 ```yml
 analyzers:
   - name: Example name # required, unique name of the analyzer
-    addr: ipv4://localhost:10302 # required, gRPC address
+    addr: ipv4://localhost:9930 # required, gRPC address
     disabled: false # optional, false by default
     feedback: http://example.com/analyzer # url to link in the comment_footer
     settings: # optional, this field is sent to analyzer "as is"

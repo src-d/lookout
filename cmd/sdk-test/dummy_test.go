@@ -23,7 +23,7 @@ func (suite *SDKDummyTestSuite) TearDownTest() {
 func (suite *SDKDummyTestSuite) TestReview() {
 	suite.StartDummy("--files")
 
-	r := suite.RunCli("review", "ipv4://localhost:10302",
+	r := suite.RunCli("review",
 		"--git-dir="+suite.gitPath,
 		"--from="+logLineRevision.Base.Hash,
 		"--to="+logLineRevision.Head.Hash)
@@ -33,7 +33,7 @@ func (suite *SDKDummyTestSuite) TestReview() {
 func (suite *SDKDummyTestSuite) TestPush() {
 	suite.StartDummy("--files")
 
-	r := suite.RunCli("push", "ipv4://localhost:10302",
+	r := suite.RunCli("push",
 		"--git-dir="+suite.gitPath,
 		"--from="+logLineRevision.Base.Hash,
 		"--to="+logLineRevision.Head.Hash)
@@ -43,7 +43,7 @@ func (suite *SDKDummyTestSuite) TestPush() {
 func (suite *SDKDummyTestSuite) TestPushNoComments() {
 	suite.StartDummy()
 
-	r := suite.RunCli("push", "ipv4://localhost:10302",
+	r := suite.RunCli("push",
 		"--git-dir="+suite.gitPath,
 		"--from="+logLineRevision.Base.Hash,
 		"--to="+logLineRevision.Head.Hash)
