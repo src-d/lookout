@@ -10,7 +10,6 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/ctxlog"
 
-	enry "gopkg.in/src-d/enry.v1"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 	gitioutil "gopkg.in/src-d/go-git.v4/utils/ioutil"
@@ -305,32 +304,5 @@ func NewChangeBlobScanner(ctx context.Context, scanner lookout.ChangeScanner, ba
 	return &lookout.FnChangeScanner{
 		Scanner: scanner,
 		Fn:      fn,
-	}
-}
-
-func filterVendor(f *lookout.File) (bool, error) {
-	if f == nil {
-		return false, nil
-	}
-
-	return enry.IsVendor(f.Path), nil
-}
-
-// NewChangeExcludeVendorScanner creates new FnChangeScanner
-func NewChangeExcludeVendorScanner(scanner lookout.ChangeScanner) *lookout.FnChangeScanner {
-	fn := func(ch *lookout.Change) (bool, error) {
-		return filterVendor(ch.Head)
-	}
-	return &lookout.FnChangeScanner{
-		Scanner: scanner,
-		Fn:      fn,
-	}
-}
-
-// NewFileExcludeVendorScanner creates new FnFileScanner
-func NewFileExcludeVendorScanner(ctx context.Context, scanner lookout.FileScanner) *lookout.FnFileScanner {
-	return &lookout.FnFileScanner{
-		Scanner: scanner,
-		Fn:      filterVendor,
 	}
 }

@@ -3,8 +3,6 @@ package enry
 import (
 	"context"
 
-	goenry "gopkg.in/src-d/enry.v1"
-
 	"github.com/src-d/lookout"
 )
 
@@ -31,16 +29,20 @@ func (s *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 		req.WantContents = true
 	}
 
-	changes, err := s.changes.GetChanges(ctx, req)
+	scanner, err := s.changes.GetChanges(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	if !req.WantLanguage {
-		return changes, nil
+	if req.ExcludeVendored {
+		scanner = newChangeExcludeVendorScanner(scanner)
 	}
 
-	return newChangeLanguageScanner(changes), nil
+	if req.WantLanguage {
+		scanner = newChangeLanguageScanner(scanner)
+	}
+
+	return scanner, nil
 }
 
 // GetFiles returns a FilesScanner that scans all files according to the request.
@@ -49,43 +51,18 @@ func (s *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (look
 		req.WantContents = true
 	}
 
-	files, err := s.files.GetFiles(ctx, req)
+	scanner, err := s.files.GetFiles(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	if !req.WantLanguage {
-		return files, nil
+	if req.ExcludeVendored {
+		scanner = newFileExcludeVendorScanner(scanner)
 	}
 
-	return newFileLanguageScanner(files), nil
-}
-
-func getLanguage(f *lookout.File) (bool, error) {
-	if f == nil {
-		return false, nil
+	if req.WantLanguage {
+		scanner = newFileLanguageScanner(scanner)
 	}
 
-	f.Language = goenry.GetLanguage(f.Path, f.Content)
-
-	return false, nil
-}
-
-func newChangeLanguageScanner(scanner lookout.ChangeScanner) *lookout.FnChangeScanner {
-	fn := func(ch *lookout.Change) (bool, error) {
-		getLanguage(ch.Base)
-		getLanguage(ch.Head)
-		return false, nil
-	}
-	return &lookout.FnChangeScanner{
-		Scanner: scanner,
-		Fn:      fn,
-	}
-}
-
-func newFileLanguageScanner(scanner lookout.FileScanner) *lookout.FnFileScanner {
-	return &lookout.FnFileScanner{
-		Scanner: scanner,
-		Fn:      getLanguage,
-	}
+	return scanner, nil
 }
