@@ -39,7 +39,7 @@ func (suite *ErrorAnalyzerIntegrationSuite) startAnalyzer(ctx context.Context, a
 	server := grpchelper.NewServer()
 	lookout.RegisterAnalyzerServer(server, a)
 
-	lis, err := pb.Listen("ipv4://localhost:10302")
+	lis, err := pb.Listen("ipv4://localhost:9930")
 	if err != nil {
 		return err
 	}

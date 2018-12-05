@@ -33,21 +33,21 @@ func (suite *BblfshIntegrationSuite) TearDownSuite() {
 }
 
 func (suite *BblfshIntegrationSuite) RunReview() io.Reader {
-	return suite.RunCli("review", "ipv4://localhost:10302",
+	return suite.RunCli("review",
 		"--git-dir="+suite.gitPath,
 		"--from="+logLineRevision.Base.Hash,
 		"--to="+logLineRevision.Head.Hash)
 }
 
 func (suite *BblfshIntegrationSuite) RunPush() io.Reader {
-	return suite.RunCli("push", "ipv4://localhost:10302",
+	return suite.RunCli("push",
 		"--git-dir="+suite.gitPath,
 		"--from="+logLineRevision.Base.Hash,
 		"--to="+logLineRevision.Head.Hash)
 }
 
 func (suite *BblfshIntegrationSuite) TestReviewNoBblfshError() {
-	r := suite.RunCli("review", "ipv4://localhost:10302",
+	r := suite.RunCli("review",
 		"--bblfshd=ipv4://localhost:0000",
 		"--git-dir="+suite.gitPath,
 		"--from="+logLineRevision.Base.Hash,
@@ -59,7 +59,7 @@ func (suite *BblfshIntegrationSuite) TestReviewNoUASTWarning() {
 	fixture := fixtures.GetByName("bblfsh-unknown-language")
 	rv := fixture.GetCommitRevision()
 
-	r := suite.RunCli("push", "ipv4://localhost:10302",
+	r := suite.RunCli("push",
 		"--git-dir="+suite.gitPath,
 		"--from="+rv.Base.Hash,
 		"--to="+rv.Head.Hash)
@@ -77,7 +77,7 @@ func (suite *BblfshIntegrationSuite) TestReviewLanguage() {
 }
 
 func (suite *BblfshIntegrationSuite) TestPushNoBblfshError() {
-	r := suite.RunCli("push", "ipv4://localhost:10302",
+	r := suite.RunCli("push",
 		"--bblfshd=ipv4://localhost:0000",
 		"--git-dir="+suite.gitPath,
 		"--from="+logLineRevision.Base.Hash,
@@ -89,7 +89,7 @@ func (suite *BblfshIntegrationSuite) TestPushNoUASTWarning() {
 	fixture := fixtures.GetByName("bblfsh-unknown-language")
 	rv := fixture.GetCommitRevision()
 
-	r := suite.RunCli("push", "ipv4://localhost:10302",
+	r := suite.RunCli("push",
 		"--git-dir="+suite.gitPath,
 		"--from="+rv.Base.Hash,
 		"--to="+rv.Head.Hash)
@@ -109,7 +109,7 @@ func (suite *BblfshIntegrationSuite) TestPushLanguage() {
 func (suite *BblfshIntegrationSuite) TestConnectToDataServer() {
 	log.DefaultLogger = log.New(log.Fields{"app": "test"})
 
-	bblfshAnalyzerAddr := "ipv4://localhost:10303"
+	bblfshAnalyzerAddr := "ipv4://localhost:9931"
 
 	a := &BbblfshClientAnalyzer{}
 

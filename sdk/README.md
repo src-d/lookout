@@ -56,6 +56,8 @@ Both `lookout-sdk push` and `lookout-sdk review` can be configured with environm
 | | `--to=` | name of the head revision for event | `HEAD` |
 | | `--config-json=` | arbitrary JSON configuration for request to an analyzer | |
 
+Optional positional argument is a gRPC URL of the analyzer to use (default: `ipv4://localhost:9930`).
+
 ### NotifyReviewEvent
 
 The main output of the Analyzer will be the `NotifyReviewEvent` response comments, triggered by Pull Requests from GitHub. For development purposes you can manually trigger a review event for a Git repository in your local filesystem, using `lookout-sdk review`.
@@ -63,10 +65,10 @@ The main output of the Analyzer will be the `NotifyReviewEvent` response comment
 For example, if you place the `lookout-sdk` binary in a git repository directory, you can run:
 
 ```bash
-$ ./lookout-sdk review ipv4://localhost:10302
+$ ./lookout-sdk review
 ```
 
-In this case the `lookout-sdk` binary will send a gRPC `NotifyReviewEvent` call to your Analyzer, which should be listening on `ipv4://localhost:10302`. The analyzer will be able to request file contents and UAST to the gRPC Data Server endpoint, exposed by the `lookout-sdk` binary at `ipv4://localhost:10301`.
+In this case the `lookout-sdk` binary will send a gRPC `NotifyReviewEvent` call to your Analyzer, which should be listening on `ipv4://localhost:9930`. The analyzer will be able to request file contents and UAST to the gRPC Data Server endpoint, exposed by the `lookout-sdk` binary at `ipv4://localhost:10301`.
 
 The lookout-sdk process will wait until the Analyzer sends a response with the comments, and exit right after that. This means the Data Server endpoint will also stop being available.
 
@@ -107,14 +109,13 @@ For example, using commit sha1s:
 ```bash
 $ ./lookout-sdk review \
 --from=fa97fa19e5c9b3482e5f88e264fb62b1e7fc6d8f \
---to=355f001d719bd0368c0469acd1a46298a80bacc0 \
-ipv4://localhost:10302
+--to=355f001d719bd0368c0469acd1a46298a80bacc0
 ```
 
 Let's say you have `branch-c` that is ahead of `master` by a few commits. Then you could run:
 
 ```bash
-$ ./lookout-sdk review --from=master --to=branch-c ipv4://localhost:10302
+$ ./lookout-sdk review --from=master --to=branch-c
 ```
 
 ### NotifyPushEvent
