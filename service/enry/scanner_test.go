@@ -31,6 +31,11 @@ func (s *ScannerSuite) TestFileChangeVendorScanner() {
 			Base: &lookout.File{Path: "f2old.py"},
 			Head: &lookout.File{Path: "f2new.js"},
 		},
+		// the change that used to be vendor but isn't anymore should survive
+		{
+			Base: &lookout.File{Path: "vendor/f2old.py"},
+			Head: &lookout.File{Path: "f2new.js"},
+		},
 		// vendor files should be filtered out
 		{
 			Head: &lookout.File{Path: "vendor/f1new.go"},
@@ -41,6 +46,10 @@ func (s *ScannerSuite) TestFileChangeVendorScanner() {
 		{
 			Base: &lookout.File{Path: "node_modules/f2old.py"},
 			Head: &lookout.File{Path: "node_modules/f2new.js"},
+		},
+		{
+			Base: &lookout.File{Path: "f2old.py"},
+			Head: &lookout.File{Path: "vendor/f2new.js"},
 		},
 	}
 
@@ -55,7 +64,7 @@ func (s *ScannerSuite) TestFileChangeVendorScanner() {
 	require.NoError(cs.Err())
 	require.NoError(cs.Close())
 
-	require.Len(changes, 3)
+	require.Len(changes, 4)
 }
 
 func (s *ScannerSuite) TestFileExcludeVendorScanner() {

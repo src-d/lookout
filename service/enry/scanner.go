@@ -16,6 +16,10 @@ func filterVendor(f *lookout.File) (bool, error) {
 // newChangeExcludeVendorScanner creates new FnChangeScanner
 func newChangeExcludeVendorScanner(scanner lookout.ChangeScanner) *lookout.FnChangeScanner {
 	fn := func(ch *lookout.Change) (bool, error) {
+		if ch.Head == nil {
+			return filterVendor(ch.Base)
+		}
+
 		return filterVendor(ch.Head)
 	}
 	return &lookout.FnChangeScanner{
