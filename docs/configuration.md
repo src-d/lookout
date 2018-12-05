@@ -54,7 +54,7 @@ You need to create a GitHub App following the [documentation about creating a Gi
 
 - Repository metadata: Read-only
 - Pull requests: Read & write
-- Single file: Read-only
+- Repository contents: Read-only
 - Commit statuses: Read & write
 
 Download a private key following the [documentation about authenticating with GitHub Apps](https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/) and set the following fields in your `config.yml` file:
