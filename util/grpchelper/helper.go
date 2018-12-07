@@ -32,17 +32,23 @@ func DialContext(ctx context.Context, target string, opts ...grpc.DialOption) (*
 	return pb.DialContext(ctx, target, opts...)
 }
 
+func logConnStatus(l log.Logger, state connectivity.State) {
+	if state == connectivity.TransientFailure {
+		l.Warningf("connection failed")
+	} else {
+		l.Infof("connection state changed to '%s'", state)
+	}
+}
+
 // LogConnStatusChanges logs gRPC connection status changes
 func LogConnStatusChanges(ctx context.Context, l log.Logger, conn *grpc.ClientConn) {
 	state := conn.GetState()
+	logConnStatus(l, state)
+
 	for {
 		if conn.WaitForStateChange(ctx, state) {
 			state = conn.GetState()
-			if state == connectivity.TransientFailure {
-				l.Warningf("connection failed")
-			} else {
-				l.Infof("connection state changed to '%s'", state)
-			}
+			logConnStatus(l, state)
 		} else {
 			// ctx expired / canceled, stop listing
 			return

@@ -24,7 +24,7 @@ func (suite *DummyIntegrationSuite) SetupTest() {
 	suite.r, suite.w = suite.StartLookoutd(dummyConfigFile)
 
 	suite.StartDummy("--files")
-	suite.GrepTrue(suite.r, `connection state changed to 'READY'`)
+	suite.GrepTrue(suite.r, `msg="connection state changed to 'READY'" addr="ipv4://localhost:9930" analyzer=Dummy`)
 }
 
 func (suite *DummyIntegrationSuite) TearDownTest() {

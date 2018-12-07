@@ -5,6 +5,7 @@ package server_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -27,6 +28,12 @@ func (suite *ProxyIntegrationSuite) SetupTest() {
 
 	suite.StoppableCtx()
 	suite.r, suite.w = suite.StartLookoutd(emptyConfigFile)
+
+	// Proxy can connect before or after the "Starting watcher" message is found
+	msg := `msg="connection state changed to 'READY'" addr="localhost:9432" app=lookoutd name=bblfsh-proxy`
+	if !strings.Contains(suite.Output(), msg) {
+		suite.GrepTrue(suite.r, msg)
+	}
 }
 
 func (suite *ProxyIntegrationSuite) TearDownTest() {

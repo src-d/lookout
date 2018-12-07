@@ -241,3 +241,8 @@ func (suite *IntegrationSuite) runQuery(db *sql.DB, query string) {
 	_, err := db.Exec(query)
 	suite.Require().NoError(err, "can't execute SQL: %q", query)
 }
+
+// Output returns the output read so far from the reader returned in StartLookoutd
+func (suite *IntegrationSuite) Output() string {
+	return suite.logBuf.String()
+}
