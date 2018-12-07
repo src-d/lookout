@@ -72,7 +72,7 @@ func NewInstallations(
 
 // Sync update state from github
 func (t *Installations) Sync() error {
-	log.Infof("syncing installations with github")
+	log.Debugf("syncing installations with github")
 
 	var installations []*github.Installation
 	opts := &github.ListOptions{
