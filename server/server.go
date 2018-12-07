@@ -57,7 +57,7 @@ func NewServer(
 // HandleEvent processes the event calling the analyzers, and posting the results
 func (s *Server) HandleEvent(ctx context.Context, e lookout.Event) error {
 	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{
-		"event-type": reflect.TypeOf(e),
+		"event-type": reflect.TypeOf(e).String(),
 		"event-id":   e.ID().String(),
 		"repo":       e.Revision().Head.InternalRepositoryURL,
 		"head":       e.Revision().Head.ReferenceName,
