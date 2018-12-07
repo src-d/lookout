@@ -4,22 +4,21 @@ import (
 	"context"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
-
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/server"
 	"github.com/src-d/lookout/store"
+
+	uuid "github.com/satori/go.uuid"
+	gocli "gopkg.in/src-d/go-cli.v0"
 	log "gopkg.in/src-d/go-log.v1"
 )
 
 func init() {
-	if _, err := app.AddCommand("review", "provides simple data server and triggers analyzer", "",
-		&ReviewCommand{}); err != nil {
-		panic(err)
-	}
+	app.AddCommand(&ReviewCommand{})
 }
 
 type ReviewCommand struct {
+	gocli.PlainCommand `name:"review" short-description:"trigger a review event" long-description:"Provides a simple data server and triggers an analyzer review event"`
 	EventCommand
 }
 

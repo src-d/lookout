@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/signal"
 	"runtime"
 	"time"
 
@@ -24,7 +23,6 @@ import (
 	"github.com/src-d/lookout/store/models"
 	"github.com/src-d/lookout/util/cache"
 	"github.com/src-d/lookout/util/cli"
-	"github.com/src-d/lookout/util/ctxlog"
 	"github.com/src-d/lookout/util/grpchelper"
 
 	"github.com/gregjones/httpcache/diskcache"
@@ -32,6 +30,7 @@ import (
 	"github.com/sanity-io/litter"
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-billy.v4/osfs"
+	gocli "gopkg.in/src-d/go-cli.v0"
 	"gopkg.in/src-d/go-log.v1"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 	yaml "gopkg.in/yaml.v2"
@@ -42,7 +41,7 @@ type stopFunc func()
 
 // lookoutdCommand represents the common options for serve, watch, work
 type lookoutdCommand struct {
-	cli.CommonOptions
+	cli.LogOptions
 	ConfigFile  string `long:"config" short:"c" default:"config.yml" env:"LOOKOUT_CONFIG_FILE" description:"path to configuration file"`
 	GithubUser  string `long:"github-user" env:"GITHUB_USER" description:"user for the GitHub API"`
 	GithubToken string `long:"github-token" env:"GITHUB_TOKEN" description:"access token for the GitHub API"`
@@ -51,6 +50,17 @@ type lookoutdCommand struct {
 
 	pool           *github.ClientPool
 	probeReadiness bool
+	conf           Config
+}
+
+// Init implements the go-cli initializer interface. Initializes logs
+// and Config file based on the cli options
+func (c *lookoutdCommand) Init(a *gocli.App) error {
+	c.LogOptions.Init(a)
+
+	var err error
+	c.conf, err = c.initConfig()
+	return err
 }
 
 // queueConsumerCommand represents the common options for serve, work
@@ -459,14 +469,4 @@ func (c *queueConsumerCommand) runEventDequeuer(ctx context.Context, qOpt cli.Qu
 	}
 
 	return queue_util.RunEventDequeuer(ctx, qOpt.Q, server.HandleEvent, c.Workers)
-}
-
-func stopOnSignal(ctx context.Context) error {
-	var stopSignalChan = make(chan os.Signal)
-	signal.Notify(stopSignalChan, os.Interrupt)
-	sig := <-stopSignalChan
-
-	ctxlog.Get(ctx).Infof("Signal %s received. Stopping server...", sig)
-
-	return nil
 }

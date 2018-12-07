@@ -1,6 +1,6 @@
 package main
 
-import "github.com/src-d/lookout/util/cli"
+import "gopkg.in/src-d/go-cli.v0"
 
 var (
 	name    = "lookout-sdk"
@@ -8,7 +8,7 @@ var (
 	build   = "undefined"
 )
 
-var app = cli.New(name)
+var app = cli.New(name, version, build, "Simplified version of the lookout server that works with a local git repository and does not need access to GitHub")
 
 func main() {
 	app.RunMain()

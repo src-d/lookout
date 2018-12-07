@@ -3,37 +3,34 @@ package cli
 import (
 	"encoding/json"
 
-	"gopkg.in/src-d/go-log.v1"
+	gocli "gopkg.in/src-d/go-cli.v0"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 // LogOptions defines logging flags. It is meant to be embedded in a
-// command struct.
+// command struct. It is similar to go-cli LogOptions, but adds the application
+// name field to the default logger. It also configures the standard logrus
+// logger with the same default values as go-log
 type LogOptions struct {
-	LogLevel       string `long:"log-level" env:"LOG_LEVEL" default:"info" description:"Logging level (info, debug, warning or error)"`
-	LogFormat      string `long:"log-format" env:"LOG_FORMAT" description:"log format (text or json), defaults to text on a terminal and json otherwise"`
-	LogFields      string `long:"log-fields" env:"LOG_FIELDS" description:"default fields for the logger, specified in json"`
-	LogForceFormat bool   `long:"log-force-format" env:"LOG_FORCE_FORMAT" description:"ignore if it is running on a terminal or not"`
+	gocli.LogOptions `group:"Log Options"`
 }
 
-var _ initializer = &LogOptions{}
-
-// Init initializes the default logger factory.
-func (c *LogOptions) init(app *App) {
+// Init implements the go-cli initializer interface
+func (c LogOptions) Init(a *gocli.App) error {
 	if c.LogFields == "" {
-		bytes, err := json.Marshal(log.Fields{"app": app.Name})
+		bytes, err := json.Marshal(log.Fields{"app": a.Parser.Name})
 		if err != nil {
 			panic(err)
 		}
 		c.LogFields = string(bytes)
 	}
 
-	log.DefaultFactory = &log.LoggerFactory{
-		Level:       c.LogLevel,
-		Format:      c.LogFormat,
-		Fields:      c.LogFields,
-		ForceFormat: c.LogForceFormat,
+	err := c.LogOptions.Init(a)
+	if err != nil {
+		return err
 	}
+
 	log.DefaultFactory.ApplyToLogrus()
 
-	log.DefaultLogger = log.New(nil)
+	return nil
 }

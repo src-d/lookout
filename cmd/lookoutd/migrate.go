@@ -5,17 +5,16 @@ import (
 	"github.com/src-d/lookout/util/cli"
 
 	"github.com/golang-migrate/migrate"
+	gocli "gopkg.in/src-d/go-cli.v0"
 	log "gopkg.in/src-d/go-log.v1"
 )
 
 func init() {
-	if _, err := app.AddCommand("migrate", "performs a DB migration up to the latest version", "",
-		&MigrateCommand{}); err != nil {
-		panic(err)
-	}
+	app.AddCommand(&MigrateCommand{})
 }
 
 type MigrateCommand struct {
+	gocli.PlainCommand `name:"migrate" short-description:"performs a DB migration up to the latest version" long-description:"Performs a DB migration up to the latest version"`
 	cli.LogOptions
 	cli.DBOptions
 }
