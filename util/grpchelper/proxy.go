@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 // NewBblfshProxyServer creates gRPC server that proxies call to bblfsh
@@ -21,6 +22,11 @@ func NewBblfshProxyServer(addr string) (*grpc.Server, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	go LogConnStatusChanges(context.Background(), log.DefaultLogger.With(log.Fields{
+		"name": "bblfsh-proxy",
+		"addr": addr,
+	}), bblfshConn)
 
 	// bblfsh proxy director
 	director := func(ctx context.Context, fullMethodName string) (context.Context, *grpc.ClientConn, error) {
