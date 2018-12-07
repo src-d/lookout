@@ -6,23 +6,23 @@ import (
 	"io"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/server"
 	"github.com/src-d/lookout/store"
+
+	uuid "github.com/satori/go.uuid"
+	gocli "gopkg.in/src-d/go-cli.v0"
 	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	log "gopkg.in/src-d/go-log.v1"
 )
 
 func init() {
-	if _, err := app.AddCommand("push", "provides simple data server and triggers analyzer", "",
-		&PushCommand{}); err != nil {
-		panic(err)
-	}
+	app.AddCommand(&PushCommand{})
 }
 
 type PushCommand struct {
+	gocli.PlainCommand `name:"push" short-description:"trigger a push event" long-description:"Provides a simple data server and triggers an analyzer push event"`
 	EventCommand
 }
 
