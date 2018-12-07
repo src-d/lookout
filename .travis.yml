@@ -49,6 +49,7 @@ jobs:
         - make test-json
         - LOOKOUT_TEST_QUEUE=true make test-json
     - name: 'Lookoutd Integration Tests macOS'
+      if: NOT type = pull_request
       script:
         - make ci-integration-dependencies
         - psql -c 'create database lookout;' -U postgres
