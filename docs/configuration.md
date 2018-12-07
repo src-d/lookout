@@ -38,7 +38,7 @@ providers:
 
 #### Authentication as a GitHub Account
 
-lookout needs to authenticate with GitHub. The easiest method for testing purposes is using a [GitHub personal access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/). The token should have the **repo** scope enabled.
+**lookout** needs to authenticate with GitHub. The easiest method for testing purposes is using a [GitHub personal access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/). The token should have the `repo` scope enabled.
 
 The credential can then be also passed to `lookoutd` as:
 

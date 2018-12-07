@@ -2,7 +2,7 @@
 
 The recommended way to locally try **source{d} lookout** is using `docker-compose` as described in [quickstart documentation](../README.md#quickstart).
 
-In some situations, you might want to run all its dependencies and components separately, or you can even want to [run it in a distributed mode](#running-lookout-in-distributed-mode). Both ways to run lookout would require to follow these steps:
+In some situations, you might want to run all its dependencies and components separately, or you can even want to [run it in a distributed mode](#running-lookout-in-distributed-mode). Both ways to run lookout would require to follow these general steps:
 
 1. [Run lookout dependencies](#dependencies),
 1. [Run the desired analyzers](#run-the-analyzers),
@@ -14,8 +14,11 @@ In other situations you just want to locally test an analyzer without accessing 
 ## Running lookout in Distributed Mode
 
 lookout can be also run in a distributed fashion using a [RabbitMQ](https://www.rabbitmq.com/) queue to coordinate a _watcher_ and several _workers_.
+
 - The _watcher_ process monitors GitHub pull requests and enqueues jobs for new events.
 - The running _workers_ dequeue jobs as they become available calling the registered analyzers and posting its returned comments.
+
+The general steps to run source{d} lookout in distributed mode are the same as said above.
 
 
 # Dependencies
@@ -43,6 +46,8 @@ To monitor RabbitMQ, go to http://localhost:8081, and access it with `guest/gues
 # Run the Analyzers
 
 You will need to run the Analyzers to be used by lookout.
+
+You can run one of our [example analyzers](analyzers-examples.md), any of the already [available analyzers](../README.md#available-analyzers) or the one that you're developing.
 
 For testing purposes, you may want to use a *dummy* analyzer. You can do so downloading it from [lookout releases page](https://github.com/src-d/lookout/releases) and running:
 
@@ -87,6 +92,8 @@ $ lookoutd serve [--dry-run] [--github-token=<token> --github-user=<user>]
 ### Distributed Mode
 
 _For non-default configuration, please take a look into [**`lookoutd` Command Options**](#options)_
+
+In order to run it in a distributed mode, the _watcher_ and the _workers_ must be run separately.
 
 Run the _watcher_:
 
