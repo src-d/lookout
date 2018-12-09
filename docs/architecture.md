@@ -41,6 +41,6 @@ Lookout Server will call all the Analyzers that were already registered when it 
 # SDK
 
 The [lookout-sdk](https://github.com/src-d/lookout-sdk) repository is a toolkit for writing new analyzers. It contains:
-- `.proto` interface definitions for all **lookout** gRPC services,
-- the pre-generated code in Go and Python that provides an easy access to the **lookout DataService** gRPC service; and low-level helpers to workaround some protobuf/gRPC caveats,
-- two simple quickstart examples.
+- `.proto` interface definitions for all **lookout** gRPC services.
+- The pre-generated code in Go and Python that provides an easy access to the **lookout DataService** gRPC service; and low-level helpers to workaround some protobuf/gRPC caveats.
+- Two simple quickstart examples.

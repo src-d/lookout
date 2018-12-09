@@ -75,10 +75,10 @@ $ lookout-sdk review \
 
 Doing so, `lookout-sdk` will:
 
-1. start a gRPC **lookout DataService** endpoint backed by the repository stored at `/somewhere/repo/path`,
-1. create a `ReviewEvent` with the changes between `branch-b` and `branch-a`,
-1. send a gRPC `NotifyReviewEvent` call to your analyzer listening on `ipv4://localhost:9999` with the created `ReviewEvent`,
-1. wait till the analyzer sends a response with the comments; the analyzer will be able to request file contents, file language or UASTs to the gRPC **lookout DataService** endpoint exposed by `lookout-sdk`,
+1. start a gRPC **lookout DataService** endpoint backed by the repository stored at `/somewhere/repo/path`;
+1. create a `ReviewEvent` with the changes between `branch-b` and `branch-a`;
+1. send a gRPC `NotifyReviewEvent` call to your analyzer listening on `ipv4://localhost:9999` with the created `ReviewEvent`;
+1. wait till the analyzer sends a response with the comments; the analyzer will be able to request file contents, file language or UASTs to the gRPC **lookout DataService** endpoint exposed by `lookout-sdk`;
 1. once the analyzer sends the response, `lookout-sdk` will put it into the `STDOUT`, stop the **lookout DataService** and exit.
 
 _For more options to run `lookout-sdk`, take a look into [**lookout-sdk Command Options**](#options)_
