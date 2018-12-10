@@ -113,7 +113,10 @@ $ docker-compose pull
 $ GITHUB_USER=<user> GITHUB_TOKEN=<token> docker-compose up --force-recreate
 ```
 
-If you need to restart the database to a clean state, you can do so with:
+You can stop it pressing `ctrl+C`
+
+If you need to restart the database to a clean state, you must drop the `postgres` container; to do so, stop running **lookout** with `ctrl+c` and then run:
+
 ```bash
 $ docker rm lookout_postgres_1
 ```
