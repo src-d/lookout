@@ -8,8 +8,8 @@ services:
       - postgres
       - dummy
     environment:
-      GITHUB_USER: ${GITHUB_USER}
-      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GITHUB_USER: ${GITHUB_USER:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     ports:
       - "10301:10301"
     entrypoint: ["/bin/sh"]
