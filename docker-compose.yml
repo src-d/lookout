@@ -6,7 +6,6 @@ services:
     network_mode: "host"
     depends_on:
       - postgres
-      - dummy
     environment:
       GITHUB_USER: ${GITHUB_USER}
       GITHUB_TOKEN: ${GITHUB_TOKEN}

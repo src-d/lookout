@@ -115,6 +115,13 @@ $ GITHUB_USER=<user> GITHUB_TOKEN=<token> docker-compose up --force-recreate
 
 You can stop it pressing `ctrl+C`
 
+If you want to try **source{d} lookout** with your own analyzer instead of `dummy` one, you must run it in advance, then [set it into `config.yml`](/docs/configuration.md#analyzers) and then run:
+
+```bash
+$ docker-compose pull
+$ GITHUB_USER=<user> GITHUB_TOKEN=<token> docker-compose up --force-recreate lookout bblfsh postgres
+```
+
 If you need to restart the database to a clean state, you must drop the `postgres` container; to do so, stop running **lookout** with `ctrl+c` and then run:
 
 ```bash
