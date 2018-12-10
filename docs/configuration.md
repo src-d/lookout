@@ -16,6 +16,17 @@ timeout:
     # configuration for the existent timeouts.
 ```
 
+## Quickstart
+
+The most important things you need to configure for a local installation, are:
+
+1. [Repositories](#repositories): add the URLs of the repositories to be watched.
+1. [Analyzers](#analyzers): add the gRPC addresses of the analyzers to be used by lookout,
+
+For more fine grained configuration, you should pay attention to the following documentation.
+
+
+# config.yml
 
 ## Github Provider
 
