@@ -71,7 +71,7 @@
 
 # Introduction
 
-With source{d} Lookout, we’re introducing a service for assisted code review, that allows running custom code analyzers on pull requests.
+With **source{d} Lookout**, we’re introducing a service for assisted code review, that allows running custom code analyzers on pull requests.
 
 Jump to the [Quickstart](#quickstart) section to start using it!
 
@@ -79,9 +79,9 @@ Jump to the [Quickstart](#quickstart) section to start using it!
 
 source{d} is the company driving the Machine Learning on Code (#MLonCode) movement. Doing Machine Learning on Code consists of applying ML techniques to train models that can cluster, identify and predict useful aspects of source code and software repositories.
 
-source{d} Lookout is the first step towards a full suite of Machine Learning on Code applications for AI-assisted coding, but you can also create your own analyzers without an ML approach.
+**source{d} Lookout** is the first step towards a full suite of Machine Learning on Code applications for AI-assisted coding, but you can also create your own analyzers without an ML approach.
 
-The benefits of using source{d} lookout are:
+The benefits of using **source{d} lookout** are:
 - Keep your code base style/patterns consistent,
 - Language Agnostic assisted code reviews,
 - Identify where to focus your attention on code reviews,
@@ -89,18 +89,18 @@ The benefits of using source{d} lookout are:
 
 ## Current Status
 
-Currently, source{d} Lookout is in development process.
+Currently, **source{d} Lookout** is in development process.
 
 ## Further Reading
 
-This repository contains the code of `lookout` and the project documentation, which you can also see properly rendered at [https://docs.sourced.tech/lookout](https://docs.sourced.tech/lookout).
+This repository contains the code of **source{d} Lookout** and the project documentation, which you can also see properly rendered at [https://docs.sourced.tech/lookout](https://docs.sourced.tech/lookout).
 
 
 # Quickstart
 
-_There are different ways to run lookout; we recommend to use `docker-compose` because it's straightforward, but you can [learn more about the **different ways to run lookout**](/docs/how-to-run.md)._
+_There are different ways to run **lookout**; we recommend to use `docker-compose` because it's straightforward, but you can [learn more about the **different ways to run lookout**](/docs/how-to-run.md)._
 
-_Please refer to the [**Configuring source{d} lookout** guide](/docs/configuration.md) for documentation about the `config.yml` file._
+_Please refer to the [**Configuring source{d} lookout** guide](/docs/configuration.md) for documentation about the `config.yml` file, and to know how to configure **lookout** to listen to your repositories, or to use your own analyzers._
 
 Using [Docker Compose](https://docs.docker.com/compose) you can use the provided [`docker-compose.yml`](/docker-compose.yml) config file to start **lookout**, its dependencies (**bblfsh** and **PostgreSQL**) and a `dummy` analyzer which will add some stats to the watched pull requests.
 
@@ -121,7 +121,7 @@ $ docker rm lookout_postgres_1
 
 # Available Analyzers
 
-This is a list of some of the available analyzers for lookout:
+This is a list of some of the available analyzers for **source{d} lookout**:
 
 | Name | Description | Targeted files | Maturity level |
 | -- | -- | -- |-- |
@@ -136,7 +136,7 @@ This is a list of some of the available analyzers for lookout:
 
 # Create an Analyzer
 
-If you are developing an Analyzer, or you want more info about how do they work, please check the [documentation about lookout analyzers](/docs/analyzers.md).
+If you are developing an Analyzer, or you want more info about how do they work, please check the [documentation about **lookout** analyzers](/docs/analyzers.md).
 
 
 # Contribute
