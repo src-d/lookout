@@ -13,7 +13,7 @@ providers:
     # watch_min_interval: 2s
 
 repositories:
-  - url: github.com/src-d/lookout
+  - url: github.com/_USER_/_REPO_TO_WATCH_
     client:
       # user:
       # token:
