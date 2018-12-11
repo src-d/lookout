@@ -67,6 +67,7 @@ func (c *PushCommand) Execute(args []string) error {
 		},
 		&store.NoopEventOperator{}, &store.NoopCommentOperator{},
 		0, 0)
+	srv.ExitOnError = true
 
 	log, err := c.repo.Log(&gogit.LogOptions{From: plumbing.NewHash(toRef.Hash)})
 	var commits uint32
@@ -101,11 +102,11 @@ func (c *PushCommand) Execute(args []string) error {
 		},
 		Configuration: conf}, false)
 
+	stopDataServer()
+
 	if err != nil {
 		return err
 	}
-
-	stopDataServer()
 
 	return <-stopCh
 }

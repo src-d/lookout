@@ -63,6 +63,7 @@ func (c *ReviewCommand) Execute(args []string) error {
 		},
 		&store.NoopEventOperator{}, &store.NoopCommentOperator{},
 		0, 0)
+	srv.ExitOnError = true
 
 	id, err := uuid.NewV4()
 	if err != nil {
@@ -82,11 +83,11 @@ func (c *ReviewCommand) Execute(args []string) error {
 		},
 		Configuration: conf}, false)
 
+	stopDataServer()
+
 	if err != nil {
 		return err
 	}
-
-	stopDataServer()
 
 	return <-stopCh
 }
