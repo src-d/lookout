@@ -270,6 +270,10 @@ func (s *Server) getConfig(ctx context.Context, e lookout.Event) (map[string]loo
 }
 
 func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.AnalyzerConfig, send reqSent) ([]lookout.AnalyzerComments, error) {
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithCancel(ctx)
+	defer cancel()
+
 	commentsCh := make(chan *lookout.AnalyzerComments, len(s.analyzers))
 	errCh := make(chan error)
 
