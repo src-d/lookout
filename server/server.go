@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sync"
 	"time"
 
 	"github.com/src-d/lookout"
@@ -30,6 +29,10 @@ type reqSent func(
 
 // Server implements glue between providers / data-server / analyzers
 type Server struct {
+	// ExitOnError set to true would stop the server and return an error
+	// if any analyzer or posting failed
+	ExitOnError bool
+
 	poster     lookout.Poster
 	fileGetter lookout.FileGetter
 	analyzers  map[string]lookout.Analyzer
@@ -51,7 +54,7 @@ func NewServer(
 	reviewTimeout time.Duration,
 	pushTimeout time.Duration,
 ) *Server {
-	return &Server{p, fileGetter, analyzers, eventOp, commentOp, reviewTimeout, pushTimeout}
+	return &Server{false, p, fileGetter, analyzers, eventOp, commentOp, reviewTimeout, pushTimeout}
 }
 
 // HandleEvent processes the event calling the analyzers, and posting the results
@@ -105,7 +108,11 @@ func (s *Server) HandleEvent(ctx context.Context, e lookout.Event) error {
 	}
 
 	// don't fail on event processing error, just skip it
-	return nil
+	if !s.ExitOnError {
+		return nil
+	}
+
+	return err
 }
 
 // HandleReview sends request to analyzers concurrently
@@ -148,7 +155,10 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent, safeP
 		}
 		return resp.Comments, nil
 	}
-	comments := s.concurrentRequest(ctx, conf, send)
+	comments, err := s.concurrentRequest(ctx, conf, send)
+	if err != nil {
+		return err
+	}
 
 	if err := s.post(ctx, e, comments, safePosting); err != nil {
 		s.status(ctx, e, lookout.ErrorAnalysisStatus)
@@ -200,7 +210,10 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent, safePosti
 		}
 		return resp.Comments, nil
 	}
-	comments := s.concurrentRequest(ctx, conf, send)
+	comments, err := s.concurrentRequest(ctx, conf, send)
+	if err != nil {
+		return err
+	}
 
 	if err := s.post(ctx, e, comments, safePosting); err != nil {
 		s.status(ctx, e, lookout.ErrorAnalysisStatus)
@@ -256,19 +269,24 @@ func (s *Server) getConfig(ctx context.Context, e lookout.Event) (map[string]loo
 	return res, nil
 }
 
-func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.AnalyzerConfig, send reqSent) []lookout.AnalyzerComments {
-	var comments commentsList
+func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.AnalyzerConfig, send reqSent) ([]lookout.AnalyzerComments, error) {
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithCancel(ctx)
+	defer cancel()
 
-	var wg sync.WaitGroup
+	commentsCh := make(chan *lookout.AnalyzerComments, len(s.analyzers))
+	errCh := make(chan error)
+
 	for name, a := range s.analyzers {
 		if a.Config.Disabled || conf[name].Disabled {
 			ctxlog.Get(ctx).Infof("analyzer %s disabled by local .lookout.yml", name)
+			commentsCh <- nil
 			continue
 		}
 
-		wg.Add(1)
 		go func(name string, a lookout.Analyzer) {
-			defer wg.Done()
+			var result *lookout.AnalyzerComments
+			defer func() { commentsCh <- result }()
 
 			aLogger := ctxlog.Get(ctx).With(log.Fields{
 				"analyzer": name,
@@ -279,19 +297,37 @@ func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.
 			cs, err := send(ctx, a.Client, settings)
 			if err != nil {
 				aLogger.Errorf(err, "analysis failed")
+				if s.ExitOnError {
+					errCh <- err
+				}
 				return
 			}
 
 			if len(cs) == 0 {
 				aLogger.Infof("no comments were produced")
+				return
 			}
 
-			comments.Add(a.Config, cs...)
+			result = &lookout.AnalyzerComments{
+				Config:   a.Config,
+				Comments: cs,
+			}
 		}(name, a)
 	}
-	wg.Wait()
 
-	return comments.Get()
+	var comments []lookout.AnalyzerComments
+	for i := 0; i < len(s.analyzers); i++ {
+		select {
+		case err := <-errCh:
+			return nil, err
+		case cs := <-commentsCh:
+			if cs != nil {
+				comments = append(comments, *cs)
+			}
+		}
+	}
+
+	return comments, nil
 }
 
 func mergeSettings(global, local map[string]interface{}) map[string]interface{} {
@@ -375,21 +411,6 @@ func (s *Server) status(ctx context.Context, e lookout.Event, st lookout.Analysi
 	if err := s.poster.Status(ctx, e, st); err != nil {
 		ctxlog.Get(ctx).With(log.Fields{"status": st}).Errorf(err, "posting status failed")
 	}
-}
-
-type commentsList struct {
-	sync.Mutex
-	list []lookout.AnalyzerComments
-}
-
-func (l *commentsList) Add(conf lookout.AnalyzerConfig, cs ...*lookout.Comment) {
-	l.Lock()
-	l.list = append(l.list, lookout.AnalyzerComments{conf, cs})
-	l.Unlock()
-}
-
-func (l *commentsList) Get() []lookout.AnalyzerComments {
-	return l.list
 }
 
 type LogPoster struct {
