@@ -205,6 +205,23 @@ func (suite *IntegrationSuite) IsQueueTested() bool {
 
 // RunCli runs lookout subcommand (not a server)
 func (suite *IntegrationSuite) RunCli(cmd string, args ...string) io.Reader {
+	out, err := suite.runCli(cmd, args...)
+	suite.Require().NoErrorf(err,
+		"'%s %s' command returned error. output:\n%s",
+		cmd, strings.Join(args, " "), out.String())
+
+	return out
+}
+
+// RunCliErr runs lookout subcommand that should fail
+func (suite *IntegrationSuite) RunCliErr(cmd string, args ...string) io.Reader {
+	out, err := suite.runCli(cmd, args...)
+	suite.Require().Error(err, "'%s %s' command should return error", cmd, strings.Join(args, " "))
+
+	return out
+}
+
+func (suite *IntegrationSuite) runCli(cmd string, args ...string) (*bytes.Buffer, error) {
 	args = append([]string{cmd}, args...)
 
 	var out bytes.Buffer
@@ -212,12 +229,7 @@ func (suite *IntegrationSuite) RunCli(cmd string, args ...string) io.Reader {
 	cliCmd.Stdout = &out
 	cliCmd.Stderr = &out
 
-	err := cliCmd.Run()
-	suite.Require().NoErrorf(err,
-		"'lookout %s' command returned error. output:\n%s",
-		strings.Join(args, " "), out.String())
-
-	return &out
+	return &out, cliCmd.Run()
 }
 
 // ResetDB recreates database for the test

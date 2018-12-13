@@ -47,7 +47,7 @@ func (suite *BblfshIntegrationSuite) RunPush() io.Reader {
 }
 
 func (suite *BblfshIntegrationSuite) TestReviewNoBblfshError() {
-	r := suite.RunCli("review",
+	r := suite.RunCliErr("review",
 		"--bblfshd=ipv4://localhost:0000",
 		"--git-dir="+suite.gitPath,
 		"--from="+logLineRevision.Base.Hash,
@@ -77,7 +77,7 @@ func (suite *BblfshIntegrationSuite) TestReviewLanguage() {
 }
 
 func (suite *BblfshIntegrationSuite) TestPushNoBblfshError() {
-	r := suite.RunCli("push",
+	r := suite.RunCliErr("push",
 		"--bblfshd=ipv4://localhost:0000",
 		"--git-dir="+suite.gitPath,
 		"--from="+logLineRevision.Base.Hash,
