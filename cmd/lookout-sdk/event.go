@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/service/bblfsh"
 	"github.com/src-d/lookout/service/enry"
@@ -16,12 +16,13 @@ import (
 	"github.com/src-d/lookout/service/purge"
 	"github.com/src-d/lookout/util/cli"
 	"github.com/src-d/lookout/util/grpchelper"
-	"google.golang.org/grpc"
 
+	"google.golang.org/grpc"
 	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	log "gopkg.in/src-d/go-log.v1"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
+	yaml "gopkg.in/yaml.v2"
 )
 
 type EventCommand struct {
@@ -31,12 +32,18 @@ type EventCommand struct {
 	GitDir     string `long:"git-dir" default:"." env:"GIT_DIR" description:"path to the .git directory to analyze"`
 	RevFrom    string `long:"from" default:"HEAD^" description:"name of the base revision for event"`
 	RevTo      string `long:"to" default:"HEAD" description:"name of the head revision for event"`
+	ConfigFile string `long:"config" short:"c" default:"" env:"LOOKOUT_CONFIG_FILE" description:"path to configuration file. Use this in place of --config-json and analyzer argument"`
 	ConfigJSON string `long:"config-json" description:"arbitrary JSON configuration for request to an analyzer"`
 	Args       struct {
 		Analyzer string `positional-arg-name:"analyzer" description:"gRPC URL of the analyzer to use (default: ipv4://localhost:9930)"`
 	} `positional-args:"yes"`
 
 	repo *gogit.Repository
+}
+
+// Config holds the main configuration
+type Config struct {
+	Analyzers []lookout.AnalyzerConfig
 }
 
 func (c *EventCommand) openRepository() error {
@@ -167,17 +174,29 @@ func (c *EventCommand) initDataServer(srv *lookout.DataServerHandler) (startFunc
 	return start, stop
 }
 
-func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
-	if c.Args.Analyzer == "" {
-		c.Args.Analyzer = "ipv4://localhost:9930"
+func (c *EventCommand) analyzer() (lookout.Analyzer, error) {
+	conf, err := c.parseConfig()
+	if err != nil {
+		return lookout.Analyzer{}, err
 	}
 
-	var err error
-	log.Infof("starting looking for Analyzer at %s", c.Args.Analyzer)
-
-	grpcAddr, err := pb.ToGoGrpcAddress(c.Args.Analyzer)
+	client, err := c.analyzerClient(conf)
 	if err != nil {
-		return nil, fmt.Errorf("Can't resolve address of analyzer '%s': %s", c.Args.Analyzer, err)
+		return lookout.Analyzer{}, err
+	}
+
+	return lookout.Analyzer{
+		Client: client,
+		Config: conf,
+	}, nil
+}
+
+func (c *EventCommand) analyzerClient(conf lookout.AnalyzerConfig) (lookout.AnalyzerClient, error) {
+	log.Infof("starting looking for Analyzer at %s", conf.Addr)
+
+	grpcAddr, err := pb.ToGoGrpcAddress(conf.Addr)
+	if err != nil {
+		return nil, fmt.Errorf("Can't resolve address of analyzer '%s': %s", conf.Addr, err)
 	}
 
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -195,22 +214,63 @@ func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
 	return lookout.NewAnalyzerClient(conn), nil
 }
 
-func (c *EventCommand) parseConfig() (types.Struct, error) {
-	if c.ConfigJSON == "" {
-		return types.Struct{}, nil
+func (c *EventCommand) parseConfig() (lookout.AnalyzerConfig, error) {
+	if c.ConfigFile != "" {
+		if c.ConfigJSON != "" {
+			return lookout.AnalyzerConfig{},
+				fmt.Errorf("Options --config-json and --config are not compatible")
+		}
+
+		if c.Args.Analyzer != "" {
+			return lookout.AnalyzerConfig{},
+				fmt.Errorf("Argument analyzer and --config option are not compatible")
+		}
+
+		return c.parseConfigFile()
 	}
 
-	var conf map[string]interface{}
-	if err := json.Unmarshal([]byte(c.ConfigJSON), &conf); err != nil {
-		return types.Struct{}, fmt.Errorf("Can't parse config-json option: %s", err)
+	return c.parseConfigArgs()
+}
+
+func (c *EventCommand) parseConfigArgs() (lookout.AnalyzerConfig, error) {
+	var settings map[string]interface{}
+
+	if c.ConfigJSON != "" {
+		if err := json.Unmarshal([]byte(c.ConfigJSON), &settings); err != nil {
+			return lookout.AnalyzerConfig{}, fmt.Errorf("Can't parse config-json option: %s", err)
+		}
 	}
 
-	st := grpchelper.ToPBStruct(conf)
-	if st == nil {
-		return types.Struct{}, nil
+	if c.Args.Analyzer == "" {
+		c.Args.Analyzer = "ipv4://localhost:9930"
 	}
 
-	return *st, nil
+	return lookout.AnalyzerConfig{
+		Name:     "test-analyzer",
+		Addr:     c.Args.Analyzer,
+		Settings: settings,
+	}, nil
+}
+
+func (c *EventCommand) parseConfigFile() (lookout.AnalyzerConfig, error) {
+	var conf Config
+	configData, err := ioutil.ReadFile(c.ConfigFile)
+	if err != nil {
+		return lookout.AnalyzerConfig{},
+			fmt.Errorf("Can't open configuration file: %s", err)
+	}
+
+	if err := yaml.Unmarshal([]byte(configData), &conf); err != nil {
+		return lookout.AnalyzerConfig{},
+			fmt.Errorf("Can't parse configuration file: %s", err)
+	}
+
+	if len(conf.Analyzers) != 1 {
+		return lookout.AnalyzerConfig{},
+			fmt.Errorf("The configuration file needs to have exactly one analyzer defined")
+	}
+
+	return conf.Analyzers[0], nil
 }
 
 func getCommitHashByRev(r *gogit.Repository, revName string) (string, error) {

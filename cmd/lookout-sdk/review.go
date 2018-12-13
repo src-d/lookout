@@ -7,6 +7,7 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/server"
 	"github.com/src-d/lookout/store"
+	"github.com/src-d/lookout/util/grpchelper"
 
 	uuid "github.com/satori/go.uuid"
 	gocli "gopkg.in/src-d/go-cli.v0"
@@ -34,11 +35,6 @@ func (c *ReviewCommand) Execute(args []string) error {
 		return err
 	}
 
-	conf, err := c.parseConfig()
-	if err != nil {
-		return err
-	}
-
 	dataHandler, err := c.makeDataServerHandler()
 	if err != nil {
 		return err
@@ -49,7 +45,7 @@ func (c *ReviewCommand) Execute(args []string) error {
 		stopCh <- startDataServer()
 	}()
 
-	client, err := c.analyzerClient()
+	analyzer, err := c.analyzer()
 	if err != nil {
 		return err
 	}
@@ -57,9 +53,7 @@ func (c *ReviewCommand) Execute(args []string) error {
 	srv := server.NewServer(
 		&server.LogPoster{log.DefaultLogger}, dataHandler.FileGetter,
 		map[string]lookout.Analyzer{
-			"test-analyzes": lookout.Analyzer{
-				Client: client,
-			},
+			analyzer.Config.Name: analyzer,
 		},
 		&store.NoopEventOperator{}, &store.NoopCommentOperator{},
 		0, 0)
@@ -69,7 +63,7 @@ func (c *ReviewCommand) Execute(args []string) error {
 		return err
 	}
 
-	err = srv.HandleReview(context.TODO(), &lookout.ReviewEvent{
+	ev := lookout.ReviewEvent{
 		InternalID:  id.String(),
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
@@ -79,8 +73,14 @@ func (c *ReviewCommand) Execute(args []string) error {
 		CommitRevision: lookout.CommitRevision{
 			Base: *fromRef,
 			Head: *toRef,
-		},
-		Configuration: conf}, false)
+		}}
+
+	st := grpchelper.ToPBStruct(analyzer.Config.Settings)
+	if st != nil {
+		ev.Configuration = *st
+	}
+
+	err = srv.HandleReview(context.TODO(), &ev, false)
 
 	if err != nil {
 		return err

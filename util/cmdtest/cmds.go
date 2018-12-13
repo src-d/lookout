@@ -22,8 +22,8 @@ import (
 var CmdTimeout = time.Minute
 
 // default path to binaries
-var dummyBin = "../../build/bin/dummy"
-var lookoutBin = "../../build/bin/lookoutd"
+var DummyBin = "../../build/bin/dummy"
+var LookoutBin = "../../build/bin/lookoutd"
 
 type IntegrationSuite struct {
 	suite.Suite
@@ -36,10 +36,10 @@ type IntegrationSuite struct {
 
 func init() {
 	if os.Getenv("DUMMY_BIN") != "" {
-		dummyBin = os.Getenv("DUMMY_BIN")
+		DummyBin = os.Getenv("DUMMY_BIN")
 	}
 	if os.Getenv("LOOKOUT_BIN") != "" {
-		lookoutBin = os.Getenv("LOOKOUT_BIN")
+		LookoutBin = os.Getenv("LOOKOUT_BIN")
 	}
 }
 
@@ -67,7 +67,7 @@ func (suite *IntegrationSuite) StartDummy(args ...string) io.Reader {
 
 	fmt.Printf("starting dummy %s\n", strings.Join(args, " "))
 
-	cmd := exec.CommandContext(suite.Ctx, dummyBin, args...)
+	cmd := exec.CommandContext(suite.Ctx, DummyBin, args...)
 	cmd.Stdout = outputWriter
 	cmd.Stderr = outputWriter
 
@@ -153,7 +153,7 @@ func (suite *IntegrationSuite) startLookoutd(args ...string) (io.Reader, io.Writ
 	suite.logBuf = &bytes.Buffer{}
 	tee := io.TeeReader(r, suite.logBuf)
 
-	cmd := exec.CommandContext(suite.Ctx, lookoutBin, args...)
+	cmd := exec.CommandContext(suite.Ctx, LookoutBin, args...)
 	cmd.Stdout = outputWriter
 	cmd.Stderr = outputWriter
 
@@ -208,7 +208,7 @@ func (suite *IntegrationSuite) RunCli(cmd string, args ...string) io.Reader {
 	args = append([]string{cmd}, args...)
 
 	var out bytes.Buffer
-	cliCmd := exec.CommandContext(suite.Ctx, lookoutBin, args...)
+	cliCmd := exec.CommandContext(suite.Ctx, LookoutBin, args...)
 	cliCmd.Stdout = &out
 	cliCmd.Stderr = &out
 
@@ -233,7 +233,7 @@ func (suite *IntegrationSuite) ResetDB() {
 	suite.runQuery(db, "GRANT ALL ON SCHEMA public TO public;")
 
 	fmt.Println("running lookoutd migrate")
-	err = exec.Command(lookoutBin, "migrate").Run()
+	err = exec.Command(LookoutBin, "migrate").Run()
 	require.NoError(err, "can't migrate DB")
 }
 

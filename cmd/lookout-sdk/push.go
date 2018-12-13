@@ -9,6 +9,7 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/server"
 	"github.com/src-d/lookout/store"
+	"github.com/src-d/lookout/util/grpchelper"
 
 	uuid "github.com/satori/go.uuid"
 	gocli "gopkg.in/src-d/go-cli.v0"
@@ -38,11 +39,6 @@ func (c *PushCommand) Execute(args []string) error {
 		return err
 	}
 
-	conf, err := c.parseConfig()
-	if err != nil {
-		return err
-	}
-
 	dataHandler, err := c.makeDataServerHandler()
 	if err != nil {
 		return err
@@ -53,7 +49,7 @@ func (c *PushCommand) Execute(args []string) error {
 		stopCh <- startDataServer()
 	}()
 
-	client, err := c.analyzerClient()
+	analyzer, err := c.analyzer()
 	if err != nil {
 		return err
 	}
@@ -61,9 +57,7 @@ func (c *PushCommand) Execute(args []string) error {
 	srv := server.NewServer(
 		&server.LogPoster{log.DefaultLogger}, dataHandler.FileGetter,
 		map[string]lookout.Analyzer{
-			"test-analyzes": lookout.Analyzer{
-				Client: client,
-			},
+			analyzer.Config.Name: analyzer,
 		},
 		&store.NoopEventOperator{}, &store.NoopCommentOperator{},
 		0, 0)
@@ -91,15 +85,21 @@ func (c *PushCommand) Execute(args []string) error {
 		return err
 	}
 
-	err = srv.HandlePush(context.TODO(), &lookout.PushEvent{
+	ev := lookout.PushEvent{
 		InternalID: id.String(),
 		CreatedAt:  time.Now(),
 		Commits:    commits,
 		CommitRevision: lookout.CommitRevision{
 			Base: *fromRef,
 			Head: *toRef,
-		},
-		Configuration: conf}, false)
+		}}
+
+	st := grpchelper.ToPBStruct(analyzer.Config.Settings)
+	if st != nil {
+		ev.Configuration = *st
+	}
+
+	err = srv.HandlePush(context.TODO(), &ev, false)
 
 	if err != nil {
 		return err
