@@ -21,12 +21,17 @@ type WebCommand struct {
 	ServerURL          string `long:"server" env:"LOOKOUT_SERVER_URL" description:"URL used to access the web server in the form 'HOSTNAME[:PORT]'. Leave it unset to allow connections from any proxy or public address"`
 	FooterHTML         string `long:"footer" env:"LOOKOUT_FOOTER_HTML" description:"Allows to add any custom html to the page footer. It must be a string encoded in base64. Use it, for example, to add your analytics tracking code snippet"`
 
+	ClientID     string `long:"client-id" env:"LOOKOUT_CLIENT_ID" required:"true" description:"GitHub App OAuth credentials"`
+	ClientSecret string `long:"client-secret" env:"LOOKOUT_CLIENT_SECRET" required:"true" description:"GitHub App OAuth credentials"`
+	SigningKey   string `long:"signing-key" env:"LOOKOUT_SIGNING_KEY" required:"true" description:"Secret key to sign JSON Web Tokens"`
+
 	cli.LogOptions
 }
 
 func (c *WebCommand) Execute(args []string) error {
+	auth := web.NewAuth(c.ClientID, c.ClientSecret, c.SigningKey)
 	static := web.NewStatic("build/public", c.ServerURL, c.FooterHTML)
-	server := web.NewHTTPServer(static)
+	server := web.NewHTTPServer(auth, static)
 	addr := fmt.Sprintf("%s:%d", c.Host, c.Port)
 
 	log.Infof("Starting http server on %s", addr)

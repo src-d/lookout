@@ -6,16 +6,8 @@ class App extends Component {
     return (
       <div className="App">
         <header className="App-header">
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
+          <a className="App-link" href="http://127.0.0.1:8080/login">
+            Login using Github
           </a>
         </header>
       </div>
