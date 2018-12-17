@@ -33,8 +33,28 @@ LOOKOUT_SDK_BIN := $(BIN_PATH)/lookout-sdk
 # lookoutd binary
 LOOKOUT_BIN := $(BIN_PATH)/lookoutd
 
+# Web variables
+FRONTEND_PATH := ./frontend
+FRONTEND_BUILD_PATH := $(FRONTEND_PATH)/build
+
+# To be used as -tags
+GO_BINDATA_TAG := bindata
+
+# Environment and arguments to use in `go run` calls.
+GO_RUN_ENV := LOG_LEVEL=DEBUG
+GO_RUN_ARGS += -tags "$(GO_BINDATA_TAG)"
+
+GORUN = $(GOCMD) run $(GO_RUN_ARGS)
+
+# Override Makefile.main defaults for arguments to be used in `go` commands.
+GO_BUILD_ARGS := -ldflags "$(LD_FLAGS)" -tags "$(GO_BINDATA_TAG)"
+
 # Tools
 BINDATA := go-bindata
+YARN := yarn --cwd $(FRONTEND_PATH)
+REMOVE := rm -rf
+MOVE := mv
+MKDIR := mkdir -p
 
 .PHONY: bindata
 bindata:
@@ -45,7 +65,6 @@ bindata:
 		-prefix '$(MIGRATIONS_PATH)/' \
 		-modtime 1 \
 		$(MIGRATIONS_PATH)/...
-
 
 GOTEST_INTEGRATION_TAGS_LIST = integration bblfsh
 GOTEST_INTEGRATION_TAGS = $(GOTEST_INTEGRATION_TAGS_LIST)
@@ -120,3 +139,58 @@ endif
 
 .PHONY: ci-integration-dependencies
 ci-integration-dependencies: prepare-services ci-start-bblfsh
+
+build-path:
+	$(MKDIR) $(BUILD_PATH)
+
+# Redefine targets from main Makefile to support web
+
+exit:
+	exit 0;
+
+# Makefile.main::dependencies -> Makefile.main::$(DEPENDENCIES) -> this::dependencies
+# The `exit` is needed to prevent running `Makefile.main::dependencies` commands.
+dependencies: | web-dependencies exit
+
+# Makefile.main::test -> this::test
+test: web-test
+
+# this::build -> Makefile.main::build -> Makefile.main::$(COMMANDS)
+# The @echo forces this prerequisites to be run before `Makefile.main::build` ones.
+build: web-build web-bindata
+	@echo
+
+# Web
+
+.PHONY: web-build
+web-build: build-path
+	$(YARN) build
+	$(REMOVE) $(BUILD_PATH)/public
+	$(MOVE) $(FRONTEND_BUILD_PATH) $(BUILD_PATH)/public
+
+.PHONY: web-dependencies
+web-dependencies:
+	$(YARN) install
+
+.PHONY: web-test
+web-test:
+	$(YARN) test
+
+.PHONY: web-clean
+web-clean:
+	$(REMOVE) $(FRONTEND_PATH)/node_modules
+	$(REMOVE) $(FRONTEND_BUILD_PATH)
+
+.PHONY: web-bindata
+web-bindata:
+	$(BINDATA) \
+		-pkg assets \
+		-o ./web/assets/asset.go \
+		build/public/...
+
+.PHONY: web-start
+web-start:
+	$(GO_RUN_ENV) $(GORUN) cmd/lookoutd/*.go web
+
+.PHONY: web-serve
+web-serve: | web-dependencies web-build web-bindata web-start
