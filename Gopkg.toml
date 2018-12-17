@@ -21,10 +21,6 @@
   name = "github.com/gregjones/httpcache"
 
 [[constraint]]
-  name = "github.com/jessevdk/go-flags"
-  version = "1.4.0"
-
-[[constraint]]
   name = "github.com/stretchr/testify"
   version = "1.2.2"
 
