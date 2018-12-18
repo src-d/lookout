@@ -32,11 +32,3 @@ An analyzer is a gRPC service that will be called by the [Server](#server) to pe
 They are not part of **Lookout** repository so they can be developed by third parties.
 
 Lookout Server will call all the registered Analyzers to produce comments for the opened Pull Request in the watched repositories. To register new Analyzers in the configuration file, lookout will need to be restarted.
-
-
-# SDK
-
-The [lookout-sdk](https://github.com/src-d/lookout-sdk) repository is a toolkit for writing new analyzers. It contains:
-- `.proto` interface definitions for all **Lookout** gRPC services.
-- The pre-generated code in Go and Python that provides an easy access to the **Lookout DataService** gRPC service; and low-level helpers to workaround some protobuf/gRPC caveats.
-- Two simple quickstart examples.
