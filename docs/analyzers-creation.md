@@ -22,9 +22,9 @@ All the analyzers should consider [the caveats described by the SDK](https://git
 
 ## Fetching Changes, UASTs or Languages from Lookout DataService
 
-Lookout will take care of dealing with Git repositories, UAST extraction, programming language detection, etc. Your analyzer will be able to use the **Lookout DataService** to query all this data.
+Lookout will take care of dealing with Git repositories, UAST extraction, programming language detection, etc. Your analyzer will be able to use the **DataService** to query all this data.
 
-You can read more about it in the [**Lookout DataService** section](architecture.md#lookout-dataservice).
+You can read more about it in the [**Lookout Server** section](architecture.md#server).
 
 
 ## How to Test an Analyzer Locally

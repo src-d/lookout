@@ -13,17 +13,15 @@ It is the main component, running in a separate process.
 It is responsible for orchestrating all the other services.
 It takes review requests made by an external code review system, calls the registered analyzers to review the changes, and posts the results back.
 
+The server also exposes **DataService** as a gRPC service.
 
-## Lookout DataService
+### DataService
 
-_For the gRPC **Lookout DataService** service definiton you can take al look to **[`service_data.proto`](https://github.com/src-d/lookout-sdk/blob/master/proto/lookout/sdk/service_data.proto#L27)**_
+**DataService** gRPC can be called by the analyzers to request a stream (ie. [go](https://grpc.io/docs/tutorials/basic/go.html#server-side-streaming-rpc-1), [python](https://grpc.io/docs/tutorials/basic/python.html#response-streaming-rpc)) of the files and changes being reviewed. The [ChangesRequest](https://github.com/src-d/lookout-sdk/blob/master/proto/lookout/sdk/service_data.proto#L58) or [FilesRequest](https://github.com/src-d/lookout-sdk/blob/master/proto/lookout/sdk/service_data.proto#L69) can be configured the to ask either for all files, or just the changed ones, as well as UASTs, language, full file content and/or exclude some paths: by regexp, or just all [vendored paths](https://github.com/github/linguist/blob/master/lib/linguist/vendor.yml).
 
-**Lookout DataService** deals with actual Git repositories; it is responsible for fetching and storing git repositories.
+**DataServer** gRPC URL is defined by `LOOKOUT_DATA_SERVER` enviroment value, and its default value is `localhost:10301`.
 
-**Lookout DataService** is also exposed by **Lookout** as a gRPC service &mdash;by default, on `localhost:10301`&mdash; that can be called by the analyzers to request a stream (ie. [go](https://grpc.io/docs/tutorials/basic/go.html#server-side-streaming-rpc-1), [python](https://grpc.io/docs/tutorials/basic/python.html#response-streaming-rpc)) of files and changes from **Lookout DataService** that **Lookout** exposes.
-
-The [ChangesRequest](https://github.com/src-d/lookout-sdk/blob/master/proto/lookout/sdk/service_data.proto#L58) or [FilesRequest](https://github.com/src-d/lookout-sdk/blob/master/proto/lookout/sdk/service_data.proto#L69) can be configured the to ask either for all files, or just the changed ones, as well as UASTs, language, full file content and/or exclude some paths: by regexp, or just all [vendored paths](https://github.com/github/linguist/blob/master/lib/linguist/vendor.yml).
-
+For the gRPC **DataService** service definiton you can take al look to **[`service_data.proto`](https://github.com/src-d/lookout-sdk/blob/master/proto/lookout/sdk/service_data.proto#L27)**
 
 ## Analyzer
 
