@@ -194,7 +194,3 @@ web-start:
 
 .PHONY: web-serve
 web-serve: | web-dependencies web-build web-bindata web-start
-
-.PHONY: web-lint
-web-lint:
-	$(YARN) lint
