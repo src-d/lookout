@@ -21,7 +21,7 @@ You will need to run an analyzer to be called by `lookout-sdk`. You can run one 
 If your analyzer makes use of UAST, you will also need a [Babelfish server](https://doc.bblf.sh/using-babelfish/getting-started.html) running.
 To start it using [Docker Compose](https://docs.docker.com/compose/) clone this repository, or download [`docker-compose.yml`](../docker-compose.yml), and run:
 
-```bash
+```shell
 $ docker-compose up bblfshd
 ```
 
@@ -47,7 +47,7 @@ In the next section, you will find a more detailed example considering the most 
 
 If we look at this example history of a given local repository stored at `/somewhere/repo/path`:
 
-```bash
+```shell
 $ git log --pretty=oneline --graph
 
 *   d036524c463227524f4bbd7b207fb87bb8b89ee3 (HEAD -> master) Merge pull request #3
