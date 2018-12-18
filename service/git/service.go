@@ -33,7 +33,7 @@ var ErrRefValidation = errors.NewKind("reference %v does not have a %s")
 // validateReferences checks if all the References have enough information to clone a repo.
 // Validation of the reference name is optional.
 func validateReferences(ctx context.Context, validateRefName bool, refs ...*lookout.ReferencePointer) error {
-	ctxlog.Get(ctx).Infof("validating refs: %v, validateRefName: %v", refs, validateRefName)
+	ctxlog.Get(ctx).Debugf("validating refs: %v, validateRefName: %v", refs, validateRefName)
 	for _, ref := range refs {
 		if nil == ref {
 			continue

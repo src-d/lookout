@@ -95,7 +95,7 @@ func (t *basicAuthRoundTripper) RoundTrip(req *http.Request) (*http.Response, er
 	ctxlog.Get(req.Context()).With(log.Fields{
 		"url":  req.URL.String(),
 		"user": t.User,
-	}).Debugf("http request")
+	}).Debugf("http request with GitHub auth")
 
 	if t.User != "" {
 		req.SetBasicAuth(t.User, t.Password)

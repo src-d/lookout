@@ -307,7 +307,7 @@ func (c *lookoutdCommand) startHealthProbes() error {
 	log.With(log.Fields{
 		"addr":  c.ProbesAddr,
 		"paths": []string{livenessPath, readinessPath},
-	}).Debugf("listening health probe HTTP requests")
+	}).Infof("listening to health probe HTTP requests")
 
 	return http.ListenAndServe(c.ProbesAddr, nil)
 }
