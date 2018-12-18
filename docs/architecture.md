@@ -19,6 +19,8 @@ The server also exposes **DataService** as a gRPC service.
 
 **DataService** gRPC can be called by the analyzers to request a stream (ie. [go](https://grpc.io/docs/tutorials/basic/go.html#server-side-streaming-rpc-1), [python](https://grpc.io/docs/tutorials/basic/python.html#response-streaming-rpc)) of the files and changes being reviewed. The [ChangesRequest](https://github.com/src-d/lookout-sdk/blob/master/proto/lookout/sdk/service_data.proto#L58) or [FilesRequest](https://github.com/src-d/lookout-sdk/blob/master/proto/lookout/sdk/service_data.proto#L69) can be configured the to ask either for all files, or just the changed ones, as well as UASTs, language, full file content and/or exclude some paths: by regexp, or just all [vendored paths](https://github.com/github/linguist/blob/master/lib/linguist/vendor.yml).
 
+**DataServer** also acts as a proxy to Babelfish, so if an analyzer needs to access the Babelfish API, it can point its [Babelfish client](https://docs.sourced.tech/babelfish/using-babelfish/clients) to the same **DataServer** address.
+
 **DataServer** gRPC URL is defined by `LOOKOUT_DATA_SERVER` enviroment value, and its default value is `localhost:10301`.
 
 For the gRPC **DataService** service definiton you can take al look to **[`service_data.proto`](https://github.com/src-d/lookout-sdk/blob/master/proto/lookout/sdk/service_data.proto#L27)**
