@@ -1,10 +1,10 @@
 # source{d} Lookout Architecture
 
-![Lookout service sequence diagram](assets/lookout-seq-diagram.png)
+![source{d} Lookout service sequence diagram](assets/lookout-seq-diagram.png)
 
 You can [edit this image](https://mermaidjs.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgcGFydGljaXBhbnQgR2l0SHViXG4gICAgcGFydGljaXBhbnQgbG9va291dFxuICAgIHBhcnRpY2lwYW50IEFuYWx5emVyXG4gICAgcGFydGljaXBhbnQgQmFiZWxmaXNoXG4gICAgbG9va291dC0-PkdpdEh1YjogUG9sbGluZ1xuICAgIEdpdEh1Yi0tPj5sb29rb3V0OiBQUi9QdXNoIGV2ZW50c1xuICAgIGxvb2tvdXQtPj5BbmFseXplcjogTm90aWZ5UmV2aWV3RXZlbnRcbiAgICBBbmFseXplci0-Pmxvb2tvdXQ6IEdldENoYW5nZXMvR2V0RmlsZXNcbiAgICBsb29rb3V0LT4-QmFiZWxmaXNoOiBwYXJzZUZpbGUgKGlmIFdhbnRVQVNUKVxuICAgIEJhYmVsZmlzaC0tPj5sb29rb3V0OiBVQVNUXG4gICAgbG9va291dC0tPj5BbmFseXplcjogQ2hhbmdlL0ZpbGVcbiAgICBBbmFseXplci0tPj5sb29rb3V0OiBDb21tZW50c1xuICAgIGxvb2tvdXQtPj5HaXRIdWI6IFBvc3QgY29tbWVudHMiLCJtZXJtYWlkIjp7InRoZW1lIjoiZGVmYXVsdCJ9fQ) using [mermaid](https://mermaidjs.github.io). ([sourcecode](assets/lookout-seq-diagram.md))
 
-Lookout consists of the following components:
+source{d} Lookout consists of the following components:
 
 
 ## Server
@@ -29,6 +29,6 @@ _Find more info about what an analyzer is and how to develop your own analyzer i
 
 An analyzer is a gRPC service that will be called by the [Server](#server) to perform the smart code analysis, and it will return a set of `Comments` as the result of the analysis.
 
-They are not part of **Lookout** repository so they can be developed by third parties.
+They are not part of **source{d} Lookout** repository so they can be developed by third parties.
 
-Lookout Server will call all the registered Analyzers to produce comments for the opened Pull Request in the watched repositories. To register new Analyzers in the configuration file, lookout will need to be restarted.
+source{d} Lookout Server will call all the registered Analyzers to produce comments for the opened Pull Request in the watched repositories. To register new Analyzers in the configuration file, `lookoutd` will need to be restarted.

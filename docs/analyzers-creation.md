@@ -20,11 +20,11 @@ You can create a new analyzer in any language that supports protocol buffers, ge
 All the analyzers should consider [the caveats described by the SDK](https://github.com/src-d/lookout-sdk#caveats).
 
 
-## Fetching Changes, UASTs or Languages from Lookout DataService
+## Fetching Changes, UASTs or Languages from DataService
 
-Lookout will take care of dealing with Git repositories, UAST extraction, programming language detection, etc. Your analyzer will be able to use the **DataService** to query all this data.
+**source{d} Lookout** will take care of dealing with Git repositories, UAST extraction, programming language detection, etc. Your analyzer will be able to use the **DataService** to query all this data.
 
-You can read more about it in the [**Lookout Server** section](architecture.md#server).
+You can read more about it in the [**source{d} Lookout Server** section](architecture.md#server).
 
 
 ## How to Test an Analyzer Locally
