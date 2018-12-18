@@ -29,6 +29,6 @@ func (c *WebCommand) Execute(args []string) error {
 	server := web.NewHTTPServer(static)
 	addr := fmt.Sprintf("%s:%d", c.Host, c.Port)
 
-	log.Infof("Start http server on %s", addr)
+	log.Infof("Starting http server on %s", addr)
 	return http.ListenAndServe(addr, server)
 }
