@@ -1,40 +1,40 @@
-<svg id="mermaid-1544726871658" width="100%" xmlns="http://www.w3.org/2000/svg" height="100%" style="max-width:1050px;" viewBox="-50 -10 1050 546"><style>
+<svg id="mermaid-1545256821914" width="100%" xmlns="http://www.w3.org/2000/svg" height="100%" style="max-width:850px;" viewBox="-50 -10 850 476"><style>
 
 
-#mermaid-1544726871658 .label {
+#mermaid-1545256821914 .label {
   font-family: 'trebuchet ms', verdana, arial;
   color: #333; }
 
-#mermaid-1544726871658 .node rect,
-#mermaid-1544726871658 .node circle,
-#mermaid-1544726871658 .node ellipse,
-#mermaid-1544726871658 .node polygon {
+#mermaid-1545256821914 .node rect,
+#mermaid-1545256821914 .node circle,
+#mermaid-1545256821914 .node ellipse,
+#mermaid-1545256821914 .node polygon {
   fill: #ECECFF;
   stroke: #9370DB;
   stroke-width: 1px; }
 
-#mermaid-1544726871658 .node.clickable {
+#mermaid-1545256821914 .node.clickable {
   cursor: pointer; }
 
-#mermaid-1544726871658 .arrowheadPath {
+#mermaid-1545256821914 .arrowheadPath {
   fill: #333333; }
 
-#mermaid-1544726871658 .edgePath .path {
+#mermaid-1545256821914 .edgePath .path {
   stroke: #333333;
   stroke-width: 1.5px; }
 
-#mermaid-1544726871658 .edgeLabel {
+#mermaid-1545256821914 .edgeLabel {
   background-color: #e8e8e8; }
 
-#mermaid-1544726871658 .cluster rect {
+#mermaid-1545256821914 .cluster rect {
   fill: #ffffde !important;
   stroke: #aaaa33 !important;
   stroke-width: 1px !important; }
 
-#mermaid-1544726871658 .cluster text {
+#mermaid-1545256821914 .cluster text {
   fill: #333; }
 
-#mermaid-1544726871658 div.mermaidTooltip {
+#mermaid-1545256821914 div.mermaidTooltip {
   position: absolute;
   text-align: center;
   max-width: 200px;
@@ -47,304 +47,304 @@
   pointer-events: none;
   z-index: 100; }
 
-#mermaid-1544726871658 .actor {
+#mermaid-1545256821914 .actor {
   stroke: #CCCCFF;
   fill: #ECECFF; }
 
-#mermaid-1544726871658 text.actor {
+#mermaid-1545256821914 text.actor {
   fill: black;
   stroke: none; }
 
-#mermaid-1544726871658 .actor-line {
+#mermaid-1545256821914 .actor-line {
   stroke: grey; }
 
-#mermaid-1544726871658 .messageLine0 {
+#mermaid-1545256821914 .messageLine0 {
   stroke-width: 1.5;
   stroke-dasharray: '2 2';
   marker-end: 'url(#arrowhead)';
   stroke: #333; }
 
-#mermaid-1544726871658 .messageLine1 {
+#mermaid-1545256821914 .messageLine1 {
   stroke-width: 1.5;
   stroke-dasharray: '2 2';
   stroke: #333; }
 
-#mermaid-1544726871658 #arrowhead {
+#mermaid-1545256821914 #arrowhead {
   fill: #333; }
 
-#mermaid-1544726871658 #crosshead path {
+#mermaid-1545256821914 #crosshead path {
   fill: #333 !important;
   stroke: #333 !important; }
 
-#mermaid-1544726871658 .messageText {
+#mermaid-1545256821914 .messageText {
   fill: #333;
   stroke: none; }
 
-#mermaid-1544726871658 .labelBox {
+#mermaid-1545256821914 .labelBox {
   stroke: #CCCCFF;
   fill: #ECECFF; }
 
-#mermaid-1544726871658 .labelText {
+#mermaid-1545256821914 .labelText {
   fill: black;
   stroke: none; }
 
-#mermaid-1544726871658 .loopText {
+#mermaid-1545256821914 .loopText {
   fill: black;
   stroke: none; }
 
-#mermaid-1544726871658 .loopLine {
+#mermaid-1545256821914 .loopLine {
   stroke-width: 2;
   stroke-dasharray: '2 2';
   marker-end: 'url(#arrowhead)';
   stroke: #CCCCFF; }
 
-#mermaid-1544726871658 .note {
+#mermaid-1545256821914 .note {
   stroke: #aaaa33;
   fill: #fff5ad; }
 
-#mermaid-1544726871658 .noteText {
+#mermaid-1545256821914 .noteText {
   fill: black;
   stroke: none;
   font-family: 'trebuchet ms', verdana, arial;
   font-size: 14px; }
 
 
-#mermaid-1544726871658 .section {
+#mermaid-1545256821914 .section {
   stroke: none;
   opacity: 0.2; }
 
-#mermaid-1544726871658 .section0 {
+#mermaid-1545256821914 .section0 {
   fill: rgba(102, 102, 255, 0.49); }
 
-#mermaid-1544726871658 .section2 {
+#mermaid-1545256821914 .section2 {
   fill: #fff400; }
 
-#mermaid-1544726871658 .section1,
-#mermaid-1544726871658 .section3 {
+#mermaid-1545256821914 .section1,
+#mermaid-1545256821914 .section3 {
   fill: white;
   opacity: 0.2; }
 
-#mermaid-1544726871658 .sectionTitle0 {
+#mermaid-1545256821914 .sectionTitle0 {
   fill: #333; }
 
-#mermaid-1544726871658 .sectionTitle1 {
+#mermaid-1545256821914 .sectionTitle1 {
   fill: #333; }
 
-#mermaid-1544726871658 .sectionTitle2 {
+#mermaid-1545256821914 .sectionTitle2 {
   fill: #333; }
 
-#mermaid-1544726871658 .sectionTitle3 {
+#mermaid-1545256821914 .sectionTitle3 {
   fill: #333; }
 
-#mermaid-1544726871658 .sectionTitle {
+#mermaid-1545256821914 .sectionTitle {
   text-anchor: start;
   font-size: 11px;
   text-height: 14px; }
 
 
-#mermaid-1544726871658 .grid .tick {
+#mermaid-1545256821914 .grid .tick {
   stroke: lightgrey;
   opacity: 0.3;
   shape-rendering: crispEdges; }
 
-#mermaid-1544726871658 .grid path {
+#mermaid-1545256821914 .grid path {
   stroke-width: 0; }
 
 
-#mermaid-1544726871658 .today {
+#mermaid-1545256821914 .today {
   fill: none;
   stroke: red;
   stroke-width: 2px; }
 
 
 
-#mermaid-1544726871658 .task {
+#mermaid-1545256821914 .task {
   stroke-width: 2; }
 
-#mermaid-1544726871658 .taskText {
+#mermaid-1545256821914 .taskText {
   text-anchor: middle;
   font-size: 11px; }
 
-#mermaid-1544726871658 .taskTextOutsideRight {
+#mermaid-1545256821914 .taskTextOutsideRight {
   fill: black;
   text-anchor: start;
   font-size: 11px; }
 
-#mermaid-1544726871658 .taskTextOutsideLeft {
+#mermaid-1545256821914 .taskTextOutsideLeft {
   fill: black;
   text-anchor: end;
   font-size: 11px; }
 
 
-#mermaid-1544726871658 .taskText0,
-#mermaid-1544726871658 .taskText1,
-#mermaid-1544726871658 .taskText2,
-#mermaid-1544726871658 .taskText3 {
+#mermaid-1545256821914 .taskText0,
+#mermaid-1545256821914 .taskText1,
+#mermaid-1545256821914 .taskText2,
+#mermaid-1545256821914 .taskText3 {
   fill: white; }
 
-#mermaid-1544726871658 .task0,
-#mermaid-1544726871658 .task1,
-#mermaid-1544726871658 .task2,
-#mermaid-1544726871658 .task3 {
+#mermaid-1545256821914 .task0,
+#mermaid-1545256821914 .task1,
+#mermaid-1545256821914 .task2,
+#mermaid-1545256821914 .task3 {
   fill: #8a90dd;
   stroke: #534fbc; }
 
-#mermaid-1544726871658 .taskTextOutside0,
-#mermaid-1544726871658 .taskTextOutside2 {
+#mermaid-1545256821914 .taskTextOutside0,
+#mermaid-1545256821914 .taskTextOutside2 {
   fill: black; }
 
-#mermaid-1544726871658 .taskTextOutside1,
-#mermaid-1544726871658 .taskTextOutside3 {
+#mermaid-1545256821914 .taskTextOutside1,
+#mermaid-1545256821914 .taskTextOutside3 {
   fill: black; }
 
 
-#mermaid-1544726871658 .active0,
-#mermaid-1544726871658 .active1,
-#mermaid-1544726871658 .active2,
-#mermaid-1544726871658 .active3 {
+#mermaid-1545256821914 .active0,
+#mermaid-1545256821914 .active1,
+#mermaid-1545256821914 .active2,
+#mermaid-1545256821914 .active3 {
   fill: #bfc7ff;
   stroke: #534fbc; }
 
-#mermaid-1544726871658 .activeText0,
-#mermaid-1544726871658 .activeText1,
-#mermaid-1544726871658 .activeText2,
-#mermaid-1544726871658 .activeText3 {
+#mermaid-1545256821914 .activeText0,
+#mermaid-1545256821914 .activeText1,
+#mermaid-1545256821914 .activeText2,
+#mermaid-1545256821914 .activeText3 {
   fill: black !important; }
 
 
-#mermaid-1544726871658 .done0,
-#mermaid-1544726871658 .done1,
-#mermaid-1544726871658 .done2,
-#mermaid-1544726871658 .done3 {
+#mermaid-1545256821914 .done0,
+#mermaid-1545256821914 .done1,
+#mermaid-1545256821914 .done2,
+#mermaid-1545256821914 .done3 {
   stroke: grey;
   fill: lightgrey;
   stroke-width: 2; }
 
-#mermaid-1544726871658 .doneText0,
-#mermaid-1544726871658 .doneText1,
-#mermaid-1544726871658 .doneText2,
-#mermaid-1544726871658 .doneText3 {
+#mermaid-1545256821914 .doneText0,
+#mermaid-1545256821914 .doneText1,
+#mermaid-1545256821914 .doneText2,
+#mermaid-1545256821914 .doneText3 {
   fill: black !important; }
 
 
-#mermaid-1544726871658 .crit0,
-#mermaid-1544726871658 .crit1,
-#mermaid-1544726871658 .crit2,
-#mermaid-1544726871658 .crit3 {
+#mermaid-1545256821914 .crit0,
+#mermaid-1545256821914 .crit1,
+#mermaid-1545256821914 .crit2,
+#mermaid-1545256821914 .crit3 {
   stroke: #ff8888;
   fill: red;
   stroke-width: 2; }
 
-#mermaid-1544726871658 .activeCrit0,
-#mermaid-1544726871658 .activeCrit1,
-#mermaid-1544726871658 .activeCrit2,
-#mermaid-1544726871658 .activeCrit3 {
+#mermaid-1545256821914 .activeCrit0,
+#mermaid-1545256821914 .activeCrit1,
+#mermaid-1545256821914 .activeCrit2,
+#mermaid-1545256821914 .activeCrit3 {
   stroke: #ff8888;
   fill: #bfc7ff;
   stroke-width: 2; }
 
-#mermaid-1544726871658 .doneCrit0,
-#mermaid-1544726871658 .doneCrit1,
-#mermaid-1544726871658 .doneCrit2,
-#mermaid-1544726871658 .doneCrit3 {
+#mermaid-1545256821914 .doneCrit0,
+#mermaid-1545256821914 .doneCrit1,
+#mermaid-1545256821914 .doneCrit2,
+#mermaid-1545256821914 .doneCrit3 {
   stroke: #ff8888;
   fill: lightgrey;
   stroke-width: 2;
   cursor: pointer;
   shape-rendering: crispEdges; }
 
-#mermaid-1544726871658 .doneCritText0,
-#mermaid-1544726871658 .doneCritText1,
-#mermaid-1544726871658 .doneCritText2,
-#mermaid-1544726871658 .doneCritText3 {
+#mermaid-1545256821914 .doneCritText0,
+#mermaid-1545256821914 .doneCritText1,
+#mermaid-1545256821914 .doneCritText2,
+#mermaid-1545256821914 .doneCritText3 {
   fill: black !important; }
 
-#mermaid-1544726871658 .activeCritText0,
-#mermaid-1544726871658 .activeCritText1,
-#mermaid-1544726871658 .activeCritText2,
-#mermaid-1544726871658 .activeCritText3 {
+#mermaid-1545256821914 .activeCritText0,
+#mermaid-1545256821914 .activeCritText1,
+#mermaid-1545256821914 .activeCritText2,
+#mermaid-1545256821914 .activeCritText3 {
   fill: black !important; }
 
-#mermaid-1544726871658 .titleText {
+#mermaid-1545256821914 .titleText {
   text-anchor: middle;
   font-size: 18px;
   fill: black; }
 
-#mermaid-1544726871658 g.classGroup text {
+#mermaid-1545256821914 g.classGroup text {
   fill: #9370DB;
   stroke: none;
   font-family: 'trebuchet ms', verdana, arial;
   font-size: 10px; }
 
-#mermaid-1544726871658 g.classGroup rect {
+#mermaid-1545256821914 g.classGroup rect {
   fill: #ECECFF;
   stroke: #9370DB; }
 
-#mermaid-1544726871658 g.classGroup line {
+#mermaid-1545256821914 g.classGroup line {
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1544726871658 .classLabel .box {
+#mermaid-1545256821914 .classLabel .box {
   stroke: none;
   stroke-width: 0;
   fill: #ECECFF;
   opacity: 0.5; }
 
-#mermaid-1544726871658 .classLabel .label {
+#mermaid-1545256821914 .classLabel .label {
   fill: #9370DB;
   font-size: 10px; }
 
-#mermaid-1544726871658 .relation {
+#mermaid-1545256821914 .relation {
   stroke: #9370DB;
   stroke-width: 1;
   fill: none; }
 
-#mermaid-1544726871658 #compositionStart {
+#mermaid-1545256821914 #compositionStart {
   fill: #9370DB;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1544726871658 #compositionEnd {
+#mermaid-1545256821914 #compositionEnd {
   fill: #9370DB;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1544726871658 #aggregationStart {
+#mermaid-1545256821914 #aggregationStart {
   fill: #ECECFF;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1544726871658 #aggregationEnd {
+#mermaid-1545256821914 #aggregationEnd {
   fill: #ECECFF;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1544726871658 #dependencyStart {
+#mermaid-1545256821914 #dependencyStart {
   fill: #9370DB;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1544726871658 #dependencyEnd {
+#mermaid-1545256821914 #dependencyEnd {
   fill: #9370DB;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1544726871658 #extensionStart {
+#mermaid-1545256821914 #extensionStart {
   fill: #9370DB;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1544726871658 #extensionEnd {
+#mermaid-1545256821914 #extensionEnd {
   fill: #9370DB;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1544726871658 .commit-id,
-#mermaid-1544726871658 .commit-msg,
-#mermaid-1544726871658 .branch-label {
+#mermaid-1545256821914 .commit-id,
+#mermaid-1545256821914 .commit-msg,
+#mermaid-1545256821914 .branch-label {
   fill: lightgrey;
   color: lightgrey; }
-</style><style>#mermaid-1544726871658 {
+</style><style>#mermaid-1545256821914 {
     color: rgba(0, 0, 0, 0.65);
     font: normal normal 400 normal 14px / 21px "Monospaced Number", "Chinese Quote", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  }</style><g></g><g><line id="actor120" x1="75" y1="5" x2="75" y2="535" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="0" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="75" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="75" dy="0">GitHub</tspan></text></g><g><line id="actor121" x1="275" y1="5" x2="275" y2="535" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="200" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="275" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="275" dy="0">Server</tspan></text></g><g><line id="actor122" x1="475" y1="5" x2="475" y2="535" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="400" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="475" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="475" dy="0">DataService</tspan></text></g><g><line id="actor123" x1="675" y1="5" x2="675" y2="535" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="600" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="675" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="675" dy="0">Bblfsh</tspan></text></g><g><line id="actor124" x1="875" y1="5" x2="875" y2="535" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="800" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="875" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="875" dy="0">Analyzer</tspan></text></g><defs><marker id="arrowhead" refX="5" refY="2" markerWidth="6" markerHeight="4" orient="auto"><path d="M 0,0 V 4 L6,2 Z"></path></marker></defs><defs><marker id="crosshead" markerWidth="15" markerHeight="8" orient="auto" refX="16" refY="4"><path fill="black" stroke="#000000" stroke-width="1px" d="M 9,2 V 6 L16,4 Z" style="stroke-dasharray: 0, 0;"></path><path fill="none" stroke="#000000" stroke-width="1px" d="M 0,1 L 6,7 M 6,1 L 0,7" style="stroke-dasharray: 0, 0;"></path></marker></defs><g><text x="175" y="118" class="messageText" style="text-anchor: middle;">polling PRs/Push events</text><line x1="275" y1="125" x2="75" y2="125" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><text x="575" y="178" class="messageText" style="text-anchor: middle;">(gRPC) NotifyReviewEvent / NotifyPushEvent</text><line x1="275" y1="185" x2="875" y2="185" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="870" y="187" fill="#f4f4f4" stroke="#666" width="10" height="208" rx="0" ry="0"></rect></g><g><text x="672.5" y="213" class="messageText" style="text-anchor: middle;">(gRPC) GetChanges / GetFiles</text><line x1="870" y1="220" x2="475" y2="220" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="470" y="222" fill="#f4f4f4" stroke="#666" width="10" height="138" rx="0" ry="0"></rect></g><g><text x="577.5" y="273" class="messageText" style="text-anchor: middle;">(gRPC) Parse</text><line x1="480" y1="280" x2="675" y2="280" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="670" y="282" fill="#f4f4f4" stroke="#666" width="10" height="33" rx="0" ry="0"></rect></g><g><text x="575" y="308" class="messageText" style="text-anchor: middle;">uast.Node</text><line x1="670" y1="315" x2="480" y2="315" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><line x1="460" y1="230" x2="690" y2="230" class="loopLine"></line><line x1="690" y1="230" x2="690" y2="325" class="loopLine"></line><line x1="460" y1="325" x2="690" y2="325" class="loopLine"></line><line x1="460" y1="230" x2="460" y2="325" class="loopLine"></line><polygon points="460,230 510,230 510,243 501.6,250 460,250" class="labelBox"></polygon><text x="467.5" y="245" fill="black" class="labelText"><tspan x="467.5" fill="black">opt</tspan></text><text x="575" y="245" fill="black" class="loopText" style="text-anchor: middle;"><tspan x="575" fill="black">[ req.WantUAST? ]</tspan></text></g><g><text x="675" y="353" class="messageText" style="text-anchor: middle;">stream of Change / File</text><line x1="480" y1="360" x2="870" y2="360" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><text x="572.5" y="388" class="messageText" style="text-anchor: middle;">Comments</text><line x1="870" y1="395" x2="275" y2="395" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><line x1="265" y1="135" x2="890" y2="135" class="loopLine"></line><line x1="890" y1="135" x2="890" y2="405" class="loopLine"></line><line x1="265" y1="405" x2="890" y2="405" class="loopLine"></line><line x1="265" y1="135" x2="265" y2="405" class="loopLine"></line><polygon points="265,135 315,135 315,148 306.6,155 265,155" class="labelBox"></polygon><text x="272.5" y="150" fill="black" class="labelText"><tspan x="272.5" fill="black">loop</tspan></text><text x="577.5" y="150" fill="black" class="loopText" style="text-anchor: middle;"><tspan x="577.5" fill="black">[ registered Analyzers ]</tspan></text></g><g><text x="175" y="433" class="messageText" style="text-anchor: middle;">Post all comments</text><line x1="275" y1="440" x2="75" y2="440" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><line x1="65" y1="75" x2="900" y2="75" class="loopLine"></line><line x1="900" y1="75" x2="900" y2="450" class="loopLine"></line><line x1="65" y1="450" x2="900" y2="450" class="loopLine"></line><line x1="65" y1="75" x2="65" y2="450" class="loopLine"></line><polygon points="65,75 115,75 115,88 106.6,95 65,95" class="labelBox"></polygon><text x="72.5" y="90" fill="black" class="labelText"><tspan x="72.5" fill="black">loop</tspan></text><text x="482.5" y="90" fill="black" class="loopText" style="text-anchor: middle;"><tspan x="482.5" fill="black">[ registered Repos ]</tspan></text></g><g><rect x="0" y="470" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="75" y="502.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="75" dy="0">GitHub</tspan></text></g><g><rect x="200" y="470" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="275" y="502.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="275" dy="0">Server</tspan></text></g><g><rect x="400" y="470" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="475" y="502.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="475" dy="0">DataService</tspan></text></g><g><rect x="600" y="470" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="675" y="502.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="675" dy="0">Bblfsh</tspan></text></g><g><rect x="800" y="470" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="875" y="502.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="875" dy="0">Analyzer</tspan></text></g></svg>
+  }</style><g></g><g><line id="actor0" x1="75" y1="5" x2="75" y2="465" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="0" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="75" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="75" dy="0">GitHub</tspan></text></g><g><line id="actor1" x1="275" y1="5" x2="275" y2="465" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="200" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="275" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="275" dy="0">lookout</tspan></text></g><g><line id="actor2" x1="475" y1="5" x2="475" y2="465" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="400" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="475" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="475" dy="0">Analyzer</tspan></text></g><g><line id="actor3" x1="675" y1="5" x2="675" y2="465" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="600" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="675" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="675" dy="0">Babelfish</tspan></text></g><defs><marker id="arrowhead" refX="5" refY="2" markerWidth="6" markerHeight="4" orient="auto"><path d="M 0,0 V 4 L6,2 Z"></path></marker></defs><defs><marker id="crosshead" markerWidth="15" markerHeight="8" orient="auto" refX="16" refY="4"><path fill="black" stroke="#000000" stroke-width="1px" d="M 9,2 V 6 L16,4 Z" style="stroke-dasharray: 0, 0;"></path><path fill="none" stroke="#000000" stroke-width="1px" d="M 0,1 L 6,7 M 6,1 L 0,7" style="stroke-dasharray: 0, 0;"></path></marker></defs><g><text x="175" y="93" class="messageText" style="text-anchor: middle;">Polling</text><line x1="275" y1="100" x2="75" y2="100" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><text x="175" y="128" class="messageText" style="text-anchor: middle;">PR/Push events</text><line x1="75" y1="135" x2="275" y2="135" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><text x="375" y="163" class="messageText" style="text-anchor: middle;">NotifyReviewEvent</text><line x1="275" y1="170" x2="475" y2="170" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><text x="375" y="198" class="messageText" style="text-anchor: middle;">GetChanges/GetFiles</text><line x1="475" y1="205" x2="275" y2="205" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><text x="475" y="233" class="messageText" style="text-anchor: middle;">parseFile (if WantUAST)</text><line x1="275" y1="240" x2="675" y2="240" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><text x="475" y="268" class="messageText" style="text-anchor: middle;">UAST</text><line x1="675" y1="275" x2="275" y2="275" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><text x="375" y="303" class="messageText" style="text-anchor: middle;">Change/File</text><line x1="275" y1="310" x2="475" y2="310" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><text x="375" y="338" class="messageText" style="text-anchor: middle;">Comments</text><line x1="475" y1="345" x2="275" y2="345" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><text x="175" y="373" class="messageText" style="text-anchor: middle;">Post comments</text><line x1="275" y1="380" x2="75" y2="380" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="0" y="400" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="75" y="432.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="75" dy="0">GitHub</tspan></text></g><g><rect x="200" y="400" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="275" y="432.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="275" dy="0">lookout</tspan></text></g><g><rect x="400" y="400" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="475" y="432.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="475" dy="0">Analyzer</tspan></text></g><g><rect x="600" y="400" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="675" y="432.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="675" dy="0">Babelfish</tspan></text></g></svg>

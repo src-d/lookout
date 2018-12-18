@@ -1,24 +1,18 @@
 ```
 sequenceDiagram
     participant GitHub
-    participant Server
-    participant DataService
-    participant Bblfsh
+    participant lookout
     participant Analyzer
-    loop registered Repos
-        Server ->> GitHub: polling PRs/Push events
-        loop registered Analyzers
-            Server ->> +Analyzer: (gRPC) NotifyReviewEvent / NotifyPushEvent
-            Analyzer ->> +DataService: (gRPC) GetChanges / GetFiles
-            opt req.WantUAST?
-                DataService ->> +Bblfsh: (gRPC) Parse
-                Bblfsh -->> -DataService: uast.Node
-            end
-            DataService -->> -Analyzer: stream of Change / File
-            Analyzer -->> -Server: Comments
-        end
-    Server ->> GitHub: Post all comments
-    end
+    participant Babelfish
+    lookout->>GitHub: Polling
+    GitHub-->>lookout: PR/Push events
+    lookout->>Analyzer: NotifyReviewEvent
+    Analyzer->>lookout: GetChanges/GetFiles
+    lookout->>Babelfish: parseFile (if WantUAST)
+    Babelfish-->>lookout: UAST
+    lookout-->>Analyzer: Change/File
+    Analyzer-->>lookout: Comments
+    lookout->>GitHub: Post comments
 ```
 
 Use https://mermaidjs.github.io/mermaid-live-editor/ to render.
