@@ -49,7 +49,7 @@ You will need to run the Analyzers to be used by **source{d} Lookout**.
 
 You can run one of our [example analyzers](analyzers-examples.md), any of the already [available analyzers](../README.md#available-analyzers) or the one that you're developing.
 
-For testing purposes, you may want to use a *dummy* analyzer. You can do so downloading it from [**Lookout** releases page](https://github.com/src-d/lookout/releases) and running:
+For testing purposes, you may want to use a [`dummy` analyzer](analyzers-examples.md#dummy-analyzer). You can download it from [**source{d} Lookout** releases page](https://github.com/src-d/lookout/releases) and then run it:
 
 ```bash
 $ dummy serve

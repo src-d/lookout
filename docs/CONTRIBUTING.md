@@ -84,13 +84,11 @@ $ make test-json
 ```
 
 
-## Dummy Analyzer
+## dummy Analyzer
 
-[Dummy analyzer](/cmd/dummy/main.go) is a simple analyzer implementation example.
+[`dummy` analyzer](analyzers-examples.md#dummy-analyzer) is part of the **source{d} Lookout** codebase but its release cycle is managed independently from the main one.
 
-It is part of the **Lookout** codebase but its release cycle is managed independently from the main one.
-
-Dummy analyzer container images will be published everytime it's created a new tag with the `dummy` prefix, e.g. `dummy-v0.0.1`
+`dummy` analyzer container images will be published everytime it's created a new tag with the `dummy` prefix, e.g. `dummy-v0.0.1`
 
 It can be built locally running:
 
