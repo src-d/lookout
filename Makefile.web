@@ -1,0 +1,51 @@
+FRONTEND_PATH := ./frontend
+FRONTEND_BUILD_PATH := $(FRONTEND_PATH)/build
+
+# Tools
+YARN := yarn --cwd $(FRONTEND_PATH)
+REMOVE := rm -rf
+MOVE := mv
+MKDIR := mkdir -p
+
+# Environment and arguments to use in `go run` calls.
+GO_RUN_ENV := LOG_LEVEL=DEBUG
+GO_RUN_ARGS += -tags "$(GO_BINDATA_TAG)"
+
+GOCMD = go
+GORUN = $(GOCMD) run $(GO_RUN_ARGS)
+
+build-path:
+	$(MKDIR) $(BUILD_PATH)
+
+.PHONY: web-build
+web-build: build-path web-dependencies
+	$(YARN) build
+	$(REMOVE) $(BUILD_PATH)/public
+	$(MOVE) $(FRONTEND_BUILD_PATH) $(BUILD_PATH)/public
+
+.PHONY: web-dependencies
+web-dependencies:
+	$(YARN) install
+
+.PHONY: web-test
+web-test:
+	CI=1 $(YARN) test
+
+.PHONY: web-clean
+web-clean:
+	$(REMOVE) $(FRONTEND_PATH)/node_modules
+	$(REMOVE) $(FRONTEND_BUILD_PATH)
+
+.PHONY: web-bindata
+web-bindata:
+	$(BINDATA) \
+		-pkg assets \
+		-o ./web/assets/asset.go \
+		build/public/...
+
+.PHONY: web-start
+web-start:
+	$(GO_RUN_ENV) $(GORUN) cmd/lookoutd/*.go web
+
+.PHONY: web-serve
+web-serve: | web-dependencies web-build web-bindata web-start

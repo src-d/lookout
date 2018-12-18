@@ -33,6 +33,12 @@ LOOKOUT_SDK_BIN := $(BIN_PATH)/lookout-sdk
 # lookoutd binary
 LOOKOUT_BIN := $(BIN_PATH)/lookoutd
 
+# To be used as -tags
+GO_BINDATA_TAG := bindata
+
+# Override Makefile.main defaults for arguments to be used in `go` commands.
+GO_BUILD_ARGS := -ldflags "$(LD_FLAGS)" -tags "$(GO_BINDATA_TAG)"
+
 # Tools
 BINDATA := go-bindata
 
@@ -45,7 +51,6 @@ bindata:
 		-prefix '$(MIGRATIONS_PATH)/' \
 		-modtime 1 \
 		$(MIGRATIONS_PATH)/...
-
 
 GOTEST_INTEGRATION_TAGS_LIST = integration bblfsh
 GOTEST_INTEGRATION_TAGS = $(GOTEST_INTEGRATION_TAGS_LIST)
@@ -120,3 +125,15 @@ endif
 
 .PHONY: ci-integration-dependencies
 ci-integration-dependencies: prepare-services ci-start-bblfsh
+
+# Redefine targets from main Makefile to support web
+
+-include Makefile.web
+
+# Makefile.main::test -> this::test
+test: web-test
+
+# this::build -> Makefile.main::build -> Makefile.main::$(COMMANDS)
+# The @echo forces this prerequisites to be run before `Makefile.main::build` ones.
+build: web-build web-bindata
+	@echo

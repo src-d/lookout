@@ -16,6 +16,7 @@
 
 # build results
 /build
+/web/assets/asset.go
 
 # Configuration
 /config.yml
