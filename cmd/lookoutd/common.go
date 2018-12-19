@@ -307,7 +307,7 @@ func (c *lookoutdCommand) startHealthProbes() error {
 	log.With(log.Fields{
 		"addr":  c.ProbesAddr,
 		"paths": []string{livenessPath, readinessPath},
-	}).Debugf("listening health probe HTTP requests")
+	}).Infof("listening to health probe HTTP requests")
 
 	return http.ListenAndServe(c.ProbesAddr, nil)
 }
@@ -328,15 +328,22 @@ func (c *queueConsumerCommand) initPoster(conf Config) (lookout.Poster, error) {
 }
 
 func (c *queueConsumerCommand) startAnalyzer(conf lookout.AnalyzerConfig) (lookout.AnalyzerClient, error) {
+	if conf.Name == "" {
+		return nil, fmt.Errorf("missing 'name' in analyzer config")
+	}
+
+	if conf.Addr == "" {
+		return nil, fmt.Errorf("missing 'addr' in config for analyzer %s", conf.Name)
+	}
 	addr, err := pb.ToGoGrpcAddress(conf.Addr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid address '%s' in config for analyzer %s: %s", conf.Addr, conf.Name, err)
 	}
 
 	ctx := context.Background()
 	conn, err := grpchelper.DialContext(ctx, addr, grpc.WithInsecure())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create a client connection to address '%s' in config for analyzer %s: %s", conf.Addr, conf.Name, err)
 	}
 
 	go grpchelper.LogConnStatusChanges(ctx, log.DefaultLogger.With(log.Fields{

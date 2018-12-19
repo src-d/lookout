@@ -89,7 +89,7 @@ func (c *ServeCommand) initHealthProbes() {
 		log.With(log.Fields{
 			"addr":  c.ProbesAddr,
 			"paths": []string{livenessPath, readinessPath},
-		}).Debugf("listening health probe HTTP requests")
+		}).Infof("listening to health probe HTTP requests")
 
 		err := http.ListenAndServe(c.ProbesAddr, nil)
 		if err != nil {

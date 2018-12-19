@@ -73,13 +73,13 @@ func (s *Server) HandleEvent(ctx context.Context, e lookout.Event) error {
 	}
 
 	if status == models.EventStatusProcessed {
-		logger.Infof("event successfully processed, skipping...")
+		logger.Debugf("event successfully processed, skipping...")
 		return nil
 	}
 
 	// TODO(max): we need some retry policy here depends on errors
 	if status == models.EventStatusFailed {
-		logger.Infof("event processing failed, skipping...")
+		logger.Debugf("event processing failed, skipping...")
 		return nil
 	}
 
@@ -226,7 +226,7 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent, safePosti
 
 func (s *Server) getConfig(ctx context.Context, e lookout.Event) (map[string]lookout.AnalyzerConfig, error) {
 	rev := e.Revision()
-	ctxlog.Get(ctx).Infof("getting .lookout.yml")
+	ctxlog.Get(ctx).Debugf("getting .lookout.yml")
 	scanner, err := s.fileGetter.GetFiles(ctx, &lookout.FilesRequest{
 		Revision:       &rev.Head,
 		IncludePattern: `^\.lookout\.yml$`,

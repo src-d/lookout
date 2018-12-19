@@ -376,25 +376,25 @@ func (t *limitRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 		return resp, err
 	}
 
-	logFields := log.Fields{}
+	logFields := log.Fields{"url": req.URL}
 
 	t.rateMu.Lock()
 	rate := t.rateLimits[category(req.URL.Path)]
 	if limit := resp.Header.Get(headerRateLimit); limit != "" {
 		rate.Limit, _ = strconv.Atoi(limit)
-		logFields["rate-limit"] = rate.Limit
+		logFields["rate.limit"] = rate.Limit
 	}
 
 	if remaining := resp.Header.Get(headerRateRemaining); remaining != "" {
 		rate.Remaining, _ = strconv.Atoi(remaining)
-		logFields["rate-limit"] = rate.Remaining
+		logFields["rate.remaining"] = rate.Remaining
 	}
 
 	if reset := resp.Header.Get(headerRateReset); reset != "" {
 		if v, _ := strconv.ParseInt(reset, 10, 64); v != 0 {
 			rate.Reset = github.Timestamp{time.Unix(v, 0)}
 		}
-		logFields["reset-at"] = rate.Reset
+		logFields["rate.reset-at"] = rate.Reset
 	}
 
 	if pollInterval := resp.Header.Get(headerPollInterval); pollInterval != "" {
@@ -407,7 +407,7 @@ func (t *limitRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 	t.rateLimits[category(req.URL.Path)] = rate
 	t.rateMu.Unlock()
 
-	ctxlog.Get(req.Context()).With(logFields).Debugf("http request to %s", req.URL.Path)
+	ctxlog.Get(req.Context()).With(logFields).Debugf("http request with GitHub rate limit")
 
 	return resp, err
 }

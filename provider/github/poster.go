@@ -101,7 +101,7 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 	dl := newDiffLines(cc)
 	review, err := p.createReviewRequest(ctx, aCommentsList, dl, e.Head.Hash, postedComments)
 	if errNoComments.Is(err) {
-		ctxlog.Get(ctx).Debugf("skipping posting analysis, there are no comments")
+		ctxlog.Get(ctx).Infof("skipping posting analysis, there are no comments")
 		return nil
 	}
 	if err != nil {
