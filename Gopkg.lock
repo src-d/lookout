@@ -42,9 +42,12 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:7a6852b35eb5bbc184561443762d225116ae630c26a7c4d90546619f1e7d2ad2"
+  digest = "1:2e08f767623936c719c07f52e1c89bb5d8597aac6b5fe669e6e851b92cebbe69"
   name = "github.com/dgrijalva/jwt-go"
-  packages = ["."]
+  packages = [
+    ".",
+    "request",
+  ]
   pruneopts = "NUT"
   revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
   version = "v3.2.0"
@@ -140,6 +143,30 @@
   packages = ["query"]
   pruneopts = "NUT"
   revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
+
+[[projects]]
+  digest = "1:c01767916c59f084bb7c41a7d5877c0f3099b1595cfa066e84ec6ad6b084dd89"
+  name = "github.com/gorilla/context"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
+  version = "v1.1.1"
+
+[[projects]]
+  digest = "1:0faa8131e5822f3420f82426667a29c5c425c3cb7e0fcf0c5d1c718d6e6ba19b"
+  name = "github.com/gorilla/securecookie"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "e59506cc896acb7f7bf732d4fdf5e25f7ccd8983"
+  version = "v1.1.1"
+
+[[projects]]
+  digest = "1:47397e09ed21e6c4cb434668a7ef7cfb017d1fb4e9345416b2485ca6393a7906"
+  name = "github.com/gorilla/sessions"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "f57b7e2d29c6211d16ffa52a0998272f75799030"
+  version = "v1.1.3"
 
 [[projects]]
   branch = "master"
@@ -518,10 +545,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f2166590ddbe84307eb6c5acbbb8a15105e74b6cd3854ec87d0dda7fa7f19902"
+  digest = "1:2cd113b6cf2ddeddb6f38afa1ec276319769f1614f8b9377eabba134a1dc7e8e"
   name = "golang.org/x/net"
   packages = [
     "context",
+    "context/ctxhttp",
     "http/httpguts",
     "http2",
     "http2/hpack",
@@ -531,6 +559,18 @@
   ]
   pruneopts = "NUT"
   revision = "afe8f62b1d6bbd81f31868121a50b06d8188e1f9"
+
+[[projects]]
+  branch = "master"
+  digest = "1:b470ef25faa1de1f870d804f1c42d5914a7de3fbde11e2cf8dd08050894b94b1"
+  name = "golang.org/x/oauth2"
+  packages = [
+    ".",
+    "github",
+    "internal",
+  ]
+  pruneopts = "NUT"
+  revision = "d668ce993890a79bda886613ee587a69dd5da7a6"
 
 [[projects]]
   branch = "master"
@@ -567,7 +607,7 @@
   version = "v0.3.0"
 
 [[projects]]
-  digest = "1:d905cf8d320c391e840d90ed7f545470cba5de75fc543b19b1193cca52acecbf"
+  digest = "1:c00148043bcc11d1b168d9fe77e9e29928095a8b0fd3090c13037aa7540b6403"
   name = "google.golang.org/appengine"
   packages = [
     ".",
@@ -579,6 +619,8 @@
     "internal/log",
     "internal/modules",
     "internal/remote_api",
+    "internal/urlfetch",
+    "urlfetch",
   ]
   pruneopts = "NUT"
   revision = "ae0ab99deb4dc413a2b4bd6c8bdd0eb67f1e4d06"
@@ -833,6 +875,8 @@
   analyzer-version = 1
   input-imports = [
     "github.com/bradleyfalzon/ghinstallation",
+    "github.com/dgrijalva/jwt-go",
+    "github.com/dgrijalva/jwt-go/request",
     "github.com/go-chi/chi",
     "github.com/go-chi/chi/middleware",
     "github.com/gogo/protobuf/types",
@@ -841,6 +885,7 @@
     "github.com/golang-migrate/migrate/source",
     "github.com/golang-migrate/migrate/source/go-bindata",
     "github.com/google/go-github/github",
+    "github.com/gorilla/sessions",
     "github.com/gregjones/httpcache",
     "github.com/gregjones/httpcache/diskcache",
     "github.com/grpc-ecosystem/go-grpc-middleware",
@@ -860,6 +905,8 @@
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
+    "golang.org/x/oauth2",
+    "golang.org/x/oauth2/github",
     "google.golang.org/grpc",
     "google.golang.org/grpc/codes",
     "google.golang.org/grpc/connectivity",

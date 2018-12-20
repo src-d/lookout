@@ -14,7 +14,7 @@ type HTTPServer struct {
 	mux http.Handler
 }
 
-func NewHTTPServer(static *Static) *HTTPServer {
+func NewHTTPServer(auth *Auth, static *Static) *HTTPServer {
 	corsOptions := cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "OPTIONS"},
@@ -31,6 +31,8 @@ func NewHTTPServer(static *Static) *HTTPServer {
 	r.Use(lg.RequestLogger(logrus.StandardLogger()))
 	r.Use(middleware.Recoverer)
 
+	r.Get("/login", auth.Login)
+	r.Get("/callback", auth.Callback)
 	r.Get("/static/*", static.ServeHTTP)
 	r.Get("/*", static.ServeHTTP)
 

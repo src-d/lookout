@@ -31,7 +31,7 @@ import (
 	"google.golang.org/grpc"
 	"gopkg.in/src-d/go-billy.v4/osfs"
 	gocli "gopkg.in/src-d/go-cli.v0"
-	"gopkg.in/src-d/go-log.v1"
+	log "gopkg.in/src-d/go-log.v1"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -39,10 +39,15 @@ import (
 type startFunc func() error
 type stopFunc func()
 
+type lookoutdBaseCommand struct {
+	cli.LogOptions
+	ConfigFile string `long:"config" short:"c" default:"config.yml" env:"LOOKOUT_CONFIG_FILE" description:"path to configuration file"`
+}
+
 // lookoutdCommand represents the common options for serve, watch, work
 type lookoutdCommand struct {
-	cli.LogOptions
-	ConfigFile  string `long:"config" short:"c" default:"config.yml" env:"LOOKOUT_CONFIG_FILE" description:"path to configuration file"`
+	lookoutdBaseCommand
+
 	GithubUser  string `long:"github-user" env:"GITHUB_USER" description:"user for the GitHub API"`
 	GithubToken string `long:"github-token" env:"GITHUB_TOKEN" description:"access token for the GitHub API"`
 	Provider    string `long:"provider" choice:"github" choice:"json" default:"github" env:"LOOKOUT_PROVIDER" description:"provider name: github, json"`
@@ -56,7 +61,7 @@ type lookoutdCommand struct {
 // Init implements the go-cli initializer interface. Initializes logs
 // and Config file based on the cli options
 func (c *lookoutdCommand) Init(a *gocli.App) error {
-	c.LogOptions.Init(a)
+	c.lookoutdBaseCommand.Init(a)
 
 	var err error
 	c.conf, err = c.initConfig()

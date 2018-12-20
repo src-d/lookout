@@ -6,18 +6,30 @@ analyzers:
 providers:
   github:
     comment_footer: '_If you have feedback about this comment, please, [tell us](%s)._'
+    # The minimum watch interval to discover new pull requests and push events
+    watch_min_interval: 2s
+    # Authorization with GitHub App
     # See https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
     # app_id: 1234
     # private_key: ./key.pem
     # installation_sync_interval: 1h
-    # watch_min_interval: 2s
+    #
+    # GitHub App OAuth credentials
+    # client_id:
+    # client_secret:
 
+# only for authorization with a GitHub token
 repositories:
   - url: github.com/_USER_/_REPO_TO_WATCH_
     client:
       # user:
       # token:
       # minInterval: 1m
+
+# only for authorization with GitHub App
+web:
+  # Secret key to sign JSON Web Tokens
+  signing_key:
 
 # These are the default timeout values. A value of 0 means no timeout
 timeout:
