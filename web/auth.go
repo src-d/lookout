@@ -17,6 +17,38 @@ import (
 	"golang.org/x/oauth2/github"
 )
 
+// TODO: move/rewrite it when we have other endpoints
+
+type successResp struct {
+	Data interface{} `json:"data"`
+}
+type errorResp struct {
+	Errors []error `json:"errors"`
+}
+
+func successJSON(w http.ResponseWriter, r *http.Request, data interface{}) {
+	b, err := json.Marshal(successResp{data})
+	if err != nil {
+		lg.RequestLog(r).Warn(err.Error())
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(b)
+}
+
+func errorJSON(w http.ResponseWriter, r *http.Request, code int, errors ...error) {
+	b, err := json.Marshal(errorResp{errors})
+	if err != nil {
+		lg.RequestLog(r).Warn(err.Error())
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(code)
+	w.Write(b)
+}
+
 // Auth is http service to authorize users, it uses oAuth and JWT underneath
 type Auth struct {
 	config     *oauth2.Config
@@ -87,28 +119,44 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := a.getUser(r.Context(), code)
+	oauthToken, err := a.config.Exchange(r.Context(), code)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("oauth exchange error: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	user, err := a.getUser(r.Context(), oauthToken)
 	if err != nil {
 		lg.RequestLog(r).Warn(fmt.Errorf("oauth get user error: %s", err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	token, err := a.makeToken(user)
+	token, err := a.makeToken(*oauthToken, user)
 	if err != nil {
 		lg.RequestLog(r).Warn(fmt.Errorf("make jwt token error: %s", err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	b, err := json.Marshal(callbackResp{token})
+	successJSON(w, r, callbackResp{token})
+}
+
+// Me endpoint make request to provider and returns user details
+func (a *Auth) Me(w http.ResponseWriter, r *http.Request) {
+	t, err := getOAuthToken(r.Context())
 	if err != nil {
-		lg.RequestLog(r).Warn(err.Error())
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Write(b)
+	u, err := a.getUser(r.Context(), t)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	successJSON(w, r, u)
 }
 
 // Middleware return http.Handler which validates token and set user id in context
@@ -122,8 +170,10 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		r = r.WithContext(SetUserID(r.Context(), claims.ID))
-		next.ServeHTTP(w, r)
+
+		ctx := context.WithValue(r.Context(), userIDKey, claims.ID)
+		ctx = context.WithValue(ctx, userOAuthToken, &claims.OAuthToken)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
@@ -162,12 +212,7 @@ func (a *Auth) validateState(r *http.Request, state string) error {
 }
 
 // getUser gets user from provider and return user model
-func (a *Auth) getUser(ctx context.Context, code string) (*User, error) {
-	token, err := a.config.Exchange(ctx, code)
-	if err != nil {
-		return nil, fmt.Errorf("oauth exchange error: %s", err)
-	}
-
+func (a *Auth) getUser(ctx context.Context, token *oauth2.Token) (*User, error) {
 	return a.userGetter(a.config.Client(ctx, token))
 }
 
@@ -188,13 +233,14 @@ func getGithubUser(client *http.Client) (*User, error) {
 }
 
 type jwtClaim struct {
-	ID int
+	ID         int
+	OAuthToken oauth2.Token
 	jwt.StandardClaims
 }
 
 // makeToken generates token string for a user
-func (a *Auth) makeToken(user *User) (string, error) {
-	claims := &jwtClaim{ID: user.ID}
+func (a *Auth) makeToken(ot oauth2.Token, user *User) (string, error) {
+	claims := &jwtClaim{ID: user.ID, OAuthToken: ot}
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	ss, err := t.SignedString(a.signingKey)
 	if err != nil {
@@ -220,20 +266,16 @@ var extractor = &request.PostExtractionFilter{
 	Filter: stripBearerPrefixFromTokenString,
 }
 
-type userIDContext int
+type userContext int
 
-const userIDKey userIDContext = 1
+const userIDKey userContext = 1
+const userOAuthToken userContext = 2
 
 // getUserInt gets the value stored in the Context for the key userIDKey, bool
 // is true on success
 func getUserInt(ctx context.Context) (int, bool) {
 	i, ok := ctx.Value(userIDKey).(int)
 	return i, ok
-}
-
-// SetUserID sets the user ID to the context
-func SetUserID(ctx context.Context, userID int) context.Context {
-	return context.WithValue(ctx, userIDKey, userID)
 }
 
 // GetUserID gets the user ID set by the JWT middleware in the Context
@@ -244,4 +286,13 @@ func GetUserID(ctx context.Context) (int, error) {
 	}
 
 	return id, nil
+}
+
+func getOAuthToken(ctx context.Context) (*oauth2.Token, error) {
+	t, ok := ctx.Value(userOAuthToken).(*oauth2.Token)
+	if !ok {
+		return nil, fmt.Errorf("OAuth token is not set in the context")
+	}
+
+	return t, nil
 }
