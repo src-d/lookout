@@ -22,6 +22,7 @@ type Auth struct {
 	config     *oauth2.Config
 	store      *sessions.CookieStore
 	signingKey []byte
+	userGetter func(client *http.Client) (*User, error)
 }
 
 // NewAuth create new Auth service
@@ -37,6 +38,7 @@ func NewAuth(clientID, clientSecret string, signingKey string) *Auth {
 		config:     config,
 		store:      sessions.NewCookieStore([]byte(clientSecret)),
 		signingKey: []byte(signingKey),
+		userGetter: getGithubUser,
 	}
 }
 
@@ -166,7 +168,10 @@ func (a *Auth) getUser(ctx context.Context, code string) (*User, error) {
 		return nil, fmt.Errorf("oauth exchange error: %s", err)
 	}
 
-	client := a.config.Client(ctx, token)
+	return a.userGetter(a.config.Client(ctx, token))
+}
+
+func getGithubUser(client *http.Client) (*User, error) {
 	resp, err := client.Get("https://api.github.com/user")
 	if err != nil {
 		return nil, fmt.Errorf("can't get user from github: %s", err)
