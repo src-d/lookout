@@ -1,209 +1,169 @@
-lookout
-[![Build Status](https://travis-ci.org/src-d/lookout.svg)](https://travis-ci.org/src-d/lookout)
-[![GoDoc](https://godoc.org/gopkg.in/src-d/lookout?status.svg)](https://godoc.org/github.com/src-d/lookout)
-[![Code Coverage](https://codecov.io/github/src-d/lookout/coverage.svg)](https://codecov.io/github/src-d/lookout)
-[![Go Report Card](https://goreportcard.com/badge/github.com/src-d/lookout)](https://goreportcard.com/report/github.com/src-d/lookout)
-![development](https://svg-badge.appspot.com/badge/stability/development?color=D6604A)
-=======
+<h1 align="center">
+  <br>
+  <a href="https://www.sourced.tech"><img src="./docs/assets/sourced.png" alt="source{d}" height="60px"></a>
+  <br>
+  <br>
+  source{d} Lookout
+  <br>
+</h1>
 
-A service for assisted code review, that allows running custom code Analyzers on pull requests.
+<h3 align="center">
+  Service for assisted code review, that allows running custom code Analyzers on pull requests.
+</h3>
 
-# Table of Contents
+<p align="center">
+  <a href="https://github.com/src-d/lookout/releases">
+    <img src="https://badge.fury.io/gh/src-d%2Flookout.svg"
+         alt="GitHub version">
+  </a>
+  <a href="https://travis-ci.org/src-d/lookout">
+    <img src="https://travis-ci.org/src-d/lookout.svg?branch=master"
+         alt="Build Status">
+  </a>
+  <img src="https://svg-badge.appspot.com/badge/stability/development?color=D6604A"
+         alt="Development">
+  <a href="https://codecov.io/github/src-d/lookout">
+    <img src="https://codecov.io/github/src-d/lookout/coverage.svg"
+         alt="Code Coverage">
+  </a>
+  <a href="https://goreportcard.com/report/github.com/src-d/lookout">
+    <img src="https://goreportcard.com/badge/github.com/src-d/lookout"
+         alt="Go Report Card">
+  </a>
+  <a href="https://godoc.org/github.com/src-d/lookout">
+    <img src="https://godoc.org/github.com/src-d/lookout?status.svg"
+         alt="GoDoc">
+  </a>
+</p>
+
+<p align="center"><b>
+    <a href="https://www.sourced.tech">Website</a> •
+    <a href="https://docs.sourced.tech">Documentation</a> •
+    <a href="https://blog.sourced.tech">Blog</a> •
+    <a href="http://bit.ly/src-d-community">Slack</a> •
+    <a href="https://twitter.com/sourcedtech">Twitter</a>
+</b></p>
+
+## Introduction
+
+With **source{d} Lookout**, we’re introducing a service for assisted code review, that allows running custom code analyzers on pull requests.
+
+Jump to the [Quickstart](#quickstart) section to start using it!
+
+
+**Table of Contents**
 
 <!--ts-->
-   * [Configuring lookout](#configuring-lookout)
-   * [Usage](#usage)
-      * [Running lookout with docker-compose](#running-lookout-with-docker-compose)
-      * [Running lookout from Binaries](#running-lookout-from-binaries)
-         * [Installation](#installation)
-         * [Dependencies](#dependencies)
-         * [Quickstart](#quickstart)
-      * [Running in Distributed Mode](#running-in-distributed-mode)
-   * [Available Analyzers](#available-analyzers)
-   * [SDK for Analyzer Developers](#sdk-for-analyzer-developers)
-   * [Development](#development)
-      * [Build](#build)
-      * [Code generation](#code-generation)
-      * [Testing](#testing)
-      * [Dummy Analyzer Release](#dummy-analyzer-release)
-   * [Contribute](#contribute)
-   * [Code of Conduct](#code-of-conduct)
-   * [License](#license)
+      * [Introduction](#introduction)
+         * [Motivation and Scope](#motivation-and-scope)
+         * [Current Status](#current-status)
+         * [Further Reading](#further-reading)
+      * [Quickstart](#quickstart)
+      * [Available Analyzers](#available-analyzers)
+      * [Create an Analyzer](#create-an-analyzer)
+      * [Contribute](#contribute)
+         * [Community](#community)
+      * [Code of Conduct](#code-of-conduct)
+      * [License](#license)
+
+<!-- Added by: david, at: 2018-12-12T20:00+01:00 -->
+
 <!--te-->
 
-# Configuring lookout
 
-Please refer to the [**Configuring lookout guide**](docs/configuration.md) for documentation for the `config.yml` file.
+### Motivation and Scope
 
-# Usage
+source{d} is the company driving the Machine Learning on Code (#MLonCode) movement. Doing Machine Learning on Code consists of applying ML techniques to train models that can cluster, identify and predict useful aspects of source code and software repositories.
 
-## Running lookout with docker-compose
+**source{d} Lookout** is the first step towards a full suite of Machine Learning on Code applications for AI-assisted coding, but you can also create your own analyzers without an ML approach.
 
-Using [Docker Compose](https://docs.docker.com/compose) you can use the provided [`docker-compose.yml`](docker-compose.yml) config file to start **lookout**, its dependencies (**bblfsh** and **PostgreSQL**) and the `dummy` analyzer which will add some stats to the watched pull requests.
+The benefits of using **source{d} Lookout** are:
+- Keep your code base style/patterns consistent.
+- Language agnostic assisted code reviews.
+- Identify where to focus your attention on code reviews.
+- Automatically warn about common mistakes before human code review.
 
-To do so, clone this repository or download [`docker-compose.yml`](docker-compose.yml).
+### Current Status
 
-Create the `config.yml` file in the same directory where `docker-compose.yml` is, and run:
+Currently, **source{d} Lookout** is in development process.
+
+### Further Reading
+
+This repository contains the code of **source{d} Lookout** and the project documentation, which you can also see properly rendered at [https://docs.sourced.tech/lookout](https://docs.sourced.tech/lookout).
+
+
+## Quickstart
+
+_There are different ways to run **Lookout**; we recommend to use `docker-compose` because it's straightforward, but you can [learn more about the **different ways to run Lookout**](/docs/how-to-run.md)._
+
+_Please refer to the [**Configuring source{d} Lookout** guide](/docs/configuration.md) for documentation about the `config.yml` file, and to know how to configure **Lookout** to analyze your repositories, or to use your own analyzers._
+
+Using [Docker Compose](https://docs.docker.com/compose) you can use the provided [`docker-compose.yml`](/docker-compose.yml) config file to start **Lookout**, its dependencies (**bblfsh** and **PostgreSQL**) and a `dummy` analyzer which will add some stats to the watched pull requests.
+
+To do so, clone this repository or download [`docker-compose.yml`](/docker-compose.yml).
+
+Create the `config.yml` file in the same directory where `docker-compose.yml` is (you can use [`config.yml.tpl`](/config.yml.tpl) as a template), and then run:
 
 ```bash
 $ docker-compose pull
 $ GITHUB_USER=<user> GITHUB_TOKEN=<token> docker-compose up --force-recreate
 ```
 
-If you need to restart the database to a clean state, you can do so with:
+You can stop it pressing `ctrl+c`
+
+If you want to try **source{d} Lookout** with your own analyzer instead of `dummy` one, you must run it in advance, then [set it into `config.yml`](/docs/configuration.md#analyzers) and then run:
+
+```bash
+$ docker-compose pull
+$ GITHUB_USER=<user> GITHUB_TOKEN=<token> docker-compose up --force-recreate lookout bblfsh postgres
+```
+
+If you need to restart the database to a clean state, you must drop the `postgres` container. To do so, stop running **Lookout** with `ctrl+c` and then run:
+
 ```bash
 $ docker rm lookout_postgres_1
 ```
 
-## Running lookout from Binaries
 
-### Installation
+## Available Analyzers
 
-Go to the [lookout releases page](https://github.com/src-d/lookout/releases) and download the latest `lookoutd` and `dummy` binaries from there.
+This is a list of some of the available analyzers for **source{d} Lookout**:
 
-### Dependencies
-
-**lookout** needs a running instance of:
-
-* [bblfshd](https://github.com/bblfsh/bblfshd) to parse files into [UAST](https://doc.bblf.sh/uast/uast-specification.html).
-* [PostgreSQL](https://www.postgresql.org).
-
-You will also need to configure external Analyzers, that will perform the actual processing of the pull requests. You may use the included `dummy` Analyzer for testing purposes.
-
-### Quickstart
-
-Following these steps you will be able to run separately the **lookout** dependencies, analyzers and the server itself.
-
-1. Run the [dependencies](#dependencies) manually or using docker-compose, executing:
-
-    ```bash
-    $ docker-compose up bblfsh postgres
-    ```
-
-1. Initialize the database.<br />
-    This command will work for the PostgreSQL created by docker-compose, use `-h` to see other options.
-
-    ```bash
-    $ lookoutd migrate
-    ```
-
-1. Start an analyzer before running **lookout**.<br />
-    You can use the *dummy* one as it is provided by this repository; to do so just run:
-
-    ```bash
-    $ dummy serve
-    ```
-
-1. Copy the [`config.yml.tpl`](config.yml.tpl) into `config.yml` and add the URLs of the repositories to be watched. Take a look at [configuration and GitHub authentication](docs/configuration.md) for more details about **lookout** configuration.
-
-1. Start **lookout** server<br />
-    If you want to post the analysis results on GitHub, run:
-
-    ```bash
-    $ lookoutd serve --github-token <token> --github-user <user>
-    ```
-
-    If you want to avoid posting the analysis results on GitHub, and only print them, run:
-
-    ```bash
-    $ lookoutd serve --dry-run
-    ```
-
-## Running in Distributed Mode
-
-_Note_: This is a work in progress feature.
-
-Please refer to the [**Running in Distributed Mode guide**](docs/distributed.md) for documentation on the advanced distributed deployment.
-
-# Available Analyzers
-
-This is a list of the available analyzers for lookout:
-
-| Name | Description | Maturity level |
-| -- | -- | -- |
-| [style-analyzer](https://github.com/src-d/style-analyzer) | Code style analyzer | development |
-| [gometalint](https://github.com/src-d/lookout-gometalint-analyzer) | Reports [gometalinter](https://github.com/alecthomas/gometalinter) results on pull requests | testing and demo |
-| [sonarcheck](https://github.com/src-d/lookout-sonarcheck-analyzer) | An analyzer that uses [bblfsh UAST](https://doc.bblf.sh/uast/uast-specification.html) and [sonar-checks](https://github.com/bblfsh/sonar-checks) to process pull requests | testing and demo |
-| [terraform](https://github.com/meyskens/lookout-terraform-analyzer) | An analyzer that checks if [Terraform](https://github.com/hashicorp/terraform/) files are correctly formatted | usable |
-| [flake8](https://github.com/src-d/lookout-flake8-analyzer) | Reports [flake8](http://flake8.pycqa.org/en/latest/) results on pull requests (for Python) | testing and demo |
+| Name | Description | Targeted files | Maturity level |
+| --- | --- | --- | --- |
+| [style-analyzer](https://github.com/src-d/style-analyzer) | Code style analyzer |  | development |
+| [terraform](https://github.com/src-d/lookout-terraform-analyzer) | Checks if [Terraform](https://github.com/hashicorp/terraform/) files are correctly formatted | Terraform | usable |
+| [gometalint](https://github.com/src-d/lookout-gometalint-analyzer) | Reports [gometalinter](https://github.com/alecthomas/gometalinter) results on pull requests | Go | testing and demo |
+| [sonarcheck](https://github.com/src-d/lookout-sonarcheck-analyzer) | Reports [SonarSource](https://github.com/bblfsh/sonar-checks) checks results on pull requests using [bblfsh UAST](https://doc.bblf.sh/uast/uast-specification.html) | Java | testing and demo |
+| [flake8](https://github.com/src-d/lookout-flake8-analyzer) | Reports [flake8](http://flake8.pycqa.org/en/latest/) results on pull requests | Python| testing and demo |
+| [npm-audit](https://github.com/erizocosmico/npm-audit-analyzer) | Reports issues with newly added dependencies using [npm-audit](https://docs.npmjs.com/cli/audit) | JavaScript | development |
+| [function-name analyzer](https://github.com/src-d/function-name-analyzer) | Applies a translation model from function identifiers to function names. |  | development |
 
 
-# SDK for Analyzer Developers
+## Create an Analyzer
 
-If you are developing an Analyzer, please check the [SDK documentation](sdk/README.md).
-
-# Development
-
-## Build
-
-You can separately build the binaries provided by **lookout**; the binaries will be stored under `build/bin` directory.
-
-**server**:
-```bash
-$ make build
-```
-
-**lookout-sdk**:
-```bash
-$ make -f Makefile.sdk build
-```
-
-**dummy** analyzer:
-```bash
-$ make -f Makefile.dummy build
-```
-
-## Code generation
-
-To generate go code from [kallax](https://github.com/src-d/go-kallax) models, run:
-
-```bash
-$ go generate ./...
-```
-
-To update [go-bindata](https://github.com/jteeuwen/go-bindata) with the new migration files:
-
-```bash
-$ kallax migrate --input ./store/models/ --out ./store/migrations --name <name>
-$ make dependencies
-$ make bindata
-```
-
-## Testing
-
-For unit-tests run:
-```bash
-$ make test
-```
-
-For `lookout-sdk` integration tests (`-short` will skip tests that require bblfsh):
-```bash
-$ make test-sdk
-$ make test-sdk-short
-```
-
-For `lookoutd serve` integration tests:
-```bash
-$ make test-json
-```
-
-## Dummy Analyzer Release
-
-[Dummy analyzer](./cmd/dummy) is a simple analyzer implementation example. It is part of the lookout codebase but its release cycle is managed independently from main one.
-
-To release a new version and publish the dummy analyzer container you need to create a tag with the `dummy` prefix, e.g. `dummy-v0.0.1`. Please note this doesn't require to do a GitHub release, we just need the Git tag.
-
-A normal release tag will not publish this container.
+If you are developing an Analyzer, or you want more info about how do they work, please check the [documentation about **Lookout** analyzers](/docs/analyzers.md).
 
 
-# Contribute
+## Contribute
 
-[Contributions](https://github.com/src-d/lookout/issues) are more than welcome, if you are interested please take a look at our [Contributing Guidelines](./CONTRIBUTING.md).
+[Contributions](https://github.com/src-d/lookout/issues) are more than welcome, if you are interested please take a look at our [Contributing Guidelines](/docs/CONTRIBUTING.md).
 
-# Code of Conduct
+### Community
+
+source{d} has an amazing community of developers and contributors who are interested in Code As Data and/or Machine Learning on Code. Please join us! 👋
+
+- [Slack](http://bit.ly/src-d-community)
+- [Twitter](https://twitter.com/sourcedtech)
+- [Email](mailto:hello@sourced.tech)
+
+
+## Code of Conduct
 
 All activities under source{d} projects are governed by the
 [source{d} code of conduct](https://github.com/src-d/guide/blob/master/.github/CODE_OF_CONDUCT.md).
 
-# License
-Affero GPL v3.0, see [LICENSE](LICENSE).
+
+## License
+
+Affero GPL v3.0 or later, see [LICENSE](LICENSE.md).

@@ -1,7 +1,9 @@
 analyzers:
   - name: Dummy
     addr: ipv4://localhost:9930
+    disabled: false
     # feedback: url to link in the comment_footer. For example, to open a new GitHub issue
+    # settings: map with custom info that will be sent to the analyzer "as is"
 
 providers:
   github:
@@ -33,13 +35,13 @@ web:
 
 # These are the default timeout values. A value of 0 means no timeout
 timeout:
-  # Timeout for an analyzer response to a NotifyReviewEvent
+  # Timeout for an analyzer to reply a NotifyReviewEvent
   analyzer_review: 10m
-  # Timeout for an analyzer response to a NotifyPushEvent
+  # Timeout for an analyzer to reply a NotifyPushEvent
   analyzer_push: 60m
-  # Timeout http requests to the GitHub API
+  # Timeout for an HTTP requests to the GitHub API
   github_request: 1m
   # Timeout for Git fetch actions
   git_fetch: 20m
-  # Timeout for parse requests to Bblfsh
+  # Timeout for Bblfsh to reply a Parse request
   bblfsh_parse: 2m
