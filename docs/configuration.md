@@ -4,7 +4,7 @@
 
 The main structure of `config.yml` is:
 
-```yml
+```yaml
 providers:
     github:
         # configuration of GitHub provider
@@ -32,7 +32,7 @@ For more fine grained configuration, you should pay attention to the following d
 
 The `providers.github` key configures how **Lookout** will connect with GitHub.
 
-```yml
+```yaml
 providers:
   github:
     comment_footer: "_If you have feedback about this comment, please, [tell us](%s)._"
@@ -80,7 +80,7 @@ You need to create a GitHub App following the [documentation about creating a Gi
 
 Download a private key following the [documentation about authenticating with GitHub Apps](https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/) and set the following fields in your `config.yml` file:
 
-```yml
+```yaml
 providers:
   github:
     app_id: 1234
@@ -103,7 +103,7 @@ The list of repositories to be watched by **Lookout** is defined by:
 
 The user and token to be used for the Github authentication can be defined per repository; if you do so, it will override the globally passed user and token.
 
-```yml
+```yaml
 repositories:
   - url: github.com/<user>/<repo1>
   - url: github.com/<user>/<repo2>
@@ -117,7 +117,7 @@ repositories:
 
 Each analyzer to be requested by **Lookout** should be defined under `analyzers` key.
 
-```yml
+```yaml
 analyzers:
   - name: Example name # required, unique name of the analyzer
     addr: ipv4://localhost:9930 # required, gRPC address
@@ -148,7 +148,7 @@ Example:
 It's possible to customize the Analyzers configuration for each repository. To do that you only need to place a `.lookout.yml` file at the root directory of that repository.
 
 Example:
-```yml
+```yaml
 analyzers:
   - name: Example name
     disabled: true
