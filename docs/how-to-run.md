@@ -31,13 +31,13 @@ The general steps to run source{d} Lookout in distributed mode are the same as s
 
 You can run them manually or with `docker-compose`.
 
-```bash
+```shell
 $ docker-compose up -d --force-recreate bblfsh postgres
 ```
 
 In case you want to run it in a distributed way, you will also need RabbitMQ, so you can run instead:
 
-```bash
+```shell
 $ docker-compose -f docker-compose.yaml -f docker-compose-rabbitmq.yml up -d --force-recreate bblfsh postgres rabbitmq
 ```
 
@@ -49,9 +49,9 @@ You will need to run the Analyzers to be used by **source{d} Lookout**.
 
 You can run one of our [example analyzers](analyzers-examples.md), any of the already [available analyzers](../README.md#available-analyzers) or the one that you're developing.
 
-For testing purposes, you may want to use a *dummy* analyzer. You can do so downloading it from [**Lookout** releases page](https://github.com/src-d/lookout/releases) and running:
+For testing purposes, you may want to use a [`dummy` analyzer](analyzers-examples.md#dummy-analyzer). You can download it from [**source{d} Lookout** releases page](https://github.com/src-d/lookout/releases) and then run it:
 
-```bash
+```shell
 $ dummy serve
 ```
 
@@ -75,7 +75,7 @@ Download the latest `lookoutd` binary from [**source{d} Lookout** releases page]
 
 _For non-default configuration, please take a look into [**`lookoutd` Command Options**](#options)_
 
-```bash
+```shell
 $ lookoutd migrate
 ```
 
@@ -85,7 +85,7 @@ _For non-default configuration, please take a look into [**`lookoutd` Command Op
 
 For a single server watching GitHub and processing events, just run:
 
-```bash
+```shell
 $ lookoutd serve [--dry-run] [--github-token=<token> --github-user=<user>]
 ```
 
@@ -97,13 +97,13 @@ In order to run it in a distributed mode, the _watcher_ and the _workers_ must b
 
 Run the _watcher_:
 
-```bash
+```shell
 $ lookoutd watch [--github-token=<token> --github-user=<user>]
 ```
 
 and as many _workers_ you need:
 
-```bash
+```shell
 $ lookoutd work [--dry-run] [--github-token=<token> --github-user=<user>]
 ```
 
