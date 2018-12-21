@@ -2,7 +2,7 @@
 
 * [Architecture](architecture.md)
 * [Configuration](configuration.md)
-* [How to Run Lookout](how-to-run.md)
+* [How to Run source{d} Lookout](how-to-run.md)
 
 ## Writing an Analyzer
 

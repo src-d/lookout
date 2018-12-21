@@ -2,13 +2,13 @@
 
 _For the **lookout-sdk** library to develop new analyzers go to [**lookout-sdk**](https://github.com/src-d/lookout-sdk) repository._
 
-`lookout-sdk` binary is a simplified version of the **Lookout** server that works with a local git repository and does not need access to Github.
+`lookout-sdk` binary is a simplified version of the `lookoutd` server that works with a local git repository and does not need access to Github.
 
-You can think about `lookout-sdk` as a _curl-like_ tool to call an analyzer gRPC endpoint with a `ReviewEvent` or a `PushEvent`, from a local git repository, and send it to an analyzer without accessing GitHub at all. For convenience, `lookout-sdk` also exposes a **Lookout DataService** backed by the same git repository.
+You can think about `lookout-sdk` as a _curl-like_ tool to call an analyzer gRPC endpoint with a `ReviewEvent` or a `PushEvent`, from a local git repository, and send it to an analyzer without accessing GitHub at all. For convenience, `lookout-sdk` also exposes a **source{d} Lookout DataService** backed by the same git repository.
 
 You can download the latest `lookout-sdk` from the [src-d/lookout releases page](https://github.com/src-d/lookout/releases).
 
-This is the sequence diagram of the `ReviewEvent` made by `lookout-sdk review`. You can compare it with a regular **Lookout** installation at the [**source{d} Lookout architecture** documentation](architecture.md).
+This is the sequence diagram of the `ReviewEvent` made by `lookout-sdk review`. You can compare it with a regular **source{d} Lookout** installation at the [Architecture documentation](architecture.md).
 
 ![sequence diagram](assets/lookout-sdk-seq-diagram.png)
 
@@ -30,12 +30,12 @@ This will create the [bblfshd](https://github.com/bblfsh/bblfshd) container list
 
 ## Usage
 
-To perform a `NotifyReviewEvent` call to an analyzer and serve the **Lookout DataService** endpoint, run:
+To perform a `NotifyReviewEvent` call to an analyzer and serve the **source{d} Lookout DataService** endpoint, run:
 ```shell
 $ lookout-sdk review
 ```
 
-To perform a `NotifyPushEvent` call to an analyzer and serve the **Lookout DataService** endpoint, run:
+To perform a `NotifyPushEvent` call to an analyzer and serve the **source{d} Lookout DataService** endpoint, run:
 ```shell
 $ lookout-sdk push
 ```
@@ -75,11 +75,11 @@ $ lookout-sdk review \
 
 Doing so, `lookout-sdk` will:
 
-1. start a gRPC **Lookout DataService** endpoint backed by the repository stored at `/somewhere/repo/path`;
+1. start a gRPC **source{d} Lookout DataService** endpoint backed by the repository stored at `/somewhere/repo/path`;
 1. create a `ReviewEvent` with the changes between `branch-b` and `branch-a`;
 1. send a gRPC `NotifyReviewEvent` call to your analyzer listening on `ipv4://localhost:9999` with the created `ReviewEvent`;
-1. wait till the analyzer sends a response with the comments; the analyzer will be able to request file contents, file language or UASTs to the gRPC **Lookout DataService** endpoint exposed by `lookout-sdk`;
-1. once the analyzer sends the response, `lookout-sdk` will put it into the `STDOUT`, stop the **Lookout DataService** and exit.
+1. wait till the analyzer sends a response with the comments; the analyzer will be able to request file contents, file language or UASTs to the gRPC **source{d} Lookout DataService** endpoint exposed by `lookout-sdk`;
+1. once the analyzer sends the response, `lookout-sdk` will put it into the `STDOUT`, stop the **source{d} Lookout DataService** and exit.
 
 _For more options to run `lookout-sdk`, take a look into [**lookout-sdk Command Options**](#options)_
 

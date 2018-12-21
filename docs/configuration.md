@@ -1,6 +1,6 @@
-# Configuring Lookout
+# Configuring source{d} Lookout
 
-**Lookout** is configured with the `config.yml` file, you can use the template [`config.yml.tpl`](/config.yml.tpl) to create your own. Use the `lookoutd` option `--config` to set the path to it, or use the default location at `./config.yml`.
+**source{d} Lookout** is configured with the `config.yml` file, you can use the template [`config.yml.tpl`](/config.yml.tpl) to create your own. Use the `lookoutd` option `--config` to set the path to it, or use the default location at `./config.yml`.
 
 The main structure of `config.yml` is:
 
@@ -21,7 +21,7 @@ timeout:
 The most important things you need to configure for a local installation, are:
 
 1. [Repositories](#repositories): add the URLs of the repositories to be watched.
-1. [Analyzers](#analyzers): add the gRPC addresses of the analyzers to be used by Lookout.
+1. [Analyzers](#analyzers): add the gRPC addresses of the analyzers to be used by **source{d} Lookout**.
 
 For more fine grained configuration, you should pay attention to the following documentation.
 
@@ -30,7 +30,7 @@ For more fine grained configuration, you should pay attention to the following d
 
 ## Github Provider
 
-The `providers.github` key configures how **Lookout** will connect with GitHub.
+The `providers.github` key configures how **source{d} Lookout** will connect with GitHub.
 
 ```yaml
 providers:
@@ -47,7 +47,7 @@ providers:
 <a id=basic-auth></a>
 ### Authentication with GitHub
 
-**Lookout** needs to authenticate with GitHub. There are two ways to authenticate with GitHub:
+**source{d} Lookout** needs to authenticate with GitHub. There are two ways to authenticate with GitHub:
 
 - Using GitHub personal access tokens.
 - Authenticating as a GitHub App.
@@ -67,7 +67,7 @@ The credentials can be passed to `lookoutd`:
 <a id=github-app></a>
 #### Authentication as a GitHub App
 
-For a production environment, you can use **Lookout** as a [GitHub App](https://developer.github.com/apps/about-apps/).
+For a production environment, you can use **source{d} Lookout** as a [GitHub App](https://developer.github.com/apps/about-apps/).
 
 To do so, you must also unset any environment variable or option for the GitHub username and token authentication.
 
@@ -97,7 +97,7 @@ The minimum watch interval to discover new pull requests and push events is defi
 
 ## Repositories
 
-The list of repositories to be watched by **Lookout** is defined by:
+The list of repositories to be watched by **source{d} Lookout** is defined by:
 - the `repositories` field at `config.yml`, or
 - the repositories where the GitHub App is installed if you [authenticated as a GitHub App](#github-app). In that case, the `repositories` field in `config.yml` will be ignored.
 
@@ -115,7 +115,7 @@ repositories:
 
 ## Analyzers
 
-Each analyzer to be requested by **Lookout** should be defined under `analyzers` key.
+Each analyzer to be requested by **source{d} Lookout** should be defined under `analyzers` key.
 
 ```yaml
 analyzers:
@@ -132,7 +132,7 @@ analyzers:
 <a id=custom-footer></a>
 ### Add a Custom Message to the Posted Comments
 
-You can configure **Lookout** to add a custom message to every comment that each analyzer returns. This custom message will be created following the rule:
+You can configure **source{d} Lookout** to add a custom message to every comment that each analyzer returns. This custom message will be created following the rule:
 ```
 sprinf(providers.github.comment_footer, feedback)
 ```
@@ -157,11 +157,11 @@ analyzers:
         mode: confident
 ```
 
-The analyzer to configure must be identified with the same `name` in the `.lookout.yml` config file as in **Lookout** server configuration, otherwise, it will be ignored.
+The analyzer to configure must be identified with the same `name` in the `.lookout.yml` config file as in **source{d} Lookout** server configuration, otherwise, it will be ignored.
 
-The repository can disable any analyzer, but it cannot define new analyzers nor enable those that are disabled in the **Lookout** server.
+The repository can disable any analyzer, but it cannot define new analyzers nor enable those that are disabled in the **source{d} Lookout** server.
 
-The `settings` for each analyzer in the `.lookout.yml` config file will be merged with the **Lookout** configuration following these rules:
+The `settings` for each analyzer in the `.lookout.yml` config file will be merged with the **source{d} Lookout** configuration following these rules:
 
 - Objects are deep merged
 - Arrays are replaced
@@ -169,7 +169,7 @@ The `settings` for each analyzer in the `.lookout.yml` config file will be merge
 
 ## Timeouts
 
-The timeouts used by **Lookout** for some operations can be modified or disabled from the `config.yml` file.
+The timeouts used by `lookoutd` for some operations can be modified or disabled from the `config.yml` file.
 
 If any timeout is set to `0`, there will be no timeout for that process.
 

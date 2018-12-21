@@ -47,7 +47,7 @@ $ make toc
 
 ## Build
 
-You can separately build the binaries provided by **Lookout**; the binaries will be stored under `build/bin` directory.
+You can separately build the binaries provided by **source{d} Lookout**; the binaries will be stored under `build/bin` directory.
 
 ### Server
 

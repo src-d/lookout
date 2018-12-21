@@ -1,19 +1,19 @@
-# Running Lookout
+# Running source{d} Lookout
 
 The recommended way to locally try **source{d} Lookout** is using `docker-compose` as described in [quickstart documentation](../README.md#quickstart).
 
-In some situations, you might want to run all its dependencies and components separately, or you may even want to [run it in a distributed mode](#running-lookout-in-distributed-mode). Both ways to run **Lookout** would require to follow these general steps:
+In some situations, you might want to run all its dependencies and components separately, or you may even want to [run it in a distributed mode](#running-lookout-in-distributed-mode). Both ways to run **source{d} Lookout** would require to follow these general steps:
 
-1. [Run Lookout dependencies](#dependencies).
+1. [Run source{d} Lookout dependencies](#dependencies).
 1. [Run the desired analyzers](#run-the-analyzers).
-1. [Configure Lookout](#configure-lookout).
-1. [Run Lookout](#run-lookout).
+1. [Configure source{d} Lookout](#configure-lookout).
+1. [Run source{d} Lookout](#run-lookout).
 
 In other situations you may just want to test an analyzer locally without accessing GitHub at all. For those situations, you might want to read the [`lookout-sdk` binary documentation](lookout-sdk.md).
 
-## Running Lookout in Distributed Mode
+## Running source{d} Lookout in Distributed Mode
 
-Lookout can be also run in a distributed fashion using a [RabbitMQ](https://www.rabbitmq.com/) queue to coordinate a _watcher_ and several _workers_.
+**source{d} Lookout** can be also run in a distributed fashion using a [RabbitMQ](https://www.rabbitmq.com/) queue to coordinate a _watcher_ and several _workers_.
 
 - The _watcher_ process monitors GitHub pull requests and enqueues jobs for new events.
 - The running _workers_ dequeue jobs as they become available, call the registered analyzers, and post the results as comments.
@@ -23,11 +23,11 @@ The general steps to run source{d} Lookout in distributed mode are the same as s
 
 # Dependencies
 
-**Lookout** needs a running instance of:
+**source{d} Lookout** needs a running instance of:
 
 * [bblfshd](https://github.com/bblfsh/bblfshd) to parse files into [UAST](https://doc.bblf.sh/uast/uast-specification.html).
 * [PostgreSQL](https://www.postgresql.org) for persistence.
-* (**optional**) [RabbitMQ](https://www.rabbitmq.com) to coordinate a _watcher_ and several _workers_ (when running **Lookout** in a distributed way).
+* (**optional**) [RabbitMQ](https://www.rabbitmq.com) to coordinate a _watcher_ and several _workers_ (when running **source{d} Lookout** in a distributed way).
 
 You can run them manually or with `docker-compose`.
 
@@ -45,7 +45,7 @@ To monitor RabbitMQ, go to http://localhost:8081, and access it with `guest/gues
 
 # Run the Analyzers
 
-You will need to run the Analyzers to be used by **Lookout**.
+You will need to run the Analyzers to be used by **source{d} Lookout**.
 
 You can run one of our [example analyzers](analyzers-examples.md), any of the already [available analyzers](../README.md#available-analyzers) or the one that you're developing.
 
@@ -55,11 +55,11 @@ For testing purposes, you may want to use a *dummy* analyzer. You can do so down
 $ dummy serve
 ```
 
-# Configure Lookout
+# Configure source{d} Lookout
 
 Copy the [`config.yml.tpl`](/config.yml.tpl) into `config.yml` and modify it according to your needs.
 
-Take a look at [configuration and GitHub authentication](configuration.md) for more details about **Lookout** configuration.
+Take a look at [configuration and GitHub authentication](configuration.md) for more details about **source{d} Lookout** configuration.
 
 At least you should:
 
@@ -67,9 +67,9 @@ At least you should:
 1. Add the URLs of the repositories to be watched or authenticate as a GitHub App.
 
 
-# Run Lookout
+# Run source{d} Lookout
 
-Download the latest `lookoutd` binary from [**Lookout** releases page](https://github.com/src-d/lookout/releases).
+Download the latest `lookoutd` binary from [**source{d} Lookout** releases page](https://github.com/src-d/lookout/releases).
 
 ## Initialize the Database
 
@@ -79,7 +79,7 @@ _For non-default configuration, please take a look into [**`lookoutd` Command Op
 $ lookoutd migrate
 ```
 
-## Start Lookout
+## Start source{d} Lookout
 
 _For non-default configuration, please take a look into [**`lookoutd` Command Options**](#options)_
 
@@ -149,7 +149,7 @@ You can adjust the number of events that each _worker_ or the single _server_ wi
 
 ## Dependencies URIs
 
-If you started all the **Lookout** dependencies using `docker-compose`, then `lookoutd` binary will be able to find them with its default values; otherwise, you should pass some extra values when running the `lookoutd` binary:
+If you started all the **source{d} Lookout** dependencies using `docker-compose`, then `lookoutd` binary will be able to find them with its default values; otherwise, you should pass some extra values when running the `lookoutd` binary:
 
 | subcommands | Env var | Option | Description | Default |
 | --- | --- | --- | --- | --- |

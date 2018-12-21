@@ -91,11 +91,11 @@ This repository contains the code of **source{d} Lookout** and the project docum
 
 ## Quickstart
 
-_There are different ways to run **Lookout**; we recommend to use `docker-compose` because it's straightforward, but you can [learn more about the **different ways to run Lookout**](/docs/how-to-run.md)._
+_There are different ways to run **source{d} Lookout**; we recommend to use `docker-compose` because it's straightforward, but you can [learn more about the **different ways to run source{d} Lookout**](/docs/how-to-run.md)._
 
-_Please refer to the [**Configuring source{d} Lookout** guide](/docs/configuration.md) for documentation about the `config.yml` file, and to know how to configure **Lookout** to analyze your repositories, or to use your own analyzers._
+_Please refer to the [**Configuring source{d} Lookout** guide](/docs/configuration.md) for documentation about the `config.yml` file, and to know how to configure **source{d} Lookout** to analyze your repositories, or to use your own analyzers._
 
-Using [Docker Compose](https://docs.docker.com/compose) you can use the provided [`docker-compose.yml`](/docker-compose.yml) config file to start **Lookout**, its dependencies (**bblfsh** and **PostgreSQL**) and a `dummy` analyzer which will add some stats to the watched pull requests.
+Using [Docker Compose](https://docs.docker.com/compose) you can use the provided [`docker-compose.yml`](/docker-compose.yml) config file to start **source{d} Lookout**, its dependencies (**bblfsh** and **PostgreSQL**) and a `dummy` analyzer which will add some stats to the watched pull requests.
 
 To do so, clone this repository or download [`docker-compose.yml`](/docker-compose.yml).
 
@@ -115,7 +115,7 @@ $ docker-compose pull
 $ GITHUB_USER=<user> GITHUB_TOKEN=<token> docker-compose up --force-recreate lookout bblfsh postgres
 ```
 
-If you need to restart the database to a clean state, you must drop the `postgres` container. To do so, stop running **Lookout** with `ctrl+c` and then run:
+If you need to restart the database to a clean state, you must drop the `postgres` container. To do so, stop running **source{d} Lookout** with `ctrl+c` and then run:
 
 ```bash
 $ docker rm lookout_postgres_1
@@ -139,7 +139,7 @@ This is a list of some of the available analyzers for **source{d} Lookout**:
 
 ## Create an Analyzer
 
-If you are developing an Analyzer, or you want more info about how do they work, please check the [documentation about **Lookout** analyzers](/docs/analyzers.md).
+If you are developing an Analyzer, or you want more info about how do they work, please check the [documentation about **source{d} Lookout** analyzers](/docs/analyzers.md).
 
 
 ## Contribute
