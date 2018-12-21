@@ -54,20 +54,17 @@ Jump to the [Quickstart](#quickstart) section to start using it!
 **Table of Contents**
 
 <!--ts-->
-      * [Introduction](#introduction)
-         * [Motivation and Scope](#motivation-and-scope)
-         * [Current Status](#current-status)
-         * [Further Reading](#further-reading)
-      * [Quickstart](#quickstart)
-      * [Available Analyzers](#available-analyzers)
-      * [Create an Analyzer](#create-an-analyzer)
-      * [Contribute](#contribute)
-         * [Community](#community)
-      * [Code of Conduct](#code-of-conduct)
-      * [License](#license)
-
-<!-- Added by: david, at: 2018-12-12T20:00+01:00 -->
-
+* [Introduction](#introduction)
+    * [Motivation and Scope](#motivation-and-scope)
+    * [Current Status](#current-status)
+    * [Further Reading](#further-reading)
+* [Quickstart](#quickstart)
+* [Available Analyzers](#available-analyzers)
+* [Create an Analyzer](#create-an-analyzer)
+* [Contribute](#contribute)
+    * [Community](#community)
+* [Code of Conduct](#code-of-conduct)
+* [License](#license)
 <!--te-->
 
 
