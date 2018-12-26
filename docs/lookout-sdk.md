@@ -40,6 +40,8 @@ To perform a `NotifyPushEvent` call to an analyzer and serve the **source{d} Loo
 $ lookout-sdk push
 ```
 
+`lookout-sdk` will exit with a non `0` exit code if the gRPC call to the analyzer ends with an error or it could not be performed.
+
 In the next section, you will find a more detailed example considering the most usual options for running `lookout-sdk` against any analyzer from two given revisions.
 
 
