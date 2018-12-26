@@ -1,107 +1,116 @@
-import React, { Component, ReactElement } from 'react';
-import Token from './services/token';
-import * as api from './api';
+import React, { Component } from 'react';
+import {
+  BrowserRouter as Router,
+  Route,
+  Redirect,
+  Link,
+  RouteProps,
+  RouteComponentProps
+} from 'react-router-dom';
+import { User } from './services/auth';
+import Auth from './services/auth';
+import Loader from './components/Loader';
+import Callback from './Callback';
 import './App.css';
-
-function Loader() {
-  return <div>loading...</div>;
-}
-
-interface ErrorProps {
-  errors: string[];
-}
-
-function Errors({ errors }: ErrorProps) {
-  return <div>{errors.join(',')}</div>;
-}
 
 function Login() {
   return (
     <header className="App-header">
-      <a className="App-link" href={api.loginUrl}>
+      <a className="App-link" href={Auth.loginUrl}>
         Login using Github
       </a>
     </header>
   );
 }
 
-interface HelloProps {
-  name: string;
+function Logout() {
+  Auth.logout();
+
+  return <Redirect to="/" />;
 }
 
-function Hello({ name }: HelloProps) {
-  return <header className="App-header">Hello {name}!</header>;
+interface IndexProps {
+  user: User;
 }
 
-interface AppState {
-  // we need undefined state for initial render
-  loggedIn: boolean | undefined;
-  name: string;
-  errors: string[];
+function Index({ user }: IndexProps) {
+  return (
+    <header className="App-header">
+      Hello {user.name}! <Link to="/logout">Logout</Link>
+    </header>
+  );
 }
 
-class App extends Component<{}, AppState> {
-  constructor(props: {}) {
-    super(props);
+interface PrivateRouteState {
+  isAuthenticated: boolean | undefined;
+}
 
-    this.fetchState = this.fetchState.bind(this);
+interface PrivateRouteComponentProps<P> extends RouteComponentProps {
+  user: User | null;
+}
 
-    this.state = {
-      loggedIn: undefined,
-      name: '',
-      errors: []
-    };
-  }
+interface PrivateRouteProps extends RouteProps {
+  component:
+    | React.ComponentType<PrivateRouteComponentProps<any>>
+    | React.ComponentType<any>;
+}
 
-  componentDidMount() {
-    // TODO: add router and use it instead of this "if"
-    if (window.location.pathname === '/callback') {
-      api
-        .callback(window.location.search)
-        .then(resp => {
-          Token.set(resp.token);
-          window.history.replaceState({}, '', '/');
-        })
-        .then(this.fetchState)
-        .catch(errors => this.setState({ errors }));
-      return;
+function PrivateRoute({ component, ...rest }: PrivateRouteProps) {
+  class CheckAuthComponent extends Component<
+    RouteComponentProps,
+    PrivateRouteState
+  > {
+    constructor(props: RouteComponentProps) {
+      super(props);
+
+      this.state = { isAuthenticated: undefined };
     }
 
-    if (!Token.exists()) {
-      this.setState({ loggedIn: false });
-      return;
+    componentDidMount() {
+      Auth.isAuthenticated
+        .then(ok => this.setState({ isAuthenticated: ok }))
+        .catch(() => this.setState({ isAuthenticated: false }));
     }
 
-    // ignore error here, just ask user to re-login
-    // it would cover all cases like expired token, changes on backend and so on
-    this.fetchState().catch(err => console.error(err));
-  }
+    render() {
+      if (!component) {
+        return null;
+      }
 
-  fetchState() {
-    return api
-      .me()
-      .then(resp => this.setState({ loggedIn: true, name: resp.name }))
-      .catch(err => {
-        this.setState({ loggedIn: false });
+      if (this.state.isAuthenticated === true) {
+        const Component = component;
+        return <Component {...this.props} user={Auth.user} />;
+      }
 
-        throw err;
-      });
-  }
+      if (this.state.isAuthenticated === false) {
+        return (
+          <Redirect
+            to={{
+              pathname: '/login',
+              state: { from: this.props.location }
+            }}
+          />
+        );
+      }
 
-  render() {
-    const { loggedIn, name, errors } = this.state;
-
-    let content: ReactElement<any>;
-    if (errors.length) {
-      content = <Errors errors={errors} />;
-    } else if (typeof loggedIn === 'undefined') {
-      content = <Loader />;
-    } else {
-      content = loggedIn ? <Hello name={name} /> : <Login />;
+      return <Loader />;
     }
-
-    return <div className="App">{content}</div>;
   }
+
+  return <Route {...rest} component={CheckAuthComponent} />;
 }
 
-export default App;
+function AppRouter() {
+  return (
+    <Router>
+      <div className="App">
+        <PrivateRoute path="/" exact component={Index} />
+        <Route path="/login" component={Login} />
+        <Route path="/logout" component={Logout} />
+        <Route path="/callback" component={Callback} />
+      </div>
+    </Router>
+  );
+}
+
+export default AppRouter;

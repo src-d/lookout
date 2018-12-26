@@ -1,5 +1,5 @@
 import lookoutOptions from './services/options';
-import TokenService from './services/token';
+import Auth from './services/auth';
 
 export const serverUrl = lookoutOptions.SERVER_URL || 'http://127.0.0.1:8080';
 
@@ -19,11 +19,10 @@ export function apiCall<T>(
   url: string,
   options: ApiCallOptions = {}
 ): Promise<T> {
-  const token = TokenService.get();
   const fetchOptions: RequestInit = {
     credentials: 'include',
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${Auth.token}`,
       'Content-Type': 'application/json'
     },
     body: null
@@ -37,7 +36,7 @@ export function apiCall<T>(
     if (!response.ok) {
       // when server return Unauthorized we need to remove token
       if (response.status === 401) {
-        TokenService.remove();
+        Auth.logout();
       }
 
       return response

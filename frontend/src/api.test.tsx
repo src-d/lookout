@@ -1,5 +1,5 @@
 import { GlobalWithFetchMock } from 'jest-fetch-mock';
-import Token from './services/token';
+import Auth from './services/auth';
 import { apiCall } from './api';
 
 // can be moved to setupFiles later if needed
@@ -13,7 +13,7 @@ describe('api', () => {
   });
 
   it('apiCall ok', () => {
-    Token.set('token');
+    window.localStorage.setItem('token', 'token');
     fetchMock.mockResponseOnce(JSON.stringify({ data: 'result' }));
 
     return apiCall('/test').then(resp => {
@@ -56,12 +56,12 @@ describe('api', () => {
   });
 
   it('apiCall removes token on unauthorized response', () => {
-    Token.set('token');
+    window.localStorage.setItem('token', 'token');
     fetchMock.mockResponseOnce('', { status: 401 });
 
     return apiCall('/test').catch(err => {
       expect(err).toEqual(['Unauthorized']);
-      expect(Token.get()).toBe(null);
+      expect(Auth.token).toBe(null);
     });
   });
 });
