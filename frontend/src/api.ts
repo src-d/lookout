@@ -15,7 +15,10 @@ interface ServerError {
   description: string;
 }
 
-function apiCall<T>(url: string, options: ApiCallOptions = {}): Promise<T> {
+export function apiCall<T>(
+  url: string,
+  options: ApiCallOptions = {}
+): Promise<T> {
   const token = TokenService.get();
   const fetchOptions: RequestInit = {
     credentials: 'include',
