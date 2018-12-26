@@ -18,6 +18,7 @@ func NewHTTPServer(auth *Auth, static *Static) *HTTPServer {
 	corsOptions := cors.Options{
 		// TODO: make it customizable
 		// we can't pass "*" because it's incompatible with "credentials: include" request
+		// http://127.0.0.1:3000 is the default url of create-react-app dev server
 		AllowedOrigins:   []string{"http://127.0.0.1:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "OPTIONS"},
 		AllowedHeaders:   []string{"Location", "Authorization", "Content-Type"},
