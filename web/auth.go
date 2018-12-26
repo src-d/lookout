@@ -12,7 +12,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
 	"github.com/gorilla/sessions"
-	"github.com/pressly/lg"
+	"github.com/src-d/lookout/util/ctxlog"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
 )
@@ -29,7 +29,7 @@ type errorResp struct {
 func successJSON(w http.ResponseWriter, r *http.Request, data interface{}) {
 	b, err := json.Marshal(successResp{data})
 	if err != nil {
-		lg.RequestLog(r).Warn(err.Error())
+		ctxlog.Get(r.Context()).Warningf(err.Error())
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -40,7 +40,7 @@ func successJSON(w http.ResponseWriter, r *http.Request, data interface{}) {
 func errorJSON(w http.ResponseWriter, r *http.Request, code int, errors ...error) {
 	b, err := json.Marshal(errorResp{errors})
 	if err != nil {
-		lg.RequestLog(r).Warn(err.Error())
+		ctxlog.Get(r.Context()).Warningf(err.Error())
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -86,7 +86,7 @@ type User struct {
 func (a *Auth) Login(w http.ResponseWriter, r *http.Request) {
 	url, err := a.makeAuthURL(w, r)
 	if err != nil {
-		lg.RequestLog(r).Warn(err.Error())
+		ctxlog.Get(r.Context()).Warningf(err.Error())
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -103,7 +103,7 @@ type callbackResp struct {
 func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
 	if err := a.validateState(r, state); err != nil {
-		lg.RequestLog(r).Warn(err.Error())
+		ctxlog.Get(r.Context()).Warningf(err.Error())
 		http.Error(w, "The state passed by github is incorrect or expired", http.StatusPreconditionFailed)
 		return
 	}
@@ -127,14 +127,14 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 
 	user, err := a.getUser(r.Context(), oauthToken)
 	if err != nil {
-		lg.RequestLog(r).Warn(fmt.Errorf("oauth get user error: %s", err))
+		ctxlog.Get(r.Context()).Warningf("oauth get user error: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	token, err := a.makeToken(*oauthToken, user)
 	if err != nil {
-		lg.RequestLog(r).Warn(fmt.Errorf("make jwt token error: %s", err))
+		ctxlog.Get(r.Context()).Warningf("make jwt token error: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
