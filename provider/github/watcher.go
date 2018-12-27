@@ -10,8 +10,8 @@ import (
 	"github.com/src-d/lookout/util/ctxlog"
 
 	"github.com/google/go-github/github"
-	"gopkg.in/src-d/go-errors.v1"
-	"gopkg.in/src-d/go-log.v1"
+	errors "gopkg.in/src-d/go-errors.v1"
+	log "gopkg.in/src-d/go-log.v1"
 )
 
 const Provider = "github"
@@ -189,7 +189,7 @@ func (w *Watcher) processRepoPRs(
 		err := fmt.Errorf("%s", err)
 
 		newErrThrottlerLogger(ctxlog.Get(ctx), w.lastErrPR[repo]).With(log.Fields{
-			"repository": repo.FullName, "response": resp,
+			"repository": repo.FullName,
 		}).Errorf(err, "request for PR list failed")
 
 		return c.watchMinInterval, nil
@@ -220,7 +220,7 @@ func (w *Watcher) processRepoEvents(
 		err := fmt.Errorf("%s", err)
 
 		newErrThrottlerLogger(ctxlog.Get(ctx), w.lastErrEvent[repo]).With(log.Fields{
-			"repository": repo.FullName, "response": resp,
+			"repository": repo.FullName,
 		}).Errorf(err, "request for events list failed")
 
 		return c.PollInterval(eventsCategory), nil
