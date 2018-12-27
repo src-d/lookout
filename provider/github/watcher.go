@@ -40,14 +40,17 @@ var (
 type Watcher struct {
 	pool *ClientPool
 	// maps clients to functions that stop watching the client
-	stopFuncs map[*Client]func()
+	stopFuncs               map[*Client]func()
+	lastErrPR, lastErrEvent map[*lookout.RepositoryInfo]*errThrottlerState
 }
 
 // NewWatcher returns a new
 func NewWatcher(pool *ClientPool) (*Watcher, error) {
 	return &Watcher{
-		pool:      pool,
-		stopFuncs: make(map[*Client]func()),
+		pool:         pool,
+		stopFuncs:    make(map[*Client]func()),
+		lastErrPR:    make(map[*lookout.RepositoryInfo]*errThrottlerState),
+		lastErrEvent: make(map[*lookout.RepositoryInfo]*errThrottlerState),
 	}, nil
 }
 
@@ -177,9 +180,18 @@ func (w *Watcher) processRepoPRs(
 ) (time.Duration, error) {
 	resp, prs, err := w.doPRListRequest(ctx, c, repo.Owner, repo.Name)
 	if ErrGitHubAPI.Is(err) {
-		ctxlog.Get(ctx).With(log.Fields{
+		if w.lastErrPR[repo] == nil {
+			w.lastErrPR[repo] = &errThrottlerState{}
+		}
+
+		// go-errors %+v prints the stack trace. Doing this we create a plain
+		// error with no stack trace for the log
+		err := fmt.Errorf("%s", err)
+
+		newErrThrottlerLogger(ctxlog.Get(ctx), w.lastErrPR[repo]).With(log.Fields{
 			"repository": repo.FullName, "response": resp,
 		}).Errorf(err, "request for PR list failed")
+
 		return c.watchMinInterval, nil
 	}
 
@@ -199,9 +211,18 @@ func (w *Watcher) processRepoEvents(
 ) (time.Duration, error) {
 	resp, events, err := w.doEventRequest(ctx, c, repo.Owner, repo.Name)
 	if ErrGitHubAPI.Is(err) {
-		ctxlog.Get(ctx).With(log.Fields{
+		if w.lastErrEvent[repo] == nil {
+			w.lastErrEvent[repo] = &errThrottlerState{}
+		}
+
+		// go-errors %+v prints the stack trace. Doing this we create a plain
+		// error with no stack trace for the log
+		err := fmt.Errorf("%s", err)
+
+		newErrThrottlerLogger(ctxlog.Get(ctx), w.lastErrEvent[repo]).With(log.Fields{
 			"repository": repo.FullName, "response": resp,
 		}).Errorf(err, "request for events list failed")
+
 		return c.PollInterval(eventsCategory), nil
 	}
 
