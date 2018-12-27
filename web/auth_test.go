@@ -81,14 +81,17 @@ func TestCallbackSuccess(t *testing.T) {
 	require.Equal(http.StatusOK, w.Code)
 
 	var resp struct {
-		Token string
+		Data struct {
+			Token string
+		}
 	}
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(err)
 
-	token, err := auth.makeToken(testUser)
+	oauthToken := oauth2.Token{AccessToken: "access-token"}
+	token, err := auth.makeToken(oauthToken, testUser)
 	require.NoError(err)
-	require.Equal(resp.Token, token)
+	require.Equal(token, resp.Data.Token)
 }
 
 func TestMiddlewareSuccess(t *testing.T) {
@@ -106,7 +109,7 @@ func TestMiddlewareSuccess(t *testing.T) {
 		require.Equal(testUser.ID, id)
 	}))
 
-	token, err := auth.makeToken(testUser)
+	token, err := auth.makeToken(oauth2.Token{}, testUser)
 	require.NoError(err)
 
 	w := httptest.NewRecorder()
