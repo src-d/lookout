@@ -1,3 +1,15 @@
+# Redefine targets from main Makefile
+
+-include Makefile
+
+# Makefile.main::test -> this::test
+test: web-test
+
+# this::build -> Makefile.main::build -> Makefile.main::$(COMMANDS)
+# The @echo forces this prerequisites to be run before `Makefile.main::build` ones.
+build: web-build web-bindata
+	@echo
+
 FRONTEND_PATH := ./frontend
 FRONTEND_BUILD_PATH := $(FRONTEND_PATH)/build
 

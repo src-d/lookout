@@ -130,14 +130,3 @@ endif
 .PHONY: ci-integration-dependencies
 ci-integration-dependencies: prepare-services ci-start-bblfsh
 
-# Redefine targets from main Makefile to support web
-
--include Makefile.web
-
-# Makefile.main::test -> this::test
-test: web-test
-
-# this::build -> Makefile.main::build -> Makefile.main::$(COMMANDS)
-# The @echo forces this prerequisites to be run before `Makefile.main::build` ones.
-build: web-build web-bindata
-	@echo
