@@ -62,6 +62,12 @@ jobs:
       os: osx
       osx_image: xcode9.4
       before_install: skip
+    - name: 'Web Tests'
+      stage: tests
+      script:
+        - make dependencies
+        - make -f Makefile.web build
+        - make -f Makefile.web test
     - name: 'Generated code'
       script:
         - make dependencies
