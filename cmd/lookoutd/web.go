@@ -60,7 +60,7 @@ func (c *WebCommand) Execute(args []string) error {
 	}
 
 	auth := web.NewAuth(ghConfg.ClientID, ghConfg.ClientSecret, conf.Web.SigningKey)
-	static := web.NewStatic("build/public", c.ServerURL, c.FooterHTML)
+	static := web.NewStatic("/build/public", c.ServerURL, c.FooterHTML)
 	server := web.NewHTTPServer(auth, static)
 	addr := fmt.Sprintf("%s:%d", c.Host, c.Port)
 
