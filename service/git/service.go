@@ -7,7 +7,7 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/ctxlog"
 
-	"gopkg.in/src-d/go-errors.v1"
+	errors "gopkg.in/src-d/go-errors.v1"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
@@ -79,10 +79,6 @@ func (r *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 			req.IncludePattern, req.ExcludePattern)
 	}
 
-	if req.ExcludeVendored {
-		scanner = NewChangeExcludeVendorScanner(scanner)
-	}
-
 	if req.WantContents {
 		scanner = NewChangeBlobScanner(ctx, scanner, base, head)
 	}
@@ -109,10 +105,6 @@ func (r *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (
 	if req.IncludePattern != "" || req.ExcludePattern != "" {
 		scanner = NewFileFilterScanner(ctx, scanner,
 			req.IncludePattern, req.ExcludePattern)
-	}
-
-	if req.ExcludeVendored {
-		scanner = NewFileExcludeVendorScanner(ctx, scanner)
 	}
 
 	if req.WantContents {

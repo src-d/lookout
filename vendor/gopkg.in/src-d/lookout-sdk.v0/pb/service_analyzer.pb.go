@@ -28,7 +28,7 @@ const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
 type EventResponse struct {
 	AnalyzerVersion string     `protobuf:"bytes,1,opt,name=analyzer_version,json=analyzerVersion,proto3" json:"analyzer_version,omitempty"`
-	Comments        []*Comment `protobuf:"bytes,2,rep,name=comments" json:"comments,omitempty"`
+	Comments        []*Comment `protobuf:"bytes,2,rep,name=comments,proto3" json:"comments,omitempty"`
 }
 
 func (m *EventResponse) Reset()         { *m = EventResponse{} }
