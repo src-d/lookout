@@ -31,9 +31,9 @@ const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 // CommitRevision defines a range of commits, from a base to a head.
 type CommitRevision struct {
 	// Base of the revision.
-	Base ReferencePointer `protobuf:"bytes,1,opt,name=base" json:"base"`
+	Base ReferencePointer `protobuf:"bytes,1,opt,name=base,proto3" json:"base"`
 	// Head of the revision.
-	Head ReferencePointer `protobuf:"bytes,2,opt,name=head" json:"head"`
+	Head ReferencePointer `protobuf:"bytes,2,opt,name=head,proto3" json:"head"`
 }
 
 func (m *CommitRevision) Reset()         { *m = CommitRevision{} }
@@ -119,14 +119,14 @@ type PushEvent struct {
 	// InternalId is the internal id for this event at the provider.
 	InternalID string `protobuf:"bytes,2,opt,name=internal_id,json=internalId,proto3" json:"internal_id,omitempty"`
 	// CreateAt is the timestamp of the creation date of the push event.
-	CreatedAt time.Time `protobuf:"bytes,3,opt,name=created_at,json=createdAt,stdtime" json:"created_at"`
+	CreatedAt time.Time `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3,stdtime" json:"created_at"`
 	// Commits is the number of commits in the push.
 	Commits uint32 `protobuf:"varint,4,opt,name=commits,proto3" json:"commits,omitempty"`
 	// Commits is the number of distinct commits in the push.
 	DistinctCommits uint32 `protobuf:"varint,5,opt,name=distinct_commits,json=distinctCommits,proto3" json:"distinct_commits,omitempty"`
 	// Configuration contains any configuration related to specific analyzer
-	Configuration  types.Struct `protobuf:"bytes,6,opt,name=configuration" json:"configuration"`
-	CommitRevision `protobuf:"bytes,7,opt,name=commit_revision,json=commitRevision,embedded=commit_revision" json:"commit_revision"`
+	Configuration  types.Struct `protobuf:"bytes,6,opt,name=configuration,proto3" json:"configuration"`
+	CommitRevision `protobuf:"bytes,7,opt,name=commit_revision,json=commitRevision,proto3,embedded=commit_revision" json:"commit_revision"`
 }
 
 func (m *PushEvent) Reset()         { *m = PushEvent{} }
@@ -169,22 +169,22 @@ type ReviewEvent struct {
 	// InternalId is the internal id for this event at the provider.
 	InternalID string `protobuf:"bytes,2,opt,name=internal_id,json=internalId,proto3" json:"internal_id,omitempty"`
 	// CreateAt is the timestamp of the creation date of the push event.
-	CreatedAt time.Time `protobuf:"bytes,3,opt,name=created_at,json=createdAt,stdtime" json:"created_at"`
+	CreatedAt time.Time `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3,stdtime" json:"created_at"`
 	// UpdatedAt is the timestamp of the last modification of the pull request.
-	UpdatedAt time.Time `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,stdtime" json:"updated_at"`
+	UpdatedAt time.Time `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3,stdtime" json:"updated_at"`
 	// IsMergeable, if the pull request is mergeable.
 	IsMergeable bool `protobuf:"varint,5,opt,name=is_mergeable,json=isMergeable,proto3" json:"is_mergeable,omitempty"`
 	// Source reference to the original branch and repository where the changes came from.
-	Source ReferencePointer `protobuf:"bytes,8,opt,name=source" json:"source"`
+	Source ReferencePointer `protobuf:"bytes,8,opt,name=source,proto3" json:"source"`
 	// Merge reference to the branch and repository where the merged Pull Request is stored.
-	Merge ReferencePointer `protobuf:"bytes,9,opt,name=merge" json:"merge"`
+	Merge ReferencePointer `protobuf:"bytes,9,opt,name=merge,proto3" json:"merge"`
 	// Configuration contains any configuration related to specific analyzer
-	Configuration types.Struct `protobuf:"bytes,10,opt,name=configuration" json:"configuration"`
+	Configuration types.Struct `protobuf:"bytes,10,opt,name=configuration,proto3" json:"configuration"`
 	// RepositoryId is internal provider repository id
 	RepositoryID uint32 `protobuf:"varint,11,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	// Number is internal provider id of review scoped by repository
 	Number         uint32 `protobuf:"varint,12,opt,name=number,proto3" json:"number,omitempty"`
-	CommitRevision `protobuf:"bytes,7,opt,name=commit_revision,json=commitRevision,embedded=commit_revision" json:"commit_revision"`
+	CommitRevision `protobuf:"bytes,7,opt,name=commit_revision,json=commitRevision,proto3,embedded=commit_revision" json:"commit_revision"`
 }
 
 func (m *ReviewEvent) Reset()         { *m = ReviewEvent{} }

@@ -42,8 +42,8 @@ func (s *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 		scanner = newChangeLanguageScanner(scanner)
 	}
 
-	if len(req.OnlyLanguages) > 0 {
-		scanner = newChangeFilterLanguageScanner(scanner, req.OnlyLanguages, !req.WantLanguage)
+	if len(req.IncludeLanguages) > 0 {
+		scanner = newChangeFilterLanguageScanner(scanner, req.IncludeLanguages, !req.WantLanguage)
 	}
 
 	return scanner, nil
@@ -68,8 +68,8 @@ func (s *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (look
 		scanner = newFileLanguageScanner(scanner)
 	}
 
-	if len(req.OnlyLanguages) > 0 {
-		scanner = newFileFilterLanguageScanner(scanner, req.OnlyLanguages, !req.WantLanguage)
+	if len(req.IncludeLanguages) > 0 {
+		scanner = newFileFilterLanguageScanner(scanner, req.IncludeLanguages, !req.WantLanguage)
 	}
 
 	return scanner, nil
