@@ -42,9 +42,8 @@ providers:
     # watch_min_interval: 2s
 ```
 
-`comment_footer` key defines a format-string that will be used for custom messages for every message posted on GitHub; see how to [add a custom message to the posted comments](#custom-footer)
+`comment_footer` key defines a format-string that will be used for custom messages for every message posted on GitHub; see how to [add a custom message to the posted comments](#add-a-custom-message-to-the-posted-comments)
 
-<a id=basic-auth></a>
 ### Authentication with GitHub
 
 **source{d} Lookout** needs to authenticate with GitHub. There are two ways to authenticate with GitHub:
@@ -64,7 +63,6 @@ The credentials can be passed to `lookoutd`:
   - token: `--github-token` argument or `GITHUB_TOKEN` environment variable.
 - per watched repository, following the instructions given by the [Repositories section](#repositories) of this docs.
 
-<a id=github-app></a>
 #### Authentication as a GitHub App
 
 For a production environment, you can use **source{d} Lookout** as a [GitHub App](https://developer.github.com/apps/about-apps/).
@@ -99,7 +97,7 @@ The minimum watch interval to discover new pull requests and push events is defi
 
 The list of repositories to be watched by **source{d} Lookout** is defined by:
 - the `repositories` field at `config.yml`, or
-- the repositories where the GitHub App is installed if you [authenticated as a GitHub App](#github-app). In that case, the `repositories` field in `config.yml` will be ignored.
+- the repositories where the GitHub App is installed if you [authenticated as a GitHub App](#authentication-as-a-github-app). In that case, the `repositories` field in `config.yml` will be ignored.
 
 The user and token to be used for the Github authentication can be defined per repository; if you do so, it will override the globally passed user and token.
 
@@ -127,9 +125,8 @@ analyzers:
         threshold: 0.8
 ```
 
-`feedback` key contains the URL used in the custom footer added to any message posted on GitHub; see how to [add a custom message to the posted comments](#custom-footer)
+`feedback` key contains the URL used in the custom footer added to any message posted on GitHub; see how to [add a custom message to the posted comments](#add-a-custom-message-to-the-posted-comments)
 
-<a id=custom-footer></a>
 ### Add a Custom Message to the Posted Comments
 
 You can configure **source{d} Lookout** to add a custom message to every comment that each analyzer returns. This custom message will be created following the rule:

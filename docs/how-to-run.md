@@ -73,7 +73,7 @@ Download the latest `lookoutd` binary from [**source{d} Lookout** releases page]
 
 ## Initialize the Database
 
-_For non-default configuration, please take a look into [**`lookoutd` Command Options**](#options)_
+_For non-default configuration, please take a look into [**`lookoutd` Command Options**](#appendix-lookoutd-command-options)_
 
 ```shell
 $ lookoutd migrate
@@ -81,7 +81,7 @@ $ lookoutd migrate
 
 ## Start source{d} Lookout
 
-_For non-default configuration, please take a look into [**`lookoutd` Command Options**](#options)_
+_For non-default configuration, please take a look into [**`lookoutd` Command Options**](#appendix-lookoutd-command-options)_
 
 For a single server watching GitHub and processing events, just run:
 
@@ -91,7 +91,7 @@ $ lookoutd serve [--dry-run] [--github-token=<token> --github-user=<user>]
 
 ### Distributed Mode
 
-_For non-default configuration, please take a look into [**`lookoutd` Command Options**](#options)_
+_For non-default configuration, please take a look into [**`lookoutd` Command Options**](#appendix-lookoutd-command-options)_
 
 In order to run it in a distributed mode, the _watcher_ and the _workers_ must be run separately.
 
@@ -107,8 +107,7 @@ and as many _workers_ you need:
 $ lookoutd work [--dry-run] [--github-token=<token> --github-user=<user>]
 ```
 
-<a id=options></a>
-# Appendix: `lookoutd` Command Options
+# Appendix: lookoutd Command Options
 
 `lookoutd` binary includes some subcommands as described above, and they accept many different options; you can use:
 - `lookoutd -h`, to see all the available subcommands.
@@ -118,7 +117,7 @@ Here are some of the most relevant options for `lookoutd`:
 
 - [dry-run mode](#dry-run-mode)
 - [authentication options](#authentication-options)
-- [number of concurrent events to process](#concurrent-events)
+- [number of concurrent events to process](#number-of-concurrent-events-to-process)
 - [dependencies URIs](#dependencies-uris)
 - [logging options](#logging-options)
 
@@ -138,7 +137,6 @@ To post the comments returned by the Analyzers into GitHub, you can configure th
 | `serve`, `work`, `watch` | `GITHUB_USER`  | `--github-user=` |
 | `serve`, `work`, `watch` | `GITHUB_TOKEN`  | `--github-token=` |
 
-<a id=concurrent-events></a>
 ## Number of Concurrent Events to Process
 
 You can adjust the number of events that each _worker_ or the single _server_ will process concurrently when running `serve` or `work` subcommands (if you set it to `0`, it will process as many as the number of processors you have):

@@ -92,7 +92,7 @@ $ lookout-sdk review \
   "ipv4://localhost:9999"
 ```
 
-_For more options to run `lookout-sdk`, take a look into [**lookout-sdk Command Options**](#options)_
+_For more options to run `lookout-sdk`, take a look into [**lookout-sdk Command Options**](#appendix-lookout-sdk-command-options)_
 
 - If analyzer gRPC address is omitted, it will be `ipv4://localhost:9930`.
 - If `--git-dir` is omitted, the current dir will be used.
@@ -103,8 +103,7 @@ _For more options to run `lookout-sdk`, take a look into [**lookout-sdk Command 
 Everything explained above for `lookout-sdk review` calling `NotifyReviewEvent`, applies also to `NotifyPushEvent` when using `lookout-sdk push`.
 
 
-<a id=options></a>
-# Appendix: `lookout-sdk` Command Options
+# Appendix: lookout-sdk Command Options
 
 `lookout-sdk` binary include some subcommands as described above, and they accept many different options; you can use:
 - `lookout-sdk -h`, to see all the available subcommands.
