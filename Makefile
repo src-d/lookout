@@ -3,7 +3,7 @@ PROJECT = lookout
 COMMANDS = cmd/lookoutd
 DEPENDENCIES = \
 	gopkg.in/src-d/go-kallax.v1 \
-	github.com/jteeuwen/go-bindata
+	github.com/mjibson/esc
 
 # Backend services
 POSTGRESQL_VERSION = 9.6
@@ -34,24 +34,23 @@ LOOKOUT_SDK_BIN := $(BIN_PATH)/lookout-sdk
 LOOKOUT_BIN := $(BIN_PATH)/lookoutd
 
 # To be used as -tags
-GO_BINDATA_TAG := bindata
+WITH_STATIC_TAG := with_static
 
 # Override Makefile.main defaults for arguments to be used in `go` commands.
-GO_BUILD_ARGS := -ldflags "$(LD_FLAGS)" -tags "$(GO_BINDATA_TAG)"
+GO_BUILD_ARGS := -ldflags "$(LD_FLAGS)" -tags "$(WITH_STATIC_TAG)"
 
 # Tools
-BINDATA := go-bindata
+ESC_BIN := esc
 TOC_GENERATOR := $(CI_PATH)/gh-md-toc
 
-.PHONY: bindata
-bindata:
+.PHONY: pack-migrations
+pack-migrations:
 	chmod -R go=r $(MIGRATIONS_PATH); \
-	$(BINDATA) \
-		-o store/bindata.go \
+	$(ESC_BIN) \
+		-o store/packed_migrations.go \
 		-pkg store \
-		-prefix '$(MIGRATIONS_PATH)/' \
 		-modtime 1 \
-		$(MIGRATIONS_PATH)/...
+		$(MIGRATIONS_PATH)
 
 GOTEST_INTEGRATION_TAGS_LIST = integration bblfsh
 GOTEST_INTEGRATION_TAGS = $(GOTEST_INTEGRATION_TAGS_LIST)
