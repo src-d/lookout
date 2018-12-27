@@ -51,35 +51,44 @@ If we look at this example history of a given local repository stored at `/somew
 $ git log --pretty=oneline --graph
 
 *   d036524c463227524f4bbd7b207fb87bb8b89ee3 (HEAD -> master) Merge pull request #3
-|\
+|\  
 | * 045a24828327ac35a28186f9b9b437adc3f7b7a3 (branch-b) message
 | * 804cbd94869cb173494ce1de410f2b48674bc772 message
-|/
-*   9294ddb13cc7c8acd2db480c9e5c1396cd85e50a (branch-a) message
-*   7f2ee64cd0a5891900cc368ae35e60a61c262060 message
+|/  
+*   9294ddb13cc7c8acd2db480c9e5c1396cd85e50a Merge pull request #2
+|\  
+| * 355f001d719bd0368c0469acd1a46298a80bacc0 (branch-a) message
+| * 7f2ee64cd0a5891900cc368ae35e60a61c262060 message
+|/  
+*   fa97fa19e5c9b3482e5f88e264fb62b1e7fc6d8f Merge pull request #1
+*
 *
 ...
 ```
 
-And considering we have an analyzer listening at `ipv4://localhost:9999`
-
-we could run:
-
+If your current directory is this repository's path, and your analyzer is listening on the default port `9930`, you can run:
 ```shell
-$ lookout-sdk review \
-  --git-dir=/somewhere/repo/path \
-  --from=branch-a \
-  --to=branch-b \
-  "ipv4://localhost:9999"
+$ lookout-sdk review
 ```
 
 Doing so, `lookout-sdk` will:
 
-1. start a gRPC **source{d} Lookout DataService** endpoint backed by the repository stored at `/somewhere/repo/path`;
-1. create a `ReviewEvent` with the changes between `branch-b` and `branch-a`;
-1. send a gRPC `NotifyReviewEvent` call to your analyzer listening on `ipv4://localhost:9999` with the created `ReviewEvent`;
-1. wait till the analyzer sends a response with the comments; the analyzer will be able to request file contents, file language or UASTs to the gRPC **source{d} Lookout DataService** endpoint exposed by `lookout-sdk`;
+1. start a gRPC **source{d} Lookout DataService** endpoint backed by the repository stored at your current directory.
+1. send a gRPC `NotifyReviewEvent` call to your analyzer listening on `ipv4://localhost:9930`. The `ReviewEvent` argument will contain a `commit_revision` field made of:
+    * `base` pointing to `HEAD^` (`9294ddb...`)
+    * `head` pointing to `HEAD` (`d036524...`)
+1. wait until the analyzer sends a response with the comments. The analyzer will be able to request file contents, file language or UASTs to the gRPC **source{d} Lookout DataService** endpoint exposed by `lookout-sdk`
 1. once the analyzer sends the response, `lookout-sdk` will put it into the `STDOUT`, stop the **source{d} Lookout DataService** and exit.
+
+Use the different options to trigger a different analysis. For example:
+
+```shell
+$ lookout-sdk review \
+  --git-dir=/somewhere/repo/path \
+  --from=fa97fa19e5c9b3482e5f88e264fb62b1e7fc6d8f \
+  --to=branch-a \
+  "ipv4://localhost:9999"
+```
 
 _For more options to run `lookout-sdk`, take a look into [**lookout-sdk Command Options**](#options)_
 
