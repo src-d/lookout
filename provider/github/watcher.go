@@ -250,8 +250,7 @@ func (w *Watcher) handlePrs(ctx context.Context,
 
 	for _, e := range prs {
 		ctx, _ := ctxlog.WithLogFields(ctx, log.Fields{
-			"pr-id":     e.GetID(),
-			"pr-number": e.GetNumber(),
+			"github.pr": e.GetNumber(),
 		})
 		event := castPullRequest(ctx, r, e)
 
