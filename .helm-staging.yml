@@ -15,8 +15,8 @@ queues:
     connectionString: amqp://lookout-rabbitmq-ha:5672
 
 nodeSelector:
- lookout:
-   srcd.host/app: lookout
+  lookout:
+    srcd.host/app: lookout
 
 repositories:
   - url: github.com/src-d/lookout
@@ -27,7 +27,7 @@ providers:
     app_id: 17877
     private_key: /local/lookout/private-key.pem
     secretName: lookout-staging-github-key
-    comment_footer: "_If you have feedback about this comment, please, [tell us](%s)._"
+    comment_footer: '_If you have feedback about this comment, please, [tell us](%s)._'
     installation_sync_interval: 5m
 
 analyzers:
@@ -43,3 +43,35 @@ analyzers:
   - name: terraform-analyzer
     addr: ipv4://lookout-terraform-analyzer:10303
     feedback: https://github.com/src-d/lookout-terraform-analyzer/issues/new
+
+bblfshd-sidecar:
+  image:
+    tag: v2.10.0
+  drivers:
+    languages:
+      # for js we have to lock old version due to style-analyzer
+      javascript:
+        repository: bblfsh/javascript-driver
+        tag: v2.4.1
+      # for the rest we can use latests
+      python:
+        repository: bblfsh/python-driver
+        tag: v2.6.0
+      java:
+        repository: bblfsh/java-driver
+        tag: v2.5.0
+      bash:
+        repository: bblfsh/bash-driver
+        tag: v2.3.2
+      ruby:
+        repository: bblfsh/ruby-driver
+        tag: v2.6.0
+      go:
+        repository: bblfsh/go-driver
+        tag: v2.5.0
+      php:
+        repository: bblfsh/php-driver
+        tag: v2.6.0
+      cpp:
+        repository: bblfsh/cpp-driver
+        tag: v1.0.0
