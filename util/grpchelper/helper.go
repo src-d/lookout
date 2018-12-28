@@ -3,6 +3,7 @@ package grpchelper
 import (
 	"context"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	log "gopkg.in/src-d/go-log.v1"
@@ -15,8 +16,14 @@ var LogAsDebug = false
 // NewServer creates new grpc.Server with custom message size
 func NewServer(opts ...grpc.ServerOption) *grpc.Server {
 	opts = append(opts,
-		grpc.StreamInterceptor(StreamServerInterceptor(log.DefaultLogger, LogAsDebug)),
-		grpc.UnaryInterceptor(UnaryServerInterceptor(log.DefaultLogger, LogAsDebug)),
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			CtxlogStreamServerInterceptor,
+			LogStreamServerInterceptor(LogAsDebug),
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			CtxlogUnaryServerInterceptor,
+			LogUnaryServerInterceptor(LogAsDebug),
+		)),
 	)
 
 	return pb.NewServer(opts...)
@@ -25,8 +32,14 @@ func NewServer(opts ...grpc.ServerOption) *grpc.Server {
 // DialContext creates a client connection to the given target with custom message size
 func DialContext(ctx context.Context, target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	opts = append(opts,
-		grpc.WithStreamInterceptor(StreamClientInterceptor(log.DefaultLogger, LogAsDebug)),
-		grpc.WithUnaryInterceptor(UnaryClientInterceptor(log.DefaultLogger, LogAsDebug)),
+		grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(
+			LogStreamClientInterceptor(LogAsDebug),
+			CtxlogStreamClientInterceptor,
+		)),
+		grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(
+			LogUnaryClientInterceptor(LogAsDebug),
+			CtxlogUnaryClientInterceptor,
+		)),
 	)
 
 	return pb.DialContext(ctx, target, opts...)
