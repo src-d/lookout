@@ -1,6 +1,19 @@
 # Configuring source{d} Lookout
 
+The behavior of **source{d} Lookout** is defined with two different configuration files:
+
+- [`config.yml`](#config-yml), to define the global configuration of the server.
+- [`.lookout.yml`](#lookout-yml), to override the analyzer default behavior in each repository.
+
+
+# config.yml
+
 **source{d} Lookout** is configured with the `config.yml` file, you can use the template [`config.yml.tpl`](/config.yml.tpl) to create your own. Use the `lookoutd` option `--config` to set the path to it, or use the default location at `./config.yml`.
+
+The most important things you need to configure for a local installation, are:
+
+1. [Repositories](#repositories): define the repositories to be watched.
+1. [Analyzers](#analyzers): add the gRPC addresses of the analyzers to be used by **source{d} Lookout**.
 
 The main structure of `config.yml` is:
 
@@ -16,17 +29,8 @@ timeout:
     # configuration for the existing timeouts.
 ```
 
-## Quickstart
-
-The most important things you need to configure for a local installation, are:
-
-1. [Repositories](#repositories): add the URLs of the repositories to be watched.
-1. [Analyzers](#analyzers): add the gRPC addresses of the analyzers to be used by **source{d} Lookout**.
-
 For more fine grained configuration, you should pay attention to the following documentation.
 
-
-# config.yml
 
 ## Github Provider
 
@@ -99,6 +103,7 @@ The minimum watch interval to discover new pull requests and push events is defi
 
 The **source{d} Lookout** Web Interface to manage the installations of your GitHub App is currently under development, but you can find more details about it and its configuration at [Web Interface docs](web.md)
 
+
 ## Repositories
 
 The list of repositories to be watched by **source{d} Lookout** is defined by:
@@ -116,6 +121,7 @@ repositories:
       # token: github-user-token
       # minInterval: 1m
 ```
+
 
 ## Analyzers
 
@@ -146,29 +152,6 @@ Example:
 "_If you have feedback about this comment, please, [tell us](%s)._"
 ```
 
-### Customize an Analyzer from the Repository
-
-It's possible to customize the Analyzers configuration for each repository. To do that you only need to place a `.lookout.yml` file at the root directory of that repository.
-
-Example:
-```yaml
-analyzers:
-  - name: Example name
-    disabled: true
-    settings:
-        threshold: 0.9
-        mode: confident
-```
-
-The analyzer to configure must be identified with the same `name` in the `.lookout.yml` config file as in **source{d} Lookout** server configuration, otherwise, it will be ignored.
-
-The repository can disable any analyzer, but it cannot define new analyzers nor enable those that are disabled in the **source{d} Lookout** server.
-
-The `settings` for each analyzer in the `.lookout.yml` config file will be merged with the **source{d} Lookout** configuration following these rules:
-
-- Objects are deep merged
-- Arrays are replaced
-- Null value replaces object
 
 ## Timeouts
 
@@ -192,3 +175,28 @@ timeout:
   # Timeout for Bblfsh to reply to a Parse request
   bblfsh_parse: 2m
 ```
+
+
+# .lookout.yml
+
+It's possible to customize the Analyzers configuration for each repository. To do that you only need to place a `.lookout.yml` file at the root directory of that repository.
+
+Example:
+```yaml
+analyzers:
+  - name: Example name
+    disabled: true
+    settings:
+        threshold: 0.9
+        mode: confident
+```
+
+The analyzer to configure must be identified with the same `name` in the `.lookout.yml` config file as in **source{d} Lookout** server configuration, otherwise, it will be ignored.
+
+The repository can disable any analyzer, but it cannot define new analyzers nor enable those that are disabled in the **source{d} Lookout** server.
+
+The `settings` for each analyzer in the `.lookout.yml` config file will be merged with the **source{d} Lookout** configuration following these rules:
+
+- Objects are deep merged
+- Arrays are replaced
+- Null value replaces object
