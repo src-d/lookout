@@ -69,7 +69,7 @@ For a production environment, you can use **source{d} Lookout** as a [GitHub App
 
 To do so, you must also unset any environment variable or option for the GitHub username and token authentication.
 
-You need to create a GitHub App following the [documentation about creating a GitHub app](https://developer.github.com/apps/building-github-apps/creating-a-github-app/). The permissions that must be set are:
+You need to create a GitHub App following the [documentation about creating a GitHub App](https://developer.github.com/apps/building-github-apps/creating-a-github-app/). The permissions that must be set are:
 
 - Repository metadata: Read-only
 - Pull requests: Read & write
@@ -86,6 +86,8 @@ providers:
     installation_sync_interval: 1h
     watch_min_interval: 10s
 ```
+
+Then you need to install the GitHub App in all your repositories or in a list of them.
 
 When the GitHub App authentication method is used, the repositories to analyze are retrieved automatically from the GitHub installations, so `repositories` list from `config.yml` is ignored.
 
