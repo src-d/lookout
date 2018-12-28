@@ -33,4 +33,23 @@ An analyzer is a gRPC service that will be called by the [Server](#server) to pe
 
 They are not part of **source{d} Lookout** repository so they can be developed by third parties.
 
-source{d} Lookout Server will call all the registered Analyzers to produce comments for the opened Pull Request in the watched repositories. To register new Analyzers in the configuration file, `lookoutd` will need to be restarted.
+**source{d} Lookout** Server will call all the registered Analyzers to produce comments for the opened Pull Request in the watched repositories. To register new Analyzers in the configuration file, `lookoutd` will need to be restarted.
+
+
+# External Services
+
+**source{d} Lookout** will call some external services, some of them depending on the configuration.
+
+## Babelfish
+
+Babelfish is used to parse files into [UAST](https://doc.bblf.sh/uast/uast-specification.html) when the [DataService](#dataservice) `GetChanges` or `GetFiles` methods are asked to include UASTs.
+
+Babelfish can also be directly called through **DataService** proxy.
+
+## RabbitMQ
+
+If **source{d} Lookout** is run in [distributed mode](how-to-run.md#distributed-mode), the watcher will enqueue in RabbitMQ all new repository and PR events, and the workers will take from there the events to be processed.
+
+## PostgreSQL
+
+**source{d} Lookout** uses PostgreSQL to store application internal state.

@@ -23,6 +23,8 @@ The general steps to run source{d} Lookout in distributed mode are the same as s
 
 # Dependencies
 
+_For more details about the purpose of these external dependencies, you can take a look at [**External services** in **Architecture** documentaion](architecture.md#external-services)_
+
 **source{d} Lookout** needs a running instance of:
 
 * [bblfshd](https://github.com/bblfsh/bblfshd) to parse files into [UAST](https://doc.bblf.sh/uast/uast-specification.html).
