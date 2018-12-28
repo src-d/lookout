@@ -84,6 +84,48 @@ $ make test-json
 ```
 
 
+## Web Interface
+
+If you want to contribute in **source{d} Lookout** [Web Interface](web.md), you should consider the following:
+
+### Dependencies
+
+[Node.js](https://nodejs.org) `>=8` is required; you can check which version of `node` do you have, running:
+
+```shell
+$ node -v
+v10.15.0
+```
+
+### Running
+
+In case you want to locally run the web interface from sources, you can choose one of the following:
+- using web assets from binaries (embeded by `esc`), that will require you to restart the server everytime you change any web asset.
+    ```shell
+    $ make -f Makefile.web web-serve
+    ```
+    And navigate to [http://127.0.0.0:8080](http://127.0.0.0:8080)
+- using `create-react-app` dev server, with live reload for web assets changes, running in separated terminals the backend: 
+    ```shell
+    $ make -f Makefile.web web-start
+    ```
+    and the frontend:
+    ```shell
+    $ make -f Makefile.web web-dependencies # if you didn't do it yet
+    $ yarn --cwd frontend start
+    ```
+    Configure the GitHub App authorization callback URL to `http://127.0.0.0:3000/callback`, and navigate to [http://127.0.0.0:3000](http://127.0.0.0:3000)
+
+### Testing
+
+For unit-tests over the Web Interface frontend:
+
+```shell
+$ make -f Makefile.web web-dependencies # if you didn't do it yet
+$ make -f Makefile.web web-test
+```
+
+
 ## dummy Analyzer
 
 [`dummy` analyzer](analyzers-examples.md#dummy-analyzer) is part of the **source{d} Lookout** codebase but its release cycle is managed independently from the main one.

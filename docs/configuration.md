@@ -95,6 +95,10 @@ The update interval to discover new installations and repositories is defined by
 
 The minimum watch interval to discover new pull requests and push events is defined by `watch_min_interval`.
 
+#### Web Interface
+
+The **source{d} Lookout** Web Interface to manage the installations of your GitHub App is currently under development, but you can find more details about it and its configuration at [Web Interface docs](web.md)
+
 ## Repositories
 
 The list of repositories to be watched by **source{d} Lookout** is defined by:

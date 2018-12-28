@@ -18,7 +18,7 @@ func NewStatic(dir, serverURL string, footerHTML string) *Static {
 // ServeHTTP serves any static file from static directory or fallbacks on index.hml
 func (s *Static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.Error(w,
-		"Frontend assets are only available when using 'make build' or 'make serve'",
+		"Frontend assets are only available when using 'make build' or 'make web-serve'",
 		http.StatusNotImplemented)
 
 	return

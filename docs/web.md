@@ -1,29 +1,44 @@
 # Web
 
-*Work in progress*
+## DISCLAIMER: Work In Progress
+
+## Intro
 
 source{d} Lookout web interface provides a user friendly way to configure GitHub installations by users.
 
-### Configuration
+
+## Run the Web Interface
+
+Since it has not been released yet, you need to build it before running it.
+
+```shell
+$ make -f Makefile.web build
+$ build/bin/lookoutd web
+```
+
+Open [http://127.0.0.1:8080](http://127.0.0.1:8080) in your browser.
+
+
+## Configuration
 
 The web interface requires the usage of a Github App as authorization method, and requires GitHub App OAuth credentials.
 
-Please follow the instructions on how to get them in the [main configuration guide](configuration.md), and set them in `config.yaml` as follows:
+The GitHub App authorization callback must be processed by the `/callback` frontend route, so configure it when creating the GitHub App (the default value would be) `http://127.0.0.0:8080/callback`.
+
+Please follow the instructions on how to get the GitHub App credentials in the [main configuration guide](configuration.md#authentication-as-a-github-app), and set them in `config.yaml` as follows:
 
 ```yaml
 providers:
   github:
     # Authorization with GitHub App
-    # See https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
     app_id: 1234
     private_key: ./key.pem
-    #
     # GitHub App OAuth credentials
     client_id: 3456
     client_secret: secret-string
 ```
 
-You would also need to set secret key which will be used to sign JSON Web Tokens.
+You also need to set in the `config.yaml`, the secret key which will be used to sign JSON Web Tokens.
 It can be any non-empty string.
 
 ```yaml
@@ -36,7 +51,8 @@ There is one extra requirement. In order to identify who is an administrator, th
 
 - Organization members: Read-only
 
-#### Advanced configuration
+
+### Advanced configuration
 
 | Env var | Option | Description | Default |
 | --- | --- | --- | --- |
