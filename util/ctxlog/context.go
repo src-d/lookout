@@ -6,30 +6,42 @@ import (
 	log "gopkg.in/src-d/go-log.v1"
 )
 
-type ctxLogger int
+type ctxKey int
 
-// LoggerKey is the key that holds logger in a context.
-const LoggerKey ctxLogger = 0
+// logFieldsKey is the key that holds log Fields in a context.
+const logFieldsKey ctxKey = 0
 
-// Get returns logger from context or DefaultLogger if there is no logger in context
+// Get returns a logger configured with the context log Fields or the default fields
 func Get(ctx context.Context) log.Logger {
-	if v := ctx.Value(LoggerKey); v != nil {
-		return v.(log.Logger)
+	var fields log.Fields
+
+	if v := ctx.Value(logFieldsKey); v != nil {
+		fields = v.(log.Fields)
 	}
 
-	if log.DefaultLogger == nil {
-		log.DefaultLogger = log.New(nil)
+	return log.New(fields)
+}
+
+// WithLogFields returns a context with new logger Fields added to the current
+// ones, and a logger
+func WithLogFields(ctx context.Context, fields log.Fields) (context.Context, log.Logger) {
+	var newFields log.Fields
+
+	if v := ctx.Value(logFieldsKey); v != nil {
+		newFields = v.(log.Fields)
+
+		for k, v := range fields {
+			newFields[k] = v
+		}
+	} else {
+		newFields = fields
 	}
-	return log.DefaultLogger
+
+	ctx = set(ctx, newFields)
+	return ctx, Get(ctx)
 }
 
-// WithLogFields returns context with new logger and the logger
-func WithLogFields(ctx context.Context, f log.Fields) (context.Context, log.Logger) {
-	logger := Get(ctx).With(f)
-	return Set(ctx, logger), logger
-}
-
-// Set puts logger into context and returns new context
-func Set(ctx context.Context, logger log.Logger) context.Context {
-	return context.WithValue(ctx, LoggerKey, logger)
+// set returns a copy of ctx with the log Fields saves as context Value
+func set(ctx context.Context, fields log.Fields) context.Context {
+	return context.WithValue(ctx, logFieldsKey, fields)
 }
