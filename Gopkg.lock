@@ -911,6 +911,7 @@
     "google.golang.org/grpc/codes",
     "google.golang.org/grpc/connectivity",
     "google.golang.org/grpc/metadata",
+    "google.golang.org/grpc/status",
     "gopkg.in/bblfsh/sdk.v1/protocol",
     "gopkg.in/bblfsh/sdk.v1/uast",
     "gopkg.in/src-d/enry.v1",
