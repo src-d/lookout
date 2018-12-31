@@ -70,7 +70,7 @@ func (c *ReviewCommand) Execute(args []string) error {
 		return err
 	}
 
-	err = srv.HandleReview(context.TODO(), &lookout.ReviewEvent{
+	err = srv.AnalyzeAndComment(context.TODO(), &lookout.ReviewEvent{
 		InternalID:  id.String(),
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),

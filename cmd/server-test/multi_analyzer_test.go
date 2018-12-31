@@ -39,7 +39,7 @@ func (suite *MultiDummyIntegrationSuite) TestSuccessReview() {
 	suite.sendEvent(successJSON)
 
 	suite.GrepAll(suite.r, []string{
-		"processing pull request",
+		"processing event type 2",
 		"posting analysis",
 		`{"analyzer-name":"Dummy1","file":"another.go","line":3,"text":"This line exceeded`,
 		`{"analyzer-name":"Dummy2","file":"another.go","line":3,"text":"This line exceeded`,

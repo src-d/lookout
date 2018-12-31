@@ -99,14 +99,7 @@ func (s *Server) HandleEvent(ctx context.Context, e lookout.Event) error {
 	// we need to retry analyzis but post only new comments (poster should handle it)
 	safePosting := status == models.EventStatusPosting
 
-	switch ev := e.(type) {
-	case *lookout.ReviewEvent:
-		err = s.HandleReview(ctx, ev, safePosting)
-	case *lookout.PushEvent:
-		err = s.HandlePush(ctx, ev, safePosting)
-	default:
-		logger.Debugf("ignoring unsupported event: %s", ev)
-	}
+	err = s.AnalyzeAndComment(ctx, e, safePosting)
 
 	if err == nil {
 		status = models.EventStatusProcessed
@@ -127,113 +120,91 @@ func (s *Server) HandleEvent(ctx context.Context, e lookout.Event) error {
 	return err
 }
 
-// HandleReview sends request to analyzers concurrently
-func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent, safePosting bool) error {
-	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{
-		"provider": e.Provider,
-	})
-	logger.Infof("processing pull request")
-
-	if err := e.Validate(); err != nil {
-		return err
-	}
-
-	conf, err := s.getConfig(ctx, e)
-	if err != nil {
-		return err
-	}
-
-	s.status(ctx, e, lookout.PendingAnalysisStatus)
-
-	send := func(
-		ctx context.Context,
-		a lookout.AnalyzerClient,
-		settings map[string]interface{},
-	) ([]*lookout.Comment, error) {
-		st := grpchelper.ToPBStruct(settings)
-		if st != nil {
-			e.Configuration = *st
+func (s *Server) AnalyzeAndComment(ctx context.Context, e lookout.Event, safePosting bool) error {
+	comments, err := s.analyze(ctx, e, safePosting)
+	if err == nil {
+		if err := s.post(ctx, e, comments, safePosting); err != nil {
+			s.status(ctx, e, lookout.ErrorAnalysisStatus)
+			err = fmt.Errorf("posting analysis failed: %s", err)
+		} else {
+			s.status(ctx, e, lookout.SuccessAnalysisStatus)
 		}
-
-		if s.analyzerReviewTimeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(ctx, s.analyzerReviewTimeout)
-			defer cancel()
-		}
-
-		resp, err := a.NotifyReviewEvent(ctx, e)
-		if err != nil {
-			return nil, err
-		}
-		return resp.Comments, nil
 	}
-	comments, err := s.concurrentRequest(ctx, conf, send, grpcErrorMessages[pb.ReviewEventType])
-	if err != nil {
-		return err
-	}
-
-	if err := s.post(ctx, e, comments, safePosting); err != nil {
-		s.status(ctx, e, lookout.ErrorAnalysisStatus)
-		return fmt.Errorf("posting analysis failed: %s", err)
-	}
-
-	s.status(ctx, e, lookout.SuccessAnalysisStatus)
-
-	return nil
+	return err
 }
 
-// HandlePush sends request to analyzers concurrently
-func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent, safePosting bool) error {
-	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{
-		"provider": e.Provider,
-	})
-	logger.Infof("processing push")
+func (s *Server) analyze(ctx context.Context, e lookout.Event, safePosting bool) ([]lookout.AnalyzerComments, error) {
+	ctxlog.Get(ctx).Infof("processing event type %d", e.Type())
 
+	var comments []lookout.AnalyzerComments
 	if err := e.Validate(); err != nil {
-		return err
+		return comments, err
 	}
 
 	conf, err := s.getConfig(ctx, e)
 	if err != nil {
-		return err
+		return comments, err
 	}
 
 	s.status(ctx, e, lookout.PendingAnalysisStatus)
 
-	send := func(
+	send := s.getSender(e)
+	return s.concurrentRequest(ctx, conf, send, grpcErrorMessages[pb.ReviewEventType])
+}
+
+func (s *Server) getSender(e lookout.Event) reqSent {
+	type analyzerNotifier struct {
+		notify  func(context.Context, lookout.AnalyzerClient) (*pb.EventResponse, error)
+		timeout time.Duration
+	}
+
+	getAnalyzerNotifier := func(ctx context.Context, settings map[string]interface{}) (analyzerNotifier, error) {
+		st := grpchelper.ToPBStruct(settings)
+		switch ev := e.(type) {
+		case *lookout.ReviewEvent:
+			if st != nil {
+				ev.Configuration = *st
+			}
+			return analyzerNotifier{
+				func(ctx context.Context, a lookout.AnalyzerClient) (*pb.EventResponse, error) {
+					return a.NotifyReviewEvent(ctx, ev)
+				}, s.analyzerReviewTimeout}, nil
+		case *lookout.PushEvent:
+			if st != nil {
+				ev.Configuration = *st
+			}
+			return analyzerNotifier{
+				func(ctx context.Context, a lookout.AnalyzerClient) (*pb.EventResponse, error) {
+					return a.NotifyPushEvent(ctx, ev)
+				}, s.analyzerPushTimeout}, nil
+		default:
+			ctxlog.Get(ctx).Debugf("ignoring unsupported event: %s", ev)
+			return analyzerNotifier{}, fmt.Errorf("unsupported event: %s", ev)
+		}
+	}
+
+	return func(
 		ctx context.Context,
 		a lookout.AnalyzerClient,
 		settings map[string]interface{},
 	) ([]*lookout.Comment, error) {
-		st := grpchelper.ToPBStruct(settings)
-		if st != nil {
-			e.Configuration = *st
+		var comments []*lookout.Comment
+		analyzerNotifier, err := getAnalyzerNotifier(ctx, settings)
+		if err != nil {
+			return comments, err
 		}
-
-		if s.analyzerPushTimeout > 0 {
+		if analyzerNotifier.timeout > 0 {
 			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(ctx, s.analyzerPushTimeout)
+			ctx, cancel = context.WithTimeout(ctx, analyzerNotifier.timeout)
 			defer cancel()
 		}
 
-		resp, err := a.NotifyPushEvent(ctx, e)
+		resp, err := analyzerNotifier.notify(ctx, a)
 		if err != nil {
 			return nil, err
 		}
 		return resp.Comments, nil
 	}
-	comments, err := s.concurrentRequest(ctx, conf, send, grpcErrorMessages[pb.PushEventType])
-	if err != nil {
-		return err
-	}
-
-	if err := s.post(ctx, e, comments, safePosting); err != nil {
-		s.status(ctx, e, lookout.ErrorAnalysisStatus)
-		return fmt.Errorf("posting analysis failed: %s", err)
-	}
-	s.status(ctx, e, lookout.SuccessAnalysisStatus)
-
-	return nil
 }
 
 func (s *Server) getConfig(ctx context.Context, e lookout.Event) (map[string]lookout.AnalyzerConfig, error) {

@@ -92,7 +92,7 @@ func (c *PushCommand) Execute(args []string) error {
 		return err
 	}
 
-	err = srv.HandlePush(context.TODO(), &lookout.PushEvent{
+	err = srv.AnalyzeAndComment(context.TODO(), &lookout.PushEvent{
 		InternalID: id.String(),
 		CreatedAt:  time.Now(),
 		Commits:    commits,

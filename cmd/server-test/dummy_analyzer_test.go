@@ -37,7 +37,7 @@ func (suite *DummyIntegrationSuite) TearDownTest() {
 func (suite *DummyIntegrationSuite) TestSuccessReview() {
 	suite.sendEvent(successJSON)
 	suite.GrepAll(suite.r, []string{
-		`processing pull request`,
+		`processing event type 2`,
 		`{"analyzer-name":"Dummy","file":"another.go","line":3,"text":"This line exceeded`,
 		`status=success`,
 	})
@@ -71,7 +71,7 @@ func (suite *DummyIntegrationSuite) TestReviewDontPostSameComment() {
 	suite.sendEvent(rev1Event.String())
 	suite.GrepAndNotAll(suite.r,
 		[]string{
-			`processing pull request`,
+			`processing event type 2`,
 			`{"analyzer-name":"Dummy","file":"dummy.go","text":"The file has increased`,
 			`status=success`,
 		}, []string{
@@ -104,7 +104,7 @@ func (suite *DummyIntegrationSuite) TestSuccessPush() {
 	}
 	suite.sendEvent(pushEvent.String())
 	suite.GrepAll(suite.r, []string{
-		"processing push",
+		"processing event type 1",
 		"comments can belong only to review event but 1 is given",
 		`status=error`,
 	})
