@@ -1,0 +1,6 @@
+analyzers:
+  - name: Dummy
+    addr: ipv4://localhost:9930
+timeout:
+  analyzer_review: 1ns
+  analyzer_push: 1ns
