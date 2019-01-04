@@ -25,18 +25,15 @@ func (a *errAnalyzer) NotifyPushEvent(ctx context.Context, e *lookout.PushEvent)
 
 type ErrorAnalyzerIntegrationSuite struct {
 	IntegrationSuite
-	configFile string
-	analyzer   lookout.AnalyzerServer
-	errMessage string
 }
 
 func (suite *ErrorAnalyzerIntegrationSuite) SetupTest() {
 	suite.ResetDB()
 
 	suite.StoppableCtx()
-	suite.r, suite.w = suite.StartLookoutd(suite.configFile)
+	suite.r, suite.w = suite.StartLookoutd(dummyConfigFile)
 
-	startMockAnalyzer(suite.Ctx, suite.analyzer)
+	startMockAnalyzer(suite.Ctx, &errAnalyzer{})
 	suite.GrepTrue(suite.r, `msg="connection state changed to 'READY'" addr="ipv4://localhost:9930" analyzer=Dummy`)
 }
 
@@ -50,13 +47,9 @@ func (suite *ErrorAnalyzerIntegrationSuite) TearDownTest() {
 func (suite *ErrorAnalyzerIntegrationSuite) TestAnalyzerErr() {
 	suite.sendEvent(successJSON)
 
-	suite.GrepTrue(suite.r, suite.errMessage)
+	suite.GrepTrue(suite.r, `msg="analysis failed" analyzer=Dummy app=lookoutd error="rpc error: code = Unknown desc = review error"`)
 }
 
 func TestErrorAnalyzerIntegrationSuite(t *testing.T) {
-	suite.Run(t, &ErrorAnalyzerIntegrationSuite{
-		configFile: dummyConfigFile,
-		analyzer:   &errAnalyzer{},
-		errMessage: `msg="analysis failed" analyzer=Dummy app=lookoutd error="rpc error: code = Unknown desc = review error"`,
-	})
+	suite.Run(t, new(ErrorAnalyzerIntegrationSuite))
 }

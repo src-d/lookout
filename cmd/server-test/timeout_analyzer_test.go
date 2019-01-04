@@ -29,18 +29,15 @@ func (a *timeoutErrAnalyzer) NotifyPushEvent(ctx context.Context, e *lookout.Pus
 
 type TimeoutErrorAnalyzerIntegrationSuite struct {
 	IntegrationSuite
-	configFile string
-	analyzer   lookout.AnalyzerServer
-	errMessage string
 }
 
 func (suite *TimeoutErrorAnalyzerIntegrationSuite) SetupTest() {
 	suite.ResetDB()
 
 	suite.StoppableCtx()
-	suite.r, suite.w = suite.StartLookoutd(suite.configFile)
+	suite.r, suite.w = suite.StartLookoutd(dummyConfigFileWithTimeouts)
 
-	startMockAnalyzer(suite.Ctx, suite.analyzer)
+	startMockAnalyzer(suite.Ctx, &timeoutErrAnalyzer{})
 	suite.GrepTrue(suite.r, `msg="connection state changed to 'READY'" addr="ipv4://localhost:9930" analyzer=Dummy`)
 }
 
@@ -54,13 +51,9 @@ func (suite *TimeoutErrorAnalyzerIntegrationSuite) TearDownTest() {
 func (suite *TimeoutErrorAnalyzerIntegrationSuite) TestAnalyzerTimeoutErr() {
 	suite.sendEvent(successJSON)
 
-	suite.GrepTrue(suite.r, suite.errMessage)
+	suite.GrepTrue(suite.r, `msg="analysis failed: timeout exceeded, try increasing analyzer_review in config.yml" analyzer=Dummy app=lookoutd error="rpc error: code = DeadlineExceeded desc = context deadline exceeded"`)
 }
 
 func TestTimeoutErrorAnalyzerIntegrationSuite(t *testing.T) {
-	suite.Run(t, &TimeoutErrorAnalyzerIntegrationSuite{
-		configFile: dummyConfigFileWithTimeouts,
-		analyzer:   &timeoutErrAnalyzer{},
-		errMessage: `msg="analysis failed: timeout exceeded, try increasing analyzer_review in config.yml" analyzer=Dummy app=lookoutd error="rpc error: code = DeadlineExceeded desc = context deadline exceeded"`,
-	})
+	suite.Run(t, new(TimeoutErrorAnalyzerIntegrationSuite))
 }
