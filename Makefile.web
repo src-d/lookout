@@ -10,6 +10,12 @@ test: web-test
 build: web-build web-pack
 	@echo
 
+# To be used as -tags
+WITH_STATIC_TAG := with_static
+
+# Override Makefile.main defaults for arguments to be used in `go` commands.
+GO_BUILD_ARGS := -ldflags "$(LD_FLAGS)" -tags "$(WITH_STATIC_TAG)"
+
 FRONTEND_PATH := ./frontend
 FRONTEND_BUILD_PATH := $(FRONTEND_PATH)/build
 
@@ -50,6 +56,7 @@ web-clean:
 
 .PHONY: web-pack
 web-pack:
+	mkdir -p ./web/assets; \
 	$(ESC_BIN) \
 		-pkg assets \
 		-o ./web/assets/asset.go \

@@ -33,12 +33,6 @@ LOOKOUT_SDK_BIN := $(BIN_PATH)/lookout-sdk
 # lookoutd binary
 LOOKOUT_BIN := $(BIN_PATH)/lookoutd
 
-# To be used as -tags
-WITH_STATIC_TAG := with_static
-
-# Override Makefile.main defaults for arguments to be used in `go` commands.
-GO_BUILD_ARGS := -ldflags "$(LD_FLAGS)" -tags "$(WITH_STATIC_TAG)"
-
 # Tools
 ESC_BIN := esc
 TOC_GENERATOR := $(CI_PATH)/gh-md-toc
