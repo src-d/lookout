@@ -101,6 +101,6 @@ func TestErrorAnalyzerIntegrationSuite(t *testing.T) {
 	suite.Run(t, &ErrorAnalyzerIntegrationSuite{
 		configFile: dummyConfigFileWithTimeouts,
 		analyzer:   &sleepyErrAnalyzer{},
-		errMessage: `msg="analysis failed: timeout exceeded, try increasing analyzerReviewTimeout" analyzer=Dummy app=lookoutd error="rpc error: code = DeadlineExceeded desc = context deadline exceeded"`,
+		errMessage: `msg="analysis failed: timeout exceeded, try increasing analyzer_review in config.yml" analyzer=Dummy app=lookoutd error="rpc error: code = DeadlineExceeded desc = context deadline exceeded"`,
 	})
 }

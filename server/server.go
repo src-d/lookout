@@ -21,10 +21,10 @@ import (
 
 var grpcErrorMessages = map[lookout.EventType]map[codes.Code]string{
 	pb.PushEventType: map[codes.Code]string{
-		codes.DeadlineExceeded: "timeout exceeded, try increasing analyzerPushTimeout",
+		codes.DeadlineExceeded: "timeout exceeded, try increasing analyzer_push in config.yml",
 	},
 	pb.ReviewEventType: map[codes.Code]string{
-		codes.DeadlineExceeded: "timeout exceeded, try increasing analyzerReviewTimeout",
+		codes.DeadlineExceeded: "timeout exceeded, try increasing analyzer_review in config.yml",
 	},
 }
 
