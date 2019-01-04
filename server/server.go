@@ -11,10 +11,22 @@ import (
 	"github.com/src-d/lookout/store/models"
 	"github.com/src-d/lookout/util/ctxlog"
 	"github.com/src-d/lookout/util/grpchelper"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 
 	log "gopkg.in/src-d/go-log.v1"
 	yaml "gopkg.in/yaml.v2"
 )
+
+var grpcErrorMessages = map[lookout.EventType]map[codes.Code]string{
+	pb.PushEventType: map[codes.Code]string{
+		codes.DeadlineExceeded: "timeout exceeded, try increasing analyzer_push in config.yml",
+	},
+	pb.ReviewEventType: map[codes.Code]string{
+		codes.DeadlineExceeded: "timeout exceeded, try increasing analyzer_review in config.yml",
+	},
+}
 
 // Config is a server configuration
 type Config struct {
@@ -155,7 +167,7 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent, safeP
 		}
 		return resp.Comments, nil
 	}
-	comments, err := s.concurrentRequest(ctx, conf, send)
+	comments, err := s.concurrentRequest(ctx, conf, send, grpcErrorMessages[pb.ReviewEventType])
 	if err != nil {
 		return err
 	}
@@ -210,7 +222,7 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent, safePosti
 		}
 		return resp.Comments, nil
 	}
-	comments, err := s.concurrentRequest(ctx, conf, send)
+	comments, err := s.concurrentRequest(ctx, conf, send, grpcErrorMessages[pb.PushEventType])
 	if err != nil {
 		return err
 	}
@@ -269,7 +281,7 @@ func (s *Server) getConfig(ctx context.Context, e lookout.Event) (map[string]loo
 	return res, nil
 }
 
-func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.AnalyzerConfig, send reqSent) ([]lookout.AnalyzerComments, error) {
+func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.AnalyzerConfig, send reqSent, logErrorMessages map[codes.Code]string) ([]lookout.AnalyzerComments, error) {
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
 	defer cancel()
@@ -296,10 +308,19 @@ func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.
 
 			cs, err := send(ctx, a.Client, settings)
 			if err != nil {
-				aLogger.Errorf(err, "analysis failed")
+				grpcStatus := status.Convert(err)
+				errMessage := "analysis failed"
+				friendlyMessage, ok := logErrorMessages[grpcStatus.Code()]
+				if ok {
+					errMessage = fmt.Sprintf("%s: %s", errMessage, friendlyMessage)
+				}
+
+				aLogger.Errorf(err, errMessage)
+
 				if s.ExitOnError {
 					errCh <- err
 				}
+
 				return
 			}
 

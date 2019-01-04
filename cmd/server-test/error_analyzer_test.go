@@ -9,9 +9,6 @@ import (
 	"time"
 
 	"github.com/src-d/lookout"
-	"github.com/src-d/lookout/util/grpchelper"
-	log "gopkg.in/src-d/go-log.v1"
-	"gopkg.in/src-d/lookout-sdk.v0/pb"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -30,35 +27,13 @@ type ErrorAnalyzerIntegrationSuite struct {
 	IntegrationSuite
 }
 
-func (suite *ErrorAnalyzerIntegrationSuite) startAnalyzer(ctx context.Context, a lookout.AnalyzerServer) error {
-	log.DefaultFactory = &log.LoggerFactory{
-		Level: log.ErrorLevel,
-	}
-	log.DefaultLogger = log.New(log.Fields{"app": "test"})
-
-	server := grpchelper.NewServer()
-	lookout.RegisterAnalyzerServer(server, a)
-
-	lis, err := pb.Listen("ipv4://localhost:9930")
-	if err != nil {
-		return err
-	}
-
-	go server.Serve(lis)
-	go func() {
-		<-ctx.Done()
-		server.Stop()
-	}()
-	return nil
-}
-
 func (suite *ErrorAnalyzerIntegrationSuite) SetupTest() {
 	suite.ResetDB()
 
 	suite.StoppableCtx()
 	suite.r, suite.w = suite.StartLookoutd(dummyConfigFile)
 
-	suite.startAnalyzer(suite.Ctx, &errAnalyzer{})
+	startMockAnalyzer(suite.Ctx, &errAnalyzer{})
 	suite.GrepTrue(suite.r, `msg="connection state changed to 'READY'" addr="ipv4://localhost:9930" analyzer=Dummy`)
 }
 
