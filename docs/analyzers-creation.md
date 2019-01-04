@@ -29,7 +29,7 @@ You can read more about it in the [**source{d} Lookout Server** section](archite
 
 ## How to Test an Analyzer Locally
 
-_Please refer to [**lookout-sdk** docs](lookout-sdk.md) to see how to locally test an analyzer without accessing GitHub at all._
+_Please refer to [**lookout-tool** docs](lookout-tool.md) to see how to locally test an analyzer without accessing GitHub at all._
 
 
 # Using Pregenerated Code from the SDK
