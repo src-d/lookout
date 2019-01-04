@@ -1,6 +1,6 @@
 // +build integration
 
-package sdk_test
+package tool_test
 
 import (
 	"context"

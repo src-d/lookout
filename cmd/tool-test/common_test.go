@@ -1,4 +1,4 @@
-package sdk_test
+package tool_test
 
 import (
 	"github.com/src-d/lookout/util/cmdtest"
