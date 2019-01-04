@@ -23,12 +23,12 @@ To generate go code from [kallax](https://github.com/src-d/go-kallax) models, ru
 $ go generate ./...
 ```
 
-To update [go-bindata](https://github.com/jteeuwen/go-bindata) with the new migration files:
+To update embedded migrations with the new files:
 
 ```shell
 $ make dependencies
 $ kallax migrate --input ./store/models/ --out ./store/migrations --name <name>
-$ make bindata
+$ make pack-migrations
 ```
 
 ### Dependencies
