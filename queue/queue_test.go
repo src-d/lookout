@@ -55,7 +55,7 @@ func nextEOF(t *testing.T, iter queue.JobIter) {
 }
 
 func TestQueueJobCreation(t *testing.T) {
-	qJob, err := NewQueueJob(&mockEventA)
+	qJob, err := NewQueueJob(context.TODO(), &mockEventA)
 	require.NoError(t, err)
 	require.NotNil(t, qJob)
 

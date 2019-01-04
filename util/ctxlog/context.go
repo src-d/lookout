@@ -22,9 +22,22 @@ func Get(ctx context.Context) log.Logger {
 	return log.New(fields)
 }
 
+// Fields returns the context log fields. It can be nil
+func Fields(ctx context.Context) log.Fields {
+	if v := ctx.Value(logFieldsKey); v != nil {
+		return v.(log.Fields)
+	}
+
+	return nil
+}
+
 // WithLogFields returns a context with new logger Fields added to the current
 // ones, and a logger
 func WithLogFields(ctx context.Context, fields log.Fields) (context.Context, log.Logger) {
+	if fields == nil {
+		return ctx, Get(ctx)
+	}
+
 	var newFields log.Fields
 
 	if v := ctx.Value(logFieldsKey); v != nil {

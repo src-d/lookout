@@ -9,6 +9,7 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/ctxlog"
 
+	log "gopkg.in/src-d/go-log.v1"
 	"gopkg.in/src-d/go-queue.v1"
 	_ "gopkg.in/src-d/go-queue.v1/amqp"
 	_ "gopkg.in/src-d/go-queue.v1/memory"
@@ -22,11 +23,16 @@ type QueueJob struct {
 	ReviewEvent *lookout.ReviewEvent
 	// Exported so go-queue marshals it, but should be accessed through Event()
 	PushEvent *lookout.PushEvent
+	// LogFields contains ctxlog logger fields to keep log continuity
+	LogFields log.Fields
 }
 
 // NewQueueJob creates a new QueueJob from the given Event
-func NewQueueJob(e lookout.Event) (*QueueJob, error) {
-	qJob := QueueJob{EventType: e.Type()}
+func NewQueueJob(ctx context.Context, e lookout.Event) (*QueueJob, error) {
+	qJob := QueueJob{
+		EventType: e.Type(),
+		LogFields: ctxlog.Fields(ctx),
+	}
 
 	switch ev := e.(type) {
 	case *lookout.ReviewEvent:
@@ -55,7 +61,7 @@ func (j QueueJob) Event() (lookout.Event, error) {
 // EventEnqueuer returns an event handler that pushes events to the queue.
 func EventEnqueuer(ctx context.Context, q queue.Queue) lookout.EventHandler {
 	return func(ctx context.Context, e lookout.Event) error {
-		qJob, err := NewQueueJob(e)
+		qJob, err := NewQueueJob(ctx, e)
 		if err != nil {
 			ctxlog.Get(ctx).Errorf(err, "queue job creation failure")
 			return err
@@ -127,9 +133,10 @@ func RunEventDequeuer(
 				return
 			}
 
-			err = eventHandler(ctx, event)
+			jobCtx, _ := ctxlog.WithLogFields(ctx, qJob.LogFields)
+			err = eventHandler(jobCtx, event)
 			if err != nil {
-				ctxlog.Get(ctx).Errorf(err, "error handling the queue job")
+				ctxlog.Get(jobCtx).Errorf(err, "error handling the queue job")
 				consumedJob.Reject(true)
 				return
 			}
