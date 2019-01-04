@@ -1,6 +1,6 @@
-# Packaging lookout-sdk binary
-PROJECT = lookout-sdk
-COMMANDS = cmd/lookout-sdk
+# Packaging lookout-tool binary
+PROJECT = lookout-tool
+COMMANDS = cmd/lookout-tool
 
 # Including ci Makefile
 CI_REPOSITORY ?= https://github.com/src-d/ci.git

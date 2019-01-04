@@ -26,9 +26,9 @@ DOCKERFILES=./docker/Dockerfile:$(PROJECT)
 OS := $(shell uname)
 CONFIG_FILE := config.yml
 
-# SDK binaries
+# tool binaries
 DUMMY_BIN := $(BIN_PATH)/dummy
-LOOKOUT_SDK_BIN := $(BIN_PATH)/lookout-sdk
+LOOKOUT_TOOL_BIN := $(BIN_PATH)/lookout-tool
 
 # lookoutd binary
 LOOKOUT_BIN := $(BIN_PATH)/lookoutd
@@ -58,19 +58,19 @@ endif
 
 GOTEST_INTEGRATION = $(GOTEST) -parallel 1 -tags='$(GOTEST_INTEGRATION_TAGS)'
 
-# Integration test for sdk client
-.PHONY: test-sdk
-test-sdk: clean-all build-all
+# Integration test for lookout-tool
+.PHONY: test-tool
+test-tool: clean-all build-all
 	DUMMY_BIN=$(PWD)/$(DUMMY_BIN) \
-	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_SDK_BIN) \
-	$(GOTEST_INTEGRATION) github.com/src-d/lookout/cmd/sdk-test
+	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_TOOL_BIN) \
+	$(GOTEST_INTEGRATION) github.com/src-d/lookout/cmd/tool-test
 
-# Same as test-sdk, but skipping tests that require a bblfshd server
-.PHONY: test-sdk-short
-test-sdk-short: clean-all build-all
+# Same as test-tool, but skipping tests that require a bblfshd server
+.PHONY: test-tool-short
+test-tool-short: clean-all build-all
 	DUMMY_BIN=$(PWD)/$(DUMMY_BIN) \
-	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_SDK_BIN) \
-	$(GOTEST_INTEGRATION) -test.short github.com/src-d/lookout/cmd/sdk-test
+	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_TOOL_BIN) \
+	$(GOTEST_INTEGRATION) -test.short github.com/src-d/lookout/cmd/tool-test
 
 # Integration test for lookout serve
 .PHONY: test-json
@@ -79,13 +79,13 @@ test-json: clean build-all
 	LOOKOUT_BIN=$(PWD)/$(LOOKOUT_BIN) \
 	$(GOTEST_INTEGRATION) github.com/src-d/lookout/cmd/server-test
 
-# Build sdk client and dummy analyzer
+# Build lookoutd, tool and dummy analyzer
 .PHONY: build-all
-build-all: $(DUMMY_BIN) $(LOOKOUT_BIN) $(LOOKOUT_SDK_BIN)
+build-all: $(DUMMY_BIN) $(LOOKOUT_BIN) $(LOOKOUT_TOOL_BIN)
 $(LOOKOUT_BIN):
 	$(GOBUILD) -o "$(LOOKOUT_BIN)" ./cmd/lookoutd
-$(LOOKOUT_SDK_BIN):
-	$(GOBUILD) -o "$(LOOKOUT_SDK_BIN)" ./cmd/lookout-sdk
+$(LOOKOUT_TOOL_BIN):
+	$(GOBUILD) -o "$(LOOKOUT_TOOL_BIN)" ./cmd/lookout-tool
 $(DUMMY_BIN):
 	$(GOBUILD) -o "$(DUMMY_BIN)" ./cmd/dummy
 
@@ -93,7 +93,7 @@ $(DUMMY_BIN):
 clean-all:
 	rm -f $(DUMMY_BIN)
 	rm -f $(LOOKOUT_BIN)
-	rm -f $(LOOKOUT_SDK_BIN)
+	rm -f $(LOOKOUT_TOOL_BIN)
 
 .PHONY: dry-run
 dry-run: $(CONFIG_FILE)
