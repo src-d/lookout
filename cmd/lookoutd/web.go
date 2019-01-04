@@ -50,13 +50,13 @@ func (c *WebCommand) Execute(args []string) error {
 
 	ghConfg := conf.Providers.Github
 	if ghConfg.ClientID == "" {
-		return fmt.Errorf("provider github client_id is required")
+		return fmt.Errorf("Missing field in configuration file: provider github client_id is required")
 	}
 	if ghConfg.ClientSecret == "" {
-		return fmt.Errorf("provider github client_secret is required")
+		return fmt.Errorf("Missing field in configuration file: provider github client_secret is required")
 	}
 	if conf.Web.SigningKey == "" {
-		return fmt.Errorf("web signing_key is required")
+		return fmt.Errorf("Missing field in configuration file: web signing_key is required")
 	}
 
 	auth := web.NewAuth(ghConfg.ClientID, ghConfg.ClientSecret, conf.Web.SigningKey)
