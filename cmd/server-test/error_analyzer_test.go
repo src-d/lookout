@@ -96,7 +96,7 @@ func TestErrorAnalyzerIntegrationSuite(t *testing.T) {
 	suite.Run(t, &ErrorAnalyzerIntegrationSuite{
 		configFile: dummyConfigFile,
 		analyzer:   &errAnalyzer{},
-		errMessage: `msg="analysis failed: code: Unknown - message: review error" analyzer=Dummy app=lookoutd error="rpc error: code = Unknown desc = review error"`,
+		errMessage: `msg="analysis failed" analyzer=Dummy app=lookoutd error="rpc error: code = Unknown desc = review error"`,
 	})
 	suite.Run(t, &ErrorAnalyzerIntegrationSuite{
 		configFile: dummyConfigFileWithTimeouts,

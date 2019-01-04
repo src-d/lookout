@@ -309,12 +309,13 @@ func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.
 			cs, err := send(ctx, a.Client, settings)
 			if err != nil {
 				grpcStatus := status.Convert(err)
-				errMessage, ok := logErrorMessages[grpcStatus.Code()]
-				if !ok {
-					errMessage = fmt.Sprintf("code: %s - message: %s", grpcStatus.Code(), grpcStatus.Message())
+				errMessage := "analysis failed"
+				friendlyMessage, ok := logErrorMessages[grpcStatus.Code()]
+				if ok {
+					errMessage = fmt.Sprintf("%s: %s", errMessage, friendlyMessage)
 				}
 
-				aLogger.Errorf(err, "analysis failed: %s", errMessage)
+				aLogger.Errorf(err, errMessage)
 
 				if s.ExitOnError {
 					errCh <- err
