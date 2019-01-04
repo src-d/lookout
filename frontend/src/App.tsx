@@ -1,17 +1,16 @@
 import React, { Component } from 'react';
 import {
   BrowserRouter as Router,
-  Route,
-  Redirect,
   Link,
-  RouteProps,
-  RouteComponentProps
+  Redirect,
+  Route,
+  RouteComponentProps,
+  RouteProps
 } from 'react-router-dom';
-import { User } from './services/auth';
-import Auth from './services/auth';
-import Loader from './components/Loader';
-import Callback from './Callback';
 import './App.css';
+import Callback from './Callback';
+import Loader from './components/Loader';
+import Auth, { User } from './services/auth';
 
 function Login() {
   return (
@@ -66,20 +65,21 @@ function PrivateRoute({ component, ...rest }: PrivateRouteProps) {
       this.state = { isAuthenticated: undefined };
     }
 
-    componentDidMount() {
+    public componentDidMount() {
       Auth.isAuthenticated
         .then(ok => this.setState({ isAuthenticated: ok }))
         .catch(() => this.setState({ isAuthenticated: false }));
     }
 
-    render() {
+    public render() {
       if (!component) {
         return null;
       }
 
       if (this.state.isAuthenticated === true) {
-        const Component = component;
-        return <Component {...this.props} user={Auth.user} />;
+        // tslint:disable-next-line
+        const WrappedComponent = component; // must be uppercase because of JSX
+        return <WrappedComponent {...this.props} user={Auth.user} />;
       }
 
       if (this.state.isAuthenticated === false) {
@@ -104,7 +104,7 @@ function AppRouter() {
   return (
     <Router>
       <div className="App">
-        <PrivateRoute path="/" exact component={Index} />
+        <PrivateRoute path="/" exact={true} component={Index} />
         <Route path="/login" component={Login} />
         <Route path="/logout" component={Logout} />
         <Route path="/callback" component={Callback} />

@@ -1,10 +1,11 @@
 import { GlobalWithFetchMock } from 'jest-fetch-mock';
-import Auth from './services/auth';
 import { apiCall } from './api';
+import Auth from './services/auth';
 
 // can be moved to setupFiles later if needed
 const customGlobal: GlobalWithFetchMock = global as GlobalWithFetchMock;
-customGlobal.fetch = require('jest-fetch-mock');
+// tslint:disable-next-line
+customGlobal.fetch = require('jest-fetch-mock'); // import * as X raises types error
 customGlobal.fetchMock = customGlobal.fetch;
 
 describe('api', () => {
