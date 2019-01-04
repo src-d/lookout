@@ -68,3 +68,7 @@ web-start:
 
 .PHONY: web-serve
 web-serve: | web-dependencies web-build web-pack web-start
+
+.PHONY: lint
+lint:
+	$(YARN) lint
