@@ -99,12 +99,14 @@ There is [`docker-compose.yml`](/docker-compose.yml) config file for [Docker Com
 
 To do so, clone this repository or download [`docker-compose.yml`](/docker-compose.yml) directly.
 
-Create the `config.yml` file in the same directory where `docker-compose.yml` is. You can use [`config.yml.tpl`](/config.yml.tpl) as a template. Then run:
+Create the `config.yml` file in the same directory where `docker-compose.yml` is. You can use [`config.yml.tpl`](/config.yml.tpl) as a template. Make sure that you specify in the `config.yml` the repositories that will be watched by **source{d} Lookout**. Then run, passing [a valid GitHub user/token](docs/configuration.md#authentication-with-github):
 
 ```bash
 $ docker-compose pull
 $ GITHUB_USER=<user> GITHUB_TOKEN=<token> docker-compose up --force-recreate
 ```
+
+Once it is running, **source{d} Lookout** will start posting the comments returned by `dummy` analyzer into the pull requests opened at GitHub in the repositories that you configured to be watched.
 
 You can stop it by pressing `ctrl+c`
 
