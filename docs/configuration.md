@@ -8,7 +8,7 @@ The behavior of **source{d} Lookout** is defined with two different configuratio
 
 # config.yml
 
-**source{d} Lookout** is configured with the `config.yml` file, you can use the template [`config.yml.tpl`](/config.yml.tpl) to create your own. Use the `lookoutd` option `--config` to set the path to it, or use the default location at `./config.yml`.
+**source{d} Lookout** is configured with the `config.yml` file, you can use the template [`config.yml.tpl`](/config.yml.tpl) to create your own. Use the `lookoutd` option `--config` to set the path to it, or use the default location at `./config.yml`. The config file is read on server startup, so `lookoutd` needs to be restarted in order to load a new configuration.
 
 The most important things you need to configure for a local installation, are:
 
