@@ -171,7 +171,7 @@ func (s *regexpFilter) OnStart() error {
 
 func (s *regexpFilter) Fn(f *lookout.File) (bool, error) {
 	if f == nil {
-		return true, nil
+		return false, nil
 	}
 
 	if !s.matchInclude(f.Path) {
@@ -217,6 +217,10 @@ func NewChangeFilterScanner(scanner lookout.ChangeScanner, include, exclude stri
 	}
 
 	fn := func(ch *lookout.Change) (bool, error) {
+		if ch.Head == nil {
+			return filter.Fn(ch.Base)
+		}
+
 		return filter.Fn(ch.Head)
 	}
 
