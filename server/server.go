@@ -10,7 +10,6 @@ import (
 	"github.com/src-d/lookout/store"
 	"github.com/src-d/lookout/store/models"
 	"github.com/src-d/lookout/util/ctxlog"
-	"github.com/src-d/lookout/util/grpchelper"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
@@ -150,7 +149,7 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent, safeP
 		a lookout.AnalyzerClient,
 		settings map[string]interface{},
 	) ([]*lookout.Comment, error) {
-		st := grpchelper.ToPBStruct(settings)
+		st := pb.ToStruct(settings)
 		if st != nil {
 			e.Configuration = *st
 		}
@@ -205,7 +204,7 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent, safePosti
 		a lookout.AnalyzerClient,
 		settings map[string]interface{},
 	) ([]*lookout.Comment, error) {
-		st := grpchelper.ToPBStruct(settings)
+		st := pb.ToStruct(settings)
 		if st != nil {
 			e.Configuration = *st
 		}
