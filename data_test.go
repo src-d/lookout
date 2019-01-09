@@ -630,3 +630,73 @@ func TestFnChangeScanner(t *testing.T) {
 
 	require.Len(scannedChanges, 2)
 }
+
+func TestDataClientGetChanges(t *testing.T) {
+	require := require.New(t)
+
+	req := &ChangesRequest{
+		Head: &ReferencePointer{
+			InternalRepositoryURL: "repo",
+			Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
+		},
+	}
+	changes := generateChanges(3)
+	dr := &MockService{
+		T:                t,
+		ExpectedCRequest: req,
+		ChangeScanner:    &SliceChangeScanner{Changes: changes},
+	}
+
+	_, grpcClient := setupDataServer(t, dr)
+
+	c := DataClient{dataClient: grpcClient}
+
+	s, err := c.GetChanges(context.TODO(), req)
+	require.NoError(err)
+
+	var scannedChanges []*Change
+	for s.Next() {
+		scannedChanges = append(scannedChanges, s.Change())
+	}
+
+	require.False(s.Next())
+	require.NoError(s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedChanges, 3)
+}
+
+func TestDataClientGetFiles(t *testing.T) {
+	require := require.New(t)
+
+	req := &FilesRequest{
+		Revision: &ReferencePointer{
+			InternalRepositoryURL: "repo",
+			Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
+		},
+	}
+	files := generateFiles(3)
+	dr := &MockService{
+		T:                t,
+		ExpectedFRequest: req,
+		FileScanner:      &SliceFileScanner{Files: files},
+	}
+
+	_, grpcClient := setupDataServer(t, dr)
+
+	c := DataClient{dataClient: grpcClient}
+
+	s, err := c.GetFiles(context.TODO(), req)
+	require.NoError(err)
+
+	var scannedFiles []*File
+	for s.Next() {
+		scannedFiles = append(scannedFiles, s.File())
+	}
+
+	require.False(s.Next())
+	require.NoError(s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedFiles, 3)
+}
