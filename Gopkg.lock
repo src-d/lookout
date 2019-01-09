@@ -93,14 +93,13 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:d49485d62a6b0f0c0c5a59ddfb86ae9f9be581fb47a97eb9cf8bee9d945e2d35"
+  digest = "1:dba2eb731d0aa85da282a1afa4239603ff164856db8ab7e46c21f8a299255fac"
   name = "github.com/golang-migrate/migrate"
   packages = [
     ".",
     "database",
     "database/postgres",
     "source",
-    "source/go-bindata",
   ]
   pruneopts = "NUT"
   revision = "22f249514de9aa3f8a720a7cabbdd45d294f83a1"
@@ -447,14 +446,6 @@
   pruneopts = "NUT"
   revision = "f187355171c936ac84a82793659ebb4936bc1c23"
   version = "v1.3.0"
-
-[[projects]]
-  digest = "1:854b7cc138e1904703080b1ff5430ccda167646966b9261f30d0cbb5445fa712"
-  name = "github.com/src-d/gitbase-web"
-  packages = ["server/assets"]
-  pruneopts = "NUT"
-  revision = "9a885b02bc6d5e39b1fec97e92d6ff56beb1b521"
-  version = "v0.1.0"
 
 [[projects]]
   branch = "master"
@@ -883,7 +874,6 @@
     "github.com/golang-migrate/migrate",
     "github.com/golang-migrate/migrate/database/postgres",
     "github.com/golang-migrate/migrate/source",
-    "github.com/golang-migrate/migrate/source/go-bindata",
     "github.com/google/go-github/github",
     "github.com/gorilla/sessions",
     "github.com/gregjones/httpcache",
@@ -899,7 +889,6 @@
     "github.com/sanity-io/litter",
     "github.com/satori/go.uuid",
     "github.com/sirupsen/logrus",
-    "github.com/src-d/gitbase-web/server/assets",
     "github.com/src-d/lookout-test-fixtures",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",

@@ -75,7 +75,7 @@ jobs:
         - make no-changes-in-commit
         - kallax migrate --input ./store/models/ --out ./store/migrations --name test-changes
         - make no-changes-in-commit
-        - make bindata
+        - make pack-migrations
         - make no-changes-in-commit
         - make build
         - make no-changes-in-commit

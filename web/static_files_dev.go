@@ -1,4 +1,4 @@
-// +build !bindata
+// +build !with_static
 
 package web
 
@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// Static without the 'bindata' tag contains a placeholder handler
+// Static without the 'with_static' tag contains a placeholder handler
 // that returns 'not implemented'
 type Static struct{}
 

@@ -1,4 +1,4 @@
-// +build bindata
+// +build with_static
 
 package web
 
@@ -6,24 +6,24 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
-	"path"
 	"strings"
 
-	"github.com/src-d/gitbase-web/server/assets"
+	"github.com/src-d/lookout/web/assets"
 )
 
 const (
 	staticDirName = "static"
-	indexFileName = "index.html"
+	indexFileName = "/index.html"
 
 	serverValuesPlaceholder = "window.REPLACE_BY_SERVER"
 	footerPlaceholder       = `<div class="invisible-footer"></div>`
 )
 
-// Static contains handlers to serve static using go-bindata
+// Static contains handlers to serve static using esc
 type Static struct {
-	dir        string
+	fs         http.FileSystem
 	options    options
 	footerHTML []byte
 }
@@ -35,8 +35,9 @@ func NewStatic(dir, serverURL string, footerHTML string) *Static {
 		// skip incorrect base64
 		footerBytes, _ = base64.StdEncoding.DecodeString(footerHTML)
 	}
+
 	return &Static{
-		dir: dir,
+		fs: assets.Dir(false, dir),
 		options: options{
 			ServerURL: serverURL,
 		},
@@ -51,10 +52,9 @@ type options struct {
 
 // ServeHTTP serves any static file from static directory or fallbacks on index.hml
 func (s *Static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	filepath := path.Join(s.dir, r.URL.Path)
-	b, err := assets.Asset(filepath)
+	_, err := s.fs.Open(r.URL.Path)
 	if err != nil {
-		if strings.HasPrefix(filepath, path.Join(s.dir, staticDirName)) {
+		if strings.HasPrefix(r.URL.Path, staticDirName) {
 			http.NotFound(w, r)
 			return
 		}
@@ -63,16 +63,21 @@ func (s *Static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.serveAsset(w, r, filepath, b)
+	http.FileServer(s.fs).ServeHTTP(w, r)
 }
 
 // serveIndexHTML serves index.html file
 func (s *Static) serveIndexHTML(initialState interface{}) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		filepath := path.Join(s.dir, indexFileName)
-		b, err := assets.Asset(filepath)
+		f, err := s.fs.Open(indexFileName)
 		if err != nil {
 			http.NotFound(w, r)
+			return
+		}
+
+		b, err := ioutil.ReadAll(f)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
@@ -83,17 +88,16 @@ func (s *Static) serveIndexHTML(initialState interface{}) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
 		b = bytes.Replace(b, []byte(serverValuesPlaceholder), bData, 1)
 		b = bytes.Replace(b, []byte(footerPlaceholder), s.footerHTML, 1)
-		s.serveAsset(w, r, filepath, b)
-	}
-}
 
-func (s *Static) serveAsset(w http.ResponseWriter, r *http.Request, filepath string, content []byte) {
-	info, err := assets.AssetInfo(filepath)
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
+
+		info, err := f.Stat()
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+
+		http.ServeContent(w, r, info.Name(), info.ModTime(), bytes.NewReader(b))
 	}
-	http.ServeContent(w, r, info.Name(), info.ModTime(), bytes.NewReader(content))
 }

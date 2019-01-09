@@ -9,7 +9,6 @@ import (
 	"github.com/golang-migrate/migrate"
 	"github.com/golang-migrate/migrate/database/postgres"
 	"github.com/golang-migrate/migrate/source"
-	bindata "github.com/golang-migrate/migrate/source/go-bindata"
 )
 
 // NewMigrateDSN returns a new Migrate instance from a database URL
@@ -19,7 +18,7 @@ func NewMigrateDSN(dsn string) (*migrate.Migrate, error) {
 		return nil, err
 	}
 
-	return migrate.NewWithSourceInstance("go-bindata", source, dsn)
+	return migrate.NewWithSourceInstance("file", source, dsn)
 }
 
 // NewMigrateInstance returns a new Migrate instance from a postgres instance
@@ -31,24 +30,30 @@ func NewMigrateInstance(db *sql.DB) (*migrate.Migrate, error) {
 
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 
-	return migrate.NewWithInstance("go-bindata", source, "postgres", driver)
+	return migrate.NewWithInstance("file", source, "postgres", driver)
 }
 
 func initSource() (source.Driver, error) {
-	s := bindata.Resource(AssetNames(),
-		func(name string) ([]byte, error) {
-			return Asset(name)
-		})
-
-	return bindata.WithInstance(s)
+	return WithInstance(FS(false), &Config{Dir: "/store/migrations/"})
 }
 
 // MaxMigrateVersion returns the current DB migration file version
 func MaxMigrateVersion() (uint, error) {
 	var maxVersion uint64
 
-	names := AssetNames()
-	for _, name := range names {
+	dir, err := FS(false).Open("/store/migrations/")
+	if err != nil {
+		return 0, fmt.Errorf("can't open directory with migrations: %s", err)
+	}
+
+	files, err := dir.Readdir(-1)
+	dir.Close()
+	if err != nil {
+		return 0, fmt.Errorf("can't read files in migrations directory: %s", err)
+	}
+
+	for _, fi := range files {
+		name := fi.Name()
 		if !strings.HasSuffix(name, "up.sql") {
 			continue
 		}

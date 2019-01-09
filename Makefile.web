@@ -7,8 +7,14 @@ test: web-test
 
 # this::build -> Makefile.main::build -> Makefile.main::$(COMMANDS)
 # The @echo forces this prerequisites to be run before `Makefile.main::build` ones.
-build: web-build web-bindata
+build: web-build web-pack
 	@echo
+
+# To be used as -tags
+WITH_STATIC_TAG := with_static
+
+# Override Makefile.main defaults for arguments to be used in `go` commands.
+GO_BUILD_ARGS := -ldflags "$(LD_FLAGS)" -tags "$(WITH_STATIC_TAG)"
 
 FRONTEND_PATH := ./frontend
 FRONTEND_BUILD_PATH := $(FRONTEND_PATH)/build
@@ -21,7 +27,7 @@ MKDIR := mkdir -p
 
 # Environment and arguments to use in `go run` calls.
 GO_RUN_ENV := LOG_LEVEL=DEBUG
-GO_RUN_ARGS += -tags "$(GO_BINDATA_TAG)"
+GO_RUN_ARGS += -tags "$(WITH_STATIC_TAG)"
 
 GOCMD = go
 GORUN = $(GOCMD) run $(GO_RUN_ARGS)
@@ -48,16 +54,17 @@ web-clean:
 	$(REMOVE) $(FRONTEND_PATH)/node_modules
 	$(REMOVE) $(FRONTEND_BUILD_PATH)
 
-.PHONY: web-bindata
-web-bindata:
-	$(BINDATA) \
+.PHONY: web-pack
+web-pack:
+	mkdir -p ./web/assets; \
+	$(ESC_BIN) \
 		-pkg assets \
 		-o ./web/assets/asset.go \
-		build/public/...
+		build/public
 
 .PHONY: web-start
 web-start:
 	$(GO_RUN_ENV) $(GORUN) cmd/lookoutd/*.go web
 
 .PHONY: web-serve
-web-serve: | web-dependencies web-build web-bindata web-start
+web-serve: | web-dependencies web-build web-pack web-start
