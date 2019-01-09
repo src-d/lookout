@@ -631,6 +631,105 @@ func TestFnChangeScanner(t *testing.T) {
 	require.Len(scannedChanges, 2)
 }
 
+func TestFnChangeScannerErr(t *testing.T) {
+	require := require.New(t)
+
+	changes := generateChanges(3)
+
+	sliceScanner := &SliceChangeScanner{Changes: changes}
+
+	e := errors.New("test-error")
+	fn := func(f *Change) (bool, error) {
+		return false, e
+	}
+
+	s := FnChangeScanner{
+		Scanner: sliceScanner,
+		Fn:      fn,
+	}
+
+	var scannedChanges []*Change
+	for s.Next() {
+		scannedChanges = append(scannedChanges, s.Change())
+	}
+
+	require.False(s.Next())
+	require.Equal(e, s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedChanges, 0)
+}
+
+func TestFnChangeScannerOnStart(t *testing.T) {
+	require := require.New(t)
+
+	changes := generateChanges(3)
+
+	sliceScanner := &SliceChangeScanner{Changes: changes}
+
+	fn := func(f *Change) (bool, error) {
+		return false, nil
+	}
+
+	var startCalled bool
+	onStart := func() error {
+		startCalled = true
+		return nil
+	}
+
+	s := FnChangeScanner{
+		Scanner: sliceScanner,
+		Fn:      fn,
+		OnStart: onStart,
+	}
+
+	var scannedChanges []*Change
+	for s.Next() {
+		scannedChanges = append(scannedChanges, s.Change())
+	}
+
+	require.False(s.Next())
+	require.NoError(s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedChanges, 3)
+	require.True(startCalled)
+}
+
+func TestFnChangeScannerOnStartErr(t *testing.T) {
+	require := require.New(t)
+
+	changes := generateChanges(3)
+
+	sliceScanner := &SliceChangeScanner{Changes: changes}
+
+	fn := func(f *Change) (bool, error) {
+		return false, nil
+	}
+
+	e := errors.New("test-err")
+	onStart := func() error {
+		return e
+	}
+
+	s := FnChangeScanner{
+		Scanner: sliceScanner,
+		Fn:      fn,
+		OnStart: onStart,
+	}
+
+	var scannedChanges []*Change
+	for s.Next() {
+		scannedChanges = append(scannedChanges, s.Change())
+	}
+
+	require.False(s.Next())
+	require.Equal(e, s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedChanges, 0)
+}
+
 func TestDataClientGetChanges(t *testing.T) {
 	require := require.New(t)
 
