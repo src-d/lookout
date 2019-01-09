@@ -2,6 +2,7 @@ package lookout
 
 import (
 	"google.golang.org/grpc"
+	log "gopkg.in/src-d/go-log.v1"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
@@ -88,4 +89,48 @@ func (g AnalyzerCommentsGroups) Count() int {
 	}
 
 	return count
+}
+
+// Dedup filters duplicated comments
+func (g AnalyzerCommentsGroups) Dedup() AnalyzerCommentsGroups {
+	var result []AnalyzerComments
+	type Key struct {
+		File string
+		Line int32
+		Text string
+	}
+
+	for _, group := range g {
+		dupComments := 0
+		analyzerName := group.Config.Name
+		var newComments []*Comment
+		uniqueCommentsMap := map[Key]*Comment{}
+		for _, comment := range group.Comments {
+			key := Key{
+				File: comment.File,
+				Line: comment.Line,
+				Text: comment.Text,
+			}
+			if _, ok := uniqueCommentsMap[key]; ok {
+				dupComments++
+				continue
+			}
+
+			uniqueCommentsMap[key] = comment
+			newComments = append(newComments, comment)
+		}
+
+		if len(newComments) > 0 {
+			result = append(result, AnalyzerComments{
+				Config:   group.Config,
+				Comments: newComments,
+			})
+		}
+
+		if dupComments > 0 {
+			log.Warningf("analyzer %s generated %d duplicated comments", analyzerName, dupComments)
+		}
+	}
+
+	return result
 }
