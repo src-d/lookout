@@ -137,13 +137,30 @@ func TestServerPersistedReview(t *testing.T) {
 	require.Len(comments, 0)
 }
 
-func TestServerIncrementalReview(t *testing.T) {
+func TestServerReviewDuplicatedComments(t *testing.T) {
 	require := require.New(t)
 
 	watcher := &WatcherMock{}
 	poster := &PosterMock{}
 	fileGetter := &FileGetterMock{}
-	client := &AnalyzerSameCommentClient{}
+
+	makeComments := func() []*lookout.Comment {
+		return []*lookout.Comment{
+			{File: "foo", Line: 1, Text: "some-text", Confidence: 1},
+			{File: "foo", Line: 1, Text: "some-text", Confidence: 2},
+			{File: "foo", Line: 1, Text: "some-other-text", Confidence: 4},
+			{File: "bar", Line: 1, Text: "some-text", Confidence: 8},
+			{File: "bar", Line: 2, Text: "some-text", Confidence: 16},
+			{File: "bar", Line: 2, Text: "some-other-text", Confidence: 32},
+		}
+	}
+
+	reviewEventComments := makeComments()
+	pushEventComments := makeComments()
+	client := &AnalyzerFixedCommentsClient{
+		reviewEventComments: reviewEventComments,
+		pushEventComments:   pushEventComments,
+	}
 	analyzers := map[string]lookout.Analyzer{
 		"mock": lookout.Analyzer{
 			Client: client,
@@ -159,7 +176,56 @@ func TestServerIncrementalReview(t *testing.T) {
 	require.Nil(err)
 
 	comments := poster.PopComments()
-	require.Len(comments, 1)
+	// should discard duplicated comments
+	require.Len(comments, 5)
+
+	// for testing use confidence as id, the confidence used in the fixtures
+	// has been chosen so that the sum of every possible combination has a
+	// unique value (similarly to unix permissions)
+	sum := 0
+	for _, c := range comments {
+		sum += int(c.Confidence)
+	}
+
+	require.Equal(sum, 61)
+}
+
+func TestServerIncrementalReview(t *testing.T) {
+	require := require.New(t)
+
+	watcher := &WatcherMock{}
+	poster := &PosterMock{}
+	fileGetter := &FileGetterMock{}
+
+	makeComments := func() []*lookout.Comment {
+		return []*lookout.Comment{
+			{Text: "some-text-1"},
+			{Text: "some-text-2"},
+		}
+	}
+
+	reviewEventComments := makeComments()
+	pushEventComments := makeComments()
+	client := &AnalyzerFixedCommentsClient{
+		reviewEventComments: reviewEventComments,
+		pushEventComments:   pushEventComments,
+	}
+	analyzers := map[string]lookout.Analyzer{
+		"mock": lookout.Analyzer{
+			Client: client,
+		},
+	}
+
+	srv := NewServer(poster, fileGetter, analyzers, store.NewMemEventOperator(), store.NewMemCommentOperator(), 0, 0)
+	watcher.Watch(context.TODO(), srv.HandleEvent)
+
+	reviewEvent := &correctReviewEvent
+
+	err := watcher.Send(reviewEvent)
+	require.Nil(err)
+
+	comments := poster.PopComments()
+	require.Len(comments, 2)
 
 	// reset client
 	client.PopReviewEvents()
@@ -443,28 +509,22 @@ func makeComment(from, to lookout.ReferencePointer) *lookout.Comment {
 	}
 }
 
-type AnalyzerSameCommentClient struct {
-	reviewEvents []*lookout.ReviewEvent
+type AnalyzerFixedCommentsClient struct {
+	reviewEvents        []*lookout.ReviewEvent
+	reviewEventComments []*lookout.Comment
+	pushEventComments   []*lookout.Comment
 }
 
-func (a *AnalyzerSameCommentClient) NotifyReviewEvent(ctx context.Context, in *lookout.ReviewEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
+func (a *AnalyzerFixedCommentsClient) NotifyReviewEvent(ctx context.Context, in *lookout.ReviewEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
 	a.reviewEvents = append(a.reviewEvents, in)
-	return &lookout.EventResponse{
-		Comments: []*lookout.Comment{
-			{Text: "some-text"},
-		},
-	}, nil
+	return &lookout.EventResponse{Comments: a.reviewEventComments}, nil
 }
 
-func (a *AnalyzerSameCommentClient) NotifyPushEvent(ctx context.Context, in *lookout.PushEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
-	return &lookout.EventResponse{
-		Comments: []*lookout.Comment{
-			{Text: "some-text"},
-		},
-	}, nil
+func (a *AnalyzerFixedCommentsClient) NotifyPushEvent(ctx context.Context, in *lookout.PushEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
+	return &lookout.EventResponse{Comments: a.pushEventComments}, nil
 }
 
-func (a *AnalyzerSameCommentClient) PopReviewEvents() []*lookout.ReviewEvent {
+func (a *AnalyzerFixedCommentsClient) PopReviewEvents() []*lookout.ReviewEvent {
 	res := a.reviewEvents[:]
 	a.reviewEvents = []*lookout.ReviewEvent{}
 	return res
