@@ -1,6 +1,6 @@
 // +build integration
 
-package sdk_test
+package tool_test
 
 import (
 	"testing"
@@ -8,19 +8,19 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type SDKDummyTestSuite struct {
-	SdkIntegrationSuite
+type ToolDummyTestSuite struct {
+	ToolIntegrationSuite
 }
 
-func (suite *SDKDummyTestSuite) SetupTest() {
+func (suite *ToolDummyTestSuite) SetupTest() {
 	suite.StoppableCtx()
 }
 
-func (suite *SDKDummyTestSuite) TearDownTest() {
+func (suite *ToolDummyTestSuite) TearDownTest() {
 	suite.Stop()
 }
 
-func (suite *SDKDummyTestSuite) TestReview() {
+func (suite *ToolDummyTestSuite) TestReview() {
 	suite.StartDummy("--files")
 
 	r := suite.RunCli("review",
@@ -30,7 +30,7 @@ func (suite *SDKDummyTestSuite) TestReview() {
 	suite.GrepTrue(r, "posting analysis")
 }
 
-func (suite *SDKDummyTestSuite) TestPush() {
+func (suite *ToolDummyTestSuite) TestPush() {
 	suite.StartDummy("--files")
 
 	r := suite.RunCli("push",
@@ -40,7 +40,7 @@ func (suite *SDKDummyTestSuite) TestPush() {
 	suite.GrepTrue(r, "posting analysis")
 }
 
-func (suite *SDKDummyTestSuite) TestPushNoComments() {
+func (suite *ToolDummyTestSuite) TestPushNoComments() {
 	suite.StartDummy()
 
 	r := suite.RunCli("push",
@@ -50,6 +50,6 @@ func (suite *SDKDummyTestSuite) TestPushNoComments() {
 	suite.GrepTrue(r, "no comments were produced")
 }
 
-func TestSDKDummyTestSuite(t *testing.T) {
-	suite.Run(t, new(SDKDummyTestSuite))
+func TestToolDummyTestSuite(t *testing.T) {
+	suite.Run(t, new(ToolDummyTestSuite))
 }

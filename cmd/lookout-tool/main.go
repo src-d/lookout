@@ -1,9 +1,9 @@
 package main
 
-import "gopkg.in/src-d/go-cli.v0"
+import cli "gopkg.in/src-d/go-cli.v0"
 
 var (
-	name    = "lookout-sdk"
+	name    = "lookout-tool"
 	version = "undefined"
 	build   = "undefined"
 )
