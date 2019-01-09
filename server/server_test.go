@@ -8,11 +8,11 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/mock"
 	"github.com/src-d/lookout/store"
-	"github.com/src-d/lookout/util/grpchelper"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	log "gopkg.in/src-d/go-log.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 var correctReviewEvent = lookout.ReviewEvent{
@@ -235,7 +235,7 @@ func TestMergeConfigWithoutLocal(t *testing.T) {
 	es := analyzerClient.PopReviewEvents()
 	require.Len(es, 1)
 
-	require.Equal(grpchelper.ToPBStruct(globalConfig.Settings), &es[0].Configuration)
+	require.Equal(pb.ToStruct(globalConfig.Settings), &es[0].Configuration)
 }
 
 func TestMergeConfigWithLocal(t *testing.T) {
@@ -273,7 +273,7 @@ func TestMergeConfigWithLocal(t *testing.T) {
 	}
 	expectedMap["some"] = "value"
 
-	require.Equal(grpchelper.ToPBStruct(expectedMap), &es[0].Configuration)
+	require.Equal(pb.ToStruct(expectedMap), &es[0].Configuration)
 }
 
 func TestConfigMerger(t *testing.T) {

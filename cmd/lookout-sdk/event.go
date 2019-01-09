@@ -205,7 +205,7 @@ func (c *EventCommand) parseConfig() (types.Struct, error) {
 		return types.Struct{}, fmt.Errorf("Can't parse config-json option: %s", err)
 	}
 
-	st := grpchelper.ToPBStruct(conf)
+	st := pb.ToStruct(conf)
 	if st == nil {
 		return types.Struct{}, nil
 	}
