@@ -1,3 +1,6 @@
+# Deletes all the extensions using make implicit rules
+.SUFFIXES:
+
 # Package configuration
 PROJECT = lookout
 COMMANDS = cmd/lookoutd
