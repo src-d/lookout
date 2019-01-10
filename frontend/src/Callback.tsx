@@ -1,10 +1,10 @@
+import * as H from 'history';
 import React, { Component } from 'react';
 import { Redirect } from 'react-router-dom';
-import * as H from 'history';
-import Auth from './services/auth';
 import * as api from './api';
-import Loader from './components/Loader';
 import Errors from './components/Errors';
+import Loader from './components/Loader';
+import Auth from './services/auth';
 
 interface CallbackProps {
   location: H.Location;
@@ -25,13 +25,13 @@ class Callback extends Component<CallbackProps, CallbackState> {
     };
   }
 
-  componentDidMount() {
+  public componentDidMount() {
     Auth.callback(this.props.location.search)
       .then(() => this.setState({ success: true }))
       .catch(errors => this.setState({ errors }));
   }
 
-  render() {
+  public render() {
     const { errors, success } = this.state;
 
     if (errors.length) {

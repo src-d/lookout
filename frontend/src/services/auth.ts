@@ -26,6 +26,7 @@ class AuthService {
           return true;
         })
         .catch(err => {
+          // tslint:disable-next-line
           console.error(err);
           this._user = null;
           return false;
@@ -43,13 +44,13 @@ class AuthService {
     return api.loginUrl;
   }
 
-  callback(queryString: string) {
+  public callback(queryString: string) {
     return api.callback(location.search).then(resp => {
       window.localStorage.setItem(localStorageKey, resp.token);
     });
   }
 
-  logout(): void {
+  public logout(): void {
     window.localStorage.removeItem(localStorageKey);
   }
 }

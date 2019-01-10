@@ -1,5 +1,5 @@
-import lookoutOptions from './services/options';
 import Auth from './services/auth';
+import lookoutOptions from './services/options';
 
 export const serverUrl = lookoutOptions.SERVER_URL || 'http://127.0.0.1:8080';
 

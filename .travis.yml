@@ -68,6 +68,7 @@ jobs:
         - make dependencies
         - make -f Makefile.web build
         - make -f Makefile.web test
+        - make -f Makefile.web lint
     - name: 'Generated code'
       script:
         - make dependencies
