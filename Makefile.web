@@ -67,4 +67,8 @@ web-start:
 	$(GO_RUN_ENV) $(GORUN) cmd/lookoutd/*.go web
 
 .PHONY: web-serve
-web-serve: | web-dependencies web-build web-pack web-start
+web-serve: | web-dependencies web-build web-bindata web-start
+
+.PHONY: lint
+lint:
+	$(YARN) lint
