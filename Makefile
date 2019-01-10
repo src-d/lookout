@@ -5,6 +5,9 @@ DEPENDENCIES = \
 	gopkg.in/src-d/go-kallax.v1 \
 	github.com/mjibson/esc
 
+# Deletes all the extensions using make implicit rules
+.SUFFIXES:
+
 # Backend services
 POSTGRESQL_VERSION = 9.6
 RABBITMQ_VERSION=any
