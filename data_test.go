@@ -2,6 +2,7 @@ package lookout
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -48,7 +49,7 @@ func TestServerGetChangesOk(t *testing.T) {
 		req := &ChangesRequest{
 			Head: &ReferencePointer{
 				InternalRepositoryURL: "repo",
-				Hash: "5262fd2b59d10e335a5c941140df16950958322d",
+				Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
 			},
 		}
 		changes := generateChanges(i)
@@ -87,7 +88,7 @@ func TestServerGetFilesOk(t *testing.T) {
 		req := &FilesRequest{
 			Revision: &ReferencePointer{
 				InternalRepositoryURL: "repo",
-				Hash: "5262fd2b59d10e335a5c941140df16950958322d",
+				Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
 			},
 		}
 		files := generateFiles(i)
@@ -126,7 +127,7 @@ func TestServerCancel(t *testing.T) {
 		for j := 0; j < i; j++ {
 			revision := &ReferencePointer{
 				InternalRepositoryURL: "repo",
-				Hash: "5262fd2b59d10e335a5c941140df16950958322d",
+				Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
 			}
 			changesReq := &ChangesRequest{Head: revision}
 			filesReq := &FilesRequest{Revision: revision}
@@ -218,7 +219,7 @@ func TestServerGetChangesError(t *testing.T) {
 	req := &ChangesRequest{
 		Head: &ReferencePointer{
 			InternalRepositoryURL: "repo",
-			Hash: "5262fd2b59d10e335a5c941140df16950958322d",
+			Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
 		},
 	}
 	changes := generateChanges(10)
@@ -252,7 +253,7 @@ func TestServerGetFilesError(t *testing.T) {
 	req := &FilesRequest{
 		Revision: &ReferencePointer{
 			InternalRepositoryURL: "repo",
-			Hash: "5262fd2b59d10e335a5c941140df16950958322d",
+			Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
 		},
 	}
 	files := generateFiles(10)
@@ -284,7 +285,7 @@ func TestServerGetChangesIterError(t *testing.T) {
 	req := &ChangesRequest{
 		Head: &ReferencePointer{
 			InternalRepositoryURL: "repo",
-			Hash: "5262fd2b59d10e335a5c941140df16950958322d",
+			Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
 		},
 	}
 	changes := generateChanges(10)
@@ -318,7 +319,7 @@ func TestServerGetFilesIterError(t *testing.T) {
 	req := &FilesRequest{
 		Revision: &ReferencePointer{
 			InternalRepositoryURL: "repo",
-			Hash: "5262fd2b59d10e335a5c941140df16950958322d",
+			Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
 		},
 	}
 	files := generateFiles(10)
@@ -500,6 +501,105 @@ func TestFnFileScanner(t *testing.T) {
 	require.Len(scannedFiles, 2)
 }
 
+func TestFnFileScannerErr(t *testing.T) {
+	require := require.New(t)
+
+	files := generateFiles(3)
+
+	sliceScanner := &SliceFileScanner{Files: files}
+
+	e := errors.New("test-error")
+	fn := func(f *File) (bool, error) {
+		return false, e
+	}
+
+	s := FnFileScanner{
+		Scanner: sliceScanner,
+		Fn:      fn,
+	}
+
+	var scannedFiles []*File
+	for s.Next() {
+		scannedFiles = append(scannedFiles, s.File())
+	}
+
+	require.False(s.Next())
+	require.Equal(e, s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedFiles, 0)
+}
+
+func TestFnFileScannerOnStart(t *testing.T) {
+	require := require.New(t)
+
+	files := generateFiles(3)
+
+	sliceScanner := &SliceFileScanner{Files: files}
+
+	fn := func(f *File) (bool, error) {
+		return false, nil
+	}
+
+	var startCalled bool
+	onStart := func() error {
+		startCalled = true
+		return nil
+	}
+
+	s := FnFileScanner{
+		Scanner: sliceScanner,
+		Fn:      fn,
+		OnStart: onStart,
+	}
+
+	var scannedFiles []*File
+	for s.Next() {
+		scannedFiles = append(scannedFiles, s.File())
+	}
+
+	require.False(s.Next())
+	require.NoError(s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedFiles, 3)
+	require.True(startCalled)
+}
+
+func TestFnFileScannerOnStartErr(t *testing.T) {
+	require := require.New(t)
+
+	files := generateFiles(3)
+
+	sliceScanner := &SliceFileScanner{Files: files}
+
+	fn := func(f *File) (bool, error) {
+		return false, nil
+	}
+
+	e := errors.New("test-err")
+	onStart := func() error {
+		return e
+	}
+
+	s := FnFileScanner{
+		Scanner: sliceScanner,
+		Fn:      fn,
+		OnStart: onStart,
+	}
+
+	var scannedFiles []*File
+	for s.Next() {
+		scannedFiles = append(scannedFiles, s.File())
+	}
+
+	require.False(s.Next())
+	require.Equal(e, s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedFiles, 0)
+}
+
 func TestFnChangeScanner(t *testing.T) {
 	require := require.New(t)
 
@@ -529,4 +629,173 @@ func TestFnChangeScanner(t *testing.T) {
 	require.NoError(s.Close())
 
 	require.Len(scannedChanges, 2)
+}
+
+func TestFnChangeScannerErr(t *testing.T) {
+	require := require.New(t)
+
+	changes := generateChanges(3)
+
+	sliceScanner := &SliceChangeScanner{Changes: changes}
+
+	e := errors.New("test-error")
+	fn := func(f *Change) (bool, error) {
+		return false, e
+	}
+
+	s := FnChangeScanner{
+		Scanner: sliceScanner,
+		Fn:      fn,
+	}
+
+	var scannedChanges []*Change
+	for s.Next() {
+		scannedChanges = append(scannedChanges, s.Change())
+	}
+
+	require.False(s.Next())
+	require.Equal(e, s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedChanges, 0)
+}
+
+func TestFnChangeScannerOnStart(t *testing.T) {
+	require := require.New(t)
+
+	changes := generateChanges(3)
+
+	sliceScanner := &SliceChangeScanner{Changes: changes}
+
+	fn := func(f *Change) (bool, error) {
+		return false, nil
+	}
+
+	var startCalled bool
+	onStart := func() error {
+		startCalled = true
+		return nil
+	}
+
+	s := FnChangeScanner{
+		Scanner: sliceScanner,
+		Fn:      fn,
+		OnStart: onStart,
+	}
+
+	var scannedChanges []*Change
+	for s.Next() {
+		scannedChanges = append(scannedChanges, s.Change())
+	}
+
+	require.False(s.Next())
+	require.NoError(s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedChanges, 3)
+	require.True(startCalled)
+}
+
+func TestFnChangeScannerOnStartErr(t *testing.T) {
+	require := require.New(t)
+
+	changes := generateChanges(3)
+
+	sliceScanner := &SliceChangeScanner{Changes: changes}
+
+	fn := func(f *Change) (bool, error) {
+		return false, nil
+	}
+
+	e := errors.New("test-err")
+	onStart := func() error {
+		return e
+	}
+
+	s := FnChangeScanner{
+		Scanner: sliceScanner,
+		Fn:      fn,
+		OnStart: onStart,
+	}
+
+	var scannedChanges []*Change
+	for s.Next() {
+		scannedChanges = append(scannedChanges, s.Change())
+	}
+
+	require.False(s.Next())
+	require.Equal(e, s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedChanges, 0)
+}
+
+func TestDataClientGetChanges(t *testing.T) {
+	require := require.New(t)
+
+	req := &ChangesRequest{
+		Head: &ReferencePointer{
+			InternalRepositoryURL: "repo",
+			Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
+		},
+	}
+	changes := generateChanges(3)
+	dr := &MockService{
+		T:                t,
+		ExpectedCRequest: req,
+		ChangeScanner:    &SliceChangeScanner{Changes: changes},
+	}
+
+	_, grpcClient := setupDataServer(t, dr)
+
+	c := DataClient{dataClient: grpcClient}
+
+	s, err := c.GetChanges(context.TODO(), req)
+	require.NoError(err)
+
+	var scannedChanges []*Change
+	for s.Next() {
+		scannedChanges = append(scannedChanges, s.Change())
+	}
+
+	require.False(s.Next())
+	require.NoError(s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedChanges, 3)
+}
+
+func TestDataClientGetFiles(t *testing.T) {
+	require := require.New(t)
+
+	req := &FilesRequest{
+		Revision: &ReferencePointer{
+			InternalRepositoryURL: "repo",
+			Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
+		},
+	}
+	files := generateFiles(3)
+	dr := &MockService{
+		T:                t,
+		ExpectedFRequest: req,
+		FileScanner:      &SliceFileScanner{Files: files},
+	}
+
+	_, grpcClient := setupDataServer(t, dr)
+
+	c := DataClient{dataClient: grpcClient}
+
+	s, err := c.GetFiles(context.TODO(), req)
+	require.NoError(err)
+
+	var scannedFiles []*File
+	for s.Next() {
+		scannedFiles = append(scannedFiles, s.File())
+	}
+
+	require.False(s.Next())
+	require.NoError(s.Err())
+	require.NoError(s.Close())
+
+	require.Len(scannedFiles, 3)
 }
