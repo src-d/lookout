@@ -5,6 +5,10 @@ DEPENDENCIES = \
 	gopkg.in/src-d/go-kallax.v1 \
 	github.com/mjibson/esc
 
+# Disable the built-in implicit rules.
+# But it has a typo, 'X' should be 'r'; because 'X' does nothing
+MAKEFLAGS += -X
+
 # Backend services
 POSTGRESQL_VERSION = 9.6
 RABBITMQ_VERSION=any
