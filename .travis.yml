@@ -25,97 +25,14 @@ before_install:
 
 stages:
   - name: tests
-  - name: release
-    if: tag IS present AND NOT tag =~ /^dummy/
-  - name: release dummy analyzer
-    if: tag IS present AND tag =~ /^dummy/
 
 jobs:
   include:
-    - name: 'Unit Tests'
-      stage: tests
-      script: make test-coverage codecov
-    - name: 'Tool Integration Tests Linux'
-      script:
-        - make ci-start-bblfsh
-        - make test-tool
-    - name: 'Tool Integration Tests macOS'
-      if: NOT type = pull_request
-      script:
-        - make test-tool-short
-      os: osx
-      osx_image: xcode9.4
-      before_install: skip
-    - name: 'Lookoutd Integration Tests Linux'
-      script:
-        - make ci-integration-dependencies
-        - psql -c 'create database lookout;' -U postgres
-        - make test-json
-        - LOOKOUT_TEST_QUEUE=true make test-json
-    - name: 'Lookoutd Integration Tests macOS'
-      if: NOT type = pull_request
-      script:
-        - make ci-integration-dependencies
-        - psql -c 'create database lookout;' -U postgres
-        - make test-json
-        - LOOKOUT_TEST_QUEUE=true make test-json
-      os: osx
-      osx_image: xcode9.4
-      before_install: skip
-    - name: 'Web Tests'
+    - name: 'Test Coverage'
       stage: tests
       script:
-        - make dependencies
-        - make -f Makefile.web build
-        - make -f Makefile.web test
-        - make -f Makefile.web lint
-    - name: 'Generated code'
-      script:
-        - make dependencies
-        - go generate ./...
-        - make no-changes-in-commit
-        - kallax migrate --input ./store/models/ --out ./store/migrations --name test-changes
-        - make no-changes-in-commit
-        - make pack-migrations
-        - make no-changes-in-commit
-        - make build
-        - make no-changes-in-commit
-        - make godep
-        - make no-changes-in-commit
-    - name: 'linux packages'
-      stage: release
-      script:
-        - PKG_OS="linux" make packages
-        - PKG_OS="linux" make -f Makefile.tool packages
-        - PKG_OS="linux" make -f Makefile.dummy packages
-      deploy: &deploy_anchor
-        provider: releases
-        api_key: $GITHUB_TOKEN
-        file_glob: true
-        file: build/*.tar.gz
-        skip_cleanup: true
-        on:
-          all_branches: true
-    - name: 'macOS packages'
-      stage: release
-      os: osx
-      osx_image: xcode9.4
-      before_install: skip
-      script:
-        - PKG_OS="darwin" make packages
-        - PKG_OS="darwin" make -f Makefile.tool packages
-        - PKG_OS="darwin" make -f Makefile.dummy packages
-      deploy: *deploy_anchor
-    - name: 'push image to Docker Hub'
-      stage: release
-      script:
-        - PKG_OS=linux make build
-        - DOCKER_PUSH_LATEST=true make docker-push
-    - name: 'push dummy analyzer image to Docker Hub'
-      stage: release dummy analyzer
-      script:
-        - PKG_OS=linux make -f Makefile.dummy build
-        - DOCKER_PUSH_LATEST=true make -f Makefile.dummy docker-push
+        - rm -rf .ci/; touch Makefile.web;
+        - make test-coverage codecov
 before_cache:
   # make bblfsh images readable
   - sudo chmod -R 777 $HOME/bblfshd/images
