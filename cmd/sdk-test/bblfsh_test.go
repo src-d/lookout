@@ -1,6 +1,6 @@
 // +build integration
 
-package tool_test
+package sdk_test
 
 import (
 	"context"
@@ -18,11 +18,11 @@ import (
 )
 
 type BblfshIntegrationSuite struct {
-	ToolIntegrationSuite
+	SdkIntegrationSuite
 }
 
 func (suite *BblfshIntegrationSuite) SetupSuite() {
-	suite.ToolIntegrationSuite.SetupSuite()
+	suite.SdkIntegrationSuite.SetupSuite()
 
 	suite.StoppableCtx()
 	suite.StartDummy("--uast", "--files")

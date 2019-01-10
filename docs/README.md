@@ -8,7 +8,7 @@
 
 * [What Is an Analyzer](analyzers.md)
 * [How to Write an Analyzer](analyzers-creation.md)
-* [Trying an Analyzer](lookout-tool.md)
+* [Trying an Analyzer](lookout-sdk.md)
 * [Examples](analyzers-examples.md)
 
 ## Learn More

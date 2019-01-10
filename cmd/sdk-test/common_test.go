@@ -1,4 +1,4 @@
-package tool_test
+package sdk_test
 
 import (
 	"github.com/src-d/lookout/util/cmdtest"
@@ -7,14 +7,14 @@ import (
 	git "gopkg.in/src-d/go-git.v4"
 )
 
-type ToolIntegrationSuite struct {
+type SdkIntegrationSuite struct {
 	cmdtest.IntegrationSuite
 
 	gitPath string
 }
 
-func (s *ToolIntegrationSuite) SetupSuite() {
-	s.gitPath = "/tmp/lookout-tool-test"
+func (s *SdkIntegrationSuite) SetupSuite() {
+	s.gitPath = "/tmp/lookout-sdk-test"
 
 	// clone repository with fixtures
 	// we should update it after https://github.com/src-d/lookout/issues/226 is resolved

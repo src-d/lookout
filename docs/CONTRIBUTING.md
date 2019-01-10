@@ -55,10 +55,10 @@ You can separately build the binaries provided by **source{d} Lookout**; the bin
 $ make build
 ```
 
-### lookout-tool
+### lookout-sdk
 
 ```shell
-$ make -f Makefile.tool build
+$ make -f Makefile.sdk build
 ```
 
 
@@ -70,11 +70,11 @@ For unit-tests run:
 $ make test
 ```
 
-For `lookout-tool` integration tests (`-short` will skip tests that require bblfsh):
+For `lookout-sdk` integration tests (`-short` will skip tests that require bblfsh):
 
 ```shell
-$ make test-tool
-$ make test-tool-short
+$ make test-sdk
+$ make test-sdk-short
 ```
 
 For `lookoutd serve` integration tests:
