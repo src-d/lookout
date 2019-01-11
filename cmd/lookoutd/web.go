@@ -28,6 +28,8 @@ type WebCommand struct {
 type webConfig struct {
 	Providers struct {
 		Github struct {
+			PrivateKey   string `yaml:"private_key"`
+			AppID        int    `yaml:"app_id"`
 			ClientID     string `yaml:"client_id"`
 			ClientSecret string `yaml:"client_secret"`
 		}
@@ -49,6 +51,12 @@ func (c *WebCommand) Execute(args []string) error {
 	}
 
 	ghConfg := conf.Providers.Github
+	if ghConfg.PrivateKey == "" {
+		return fmt.Errorf("Missing field in configuration file: provider github private_key is required")
+	}
+	if ghConfg.AppID == 0 {
+		return fmt.Errorf("Missing field in configuration file: provider github app_id is required")
+	}
 	if ghConfg.ClientID == "" {
 		return fmt.Errorf("Missing field in configuration file: provider github client_id is required")
 	}
@@ -60,8 +68,12 @@ func (c *WebCommand) Execute(args []string) error {
 	}
 
 	auth := web.NewAuth(ghConfg.ClientID, ghConfg.ClientSecret, conf.Web.SigningKey)
+	gh := web.GitHub{
+		AppID:      ghConfg.AppID,
+		PrivateKey: ghConfg.PrivateKey,
+	}
 	static := web.NewStatic("/build/public", c.ServerURL, c.FooterHTML)
-	server := web.NewHTTPServer(auth, static)
+	server := web.NewHTTPServer(auth, &gh, static)
 	addr := fmt.Sprintf("%s:%d", c.Host, c.Port)
 
 	log.Infof("Starting http server on %s", addr)
