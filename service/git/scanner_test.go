@@ -186,6 +186,47 @@ func (s *ScannerSuite) TestFilterDeletedFiles() {
 			require.NoError(cs.Close())
 		})
 	}
+
+	// check that filter applies on Base if Head is empty
+
+	require := require.New(s.T())
+
+	head := s.getCommit(s.Basic.Head)
+	headTree, err := head.Tree()
+	s.Require().NoError(err)
+
+	parent, err := head.Parent(0)
+	s.Require().NoError(err)
+	parentTree, err := parent.Tree()
+	s.Require().NoError(err)
+
+	// should be filtered out
+	cs := NewChangeFilterScanner(
+		// head and parent inverted to force a test case with a deleted file
+		NewDiffTreeScanner(headTree, parentTree),
+		"", ".*foo.*",
+	)
+
+	var changes []*lookout.Change
+	for cs.Next() {
+		changes = append(changes, cs.Change())
+	}
+
+	require.Len(changes, 0)
+
+	// should not be filtered out
+	cs = NewChangeFilterScanner(
+		// head and parent inverted to force a test case with a deleted file
+		NewDiffTreeScanner(headTree, parentTree),
+		"", ".*notfoo.*",
+	)
+
+	changes = []*lookout.Change{}
+	for cs.Next() {
+		changes = append(changes, cs.Change())
+	}
+
+	require.Len(changes, 1)
 }
 
 func (s *ScannerSuite) changeFixtures(fs []filterScannerFixture) []*lookout.ChangesRequest {
