@@ -134,7 +134,7 @@ analyzers:
 
 You can configure **source{d} Lookout** to add a custom message to every comment that each analyzer returns. This custom message will be created following the rule:
 ```
-sprinf(providers.github.comment_footer, feedback)
+sprintf(providers.github.comment_footer, feedback)
 ```
 If any of those two keys are not defined, the custom message won't be added.
 
