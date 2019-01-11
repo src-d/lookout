@@ -6,6 +6,9 @@ import (
 	log "gopkg.in/src-d/go-log.v1"
 )
 
+// NewLogger function to create new log.Logger, needed for mocking in tests
+var NewLogger = log.New
+
 type ctxKey int
 
 // logFieldsKey is the key that holds log Fields in a context.
@@ -19,7 +22,7 @@ func Get(ctx context.Context) log.Logger {
 		fields = v.(log.Fields)
 	}
 
-	return log.New(fields)
+	return NewLogger(fields)
 }
 
 // Fields returns the context log fields. It can be nil

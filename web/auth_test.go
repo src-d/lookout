@@ -2,14 +2,11 @@ package web
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/pressly/lg"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 )
@@ -19,7 +16,7 @@ func TestLogin(t *testing.T) {
 	auth := NewAuth("client-id", "client-secret", "signing-key")
 
 	w := httptest.NewRecorder()
-	r := newRequest("GET", "/login", nil)
+	r := httptest.NewRequest("GET", "/login", nil)
 	auth.Login(w, r)
 
 	require.Equal(http.StatusTemporaryRedirect, w.Code)
@@ -71,7 +68,7 @@ func TestCallbackSuccess(t *testing.T) {
 	code := "test-code"
 
 	w := httptest.NewRecorder()
-	r := newRequest("GET", "/callback?state="+state+"&code="+code, nil)
+	r := httptest.NewRequest("GET", "/callback?state="+state+"&code="+code, nil)
 
 	session, _ := auth.store.Get(r, "sess")
 	session.Values["state"] = state
@@ -113,7 +110,7 @@ func TestMiddlewareSuccess(t *testing.T) {
 	require.NoError(err)
 
 	w := httptest.NewRecorder()
-	r := newRequest("GET", "/", nil)
+	r := httptest.NewRequest("GET", "/", nil)
 	r.Header.Set("Authorization", "Bearer "+token)
 	handler.ServeHTTP(w, r)
 
@@ -127,17 +124,8 @@ func TestMiddlewareUnauthorized(t *testing.T) {
 	handler := auth.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 
 	w := httptest.NewRecorder()
-	r := newRequest("GET", "/", nil)
+	r := httptest.NewRequest("GET", "/", nil)
 	handler.ServeHTTP(w, r)
 
 	require.Equal(http.StatusUnauthorized, w.Code)
-}
-
-func newRequest(method, target string, body io.Reader) *http.Request {
-	r := httptest.NewRequest(method, target, nil)
-
-	httpLogger := lg.HTTPLogger{Logger: logrus.StandardLogger()}
-	logEntry := httpLogger.NewLogEntry(r)
-
-	return r.WithContext(lg.WithLogEntry(r.Context(), logEntry))
 }

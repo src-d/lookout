@@ -5,9 +5,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/pressly/lg"
 	"github.com/rs/cors"
-	"github.com/sirupsen/logrus"
 )
 
 type HTTPServer struct {
@@ -31,7 +29,7 @@ func NewHTTPServer(auth *Auth, static *Static) *HTTPServer {
 	}
 
 	r.Use(cors.New(corsOptions).Handler)
-	r.Use(lg.RequestLogger(logrus.StandardLogger()))
+	r.Use(RequestLogger)
 	r.Use(middleware.Recoverer)
 
 	r.Get("/login", auth.Login)
