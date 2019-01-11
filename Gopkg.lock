@@ -380,14 +380,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:f3b6f8d99f02a3637477e5875e05ae7a0be0f0ad361de7a9e722f864db70ce46"
-  name = "github.com/pressly/lg"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "bfbc64b4561fef198c68289c2610ccc4696d57d1"
-  version = "v1.1.1"
-
-[[projects]]
   digest = "1:f250ca51e5b9215bc2df18f92060a9a835e9f85ab18ebbba0e1a6ef1f8fcdbfe"
   name = "github.com/rs/cors"
   packages = ["."]
@@ -884,11 +876,9 @@
     "github.com/jinzhu/copier",
     "github.com/lib/pq",
     "github.com/mwitkow/grpc-proxy/proxy",
-    "github.com/pressly/lg",
     "github.com/rs/cors",
     "github.com/sanity-io/litter",
     "github.com/satori/go.uuid",
-    "github.com/sirupsen/logrus",
     "github.com/src-d/lookout-test-fixtures",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
