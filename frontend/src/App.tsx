@@ -10,6 +10,7 @@ import {
 import './App.css';
 import Callback from './Callback';
 import Loader from './components/Loader';
+import Organizations from './components/Organizations';
 import Auth, { User } from './services/auth';
 
 function Login() {
@@ -34,9 +35,12 @@ interface IndexProps {
 
 function Index({ user }: IndexProps) {
   return (
-    <header className="App-header">
-      Hello {user.name}! <Link to="/logout">Logout</Link>
-    </header>
+    <div>
+      <header className="App-header">
+        Hello {user.name}! <Link to="/logout">Logout</Link>
+      </header>
+      <Organizations user={user} />
+    </div>
   );
 }
 
