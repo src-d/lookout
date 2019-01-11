@@ -14,7 +14,7 @@ import (
 func RequestLogger(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		logFields := logFieldsFromRequest(r)
-		logger := Get(r.Context()).With(logFields)
+		ctx, logger := WithLogFields(r.Context(), logFields)
 		logger.Infof("request started")
 
 		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
@@ -29,7 +29,7 @@ func RequestLogger(next http.Handler) http.Handler {
 			}).Infof("request complete")
 		}()
 
-		r = r.WithContext(Set(r.Context(), logger))
+		r = r.WithContext(ctx)
 		next.ServeHTTP(ww, r)
 	}
 	return http.HandlerFunc(fn)

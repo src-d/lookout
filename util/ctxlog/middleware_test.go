@@ -15,7 +15,7 @@ func TestMiddleware(t *testing.T) {
 	require := require.New(t)
 
 	testLogger := &TestLogger{}
-	log.DefaultLogger = testLogger
+	NewLogger = testLogger.New
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		Get(r.Context()).Infof("inside handler")
