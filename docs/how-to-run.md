@@ -9,7 +9,7 @@ In some situations, you might want to run all its dependencies and components se
 1. [Configure source{d} Lookout](#configure-lookout).
 1. [Run source{d} Lookout](#run-lookout).
 
-In other situations you may just want to test an analyzer locally without accessing GitHub at all. For those situations, you might want to read the [`lookout-tool` binary documentation](lookout-tool.md).
+In other situations you may just want to test an analyzer locally without accessing GitHub at all. For those situations, you might want to read the [`lookout-sdk` binary documentation](lookout-sdk.md).
 
 ## Running source{d} Lookout in Distributed Mode
 

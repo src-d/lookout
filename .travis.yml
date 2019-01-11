@@ -35,14 +35,14 @@ jobs:
     - name: 'Unit Tests'
       stage: tests
       script: make test-coverage codecov
-    - name: 'Tool Integration Tests Linux'
+    - name: 'SDK Integration Tests Linux'
       script:
         - make ci-start-bblfsh
-        - make test-tool
-    - name: 'Tool Integration Tests macOS'
+        - make test-sdk
+    - name: 'SDK Integration Tests macOS'
       if: NOT type = pull_request
       script:
-        - make test-tool-short
+        - make test-sdk-short
       os: osx
       osx_image: xcode9.4
       before_install: skip
@@ -86,7 +86,7 @@ jobs:
       stage: release
       script:
         - PKG_OS="linux" make packages
-        - PKG_OS="linux" make -f Makefile.tool packages
+        - PKG_OS="linux" make -f Makefile.sdk packages
         - PKG_OS="linux" make -f Makefile.dummy packages
       deploy: &deploy_anchor
         provider: releases
@@ -103,7 +103,7 @@ jobs:
       before_install: skip
       script:
         - PKG_OS="darwin" make packages
-        - PKG_OS="darwin" make -f Makefile.tool packages
+        - PKG_OS="darwin" make -f Makefile.sdk packages
         - PKG_OS="darwin" make -f Makefile.dummy packages
       deploy: *deploy_anchor
     - name: 'push image to Docker Hub'

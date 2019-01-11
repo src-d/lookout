@@ -1,22 +1,22 @@
-# lookout-tool Binary
+# lookout-sdk Binary
 
 _For the **lookout-sdk** library to develop new analyzers go to [**lookout-sdk**](https://github.com/src-d/lookout-sdk) repository._
 
-`lookout-tool` binary is a simplified version of the `lookoutd` server that works with a local git repository and does not need access to Github.
+`lookout-sdk` binary is a simplified version of the `lookoutd` server that works with a local git repository and does not need access to Github.
 
-You can think about `lookout-tool` as a _curl-like_ tool to call an analyzer gRPC endpoint with a `ReviewEvent` or a `PushEvent`, from a local git repository, and send it to an analyzer without accessing GitHub at all. For convenience, `lookout-tool` also exposes a **source{d} Lookout DataService** backed by the same git repository.
+You can think about `lookout-sdk` as a _curl-like_ tool to call an analyzer gRPC endpoint with a `ReviewEvent` or a `PushEvent`, from a local git repository, and send it to an analyzer without accessing GitHub at all. For convenience, `lookout-sdk` also exposes a **source{d} Lookout DataService** backed by the same git repository.
 
-You can download the latest `lookout-tool` from the [src-d/lookout releases page](https://github.com/src-d/lookout/releases).
+You can download the latest `lookout-sdk` from the [src-d/lookout releases page](https://github.com/src-d/lookout/releases).
 
-This is the sequence diagram of the `ReviewEvent` made by `lookout-tool review`. You can compare it with a regular **source{d} Lookout** installation at the [Architecture documentation](architecture.md).
+This is the sequence diagram of the `ReviewEvent` made by `lookout-sdk review`. You can compare it with a regular **source{d} Lookout** installation at the [Architecture documentation](architecture.md).
 
-![sequence diagram](assets/lookout-tool-seq-diagram.png)
+![sequence diagram](assets/lookout-sdk-seq-diagram.png)
 
-You can [edit this image](https://mermaidjs.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgcGFydGljaXBhbnQgc2RrIGFzIGxvb2tvdXQtc2RrXG4gICAgcGFydGljaXBhbnQgQW5hbHl6ZXJcbiAgICBwYXJ0aWNpcGFudCBCYWJlbGZpc2hcbiAgICBzZGstPj5BbmFseXplcjogTm90aWZ5UmV2aWV3RXZlbnRcbiAgICBBbmFseXplci0-PnNkazogR2V0Q2hhbmdlcy9HZXRGaWxlc1xuICAgIHNkay0-PkJhYmVsZmlzaDogcGFyc2VGaWxlIChpZiBXYW50VUFTVClcbiAgICBCYWJlbGZpc2gtLT4-c2RrOiBVQVNUXG4gICAgc2RrLS0-PkFuYWx5emVyOiBDaGFuZ2UvRmlsZVxuICAgIEFuYWx5emVyLS0-PnNkazogQ29tbWVudHNcbiIsIm1lcm1haWQiOnsidGhlbWUiOiJkZWZhdWx0In19) using [mermaid](https://mermaidjs.github.io). ([sourcecode](assets/lookout-tool-seq-diagram.md))
+You can [edit this image](https://mermaidjs.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgcGFydGljaXBhbnQgc2RrIGFzIGxvb2tvdXQtc2RrXG4gICAgcGFydGljaXBhbnQgQW5hbHl6ZXJcbiAgICBwYXJ0aWNpcGFudCBCYWJlbGZpc2hcbiAgICBzZGstPj5BbmFseXplcjogTm90aWZ5UmV2aWV3RXZlbnRcbiAgICBBbmFseXplci0-PnNkazogR2V0Q2hhbmdlcy9HZXRGaWxlc1xuICAgIHNkay0-PkJhYmVsZmlzaDogcGFyc2VGaWxlIChpZiBXYW50VUFTVClcbiAgICBCYWJlbGZpc2gtLT4-c2RrOiBVQVNUXG4gICAgc2RrLS0-PkFuYWx5emVyOiBDaGFuZ2UvRmlsZVxuICAgIEFuYWx5emVyLS0-PnNkazogQ29tbWVudHNcbiIsIm1lcm1haWQiOnsidGhlbWUiOiJkZWZhdWx0In19) using [mermaid](https://mermaidjs.github.io). ([sourcecode](assets/lookout-sdk-seq-diagram.md))
 
 ## Requirements
 
-You will need to run an analyzer to be called by `lookout-tool`. You can run one of our [example analyzers](analyzers-examples.md), any of the already [available analyzers](../README.md#available-analyzers) or the one that you're developing.
+You will need to run an analyzer to be called by `lookout-sdk`. You can run one of our [example analyzers](analyzers-examples.md), any of the already [available analyzers](../README.md#available-analyzers) or the one that you're developing.
 
 If your analyzer makes use of UAST, you will also need a [Babelfish server](https://doc.bblf.sh/using-babelfish/getting-started.html) running.
 To start it using [Docker Compose](https://docs.docker.com/compose/) clone this repository, or download [`docker-compose.yml`](../docker-compose.yml), and run:
@@ -32,15 +32,15 @@ This will create the [bblfshd](https://github.com/bblfsh/bblfshd) container list
 
 To perform a `NotifyReviewEvent` call to an analyzer and serve the **source{d} Lookout DataService** endpoint, run:
 ```shell
-$ lookout-tool review
+$ lookout-sdk review
 ```
 
 To perform a `NotifyPushEvent` call to an analyzer and serve the **source{d} Lookout DataService** endpoint, run:
 ```shell
-$ lookout-tool push
+$ lookout-sdk push
 ```
 
-In the next section, you will find a more detailed example considering the most usual options for running `lookout-tool` against any analyzer from two given revisions.
+In the next section, you will find a more detailed example considering the most usual options for running `lookout-sdk` against any analyzer from two given revisions.
 
 
 ## How Does It Work
@@ -68,29 +68,29 @@ $ git log --pretty=oneline --graph
 
 If your current directory is this repository's path, and your analyzer is listening on the default port `9930`, you can run:
 ```shell
-$ lookout-tool review
+$ lookout-sdk review
 ```
 
-Doing so, `lookout-tool` will:
+Doing so, `lookout-sdk` will:
 
 1. start a gRPC **source{d} Lookout DataService** endpoint backed by the repository stored at your current directory.
 1. send a gRPC `NotifyReviewEvent` call to your analyzer listening on `ipv4://localhost:9930`. The `ReviewEvent` argument will contain a `commit_revision` field made of:
     * `base` pointing to `HEAD^` (`9294ddb...`)
     * `head` pointing to `HEAD` (`d036524...`)
-1. wait until the analyzer sends a response with the comments. The analyzer will be able to request file contents, file language or UASTs to the gRPC **source{d} Lookout DataService** endpoint exposed by `lookout-tool`
-1. once the analyzer sends the response, `lookout-tool` will put it into the `STDOUT`, stop the **source{d} Lookout DataService** and exit.
+1. wait until the analyzer sends a response with the comments. The analyzer will be able to request file contents, file language or UASTs to the gRPC **source{d} Lookout DataService** endpoint exposed by `lookout-sdk`
+1. once the analyzer sends the response, `lookout-sdk` will put it into the `STDOUT`, stop the **source{d} Lookout DataService** and exit.
 
 Use the different options to trigger a different analysis. For example:
 
 ```shell
-$ lookout-tool review \
+$ lookout-sdk review \
   --git-dir=/somewhere/repo/path \
   --from=fa97fa19e5c9b3482e5f88e264fb62b1e7fc6d8f \
   --to=branch-a \
   "ipv4://localhost:9999"
 ```
 
-_For more options to run `lookout-tool`, take a look into [**lookout-tool Command Options**](#options)_
+_For more options to run `lookout-sdk`, take a look into [**lookout-sdk Command Options**](#options)_
 
 - If analyzer gRPC address is omitted, it will be `ipv4://localhost:9930`.
 - If `--git-dir` is omitted, the current dir will be used.
@@ -98,17 +98,17 @@ _For more options to run `lookout-tool`, take a look into [**lookout-tool Comman
 - If `--to` is omitted, it will be `HEAD`.
 - Both `--from` and `--to` can be any [git revision](https://git-scm.com/docs/gitrevisions#_specifying_revisions). For example a tag name, branch name or the full commit SHA-1.
 
-Everything explained above for `lookout-tool review` calling `NotifyReviewEvent`, applies also to `NotifyPushEvent` when using `lookout-tool push`.
+Everything explained above for `lookout-sdk review` calling `NotifyReviewEvent`, applies also to `NotifyPushEvent` when using `lookout-sdk push`.
 
 
 <a id=options></a>
-# Appendix: `lookout-tool` Command Options
+# Appendix: `lookout-sdk` Command Options
 
-`lookout-tool` binary include some subcommands as described above, and they accept many different options; you can use:
-- `lookout-tool -h`, to see all the available subcommands.
-- `lookout-tool subcommand -h`, to see all the options for the given subcommand.
+`lookout-sdk` binary include some subcommands as described above, and they accept many different options; you can use:
+- `lookout-sdk -h`, to see all the available subcommands.
+- `lookout-sdk subcommand -h`, to see all the options for the given subcommand.
 
-Here are some of the most relevant options for both `lookout-tool push` and `lookout-tool review`:
+Here are some of the most relevant options for both `lookout-sdk push` and `lookout-sdk review`:
 
 | Env var | Option | Description | Default |
 | --- | --- | --- | --- |

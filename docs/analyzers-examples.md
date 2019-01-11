@@ -1,6 +1,6 @@
 # Examples
 
-_Please refer to [**lookout-tool** docs](lookout-tool.md) to see how to locally test an analyzer without accessing GitHub._
+_Please refer to [**lookout-sdk** docs](lookout-sdk.md) to see how to locally test an analyzer without accessing GitHub._
 
 # language-analyzer
 
