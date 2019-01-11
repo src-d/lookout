@@ -6,7 +6,6 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/rs/cors"
-	"github.com/src-d/lookout/util/ctxlog"
 )
 
 type HTTPServer struct {
@@ -30,7 +29,7 @@ func NewHTTPServer(auth *Auth, static *Static) *HTTPServer {
 	}
 
 	r.Use(cors.New(corsOptions).Handler)
-	r.Use(ctxlog.RequestLogger)
+	r.Use(RequestLogger)
 	r.Use(middleware.Recoverer)
 
 	r.Get("/login", auth.Login)

@@ -1,4 +1,4 @@
-package ctxlog
+package web
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/middleware"
+	"github.com/src-d/lookout/util/ctxlog"
 	log "gopkg.in/src-d/go-log.v1"
 )
 
@@ -14,7 +15,7 @@ import (
 func RequestLogger(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		logFields := logFieldsFromRequest(r)
-		ctx, logger := WithLogFields(r.Context(), logFields)
+		ctx, logger := ctxlog.WithLogFields(r.Context(), logFields)
 		logger.Infof("request started")
 
 		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)

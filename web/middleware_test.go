@@ -1,4 +1,4 @@
-package ctxlog
+package web
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/src-d/lookout/util/ctxlog"
 	"github.com/stretchr/testify/require"
 
 	log "gopkg.in/src-d/go-log.v1"
@@ -15,10 +16,10 @@ func TestMiddleware(t *testing.T) {
 	require := require.New(t)
 
 	testLogger := &TestLogger{}
-	NewLogger = testLogger.New
+	ctxlog.NewLogger = testLogger.New
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		Get(r.Context()).Infof("inside handler")
+		ctxlog.Get(r.Context()).Infof("inside handler")
 
 		w.Write([]byte("test"))
 		w.WriteHeader(http.StatusOK)
