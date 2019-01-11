@@ -44,7 +44,7 @@ jobs:
       script:
         - make test-sdk-short
       os: osx
-      osx_image: xcode9.4
+      osx_image: xcode10.1
       before_install: skip
     - name: 'Lookoutd Integration Tests Linux'
       script:
@@ -60,7 +60,7 @@ jobs:
         - make test-json
         - LOOKOUT_TEST_QUEUE=true make test-json
       os: osx
-      osx_image: xcode9.4
+      osx_image: xcode10.1
       before_install: skip
     - name: 'Web Tests'
       stage: tests
@@ -99,7 +99,7 @@ jobs:
     - name: 'macOS packages'
       stage: release
       os: osx
-      osx_image: xcode9.4
+      osx_image: xcode10.1
       before_install: skip
       script:
         - PKG_OS="darwin" make packages
