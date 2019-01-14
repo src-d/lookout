@@ -172,6 +172,7 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 		}
 
 		ctx := context.WithValue(r.Context(), userIDKey, claims.ID)
+		ctx = context.WithValue(ctx, userLoginKey, claims.Login)
 		ctx = context.WithValue(ctx, userOAuthToken, &claims.OAuthToken)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -234,13 +235,14 @@ func getGithubUser(client *http.Client) (*User, error) {
 
 type jwtClaim struct {
 	ID         int
+	Login      string
 	OAuthToken oauth2.Token
 	jwt.StandardClaims
 }
 
 // makeToken generates token string for a user
 func (a *Auth) makeToken(ot oauth2.Token, user *User) (string, error) {
-	claims := &jwtClaim{ID: user.ID, OAuthToken: ot}
+	claims := &jwtClaim{ID: user.ID, Login: user.Login, OAuthToken: ot}
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	ss, err := t.SignedString(a.signingKey)
 	if err != nil {
@@ -268,8 +270,12 @@ var extractor = &request.PostExtractionFilter{
 
 type userContext int
 
-const userIDKey userContext = 1
-const userOAuthToken userContext = 2
+const (
+	_ userContext = iota
+	userIDKey
+	userLoginKey
+	userOAuthToken
+)
 
 // getUserInt gets the value stored in the Context for the key userIDKey, bool
 // is true on success
@@ -286,6 +292,16 @@ func GetUserID(ctx context.Context) (int, error) {
 	}
 
 	return id, nil
+}
+
+// GetUserLogin gets the user login set by the JWT middleware in the Context
+func GetUserLogin(ctx context.Context) (string, error) {
+	login, ok := ctx.Value(userLoginKey).(string)
+	if !ok || login == "" {
+		return "", fmt.Errorf("user login is not set in the context")
+	}
+
+	return login, nil
 }
 
 func getOAuthToken(ctx context.Context) (*oauth2.Token, error) {

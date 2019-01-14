@@ -2,13 +2,13 @@
 
 *Work in progress*
 
-source{d} Lookout web interface provides user friendly way to configure Github installations by users.
+source{d} Lookout web interface provides a user friendly way to configure GitHub installations by users.
 
 ### Configuration
 
-The web interface requires usage of Github App as authorization method and requires GitHub App OAuth credentials.
+The web interface requires the usage of a Github App as authorization method, and requires GitHub App OAuth credentials.
 
-Please, follow an instraction how to get them in [main configuration guide](fix_this_link_later) and set them in `config.yaml` as following:
+Please follow the instructions on how to get them in the [main configuration guide](configuration.md), and set them in `config.yaml` as follows:
 
 ```yaml
 providers:
@@ -29,8 +29,12 @@ It can be any non-empty string.
 ```yaml
 web:
   # Secret key to sign JSON Web Tokens
-  signing_key:
+  signing_key: secret123
 ```
+
+There is one extra requirement. In order to identify who is an administrator, the source{d} Lookout GitHub App needs to define one extra permission:
+
+- Organization members: Read-only
 
 #### Advanced configuration
 

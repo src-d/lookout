@@ -80,3 +80,15 @@ interface MeResponse {
 export function me(): Promise<MeResponse> {
   return apiCall<MeResponse>('/api/me');
 }
+
+export interface Org {
+  name: string;
+}
+
+interface OrgsResponse extends Array<Org> {}
+
+// Returns a list of GitHub organization names where lookout is installed and
+// the logged-in user is an administrator
+export function orgs(): Promise<OrgsResponse> {
+  return apiCall<OrgsResponse>('/api/orgs');
+}

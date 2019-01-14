@@ -12,7 +12,7 @@ type HTTPServer struct {
 	mux http.Handler
 }
 
-func NewHTTPServer(auth *Auth, static *Static) *HTTPServer {
+func NewHTTPServer(auth *Auth, gh *GitHub, static *Static) *HTTPServer {
 	corsOptions := cors.Options{
 		// TODO: make it customizable
 		// we can't pass "*" because it's incompatible with "credentials: include" request
@@ -36,6 +36,7 @@ func NewHTTPServer(auth *Auth, static *Static) *HTTPServer {
 	r.Get("/api/callback", auth.Callback)
 	r.With(auth.Middleware).Route("/api", func(r chi.Router) {
 		r.Get("/me", auth.Me)
+		r.Get("/orgs", gh.Orgs)
 	})
 	r.Get("/static/*", static.ServeHTTP)
 	r.Get("/*", static.ServeHTTP)
