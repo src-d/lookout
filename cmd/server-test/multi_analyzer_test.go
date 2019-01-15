@@ -40,9 +40,11 @@ func (suite *MultiDummyIntegrationSuite) TestSuccessReview() {
 
 	suite.GrepAll(suite.r, []string{
 		"processing pull request",
-		"posting analysis",
+		`msg="posting analysis" app=lookoutd comments=4`,
 		`{"analyzer-name":"Dummy1","file":"another.go","line":3,"text":"This line exceeded`,
+		`{"analyzer-name":"Dummy1","file":"another.go","line":3,"text":"This line exceeded 120 chars."}`,
 		`{"analyzer-name":"Dummy2","file":"another.go","line":3,"text":"This line exceeded`,
+		`{"analyzer-name":"Dummy2","file":"another.go","line":3,"text":"This line exceeded 120 chars."}`,
 		`status=success`,
 	})
 }

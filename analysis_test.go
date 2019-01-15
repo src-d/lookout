@@ -46,3 +46,37 @@ func TestAnalyzerCommentsGroupsFilter(t *testing.T) {
 
 	assert.Equal(e, err)
 }
+
+func TestAnalyzerCommentsGroupsCount(t *testing.T) {
+	assert := assert.New(t)
+
+	g := AnalyzerCommentsGroups{}
+
+	assert.Equal(g.Count(), 0)
+
+	g = AnalyzerCommentsGroups{
+		{
+			Comments: []*Comment{
+				{Text: "some text"},
+			},
+		},
+	}
+
+	assert.Equal(g.Count(), 1)
+
+	g = AnalyzerCommentsGroups{
+		{
+			Comments: []*Comment{
+				{Text: "some text"},
+			},
+		},
+		{
+			Comments: []*Comment{
+				{Text: "some text"},
+				{Text: "some text"},
+			},
+		},
+	}
+
+	assert.Equal(g.Count(), 3)
+}

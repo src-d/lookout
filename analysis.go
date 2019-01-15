@@ -79,3 +79,13 @@ func (g AnalyzerCommentsGroups) Filter(fn CommentsFilterFn) ([]AnalyzerComments,
 
 	return result, nil
 }
+
+// Count returns the total number of comments
+func (g AnalyzerCommentsGroups) Count() int {
+	count := 0
+	for _, group := range g {
+		count += len(group.Comments)
+	}
+
+	return count
+}

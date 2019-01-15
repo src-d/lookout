@@ -409,7 +409,7 @@ func (s *Server) post(ctx context.Context, e lookout.Event, comments lookout.Ana
 	}
 
 	ctxlog.Get(ctx).With(log.Fields{
-		"comments": len(comments),
+		"comments": comments.Count(),
 	}).Infof("posting analysis")
 
 	if err := s.poster.Post(ctx, e, comments, safe); err != nil {
