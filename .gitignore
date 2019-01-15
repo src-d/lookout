@@ -20,3 +20,4 @@
 
 # Configuration
 /config.yml
+/*.pem

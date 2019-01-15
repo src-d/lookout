@@ -1,3 +1,4 @@
+# list of the analyzers to be called by lookoutd
 analyzers:
   - name: Dummy
     addr: ipv4://localhost:9930
@@ -20,7 +21,7 @@ providers:
     # client_id:
     # client_secret:
 
-# only for authorization with a GitHub token
+# list of repositories to watch when using authorization with a GitHub token
 repositories:
   - url: github.com/_USER_/_REPO_TO_WATCH_
     client:
@@ -28,7 +29,7 @@ repositories:
       # token:
       # minInterval: 1m
 
-# only for authorization with GitHub App
+# web interface configuration, only available if authorizing with GitHub App
 web:
   # Secret key to sign JSON Web Tokens
   signing_key:

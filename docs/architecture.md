@@ -17,7 +17,7 @@ The server also exposes **DataService** as a gRPC service.
 
 ### DataService
 
-**DataService** gRPC can be called by the analyzers to request a stream (ie. [go](https://grpc.io/docs/tutorials/basic/go.html#server-side-streaming-rpc-1), [python](https://grpc.io/docs/tutorials/basic/python.html#response-streaming-rpc)) of the files and changes being reviewed. The [ChangesRequest](https://github.com/src-d/lookout-sdk/blob/master/proto/lookout/sdk/service_data.proto#L58) or [FilesRequest](https://github.com/src-d/lookout-sdk/blob/master/proto/lookout/sdk/service_data.proto#L70) can be configured to ask either for all files, or just the changed ones, as well as UASTs, language, full file content and/or exclude some paths: by regexp, or just all [vendored paths](https://github.com/github/linguist/blob/master/lib/linguist/vendor.yml).
+**DataService** gRPC can be called by the analyzers to request a stream (ie. [go](https://grpc.io/docs/tutorials/basic/go.html#server-side-streaming-rpc-1), [python](https://grpc.io/docs/tutorials/basic/python.html#response-streaming-rpc)) of all the files in the repository being analyzed ([FilesRequest](https://github.com/src-d/lookout-sdk/blob/master/proto/lookout/sdk/service_data.proto#L70)), or only the ones that changed ([ChangesRequest](https://github.com/src-d/lookout-sdk/blob/master/proto/lookout/sdk/service_data.proto#L58)). Both requests can be configured to also require either the files content, UASTs and language; the requests can also filter by programming languages, file paths (by regexp), and exclude the [vendored paths](https://github.com/github/linguist/blob/master/lib/linguist/vendor.yml).
 
 **DataServer** also acts as a proxy to Babelfish, so if an analyzer needs to access the Babelfish API, it can point its [Babelfish client](https://docs.sourced.tech/babelfish/using-babelfish/clients) to the same **DataServer** address.
 
@@ -33,4 +33,23 @@ An analyzer is a gRPC service that will be called by the [Server](#server) to pe
 
 They are not part of **source{d} Lookout** repository so they can be developed by third parties.
 
-source{d} Lookout Server will call all the registered Analyzers to produce comments for the opened Pull Request in the watched repositories. To register new Analyzers in the configuration file, `lookoutd` will need to be restarted.
+**source{d} Lookout** Server will call all the registered Analyzers to produce comments for the opened Pull Request in the watched repositories. To register new Analyzers in the configuration file, `lookoutd` will need to be restarted.
+
+
+# External Services
+
+**source{d} Lookout** will call some external services, some of them depending on the configuration.
+
+## Babelfish
+
+Babelfish is used to parse files into [UAST](https://doc.bblf.sh/uast/uast-specification.html) when the [DataService](#dataservice) `GetChanges` or `GetFiles` methods are asked to include UASTs.
+
+Babelfish can also be directly called through **DataService** proxy.
+
+## RabbitMQ
+
+If **source{d} Lookout** is run in [distributed mode](how-to-run.md#distributed-mode), the watcher will enqueue in RabbitMQ all new repository and PR events, and the workers will take from there the events to be processed.
+
+## PostgreSQL
+
+**source{d} Lookout** uses PostgreSQL to store application internal state.

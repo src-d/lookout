@@ -40,6 +40,8 @@ To perform a `NotifyPushEvent` call to an analyzer and serve the **source{d} Loo
 $ lookout-sdk push
 ```
 
+`lookout-sdk` will exit with a non `0` exit code if the gRPC call to the analyzer ends with an error or it could not be performed.
+
 In the next section, you will find a more detailed example considering the most usual options for running `lookout-sdk` against any analyzer from two given revisions.
 
 
@@ -90,7 +92,7 @@ $ lookout-sdk review \
   "ipv4://localhost:9999"
 ```
 
-_For more options to run `lookout-sdk`, take a look into [**lookout-sdk Command Options**](#options)_
+_For more options to run `lookout-sdk`, take a look into [**lookout-sdk Command Options**](#appendix-lookout-sdk-command-options)_
 
 - If analyzer gRPC address is omitted, it will be `ipv4://localhost:9930`.
 - If `--git-dir` is omitted, the current dir will be used.
@@ -101,8 +103,7 @@ _For more options to run `lookout-sdk`, take a look into [**lookout-sdk Command 
 Everything explained above for `lookout-sdk review` calling `NotifyReviewEvent`, applies also to `NotifyPushEvent` when using `lookout-sdk push`.
 
 
-<a id=options></a>
-# Appendix: `lookout-sdk` Command Options
+# Appendix: lookout-sdk Command Options
 
 `lookout-sdk` binary include some subcommands as described above, and they accept many different options; you can use:
 - `lookout-sdk -h`, to see all the available subcommands.
