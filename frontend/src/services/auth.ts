@@ -1,4 +1,5 @@
 import * as api from '../api';
+import log from './log';
 
 export interface User {
   name: string;
@@ -26,8 +27,7 @@ class AuthService {
           return true;
         })
         .catch(err => {
-          // tslint:disable-next-line
-          console.error(err);
+          log.error(err);
           this._user = null;
           return false;
         });
