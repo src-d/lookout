@@ -104,7 +104,7 @@ In case you want to locally run the web interface from sources, you can choose o
     ```shell
     $ make -f Makefile.web web-serve
     ```
-    And navigate to [http://127.0.0.0:8080](http://127.0.0.0:8080)
+    And navigate to [http://127.0.0.1:8080](http://127.0.0.1:8080)
 - using `create-react-app` dev server, with live reload for web assets changes, running in separated terminals the backend: 
     ```shell
     $ make -f Makefile.web web-start
@@ -114,7 +114,7 @@ In case you want to locally run the web interface from sources, you can choose o
     $ make -f Makefile.web web-dependencies # if you didn't do it yet
     $ yarn --cwd frontend start
     ```
-    Configure the GitHub App authorization callback URL to `http://127.0.0.0:3000/callback`, and navigate to [http://127.0.0.0:3000](http://127.0.0.0:3000)
+    Configure the GitHub App authorization callback URL to `http://127.0.0.1:3000/callback`, and navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000)
 
 ### Testing
 

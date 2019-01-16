@@ -23,7 +23,7 @@ Open [http://127.0.0.1:8080](http://127.0.0.1:8080) in your browser.
 
 The web interface requires the usage of a Github App as authorization method, and requires GitHub App OAuth credentials.
 
-The GitHub App authorization callback must be processed by the `/callback` frontend route, so configure it when creating the GitHub App (the default value would be) `http://127.0.0.0:8080/callback`.
+The GitHub App authorization callback must be processed by the `/callback` frontend route, so configure it to your hostname when creating the GitHub App. The default value would be `http://127.0.0.1:8080/callback`.
 
 Please follow the instructions on how to get the GitHub App credentials in the [main configuration guide](configuration.md#authentication-as-a-github-app), and set them in `config.yaml` as follows:
 
