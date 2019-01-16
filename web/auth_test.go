@@ -68,7 +68,7 @@ func TestCallbackSuccess(t *testing.T) {
 	code := "test-code"
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/callback?state="+state+"&code="+code, nil)
+	r := httptest.NewRequest("GET", "/api/callback?state="+state+"&code="+code, nil)
 
 	session, _ := auth.store.Get(r, "sess")
 	session.Values["state"] = state
