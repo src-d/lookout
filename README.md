@@ -1,10 +1,5 @@
 <h1 align="center">
-  <br>
-  <a href="https://www.sourced.tech"><img src="./docs/assets/sourced.png" alt="source{d}" height="60px"></a>
-  <br>
-  <br>
-  source{d} Lookout
-  <br>
+  <a href="https://www.sourced.tech"><img src="./docs/assets/sourced-lookout.png" alt="source{d} Lookout" height="120px"></a>
 </h1>
 
 <h3 align="center">
