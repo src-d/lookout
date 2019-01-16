@@ -384,7 +384,7 @@ func mergeMaps(global, local map[string]interface{}) map[string]interface{} {
 }
 
 func (s *Server) post(ctx context.Context, e lookout.Event, comments lookout.AnalyzerCommentsGroups, safe bool) error {
-	comments, err := comments.Filter(func(c *lookout.Comment) (bool, error) {
+	comments, err := comments.Dedup().Filter(func(c *lookout.Comment) (bool, error) {
 		yes, err := s.commentOp.Posted(ctx, e, c)
 		if err != nil {
 			ctxlog.Get(ctx).Errorf(err, "comment posted check failed")

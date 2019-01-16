@@ -38,15 +38,24 @@ func (suite *MultiDummyIntegrationSuite) TearDownTest() {
 func (suite *MultiDummyIntegrationSuite) TestSuccessReview() {
 	suite.sendEvent(successJSON)
 
-	suite.GrepAll(suite.r, []string{
+	str := suite.GrepAll(suite.r, []string{
 		"processing pull request",
 		`msg="posting analysis" app=lookoutd comments=4`,
-		`{"analyzer-name":"Dummy1","file":"another.go","line":3,"text":"This line exceeded`,
-		`{"analyzer-name":"Dummy1","file":"another.go","line":3,"text":"This line exceeded 120 chars."}`,
-		`{"analyzer-name":"Dummy2","file":"another.go","line":3,"text":"This line exceeded`,
-		`{"analyzer-name":"Dummy2","file":"another.go","line":3,"text":"This line exceeded 120 chars."}`,
 		`status=success`,
 	})
+
+	dummy1First := `{"analyzer-name":"Dummy1","file":"another\.go","text":"The file has increased in 4 lines\."}.*` +
+		`{"analyzer-name":"Dummy1","file":"another\.go","line":3,"text":"This line exceeded 120 chars\."}.*` +
+		`{"analyzer-name":"Dummy2","file":"another\.go","text":"The file has increased in 4 lines\."}.*` +
+		`{"analyzer-name":"Dummy2","file":"another\.go","line":3,"text":"This line exceeded 120 chars\."}`
+	dummy2First := `{"analyzer-name":"Dummy2","file":"another\.go","text":"The file has increased in 4 lines\."}.*` +
+		`{"analyzer-name":"Dummy2","file":"another\.go","line":3,"text":"This line exceeded 120 chars\."}.*` +
+		`{"analyzer-name":"Dummy1","file":"another\.go","text":"The file has increased in 4 lines\."}.*` +
+		`{"analyzer-name":"Dummy1","file":"another\.go","line":3,"text":"This line exceeded 120 chars\."}`
+	expr := `(?s)(` + dummy1First + `|` + dummy2First + `)`
+
+	found := suite.EgrepWholeFromString(str, expr)
+	suite.Require().True(found)
 }
 
 func TestMultiDummyIntegrationSuite(t *testing.T) {
