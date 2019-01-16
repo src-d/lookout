@@ -1,43 +1,21 @@
-<h1 align="center">
-  <a href="https://www.sourced.tech"><img src="./docs/assets/sourced-lookout.png" alt="source{d} Lookout" height="120px"></a>
-</h1>
+<a href="https://www.sourced.tech/lookout">
+  <img src="./docs/assets/sourced-lookout.png" alt="source{d} Lookout" height="120px">
+</a>
 
-<h3 align="center">
-  Service for assisted code review, that allows running custom code Analyzers on pull requests.
-</h3>
+**Service for assisted code review, that allows running custom code Analyzers on pull requests.**
 
-<p align="center">
-  <a href="https://github.com/src-d/lookout/releases">
-    <img src="https://badge.fury.io/gh/src-d%2Flookout.svg"
-         alt="GitHub version">
-  </a>
-  <a href="https://travis-ci.org/src-d/lookout">
-    <img src="https://travis-ci.org/src-d/lookout.svg?branch=master"
-         alt="Build Status">
-  </a>
-  <img src="https://svg-badge.appspot.com/badge/stability/development?color=D6604A"
-         alt="Development">
-  <a href="https://codecov.io/github/src-d/lookout">
-    <img src="https://codecov.io/github/src-d/lookout/coverage.svg"
-         alt="Code Coverage">
-  </a>
-  <a href="https://goreportcard.com/report/github.com/src-d/lookout">
-    <img src="https://goreportcard.com/badge/github.com/src-d/lookout"
-         alt="Go Report Card">
-  </a>
-  <a href="https://godoc.org/github.com/src-d/lookout">
-    <img src="https://godoc.org/github.com/src-d/lookout?status.svg"
-         alt="GoDoc">
-  </a>
-</p>
+[![GitHub version](https://badge.fury.io/gh/src-d%2Flookout.svg)](https://github.com/src-d/lookout/releases)
+[![Build Status](https://travis-ci.org/src-d/lookout.svg?branch=master)](https://travis-ci.org/src-d/lookout)
+![Development](https://svg-badge.appspot.com/badge/stability/development?color=D6604A)
+[![Code Coverage](https://codecov.io/github/src-d/lookout/coverage.svg)](https://codecov.io/github/src-d/lookout)
+[![Go Report Card](https://goreportcard.com/badge/github.com/src-d/lookout)](https://goreportcard.com/report/github.com/src-d/lookout)
+[![GoDoc](https://godoc.org/github.com/src-d/lookout?status.svg)](https://godoc.org/github.com/src-d/lookout)
 
-<p align="center"><b>
-    <a href="https://www.sourced.tech">Website</a> •
-    <a href="https://docs.sourced.tech">Documentation</a> •
-    <a href="https://blog.sourced.tech">Blog</a> •
-    <a href="http://bit.ly/src-d-community">Slack</a> •
-    <a href="https://twitter.com/sourcedtech">Twitter</a>
-</b></p>
+[Website](https://www.sourced.tech) •
+[Documentation](https://docs.sourced.tech) •
+[Blog](https://blog.sourced.tech) •
+[Slack](http://bit.ly/src-d-community) •
+[Twitter](https://twitter.com/sourcedtech)
 
 ## Introduction
 
@@ -50,14 +28,14 @@ Jump to the [Quickstart](#quickstart) section to start using it!
 
 <!--ts-->
 * [Introduction](#introduction)
-    * [Motivation and Scope](#motivation-and-scope)
-    * [Current Status](#current-status)
-    * [Further Reading](#further-reading)
+  * [Motivation and Scope](#motivation-and-scope)
+  * [Current Status](#current-status)
+  * [Further Reading](#further-reading)
 * [Quickstart](#quickstart)
 * [Available Analyzers](#available-analyzers)
 * [Create an Analyzer](#create-an-analyzer)
 * [Contribute](#contribute)
-    * [Community](#community)
+  * [Community](#community)
 * [Code of Conduct](#code-of-conduct)
 * [License](#license)
 <!--te-->
