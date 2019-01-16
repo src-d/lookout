@@ -2,15 +2,12 @@ package git
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/ctxlog"
 
 	errors "gopkg.in/src-d/go-errors.v1"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
-	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 )
 
 // Service implements data service interface on top of go-git
@@ -148,52 +145,4 @@ func (r *Service) loadTrees(ctx context.Context,
 	}
 
 	return trees[0], trees[1], nil
-}
-
-func (r *Service) resolveCommitTree(s storer.Storer, h plumbing.Hash) (
-	*object.Tree, error) {
-
-	c, err := r.resolveCommit(s, h)
-	if err != nil {
-		return nil, err
-	}
-
-	t, err := c.Tree()
-	if err != nil {
-		return nil, err
-	}
-
-	return t, nil
-}
-
-func (r *Service) resolveCommit(s storer.Storer, h plumbing.Hash) (
-	*object.Commit, error) {
-
-	for i := 0; i < maxResolveLength; i++ {
-		obj, err := s.EncodedObject(plumbing.AnyObject, h)
-		if err != nil {
-			return nil, err
-		}
-
-		switch obj.Type() {
-		case plumbing.TagObject:
-			tag, err := object.DecodeTag(s, obj)
-			if err != nil {
-				return nil, err
-			}
-
-			h = tag.Target
-		case plumbing.CommitObject:
-			commit, err := object.DecodeCommit(s, obj)
-			if err != nil {
-				return nil, err
-			}
-
-			return commit, nil
-		default:
-			return nil, fmt.Errorf("bad object type: %s", obj.Type().String())
-		}
-	}
-
-	return nil, fmt.Errorf("maximum length of tag chain exceeded: %d", maxResolveLength)
 }
