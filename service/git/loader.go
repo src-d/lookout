@@ -17,11 +17,11 @@ type CommitLoader interface {
 }
 
 type LibraryCommitLoader struct {
-	Library *Library
-	Syncer  *Syncer
+	Library ReposCollectionHandler
+	Syncer  Syncer
 }
 
-func NewLibraryCommitLoader(l *Library, s *Syncer) *LibraryCommitLoader {
+func NewLibraryCommitLoader(l ReposCollectionHandler, s Syncer) *LibraryCommitLoader {
 	return &LibraryCommitLoader{
 		Library: l,
 		Syncer:  s,
