@@ -27,10 +27,8 @@ MKDIR := mkdir -p
 
 # Environment and arguments to use in `go run` calls.
 GO_RUN_ENV := LOG_LEVEL=DEBUG
-GO_RUN_ARGS += -tags "$(WITH_STATIC_TAG)"
 
 GOCMD = go
-GORUN = $(GOCMD) run $(GO_RUN_ARGS)
 
 build-path:
 	$(MKDIR) $(BUILD_PATH)
@@ -64,10 +62,11 @@ web-pack:
 
 .PHONY: web-start
 web-start:
-	$(GO_RUN_ENV) $(GORUN) cmd/lookoutd/*.go web
+	$(GO_RUN_ENV) $(GOCMD) run cmd/lookoutd/*.go web
 
 .PHONY: web-serve
-web-serve: | web-dependencies web-build web-bindata web-start
+web-serve: | web-build web-pack
+	$(GO_RUN_ENV) $(GOCMD) run -tags "$(WITH_STATIC_TAG)" cmd/lookoutd/*.go web
 
 .PHONY: lint
 lint:
