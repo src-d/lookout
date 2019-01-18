@@ -53,17 +53,8 @@ func (l *LibraryCommitLoader) LoadCommits(
 		return nil, err
 	}
 
-	commits := make([]*object.Commit, len(rps))
-	for i, rp := range rps {
-		commit, err := r.CommitObject(plumbing.NewHash(rp.Hash))
-		if err != nil {
-			return nil, err
-		}
-
-		commits[i] = commit
-	}
-
-	return commits, nil
+	storerCl := NewStorerCommitLoader(r.Storer)
+	return storerCl.LoadCommits(ctx, rps...)
 }
 
 type StorerCommitLoader struct {
@@ -79,20 +70,14 @@ func NewStorerCommitLoader(storer storer.Storer) *StorerCommitLoader {
 func (l *StorerCommitLoader) LoadCommits(ctx context.Context,
 	rps ...lookout.ReferencePointer) ([]*object.Commit, error) {
 
-	var commits []*object.Commit
-	for _, rp := range rps {
-		obj, err := l.Storer.EncodedObject(
-			plumbing.CommitObject, plumbing.NewHash(rp.Hash))
+	commits := make([]*object.Commit, len(rps))
+	for i, rp := range rps {
+		commit, err := object.GetCommit(l.Storer, plumbing.NewHash(rp.Hash))
 		if err != nil {
 			return nil, err
 		}
 
-		commit, err := object.DecodeCommit(l.Storer, obj)
-		if err != nil {
-			return nil, err
-		}
-
-		commits = append(commits, commit)
+		commits[i] = commit
 	}
 
 	return commits, nil
