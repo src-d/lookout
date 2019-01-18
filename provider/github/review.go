@@ -126,7 +126,7 @@ func getPostedComment(ctx context.Context, client *Client, owner, repo string, n
 		}
 
 		for {
-			comments, resp, err := client.PullRequests.ListReviewComments(ctx, owner, repo, int64(number), review.GetID(), listCommentsOpts)
+			comments, resp, err := client.PullRequests.ListReviewComments(ctx, owner, repo, number, review.GetID(), listCommentsOpts)
 			if handleAPIError(resp, err, "review comments could not be listed") != nil {
 				return nil, err
 			}
