@@ -446,21 +446,44 @@ zCtJLcpLzInPTLHm4nL29/X1DLHmAgQAAP//0vNoAUcAAAA=
 `,
 	},
 
+	"/store/migrations/1547744983_organizations.down.sql": {
+		name:    "1547744983_organizations.down.sql",
+		local:   "store/migrations/1547744983_organizations.down.sql",
+		size:    42,
+		modtime: 1,
+		compressed: `
+H4sIAAAAAAAC/3Jydff0s+bicgnyD1AIcXTycVXIL0pPzMusSizJzM+z5uJy9vf19Qyx5gIEAAD//3ZC
+3tcqAAAA
+`,
+	},
+
+	"/store/migrations/1547744983_organizations.up.sql": {
+		name:    "1547744983_organizations.up.sql",
+		local:   "store/migrations/1547744983_organizations.up.sql",
+		size:    155,
+		modtime: 1,
+		compressed: `
+H4sIAAAAAAAC/2TKwQoCIRCA4bPzFHMs2Dfw5C4SkrohdthTSNoyEGOIG9HTdwui6/9/oz4YLwGmoFXU
+GNVoNda2JqZ36lQZdyAo47ZRRj9H9Gdr8RSMU2HBo14GEI9Wn5RLw15e/YsGEMS9NE73C+W/d618o/U3
+w14CwDQ7Z6KETwAAAP//+lQfNZsAAAA=
+`,
+	},
+
 	"/store/migrations/lock.json": {
 		name:    "lock.json",
 		local:   "store/migrations/lock.json",
-		size:    7731,
+		size:    8554,
 		modtime: 1,
 		compressed: `
-H4sIAAAAAAAC/+xZwY6bQAy95ytGnPcLcu2xUlRV21NVIQMO62rGQ2c8adlV/r2C7qaBQNqu1Gagc4kQ
-luP3jMfPmKeNUtk9FBp9tlUfN0op9dT/KpXtwGC2VVlpjUGW7O7F8MbqYPinx7nXwJOqk1N//75t+vsh
-jC3vHBlw7Vtss60SF3BgfY97dMhl58xB64FxZ2UXtJ7y+8D0JXROe9AeT5bj3XXYpUMQrHKQafhCBr2A
-aeTxCos+5i1phKZaAw2HB8KvOR6QJX9lRV0ncR725TyMIw/+/HQGnov8zHScycYlglemY08aZ54nfpOY
-H6QmnkFOLFijixn8ZXKXkvbS8p6qPt4k/oJq4qgZAINuH8f1EU3+n68+bc64XIhoE/zDqJOsXke9gAS/
-zFPTOHugKtqa+wX6rqE6Bj2rl9E3rXWMYN3oTOKX2ngr8kJcSr5wHr0E1sGBkOVpEp+95SJmDgV4XCj0
-B4QqVui/Jd6TLwJJvpMA/kUCPjfoauzfRafbrrUagWMm4W1w5VK7Vp/+hWJPgpcEL+0+V7P7FHA13mb5
-+SP0v9t+/sk8NsKWvkuks5k2RP/LgOywsZ7EunaWQvyLCQ6mmKugCNAPm/Gmuzp+DwAA//+IbZL/Mx4A
-AA==
+H4sIAAAAAAAC/+xZwW7bMAy95ysEn/sFue44IBiG7jQMAW0zLgeJ8iQqm1Pk34e4bRY7drYVWyulugSG
+CUbvUSSfLN4vlCpuodToi6X6vFBKqfv+V6liBQaLpSoqawyyFDdPhndWB8O/PE69Bp5UH53697dd278P
+YWz54MiA695jVyyVuIAD60fcoEOuDs4ctB4YV1ZWQespv09M38LBaQPa49Gyv7kMu3IIgvUaZBq+kEEv
+YFrZXWDRr/maNEJbXwMNh1vC72vcIsv6mRl1mcTpsk/1MF558OfHGnhM8hPTfiYa5wieGY4NaZzZT/wh
+MW+kJp5BTizYoIsZ/HlwUwl7ZXlDdb/eJP6SGuKoGQCD7nbj/Igm/o9PXxYnXM5E1LoGmHYgZPntKGnr
+7JbqaHfuN+gPbckx6FnVSaL0m5TLpg3+biTAV180XkCCTzPjcsHnL5d/0beMIfGpnldq8kJcyTpxHg/y
+Edzw0DIg8dVbLmPmUILHRKHfIdSxQv8j8Z78fs7ynQXwPxLwa4Ouwf4KZ7rtWqsROGYS3gZXpdq1+vAn
+ij0LXha8PDK4mpGBgGvwdWYGD0u/3NDgb85jI2x5nJdrM98QvZUDssPWehLrulkK8V9McDDlXAZFgH7Y
+jBeHp/3PAAAA//+UEnKLaiEAAA==
 `,
 	},
 
@@ -494,6 +517,8 @@ var _escDirs = map[string][]os.FileInfo{
 		_escData["/store/migrations/1537528735_migrate_review_event_id.up.sql"],
 		_escData["/store/migrations/1539095669_delete_old_internal_id.down.sql"],
 		_escData["/store/migrations/1539095669_delete_old_internal_id.up.sql"],
+		_escData["/store/migrations/1547744983_organizations.down.sql"],
+		_escData["/store/migrations/1547744983_organizations.up.sql"],
 		_escData["/store/migrations/lock.json"],
 	},
 }
