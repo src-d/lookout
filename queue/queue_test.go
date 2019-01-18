@@ -2,18 +2,23 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"io"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/src-d/lookout"
 	fixtures "github.com/src-d/lookout-test-fixtures"
+	lookout_mock "github.com/src-d/lookout/mock"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/src-d/go-queue.v1"
+	"github.com/stretchr/testify/suite"
+	queue "gopkg.in/src-d/go-queue.v1"
 )
 
 var (
@@ -30,6 +35,8 @@ var (
 		InternalID:     "5678",
 		CommitRevision: *longLineFixture.GetCommitRevision(),
 	}
+
+	fakeEvent = lookout_mock.FakeEvent{}
 )
 
 func initQueue(t *testing.T, broker string) queue.Queue {
@@ -54,23 +61,90 @@ func nextEOF(t *testing.T, iter queue.JobIter) {
 	assert.Nil(t, retrievedJob)
 }
 
-func TestQueueJobCreation(t *testing.T) {
-	qJob, err := NewQueueJob(context.TODO(), &mockEventA)
-	require.NoError(t, err)
-	require.NotNil(t, qJob)
-
-	qEv, err := qJob.Event()
-	require.NoError(t, err)
-	require.NotNil(t, qEv)
-	require.EqualValues(t, &mockEventA, qEv)
-	require.EqualValues(t, mockEventA.Type(), qJob.EventType)
-
-	require.Nil(t, qJob.PushEvent)
+type QueueJobTestSuite struct {
+	suite.Suite
 }
 
-func TestEnqueuerNoCache(t *testing.T) {
+func (s *QueueJobTestSuite) TestCreationWithReviewEvent() {
+	require := s.Require()
+
+	qJob, err := NewQueueJob(context.TODO(), &mockEventA)
+	require.NoError(err)
+	require.NotNil(qJob)
+
+	qEv, err := qJob.Event()
+	require.NoError(err)
+	require.NotNil(qEv)
+	require.EqualValues(&mockEventA, qEv)
+	require.EqualValues(mockEventA.Type(), qJob.EventType)
+
+	require.Nil(qJob.PushEvent)
+}
+
+func (s *QueueJobTestSuite) TestCreationWithPushEvent() {
+	require := s.Require()
+
+	qJob, err := NewQueueJob(context.TODO(), &mockEventB)
+	require.NoError(err)
+	require.NotNil(qJob)
+
+	qEv, err := qJob.Event()
+	require.NoError(err)
+	require.NotNil(qEv)
+	require.EqualValues(&mockEventB, qEv)
+	require.EqualValues(mockEventB.Type(), qJob.EventType)
+
+	require.Nil(qJob.ReviewEvent)
+}
+
+func (s *QueueJobTestSuite) TestCreationWithFakeEvent() {
+	require := s.Require()
+
+	qJob, err := NewQueueJob(context.TODO(), &fakeEvent)
+	require.EqualError(err, "unsupported event type *mock.FakeEvent")
+	require.Nil(qJob)
+}
+
+func (s *QueueJobTestSuite) TestEventMethodWithFakeEvent() {
+	require := s.Require()
+
+	qj := QueueJob{EventType: fakeEvent.Type()}
+	qEv, err := qj.Event()
+	require.EqualError(err, "queue does not contain a valid lookout event")
+	require.Nil(qEv)
+}
+
+func TestQueueJobTestSuite(t *testing.T) {
+	suite.Run(t, new(QueueJobTestSuite))
+}
+
+type EventEnqueuerTestSuite struct {
+	suite.Suite
+}
+
+func (s *EventEnqueuerTestSuite) TestEnqueueFakeEvent() {
+	q := initQueue(s.T(), "memoryfinite://")
+	handler := EventEnqueuer(context.TODO(), q)
+
+	err := handler(context.TODO(), &fakeEvent)
+	s.EqualError(err, "unsupported event type *mock.FakeEvent")
+}
+
+func (s *EventEnqueuerTestSuite) TestErrorOnQueueJobCreation() {
+	mq := new(MockQueue)
+
+	mq.On("Publish", mock.Anything).Return(errors.New("publish mock error"))
+
+	handler := EventEnqueuer(context.TODO(), mq)
+
+	err := handler(context.TODO(), &mockEventA)
+	s.EqualError(err, "publish mock error")
+}
+
+func (s *EventEnqueuerTestSuite) TestNoCache() {
 	// Enqueue the same event twice, dequeue it twice
 
+	t := s.T()
 	q := initQueue(t, "memoryfinite://")
 
 	handler := EventEnqueuer(context.TODO(), q)
@@ -90,9 +164,10 @@ func TestEnqueuerNoCache(t *testing.T) {
 	nextEOF(t, iter)
 }
 
-func TestEnqueuerCache(t *testing.T) {
+func (s *EventEnqueuerTestSuite) TestWithCache() {
 	// Enqueue the same event twice, it should be available to dequeue only once
 
+	t := s.T()
 	q := initQueue(t, "memoryfinite://")
 
 	handler := lookout.CachedHandler(EventEnqueuer(context.TODO(), q))
@@ -111,7 +186,82 @@ func TestEnqueuerCache(t *testing.T) {
 	nextEOF(t, iter)
 }
 
-func TestDequeuer(t *testing.T) {
+func TestEventEnqueuerTestSuite(t *testing.T) {
+	suite.Run(t, new(EventEnqueuerTestSuite))
+}
+
+type MockJobIter struct {
+	mock.Mock
+	io.Closer
+}
+
+func (m *MockJobIter) Next() (*queue.Job, error) {
+	args := m.Called()
+	return args.Get(0).(*queue.Job), args.Error(1)
+}
+
+type MockQueue struct {
+	mock.Mock
+}
+
+func (m *MockQueue) Publish(j *queue.Job) error {
+	args := m.Called(j)
+	return args.Error(0)
+}
+
+func (m *MockQueue) PublishDelayed(j *queue.Job, t time.Duration) error {
+	args := m.Called(j, t)
+	return args.Error(0)
+}
+
+func (m *MockQueue) Transaction(tc queue.TxCallback) error {
+	args := m.Called(tc)
+	return args.Error(0)
+}
+func (m *MockQueue) Consume(advertisedWindow int) (queue.JobIter, error) {
+	args := m.Called(advertisedWindow)
+	rawJobIter := args.Get(0)
+	if rawJobIter != nil {
+		return rawJobIter.(*MockJobIter), nil
+	}
+
+	return nil, args.Error(1)
+}
+
+func (m *MockQueue) RepublishBuried(conditions ...queue.RepublishConditionFunc) error {
+	args := m.Called(conditions)
+	return args.Error(0)
+}
+
+type EventDequeuerTestSuite struct {
+	suite.Suite
+}
+
+func (s *EventDequeuerTestSuite) TestWrongConcurrencyValue() {
+	q := initQueue(s.T(), "memory://")
+	handler := func(context.Context, lookout.Event) error {
+		return nil
+	}
+	err := RunEventDequeuer(context.TODO(), q, handler, 0)
+	s.EqualError(err, "wrong value 0 for concurrent argument")
+}
+
+func (s *EventDequeuerTestSuite) TestErrorOnQueueConsumption() {
+	mq := new(MockQueue)
+
+	mq.On("Consume", mock.Anything).Return(nil, errors.New("consume mock error"))
+
+	handler := func(context.Context, lookout.Event) error {
+		return nil
+	}
+	err := RunEventDequeuer(context.TODO(), mq, handler, 1)
+	s.EqualError(err, "queue consume failed: consume mock error")
+
+	mq.AssertExpectations(s.T())
+}
+
+func (s *EventDequeuerTestSuite) TestSimple() {
+	t := s.T()
 	q := initQueue(t, "memory://")
 
 	var wg sync.WaitGroup
@@ -136,7 +286,8 @@ func TestDequeuer(t *testing.T) {
 	assert.Equal(t, 2, calls)
 }
 
-func TestDequeuerConcurrent(t *testing.T) {
+func (s *EventDequeuerTestSuite) TestConcurrent() {
+	t := s.T()
 	testCases := []int{1, 2, 13, 150}
 
 	for _, n := range testCases {
@@ -183,4 +334,8 @@ func TestDequeuerConcurrent(t *testing.T) {
 			cancel()
 		})
 	}
+}
+
+func TestEventDequeuerTestSuite(t *testing.T) {
+	suite.Run(t, new(EventDequeuerTestSuite))
 }
