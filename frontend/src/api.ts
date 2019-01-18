@@ -20,6 +20,7 @@ export function apiCall<T>(
   options: ApiCallOptions = {}
 ): Promise<T> {
   const fetchOptions: RequestInit = {
+    ...options,
     credentials: 'include',
     headers: {
       Authorization: `Bearer ${Auth.token}`,
@@ -81,14 +82,37 @@ export function me(): Promise<MeResponse> {
   return apiCall<MeResponse>('/api/me');
 }
 
-export interface Org {
+export interface OrgListItem {
+  id: number;
   name: string;
 }
 
-interface OrgsResponse extends Array<Org> {}
+interface OrgsResponse extends Array<OrgListItem> {}
 
 // Returns a list of GitHub organization names where lookout is installed and
 // the logged-in user is an administrator
 export function orgs(): Promise<OrgsResponse> {
   return apiCall<OrgsResponse>('/api/orgs');
+}
+
+export interface OrgResponse {
+  id: number;
+  name: string;
+  config: string;
+}
+
+// Returns info about the individual organization
+export function org(name: string): Promise<OrgResponse> {
+  return apiCall<OrgResponse>(`/api/org/${name}`);
+}
+
+// Updates the organization config
+export function updateConfig(
+  name: string,
+  config: string
+): Promise<OrgResponse> {
+  return apiCall<OrgResponse>(`/api/org/${name}`, {
+    method: 'PUT',
+    body: { config }
+  });
 }

@@ -10,7 +10,7 @@ interface OrgsProps {
 
 interface OrgsState {
   done: boolean;
-  orgs: api.Org[];
+  orgs: api.OrgListItem[];
   errors: string[];
 }
 
@@ -49,7 +49,11 @@ class Organizations extends React.Component<OrgsProps, OrgsState> {
       return <Errors errors={this.state.errors} />;
     }
 
-    const orgs = this.state.orgs.map(org => <li key={org.name}>{org.name}</li>);
+    const orgs = this.state.orgs.map(org => (
+      <li key={org.name}>
+        <a href={`/org/${org.name}`}>{org.name}</a>
+      </li>
+    ));
 
     return (
       <div>
