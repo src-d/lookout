@@ -246,3 +246,53 @@ func (o *DBCommentOperator) posted(ctx context.Context, e *lookout.ReviewEvent, 
 
 	return count > 0, nil
 }
+
+// DBOrganizationOperator operates on an organization database store
+type DBOrganizationOperator struct {
+	organizationStore *models.OrganizationStore
+}
+
+// NewDBOrganizationOperator creates new DBOrganizationOperator using kallax as storage
+func NewDBOrganizationOperator(store *models.OrganizationStore) *DBOrganizationOperator {
+	return &DBOrganizationOperator{store}
+}
+
+var _ OrganizationOperator = &DBOrganizationOperator{}
+
+func (o *DBOrganizationOperator) getOrganization(ctx context.Context, provider string, orgID string) (*models.Organization, error) {
+	q := models.NewOrganizationQuery().FindByProvider(provider).FindByInternalID(orgID)
+	return o.organizationStore.FindOne(q)
+}
+
+// Save persists the given config, updating the current one if it exists
+// for the given (provider, orgID)
+func (o *DBOrganizationOperator) Save(ctx context.Context, provider string, orgID string, config string) error {
+	m, err := o.getOrganization(ctx, provider, orgID)
+	if err != nil && err != kallax.ErrNotFound {
+		return err
+	}
+
+	if err == kallax.ErrNotFound {
+		m = models.NewOrganization(provider, orgID, config)
+	} else {
+		m.Config = config
+	}
+
+	_, err = o.organizationStore.Save(m)
+	return err
+}
+
+// Config returns the stored config for the given (provider, orgID). If there
+// are no records in the DB, it returns "" without error.
+func (o *DBOrganizationOperator) Config(ctx context.Context, provider string, orgID string) (string, error) {
+	m, err := o.getOrganization(ctx, provider, orgID)
+	if err != nil && err != kallax.ErrNotFound {
+		return "", err
+	}
+
+	if err == kallax.ErrNotFound {
+		return "", nil
+	}
+
+	return m.Config, nil
+}

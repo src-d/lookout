@@ -97,3 +97,24 @@ type Comment struct {
 func newComment(r *ReviewEvent, c *lookout.Comment) *Comment {
 	return &Comment{ID: kallax.NewULID(), ReviewEvent: r, Comment: *c}
 }
+
+// Organization is a persisted model for an Organization (e.g. a GitHub App
+// installation). It contains settings for a group of repositories.
+// The primary key should be (Provider,InternalID), but kallax does not support
+// composite or string keys
+type Organization struct {
+	kallax.Model `pk:"id"`
+	ID           kallax.ULID
+	Provider     string
+	InternalID   string
+	Config       string
+}
+
+func newOrganization(provider string, internalID string, config string) *Organization {
+	return &Organization{
+		ID:         kallax.NewULID(),
+		Provider:   provider,
+		InternalID: internalID,
+		Config:     config,
+	}
+}
