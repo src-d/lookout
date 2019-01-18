@@ -10,6 +10,7 @@ import {
 import './App.css';
 import Callback from './Callback';
 import Loader from './components/Loader';
+import Organization from './components/Organization';
 import Organizations from './components/Organizations';
 import Auth, { User } from './services/auth';
 
@@ -17,7 +18,7 @@ function Login() {
   return (
     <header className="App-header">
       <a className="App-link" href={Auth.loginUrl}>
-        Login using Github
+        Log in using GitHub
       </a>
     </header>
   );
@@ -29,6 +30,18 @@ function Logout() {
   return <Redirect to="/" />;
 }
 
+interface HeaderProps {
+  user: User;
+}
+
+function Header({ user }: HeaderProps) {
+  return (
+    <header className="App-header">
+      Hello {user.name}! <Link to="/logout">Logout</Link>
+    </header>
+  );
+}
+
 interface IndexProps {
   user: User;
 }
@@ -36,10 +49,29 @@ interface IndexProps {
 function Index({ user }: IndexProps) {
   return (
     <div>
-      <header className="App-header">
-        Hello {user.name}! <Link to="/logout">Logout</Link>
-      </header>
+      <Header user={user} />
       <Organizations user={user} />
+    </div>
+  );
+}
+
+interface MatchParams {
+  name: string;
+}
+
+interface OrgProps extends RouteComponentProps<MatchParams> {
+  user: User;
+}
+
+function Org({ user, match }: OrgProps) {
+  return (
+    <div>
+      <Header user={user} />
+      <Organization user={user} orgName={match.params.name} />
+      <div>
+        <br />
+        <a href="/">Back to organizations</a>
+      </div>
     </div>
   );
 }
@@ -109,6 +141,7 @@ function AppRouter() {
     <Router>
       <div className="App">
         <PrivateRoute path="/" exact={true} component={Index} />
+        <PrivateRoute path="/org/:name" exact={true} component={Org} />
         <Route path="/login" component={Login} />
         <Route path="/logout" component={Logout} />
         <Route path="/callback" component={Callback} />
