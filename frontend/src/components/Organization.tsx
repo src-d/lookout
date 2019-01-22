@@ -90,8 +90,12 @@ class Organization extends React.Component<OrgProps, OrgState> {
 
   private handleConfigSave() {
     if (this.state.org === undefined) {
-      // tslint:disable-next-line
-      console.error('handleConfigSave called with undefined state.org');
+      this.setState({
+        done: true,
+        errors: [
+          'Internal error, handleConfigSave called with undefined state.org'
+        ]
+      });
       return;
     }
 
