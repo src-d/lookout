@@ -16,6 +16,7 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/src-d/lookout/store"
 	"github.com/src-d/lookout/util/ctxlog"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // GitHub is an HTTP service to call GitHub endpoints
@@ -260,12 +261,18 @@ func (g *GitHub) UpdateOrg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var empty struct{}
+	if err := yaml.Unmarshal([]byte(configRequest.Config), &empty); err != nil {
+		http.Error(w,
+			fmt.Sprintf("Bad Request. The configuration is not valid YAML: %s", err),
+			http.StatusBadRequest)
+		return
+	}
+
 	installation, err := g.orgInstallation(w, r)
 	if err != nil {
 		return
 	}
-
-	// TODO: check config is valid yaml
 
 	idStr := strconv.FormatInt(installation.GetAccount().GetID(), 10)
 	err = g.OrganizationOp.Save(r.Context(), github_provider.Provider, idStr, configRequest.Config)
