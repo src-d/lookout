@@ -469,6 +469,29 @@ w14CwDQ7Z6KETwAAAP//+lQfNZsAAAA=
 `,
 	},
 
+	"/store/migrations/1548157581_organizations_constraints.down.sql": {
+		name:    "1548157581_organizations_constraints.down.sql",
+		local:   "store/migrations/1548157581_organizations_constraints.down.sql",
+		size:    40,
+		modtime: 1,
+		compressed: `
+H4sIAAAAAAAC/3IJ8g9Q8PRzcY1QyC9KT8zLrEosyczPi0/Ozy3IL84sSY0vyE6ttOYCBAAA//+4y7zd
+KAAAAA==
+`,
+	},
+
+	"/store/migrations/1548157581_organizations_constraints.up.sql": {
+		name:    "1548157581_organizations_constraints.up.sql",
+		local:   "store/migrations/1548157581_organizations_constraints.up.sql",
+		size:    218,
+		modtime: 1,
+		compressed: `
+H4sIAAAAAAAC/3SNsW7CMBRF5/or7thGqfIBnarWQ5ZURURiix72IzzFsS3bQYSvR8oEA/O955ymwhg+
+J3KOrjCJqbAFQSyWRSxikpnSionXGseloJwZFKMTQ0WChwujGJApWVGGnLbDAwXJeI8pXMRyqiG+cPLk
+BrEfqBqlfnb6e6/Rd+1/r9F2v/qAkEbyctsCgwlzDFkKD3HiVb39dU/7K/mXugcAAP//av1XvtoAAAA=
+`,
+	},
+
 	"/store/migrations/lock.json": {
 		name:    "lock.json",
 		local:   "store/migrations/lock.json",
@@ -519,6 +542,8 @@ var _escDirs = map[string][]os.FileInfo{
 		_escData["/store/migrations/1539095669_delete_old_internal_id.up.sql"],
 		_escData["/store/migrations/1547744983_organizations.down.sql"],
 		_escData["/store/migrations/1547744983_organizations.up.sql"],
+		_escData["/store/migrations/1548157581_organizations_constraints.down.sql"],
+		_escData["/store/migrations/1548157581_organizations_constraints.up.sql"],
 		_escData["/store/migrations/lock.json"],
 	},
 }
