@@ -9,7 +9,7 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/ctxlog"
 
-	"gopkg.in/src-d/go-git.v4"
+	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 
@@ -18,8 +18,12 @@ import (
 
 const defaultRemoteName = "origin"
 
-// Syncer syncs the local copy of git repository for a given CommitRevision.
-type Syncer struct {
+type Syncer interface {
+	Sync(context.Context, ...lookout.ReferencePointer) error
+}
+
+// LibrarySyncer syncs the local copy of git repository for a given CommitRevision.
+type LibrarySyncer struct {
 	m sync.Map // holds mutexes per repository
 
 	l *Library
@@ -37,12 +41,12 @@ type AuthProvider interface {
 
 // NewSyncer returns a Syncer for the given Library. authProvider can be nil.
 // A fetchTimeout of zero means no timeout.
-func NewSyncer(l *Library, authProvider AuthProvider, fetchTimeout time.Duration) *Syncer {
-	return &Syncer{l: l, authProvider: authProvider, fetchTimeout: fetchTimeout}
+func NewSyncer(l *Library, authProvider AuthProvider, fetchTimeout time.Duration) Syncer {
+	return &LibrarySyncer{l: l, authProvider: authProvider, fetchTimeout: fetchTimeout}
 }
 
 // Sync syncs the local git repository to the given reference pointers.
-func (s *Syncer) Sync(ctx context.Context,
+func (s *LibrarySyncer) Sync(ctx context.Context,
 	rps ...lookout.ReferencePointer) error {
 	if len(rps) == 0 {
 		return fmt.Errorf("at least one reference pointer is required")
@@ -77,7 +81,9 @@ func (s *Syncer) Sync(ctx context.Context,
 	return s.fetch(ctx, repoInfo, gitRepo, refspecs)
 }
 
-func (s *Syncer) fetch(ctx context.Context, repoInfo *lookout.RepositoryInfo, r *git.Repository, refspecs []config.RefSpec) (err error) {
+func (s *LibrarySyncer) fetch(ctx context.Context, repoInfo *lookout.RepositoryInfo,
+	r *git.Repository, refspecs []config.RefSpec) (err error) {
+
 	ctxlog.Get(ctx).Infof("fetching references for repository %s: %v", repoInfo.CloneURL, refspecs)
 	start := time.Now()
 	defer func() {

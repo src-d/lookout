@@ -9,10 +9,10 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/ctxlog"
 
-	"gopkg.in/src-d/go-billy.v4"
+	billy "gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-billy.v4/util"
-	"gopkg.in/src-d/go-errors.v1"
-	"gopkg.in/src-d/go-git.v4"
+	errors "gopkg.in/src-d/go-errors.v1"
+	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/cache"
 	"gopkg.in/src-d/go-git.v4/storage"
@@ -23,6 +23,13 @@ var (
 	ErrRepositoryExists    = errors.NewKind("repository %s already exists")
 	ErrRepositoryNotExists = errors.NewKind("repository %s not exists")
 )
+
+type ReposCollectionHandler interface {
+	GetOrInit(context.Context, *lookout.RepositoryInfo) (*git.Repository, error)
+	Init(context.Context, *lookout.RepositoryInfo) (*git.Repository, error)
+	Has(*lookout.RepositoryInfo) (bool, error)
+	Get(context.Context, *lookout.RepositoryInfo) (*git.Repository, error)
+}
 
 // Library controls the persistence of multiple git repositories.
 type Library struct {
