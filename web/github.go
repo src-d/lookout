@@ -86,7 +86,7 @@ func (g *GitHub) installation(ctx context.Context, orgName string) (*github.Inst
 	return installation, nil
 }
 
-func (g *GitHub) admin(ctx context.Context, installation *github.Installation, login string) (bool, error) {
+func (g *GitHub) isAdmin(ctx context.Context, installation *github.Installation, login string) (bool, error) {
 	// New transport for each installation
 	itr, err := ghinstallation.NewKeyFromFile(
 		http.DefaultTransport, g.AppID, int(installation.GetID()), g.PrivateKey)
@@ -140,7 +140,7 @@ func (g *GitHub) Orgs(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		admin, err := g.admin(r.Context(), installation, login)
+		admin, err := g.isAdmin(r.Context(), installation, login)
 		if err != nil {
 			ctxlog.Get(r.Context()).Errorf(err, "failed to check user admin role")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -194,7 +194,7 @@ func (g *GitHub) orgInstallation(w http.ResponseWriter, r *http.Request) (*githu
 		return nil, fmt.Errorf(http.StatusText(http.StatusNotFound))
 	}
 
-	admin, err := g.admin(r.Context(), installation, login)
+	admin, err := g.isAdmin(r.Context(), installation, login)
 	if err != nil {
 		ctxlog.Get(r.Context()).Errorf(err, "failed to check user admin role")
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
