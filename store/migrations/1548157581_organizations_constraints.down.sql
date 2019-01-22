@@ -1,0 +1,1 @@
+DROP INDEX organization_composite_pkey;
