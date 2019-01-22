@@ -85,7 +85,7 @@ func (g *GitHub) installation(ctx context.Context, orgName string) (*github.Inst
 	return installation, nil
 }
 
-func (g *GitHub) admin(w http.ResponseWriter, r *http.Request, installation *github.Installation, login string) (bool, error) {
+func (g *GitHub) admin(ctx context.Context, installation *github.Installation, login string) (bool, error) {
 	// New transport for each installation
 	itr, err := ghinstallation.NewKeyFromFile(
 		http.DefaultTransport, g.AppID, int(installation.GetID()), g.PrivateKey)
@@ -98,7 +98,7 @@ func (g *GitHub) admin(w http.ResponseWriter, r *http.Request, installation *git
 	client := github.NewClient(&http.Client{Transport: itr})
 
 	org := installation.GetAccount().GetLogin()
-	mem, _, err := client.Organizations.GetOrgMembership(r.Context(), login, org)
+	mem, _, err := client.Organizations.GetOrgMembership(ctx, login, org)
 	if err != nil {
 		return false, fmt.Errorf("failed to get GitHub user %s membership to organization %s: %s", login, org, err)
 	}
@@ -139,7 +139,7 @@ func (g *GitHub) Orgs(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		admin, err := g.admin(w, r, installation, login)
+		admin, err := g.admin(r.Context(), installation, login)
 		if err != nil {
 			ctxlog.Get(r.Context()).Errorf(err, "failed to check user admin role")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -193,7 +193,7 @@ func (g *GitHub) orgInstallation(w http.ResponseWriter, r *http.Request) (*githu
 		return nil, fmt.Errorf(http.StatusText(http.StatusNotFound))
 	}
 
-	admin, err := g.admin(w, r, installation, login)
+	admin, err := g.admin(r.Context(), installation, login)
 	if err != nil {
 		ctxlog.Get(r.Context()).Errorf(err, "failed to check user admin role")
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
