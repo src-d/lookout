@@ -58,15 +58,19 @@ class Organization extends React.Component<OrgProps, OrgState> {
       return <Loader />;
     }
 
-    const org = this.state.org;
-
-    if (this.state.errors.length > 0 || org === undefined) {
+    if (this.state.errors.length > 0) {
       return <Errors errors={this.state.errors} />;
+    }
+
+    if (this.state.org === undefined) {
+      return (
+        <Errors errors={["Internal error, 'org' should not be undefined"]} />
+      );
     }
 
     return (
       <div>
-        <h1>Settings for Organization {org.name}</h1>
+        <h1>Settings for Organization {this.state.org.name}</h1>
         <textarea
           value={this.state.config}
           onChange={this.handleConfigChange}
