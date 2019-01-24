@@ -44,11 +44,12 @@ type Server struct {
 	// if any analyzer or posting failed
 	ExitOnError bool
 
-	poster     lookout.Poster
-	fileGetter lookout.FileGetter
-	analyzers  map[string]lookout.Analyzer
-	eventOp    store.EventOperator
-	commentOp  store.CommentOperator
+	poster         lookout.Poster
+	fileGetter     lookout.FileGetter
+	analyzers      map[string]lookout.Analyzer
+	eventOp        store.EventOperator
+	commentOp      store.CommentOperator
+	organizationOp store.OrganizationOperator
 
 	analyzerReviewTimeout time.Duration
 	analyzerPushTimeout   time.Duration
@@ -62,10 +63,13 @@ func NewServer(
 	analyzers map[string]lookout.Analyzer,
 	eventOp store.EventOperator,
 	commentOp store.CommentOperator,
+	organizationOp store.OrganizationOperator,
 	reviewTimeout time.Duration,
 	pushTimeout time.Duration,
 ) *Server {
-	return &Server{false, p, fileGetter, analyzers, eventOp, commentOp, reviewTimeout, pushTimeout}
+	return &Server{false, p, fileGetter, analyzers,
+		eventOp, commentOp, organizationOp,
+		reviewTimeout, pushTimeout}
 }
 
 // HandleEvent processes the event calling the analyzers, and posting the results

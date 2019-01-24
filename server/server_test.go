@@ -456,12 +456,17 @@ func setupMockedServer(params mockedServerParams) (*WatcherMock, *PosterMock) {
 
 	var eventOp store.EventOperator
 	var commentOp store.CommentOperator
+	var organizationOp store.OrganizationOperator
 	if params.Persist {
 		eventOp = store.NewMemEventOperator()
 		commentOp = store.NewMemCommentOperator()
+
+		//TODO
+		organizationOp = &store.NoopOrganizationOperator{}
 	} else {
 		eventOp = &store.NoopEventOperator{}
 		commentOp = &store.NoopCommentOperator{}
+		organizationOp = &store.NoopOrganizationOperator{}
 	}
 
 	analyzers := map[string]lookout.Analyzer{
@@ -472,7 +477,7 @@ func setupMockedServer(params mockedServerParams) (*WatcherMock, *PosterMock) {
 	}
 
 	srv := NewServer(
-		poster, fileGetter, analyzers, eventOp, commentOp,
+		poster, fileGetter, analyzers, eventOp, commentOp, organizationOp,
 		params.ReviewTimeout, params.PushTimeout)
 	watcher.Watch(context.TODO(), srv.HandleEvent)
 

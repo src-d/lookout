@@ -427,7 +427,8 @@ func (c *queueConsumerCommand) initDataServer(srv *lookout.DataServerHandler) (s
 	return start, stop
 }
 
-func (c *queueConsumerCommand) initDBOperators(db *sql.DB) (*store.DBEventOperator, *store.DBCommentOperator) {
+func (c *queueConsumerCommand) initDBOperators(db *sql.DB) (
+	*store.DBEventOperator, *store.DBCommentOperator, *store.DBOrganizationOperator) {
 	reviewStore := models.NewReviewEventStore(db)
 	reviewTargetStore := models.NewReviewTargetStore(db)
 	eventOp := store.NewDBEventOperator(
@@ -440,8 +441,11 @@ func (c *queueConsumerCommand) initDBOperators(db *sql.DB) (*store.DBEventOperat
 		reviewStore,
 		reviewTargetStore,
 	)
+	organizationsOp := store.NewDBOrganizationOperator(
+		models.NewOrganizationStore(db),
+	)
 
-	return eventOp, commentsOp
+	return eventOp, commentsOp, organizationsOp
 }
 
 func (c *queueConsumerCommand) initAnalyzers(conf Config) (map[string]lookout.Analyzer, error) {

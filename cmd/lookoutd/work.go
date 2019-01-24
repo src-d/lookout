@@ -47,7 +47,7 @@ func (c *WorkCommand) ExecuteContext(ctx context.Context, args []string) error {
 		return fmt.Errorf("Can't connect to the DB: %s", err)
 	}
 
-	eventOp, commentsOp := c.initDBOperators(db)
+	eventOp, commentsOp, organizationsOp := c.initDBOperators(db)
 
 	analyzers, err := c.initAnalyzers(c.conf)
 	if err != nil {
@@ -67,7 +67,7 @@ func (c *WorkCommand) ExecuteContext(ctx context.Context, args []string) error {
 	server := server.NewServer(
 		poster, dataHandler.FileGetter,
 		analyzers,
-		eventOp, commentsOp,
+		eventOp, commentsOp, organizationsOp,
 		c.conf.Timeout.AnalyzerReview, c.conf.Timeout.AnalyzerPush,
 	)
 

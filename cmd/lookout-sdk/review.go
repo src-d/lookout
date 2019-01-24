@@ -61,7 +61,9 @@ func (c *ReviewCommand) Execute(args []string) error {
 				Client: client,
 			},
 		},
-		&store.NoopEventOperator{}, &store.NoopCommentOperator{},
+		&store.NoopEventOperator{},
+		&store.NoopCommentOperator{},
+		&store.NoopOrganizationOperator{},
 		0, 0)
 	srv.ExitOnError = true
 
