@@ -141,10 +141,17 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent, safeP
 		return err
 	}
 
-	conf, err := s.getConfig(ctx, e)
+	repoConf, err := s.getConfig(ctx, e)
 	if err != nil {
 		return err
 	}
+
+	orgConf, err := s.getOrgConfig(ctx, e)
+	if err != nil {
+		return err
+	}
+
+	conf := mergeConfigs(orgConf, repoConf)
 
 	s.status(ctx, e, lookout.PendingAnalysisStatus)
 
@@ -264,9 +271,19 @@ func (s *Server) getConfig(ctx context.Context, e lookout.Event) (map[string]loo
 		return nil, nil
 	}
 
+	parseCtx, _ := ctxlog.WithLogFields(ctx, log.Fields{"config-file": "repository .lookout.yml"})
+	conf, err := s.parseConfig(parseCtx, configContent)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the local .lookout.yml file from the repository: %s", err)
+	}
+
+	return conf, nil
+}
+
+func (s *Server) parseConfig(ctx context.Context, configContent []byte) (map[string]lookout.AnalyzerConfig, error) {
 	var conf Config
 	if err := yaml.Unmarshal(configContent, &conf); err != nil {
-		return nil, fmt.Errorf("Can't parse configuration file: %s", err)
+		return nil, fmt.Errorf("can't parse configuration file: %s", err)
 	}
 
 	res := make(map[string]lookout.AnalyzerConfig, len(s.analyzers))
@@ -275,13 +292,32 @@ func (s *Server) getConfig(ctx context.Context, e lookout.Event) (map[string]loo
 	}
 	for _, aConf := range conf.Analyzers {
 		if _, ok := s.analyzers[aConf.Name]; !ok {
-			ctxlog.Get(ctx).Warningf("analyzer '%s' required by local config isn't enabled on server", aConf.Name)
+			ctxlog.Get(ctx).Warningf("analyzer '%s' required by configuration file isn't enabled on server", aConf.Name)
 			continue
 		}
 		res[aConf.Name] = aConf
 	}
 
 	return res, nil
+}
+
+func (s *Server) getOrgConfig(ctx context.Context, e lookout.Event) (map[string]lookout.AnalyzerConfig, error) {
+	// TODO get provider and organization ID from the event
+	orgID := "1234"
+	provider := "github"
+
+	configContent, err := s.organizationOp.Config(ctx, provider, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("could not load default configuration for organization from the DB: %s", err)
+	}
+
+	parseCtx, _ := ctxlog.WithLogFields(ctx, log.Fields{"config-file": "organization default"})
+	conf, err := s.parseConfig(parseCtx, []byte(configContent))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the organization default configuration from the DB: %s", err)
+	}
+
+	return conf, nil
 }
 
 func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.AnalyzerConfig, send reqSent, logErrorMessages map[codes.Code]string) ([]lookout.AnalyzerComments, error) {
@@ -294,7 +330,7 @@ func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.
 
 	for name, a := range s.analyzers {
 		if a.Config.Disabled || conf[name].Disabled {
-			ctxlog.Get(ctx).Infof("analyzer %s disabled by local .lookout.yml", name)
+			ctxlog.Get(ctx).Infof("analyzer %s disabled by local repository configuration", name)
 			commentsCh <- nil
 			continue
 		}
@@ -352,6 +388,33 @@ func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.
 	}
 
 	return comments, nil
+}
+
+func mergeConfigs(global, local map[string]lookout.AnalyzerConfig) map[string]lookout.AnalyzerConfig {
+	if local == nil {
+		return global
+	}
+
+	if global == nil {
+		return local
+	}
+
+	merged := make(map[string]lookout.AnalyzerConfig)
+	for k, v := range global {
+		merged[k] = v
+	}
+
+	for k, v := range local {
+		if globalV, ok := merged[k]; ok {
+			globalV.Settings = mergeMaps(globalV.Settings, v.Settings)
+			merged[k] = globalV
+			continue
+		}
+
+		merged[k] = v
+	}
+
+	return merged
 }
 
 func mergeSettings(global, local map[string]interface{}) map[string]interface{} {
