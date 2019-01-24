@@ -414,14 +414,25 @@ func (t *limitRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 
 var _ http.RoundTripper = &limitRoundTripper{}
 
-func handleAPIError(resp *github.Response, err error) error {
+func handleAPIError(resp *github.Response, err error, msg string) error {
 	if err != nil {
-		return ErrGitHubAPI.Wrap(err)
+		if e, ok := err.(*github.ErrorResponse); ok {
+			if e.Response == nil {
+				e.Response = resp.Response
+			} else if e.Response.Request == nil {
+				e.Response.Request = resp.Response.Request
+			}
+		}
+
+		return ErrGitHubAPI.Wrap(err, msg)
 	}
 
 	if resp.StatusCode == 200 {
 		return nil
 	}
 
-	return ErrGitHubAPI.Wrap(fmt.Errorf("bad HTTP status: %d", resp.StatusCode))
+	return ErrGitHubAPI.Wrap(
+		fmt.Errorf("bad HTTP status: %d", resp.StatusCode),
+		msg,
+	)
 }

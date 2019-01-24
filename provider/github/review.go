@@ -40,7 +40,8 @@ func createReview(
 	requests := splitReviewRequest(req, batchReviewComments)
 	for i, req := range requests {
 		_, resp, err := client.PullRequests.CreateReview(ctx, owner, repo, number, req)
-		if err = handleAPIError(resp, err); err != nil {
+
+		if err = handleAPIError(resp, err, "review could not be pushed"); err != nil {
 			return err
 		}
 
@@ -99,7 +100,7 @@ func getPostedComment(ctx context.Context, client *Client, owner, repo string, n
 	var reviews []*github.PullRequestReview
 	for {
 		rs, resp, err := client.PullRequests.ListReviews(ctx, owner, repo, number, listReviewsOpts)
-		if handleAPIError(resp, err) != nil {
+		if handleAPIError(resp, err, "pull request reviews could not be listed") != nil {
 			return nil, err
 		}
 
@@ -118,7 +119,7 @@ func getPostedComment(ctx context.Context, client *Client, owner, repo string, n
 
 		for {
 			comments, resp, err := client.PullRequests.ListReviewComments(ctx, owner, repo, int64(number), review.GetID(), listCommentsOpts)
-			if handleAPIError(resp, err) != nil {
+			if handleAPIError(resp, err, "review comments could not be listed") != nil {
 				return nil, err
 			}
 

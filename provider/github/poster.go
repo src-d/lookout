@@ -16,7 +16,7 @@ import (
 
 var (
 	// ErrGitHubAPI signals an error while making a request to the GitHub API.
-	ErrGitHubAPI = errors.NewKind("github api error")
+	ErrGitHubAPI = errors.NewKind("github api error: %s")
 	// ErrEventNotSupported signals that this provider does not support the
 	// given event for a given operation.
 	ErrEventNotSupported = errors.NewKind("event not supported")
@@ -85,7 +85,7 @@ func (p *Poster) postPR(ctx context.Context, e *lookout.ReviewEvent,
 	cc, resp, err := client.Repositories.CompareCommits(ctx, owner, repo,
 		e.Base.Hash,
 		e.Head.Hash)
-	if err = handleAPIError(resp, err); err != nil {
+	if err = handleAPIError(resp, err, "commits could not be compared"); err != nil {
 		return err
 	}
 
@@ -268,7 +268,7 @@ func (p *Poster) statusPR(ctx context.Context, e *lookout.ReviewEvent, status lo
 
 	_, _, err = client.Repositories.CreateStatus(ctx, owner, repo, e.CommitRevision.Head.Hash, repoStatus)
 	if err != nil {
-		return ErrGitHubAPI.Wrap(err)
+		return ErrGitHubAPI.Wrap(err, "commit status could not be pushed")
 	}
 
 	return nil
