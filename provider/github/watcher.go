@@ -312,7 +312,7 @@ func (w *Watcher) doPRListRequest(ctx context.Context, client *Client, username,
 
 	prs, resp, err := client.PullRequests.List(ctx, username, repository, &github.PullRequestListOptions{})
 	if err != nil {
-		return resp, nil, ErrGitHubAPI.Wrap(err)
+		return resp, nil, ErrGitHubAPI.Wrap(err, "pull requests could not be listed")
 	}
 
 	if isStatusNotModified(resp.Response) {
@@ -333,7 +333,7 @@ func (w *Watcher) doEventRequest(ctx context.Context, client *Client, username, 
 	)
 
 	if err != nil {
-		return resp, nil, ErrGitHubAPI.Wrap(err)
+		return resp, nil, ErrGitHubAPI.Wrap(err, "repository events could not be listed")
 	}
 
 	if isStatusNotModified(resp.Response) {
