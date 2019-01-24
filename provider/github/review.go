@@ -42,6 +42,9 @@ func createReview(
 		_, resp, err := client.PullRequests.CreateReview(ctx, owner, repo, number, req)
 
 		if err = handleAPIError(resp, err, "review could not be pushed"); err != nil {
+			ctxlog.WithLogFields(ctx, log.Fields{
+				"comments": newDraftReview(req),
+			})
 			return err
 		}
 
@@ -52,6 +55,37 @@ func createReview(
 	}
 
 	return nil
+}
+
+type draftReview struct {
+	commit   string
+	body     string
+	event    string
+	comments []comment
+}
+
+type comment struct {
+	path string
+	pos  int
+	body string
+}
+
+func newDraftReview(req *github.PullRequestReviewRequest) draftReview {
+	if req == nil {
+		return draftReview{}
+	}
+
+	comments := make([]comment, len(req.Comments))
+	for i, c := range req.Comments {
+		comments[i] = comment{*c.Path, *c.Position, *c.Body}
+	}
+
+	return draftReview{
+		commit:   *req.CommitID,
+		body:     *req.Body,
+		event:    *req.Event,
+		comments: comments,
+	}
 }
 
 func filterPostedComments(comments []*github.DraftReviewComment, posted []*github.PullRequestComment) []*github.DraftReviewComment {
