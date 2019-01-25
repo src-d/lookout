@@ -119,8 +119,8 @@ ci-start-bblfsh:
 	@echo "running bblfsh is unsupported on mac os ci"
 else
 ci-start-bblfsh:
-	docker run -d --name bblfshd --privileged -v $(HOME)/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd:v2.9.0
-	docker exec -it bblfshd bblfshctl driver install --force go bblfsh/go-driver:v2.2.0
+	docker run -d --name bblfshd --privileged -v $(HOME)/bblfshd:/var/lib/bblfshd -p "9432:9432" bblfsh/bblfshd:v2.11.0
+	docker exec -it bblfshd bblfshctl driver install --force go bblfsh/go-driver:v2.5.0
 endif
 
 .PHONY: ci-integration-dependencies
