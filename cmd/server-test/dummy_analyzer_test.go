@@ -43,6 +43,17 @@ func (suite *DummyIntegrationSuite) TestSuccessReview() {
 	})
 }
 
+func (suite *DummyIntegrationSuite) TestGRPCLogs() {
+	// Check that 'event-id' log field is sent from lookoutd to the dummy analyzer,
+	// and then received back when receiving a grpc call from the analyzer.
+	suite.sendEvent(successJSON)
+	suite.GrepAll(suite.r, []string{
+		`processing pull request`,
+		`msg="gRPC streaming server call started" analyzer=Dummy app=lookoutd event-id=16ee0f607886b841c7633ab4cea5334cbc2022a1 event-type="*pb.ReviewEvent" grpc.method=GetChanges`,
+		`status=success`,
+	})
+}
+
 func (suite *DummyIntegrationSuite) TestReviewDontPostSameComment() {
 	fixture := fixtures.GetByName("incremental-pr")
 
