@@ -14,7 +14,7 @@ import (
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
-func castEvent(r *lookout.RepositoryInfo, e *github.Event) (lookout.Event, error) {
+func castEvent(r *repositoryInfo, e *github.Event) (lookout.Event, error) {
 	switch e.GetType() {
 	case "PushEvent":
 		payload, err := e.ParsePayload()
@@ -28,7 +28,7 @@ func castEvent(r *lookout.RepositoryInfo, e *github.Event) (lookout.Event, error
 	return nil, nil
 }
 
-func castPushEvent(r *lookout.RepositoryInfo, e *github.Event, push *github.PushEvent) *lookout.PushEvent {
+func castPushEvent(r *repositoryInfo, e *github.Event, push *github.PushEvent) *lookout.PushEvent {
 	pe := &lookout.PushEvent{}
 	pe.Provider = Provider
 	pe.InternalID = e.GetID()
@@ -47,6 +47,8 @@ func castPushEvent(r *lookout.RepositoryInfo, e *github.Event, push *github.Push
 		ReferenceName:         plumbing.ReferenceName(push.GetRef()),
 		Hash:                  push.GetBefore(),
 	}
+
+	pe.OrganizationID = r.OrganizationID
 
 	return pe
 }
@@ -67,7 +69,7 @@ func castHash(sha1 *string) plumbing.Hash {
 	return plumbing.NewHash(*sha1)
 }
 
-func castPullRequest(ctx context.Context, r *lookout.RepositoryInfo, pr *github.PullRequest) *lookout.ReviewEvent {
+func castPullRequest(ctx context.Context, r *repositoryInfo, pr *github.PullRequest) *lookout.ReviewEvent {
 	pre := &lookout.ReviewEvent{}
 	pre.Provider = Provider
 	pre.InternalID = strconv.FormatInt(pr.GetID(), 10)
@@ -89,6 +91,8 @@ func castPullRequest(ctx context.Context, r *lookout.RepositoryInfo, pr *github.
 	}
 
 	pre.IsMergeable = pr.GetMergeable()
+
+	pre.OrganizationID = r.OrganizationID
 
 	return pre
 }

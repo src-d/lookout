@@ -171,7 +171,7 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent, safeP
 			defer cancel()
 		}
 
-		resp, err := a.NotifyReviewEvent(ctx, e)
+		resp, err := a.NotifyReviewEvent(ctx, &e.ReviewEvent)
 		if err != nil {
 			return nil, err
 		}
@@ -226,7 +226,7 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent, safePosti
 			defer cancel()
 		}
 
-		resp, err := a.NotifyPushEvent(ctx, e)
+		resp, err := a.NotifyPushEvent(ctx, &e.PushEvent)
 		if err != nil {
 			return nil, err
 		}
@@ -302,11 +302,7 @@ func (s *Server) parseConfig(ctx context.Context, configContent []byte) (map[str
 }
 
 func (s *Server) getOrgConfig(ctx context.Context, e lookout.Event) (map[string]lookout.AnalyzerConfig, error) {
-	// TODO get provider and organization ID from the event
-	orgID := "1234"
-	provider := "github"
-
-	configContent, err := s.organizationOp.Config(ctx, provider, orgID)
+	configContent, err := s.organizationOp.Config(ctx, e.GetProvider(), e.GetOrganizationID())
 	if err != nil {
 		return nil, fmt.Errorf("could not load default configuration for organization from the DB: %s", err)
 	}

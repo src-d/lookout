@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/cache"
 	"github.com/src-d/lookout/util/ctxlog"
 
@@ -37,7 +36,7 @@ func NewClientPoolFromTokens(
 	cache *cache.ValidableCache,
 	timeout time.Duration,
 ) (*ClientPool, error) {
-	byConfig := make(map[ClientConfig][]*lookout.RepositoryInfo)
+	byConfig := make(map[ClientConfig][]*repositoryInfo)
 
 	for url, c := range urlToConfig {
 		repo, err := pb.ParseRepositoryInfo(url)
@@ -45,10 +44,11 @@ func NewClientPoolFromTokens(
 			return nil, err
 		}
 
-		byConfig[c] = append(byConfig[c], repo)
+		// repositoryInfo.OrganizationID is left unset for clients using personal tokens
+		byConfig[c] = append(byConfig[c], &repositoryInfo{RepositoryInfo: *repo})
 	}
 
-	byClients := make(map[*Client][]*lookout.RepositoryInfo, len(byConfig))
+	byClients := make(map[*Client][]*repositoryInfo, len(byConfig))
 	byRepo := make(map[string]*Client, len(urlToConfig))
 	for conf, repos := range byConfig {
 		cachedT := httpcache.NewTransport(cache)
@@ -72,7 +72,7 @@ func NewClientPoolFromTokens(
 		client := NewClient(rt, cache, conf.MinInterval, gitAuth, timeout)
 
 		if _, ok := byClients[client]; !ok {
-			byClients[client] = []*lookout.RepositoryInfo{}
+			byClients[client] = []*repositoryInfo{}
 		}
 
 		byClients[client] = append(byClients[client], repos...)

@@ -35,9 +35,16 @@ type ClientPoolEvent struct {
 	Client *Client
 }
 
+// repositoryInfo wraps a lookout.RepositoryInfo adding an Organization ID
+type repositoryInfo struct {
+	lookout.RepositoryInfo
+	// OrganizationID is this repository's organization
+	OrganizationID string
+}
+
 // ClientPool holds mapping of repositories to clients
 type ClientPool struct {
-	byClients map[*Client][]*lookout.RepositoryInfo
+	byClients map[*Client][]*repositoryInfo
 	byRepo    map[string]*Client
 	mutex     sync.Mutex
 
@@ -48,7 +55,7 @@ type ClientPool struct {
 // NewClientPool creates new pool of clients with repositories
 func NewClientPool() *ClientPool {
 	return &ClientPool{
-		byClients: make(map[*Client][]*lookout.RepositoryInfo),
+		byClients: make(map[*Client][]*repositoryInfo),
 		byRepo:    make(map[string]*Client),
 		subs:      make(map[chan ClientPoolEvent]bool),
 	}
@@ -57,7 +64,7 @@ func NewClientPool() *ClientPool {
 // newClientPoolFromClients creates a new pool of clients based on the given
 // clients and repositories
 func newClientPoolFromClients(
-	byClients map[*Client][]*lookout.RepositoryInfo,
+	byClients map[*Client][]*repositoryInfo,
 	byRepo map[string]*Client) *ClientPool {
 
 	return &ClientPool{
@@ -68,12 +75,12 @@ func newClientPoolFromClients(
 }
 
 // Clients returns map[Client]RepositoryInfo
-func (p *ClientPool) Clients() map[*Client][]*lookout.RepositoryInfo {
+func (p *ClientPool) Clients() map[*Client][]*repositoryInfo {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
 	// Create the target map
-	copyMap := make(map[*Client][]*lookout.RepositoryInfo, len(p.byClients))
+	copyMap := make(map[*Client][]*repositoryInfo, len(p.byClients))
 
 	// Copy from the original map to the target map
 	for key, value := range p.byClients {
@@ -106,7 +113,7 @@ func (p *ClientPool) Repos() []string {
 }
 
 // ReposByClient returns list of repositories by client
-func (p *ClientPool) ReposByClient(c *Client) []*lookout.RepositoryInfo {
+func (p *ClientPool) ReposByClient(c *Client) []*repositoryInfo {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -114,7 +121,7 @@ func (p *ClientPool) ReposByClient(c *Client) []*lookout.RepositoryInfo {
 }
 
 // Update updates list of repositories for a client
-func (p *ClientPool) Update(c *Client, newRepos []*lookout.RepositoryInfo) {
+func (p *ClientPool) Update(c *Client, newRepos []*repositoryInfo) {
 	if len(newRepos) == 0 {
 		p.RemoveClient(c)
 		return
@@ -140,7 +147,7 @@ func (p *ClientPool) Update(c *Client, newRepos []*lookout.RepositoryInfo) {
 	}
 
 	// delete old repos
-	var reposAfterDelete []*lookout.RepositoryInfo
+	var reposAfterDelete []*repositoryInfo
 	for _, repo := range repos {
 		found := false
 		for _, newRepo := range newRepos {

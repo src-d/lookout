@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
+
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/server"
 	"github.com/src-d/lookout/store"
@@ -73,17 +75,19 @@ func (c *ReviewCommand) Execute(args []string) error {
 	}
 
 	err = srv.HandleReview(context.TODO(), &lookout.ReviewEvent{
-		InternalID:  id.String(),
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-		IsMergeable: true,
-		Source:      *toRef,
-		Merge:       *toRef,
-		CommitRevision: lookout.CommitRevision{
-			Base: *fromRef,
-			Head: *toRef,
-		},
-		Configuration: conf}, false)
+		ReviewEvent: pb.ReviewEvent{
+			InternalID:  id.String(),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			IsMergeable: true,
+			Source:      *toRef,
+			Merge:       *toRef,
+			CommitRevision: lookout.CommitRevision{
+				Base: *fromRef,
+				Head: *toRef,
+			},
+			Configuration: conf}},
+		false)
 
 	stopDataServer()
 

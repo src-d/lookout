@@ -6,6 +6,8 @@ import (
 	"io"
 	"time"
 
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
+
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/server"
 	"github.com/src-d/lookout/store"
@@ -95,14 +97,16 @@ func (c *PushCommand) Execute(args []string) error {
 	}
 
 	err = srv.HandlePush(context.TODO(), &lookout.PushEvent{
-		InternalID: id.String(),
-		CreatedAt:  time.Now(),
-		Commits:    commits,
-		CommitRevision: lookout.CommitRevision{
-			Base: *fromRef,
-			Head: *toRef,
-		},
-		Configuration: conf}, false)
+		PushEvent: pb.PushEvent{
+			InternalID: id.String(),
+			CreatedAt:  time.Now(),
+			Commits:    commits,
+			CommitRevision: lookout.CommitRevision{
+				Base: *fromRef,
+				Head: *toRef,
+			},
+			Configuration: conf}},
+		false)
 
 	stopDataServer()
 

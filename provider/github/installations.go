@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/src-d/lookout"
@@ -103,7 +104,7 @@ func (t *Installations) Sync() error {
 	// remove revoked installations
 	for id := range t.clients {
 		if _, ok := new[id]; !ok {
-			log.Debugf("remove installation %d", id)
+			log.Debugf("remove installation %d, %s", id, new[id].GetAccount().GetLogin())
 			t.removeInstallation(id)
 		}
 	}
@@ -111,7 +112,7 @@ func (t *Installations) Sync() error {
 	// add new installations
 	for id := range new {
 		if _, ok := t.clients[id]; !ok {
-			log.Debugf("add installation %d", id)
+			log.Debugf("add installation %d, %s", id, new[id].GetAccount().GetLogin())
 			t.addInstallation(id)
 		}
 	}
@@ -122,8 +123,15 @@ func (t *Installations) Sync() error {
 		if err != nil {
 			return err
 		}
-		log.Debugf("%d repositories found for installation %d", len(repos), id)
-		t.Pool.Update(c, repos)
+		log.Debugf("%d repositories found for installation %d, %s",
+			len(repos), id, new[id].GetAccount().GetLogin())
+
+		ghRepos := make([]*repositoryInfo, len(repos))
+		for i, repo := range repos {
+			orgIDStr := strconv.FormatInt(new[id].GetAccount().GetID(), 10)
+			ghRepos[i] = &repositoryInfo{RepositoryInfo: *repo, OrganizationID: orgIDStr}
+		}
+		t.Pool.Update(c, ghRepos)
 	}
 
 	return nil

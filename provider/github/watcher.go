@@ -41,7 +41,7 @@ type Watcher struct {
 	pool *ClientPool
 	// maps clients to functions that stop watching the client
 	stopFuncs               map[*Client]func()
-	lastErrPR, lastErrEvent map[*lookout.RepositoryInfo]*errThrottlerState
+	lastErrPR, lastErrEvent map[*repositoryInfo]*errThrottlerState
 }
 
 // NewWatcher returns a new
@@ -49,8 +49,8 @@ func NewWatcher(pool *ClientPool) (*Watcher, error) {
 	return &Watcher{
 		pool:         pool,
 		stopFuncs:    make(map[*Client]func()),
-		lastErrPR:    make(map[*lookout.RepositoryInfo]*errThrottlerState),
-		lastErrEvent: make(map[*lookout.RepositoryInfo]*errThrottlerState),
+		lastErrPR:    make(map[*repositoryInfo]*errThrottlerState),
+		lastErrEvent: make(map[*repositoryInfo]*errThrottlerState),
 	}, nil
 }
 
@@ -135,7 +135,7 @@ func (w *Watcher) startClientLoops(
 
 type requestFun func(context.Context,
 	*Client,
-	*lookout.RepositoryInfo,
+	*repositoryInfo,
 	lookout.EventHandler) (time.Duration, error)
 
 func (w *Watcher) watchLoop(
@@ -175,7 +175,7 @@ func (w *Watcher) watchLoop(
 func (w *Watcher) processRepoPRs(
 	ctx context.Context,
 	c *Client,
-	repo *lookout.RepositoryInfo,
+	repo *repositoryInfo,
 	cb lookout.EventHandler,
 ) (time.Duration, error) {
 	resp, prs, err := w.doPRListRequest(ctx, c, repo.Owner, repo.Name)
@@ -206,7 +206,7 @@ func (w *Watcher) processRepoPRs(
 func (w *Watcher) processRepoEvents(
 	ctx context.Context,
 	c *Client,
-	repo *lookout.RepositoryInfo,
+	repo *repositoryInfo,
 	cb lookout.EventHandler,
 ) (time.Duration, error) {
 	resp, events, err := w.doEventRequest(ctx, c, repo.Owner, repo.Name)
@@ -237,7 +237,7 @@ func (w *Watcher) processRepoEvents(
 func (w *Watcher) handlePrs(ctx context.Context,
 	client *Client,
 	cb lookout.EventHandler,
-	r *lookout.RepositoryInfo,
+	r *repositoryInfo,
 	resp *github.Response,
 	prs []*github.PullRequest,
 ) error {
@@ -268,7 +268,7 @@ func (w *Watcher) handleEvents(
 	ctx context.Context,
 	client *Client,
 	cb lookout.EventHandler,
-	r *lookout.RepositoryInfo,
+	r *repositoryInfo,
 	resp *github.Response,
 	events []*github.Event,
 ) error {
@@ -300,7 +300,7 @@ func (w *Watcher) handleEvents(
 	return client.Validate(resp.Request.URL.String())
 }
 
-func (w *Watcher) handleEvent(r *lookout.RepositoryInfo, e *github.Event) (lookout.Event, error) {
+func (w *Watcher) handleEvent(r *repositoryInfo, e *github.Event) (lookout.Event, error) {
 	return castEvent(r, e)
 }
 
