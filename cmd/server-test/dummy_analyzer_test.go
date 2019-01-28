@@ -49,7 +49,7 @@ func (suite *DummyIntegrationSuite) TestGRPCLogs() {
 	suite.sendEvent(successJSON)
 	suite.GrepAll(suite.r, []string{
 		`processing pull request`,
-		`msg="gRPC streaming server call started" analyzer=Dummy app=lookoutd event-id=16ee0f607886b841c7633ab4cea5334cbc2022a1 event-type="*pb.ReviewEvent" grpc.method=GetChanges`,
+		`msg="gRPC streaming server call started" analyzer=Dummy app=lookoutd event-id=16ee0f607886b841c7633ab4cea5334cbc2022a1 event-type="*lookout.ReviewEvent" grpc.method=GetChanges`,
 		`status=success`,
 	})
 }
