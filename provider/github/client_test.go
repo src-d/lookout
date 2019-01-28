@@ -1,9 +1,14 @@
 package github
 
 import (
+	"fmt"
+	"net/http"
+	"net/url"
 	"testing"
 
+	"github.com/google/go-github/github"
 	"github.com/src-d/lookout"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
@@ -124,4 +129,42 @@ func TestClientPoolMultipleDeleteRepos(t *testing.T) {
 	p.Update(client, newRepos)
 
 	require.Equal(newRepos, p.ReposByClient(client))
+}
+func TestErrorResponseDoesNotPanic(t *testing.T) {
+	require := require.New(t)
+
+	url, _ := url.Parse("http://example.com")
+
+	mockResponse := &github.Response{Response: &http.Response{
+		StatusCode: http.StatusOK,
+		Request:    &http.Request{Method: "GET", URL: url},
+	}}
+
+	apiResponseErrWithoutEmbededResponse := &github.ErrorResponse{Response: nil}
+
+	apiResponseErrWithEmbededResponseWithoutRequest := &github.ErrorResponse{
+		Response: &http.Response{
+			StatusCode: http.StatusOK,
+			Request:    nil,
+		},
+	}
+
+	apiResponseErrWithProperEmbededResponse := &github.ErrorResponse{
+		Response: &http.Response{
+			StatusCode: http.StatusOK,
+			Request:    &http.Request{Method: "GET", URL: url},
+		},
+	}
+
+	processAPIError := func(apiErr error) assert.PanicTestFunc {
+		return func() {
+			err := handleAPIError(mockResponse, apiErr, "")
+			msg := fmt.Sprintf("%s", err.Error())
+			msg += ""
+		}
+	}
+
+	require.NotPanics(processAPIError(apiResponseErrWithProperEmbededResponse), "API error should not panic when stringed")
+	require.NotPanics(processAPIError(apiResponseErrWithEmbededResponseWithoutRequest), "API error with embedded empty response should not panic when stringed")
+	require.NotPanics(processAPIError(apiResponseErrWithoutEmbededResponse), "empty API error should not panic when stringed")
 }

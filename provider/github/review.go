@@ -40,7 +40,11 @@ func createReview(
 	requests := splitReviewRequest(req, batchReviewComments)
 	for i, req := range requests {
 		_, resp, err := client.PullRequests.CreateReview(ctx, owner, repo, number, req)
-		if err = handleAPIError(resp, err); err != nil {
+
+		if err = handleAPIError(resp, err, "review could not be pushed"); err != nil {
+			ctxlog.WithLogFields(ctx, log.Fields{
+				"comments": newDraftReview(req),
+			})
 			return err
 		}
 
@@ -51,6 +55,37 @@ func createReview(
 	}
 
 	return nil
+}
+
+type draftReview struct {
+	commit   string
+	body     string
+	event    string
+	comments []comment
+}
+
+type comment struct {
+	path string
+	pos  int
+	body string
+}
+
+func newDraftReview(req *github.PullRequestReviewRequest) draftReview {
+	if req == nil {
+		return draftReview{}
+	}
+
+	comments := make([]comment, len(req.Comments))
+	for i, c := range req.Comments {
+		comments[i] = comment{*c.Path, *c.Position, *c.Body}
+	}
+
+	return draftReview{
+		commit:   *req.CommitID,
+		body:     *req.Body,
+		event:    *req.Event,
+		comments: comments,
+	}
 }
 
 func filterPostedComments(comments []*github.DraftReviewComment, posted []*github.PullRequestComment) []*github.DraftReviewComment {
@@ -99,7 +134,7 @@ func getPostedComment(ctx context.Context, client *Client, owner, repo string, n
 	var reviews []*github.PullRequestReview
 	for {
 		rs, resp, err := client.PullRequests.ListReviews(ctx, owner, repo, number, listReviewsOpts)
-		if handleAPIError(resp, err) != nil {
+		if handleAPIError(resp, err, "pull request reviews could not be listed") != nil {
 			return nil, err
 		}
 
@@ -118,7 +153,7 @@ func getPostedComment(ctx context.Context, client *Client, owner, repo string, n
 
 		for {
 			comments, resp, err := client.PullRequests.ListReviewComments(ctx, owner, repo, int64(number), review.GetID(), listCommentsOpts)
-			if handleAPIError(resp, err) != nil {
+			if handleAPIError(resp, err, "review comments could not be listed") != nil {
 				return nil, err
 			}
 

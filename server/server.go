@@ -110,7 +110,8 @@ func (s *Server) HandleEvent(ctx context.Context, e lookout.Event) error {
 	if err == nil {
 		status = models.EventStatusProcessed
 	} else {
-		logger.Errorf(err, "event processing failed")
+
+		ctxlog.Get(ctx).Errorf(err, "event processing failed")
 		status = models.EventStatusFailed
 	}
 
