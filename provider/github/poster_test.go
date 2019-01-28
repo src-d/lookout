@@ -205,11 +205,10 @@ func (s *PosterTestSuite) TestPostFooter() {
 	aComments := mockAnalyzerComments
 	aComments[0].Config.Feedback = "https://foo.bar/feedback"
 
+	footerTpl, _ := newFooterTemplate("To post feedback go to {{.Feedback}}")
 	p := &Poster{
-		pool: s.pool,
-		conf: ProviderConfig{
-			CommentFooter: "To post feedback go to %s",
-		},
+		pool:           s.pool,
+		footerTemplate: footerTpl,
 	}
 	err := p.Post(context.Background(), mockEvent, aComments, false)
 	s.NoError(err)
@@ -525,4 +524,23 @@ func intptr(v int) *int {
 
 func int64ptr(v int64) *int64 {
 	return &v
+}
+
+func (s *PosterTestSuite) TestCouldNotParseFooterTemplate() {
+	emptyTemplateRaw := ""
+	posterWithEmptyTemplate, err := NewPoster(nil, ProviderConfig{CommentFooter: emptyTemplateRaw})
+	s.Nil(err, "NewPoster must return no error when parsing an empty template")
+	emptyTemplate := posterWithEmptyTemplate.footerTemplate
+	commentsEmptyTemplate := addFootnote(context.TODO(), "comments", emptyTemplate, nil)
+	s.Equal("comments", commentsEmptyTemplate)
+
+	oldTemplateRaw := "Old template %s"
+	posterWithOldTemplate, err := NewPoster(nil, ProviderConfig{CommentFooter: oldTemplateRaw})
+	s.Nil(posterWithOldTemplate, "NewPoster must fail when parsing an old template config")
+	s.True(ErrOldTemplate.Is(err), "Error should be 'ErrOldTemplate'")
+
+	wrongTemplateeRaw := "Old template {{{parseerror"
+	posterWithWrongTemplate, err := NewPoster(nil, ProviderConfig{CommentFooter: wrongTemplateeRaw})
+	s.Nil(posterWithWrongTemplate, "NewPoster must fail when parsing a wrong template config")
+	s.True(ErrParseTemplate.Is(err), "Error should be 'ErrParseTemplate'")
 }

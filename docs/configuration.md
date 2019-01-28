@@ -39,14 +39,14 @@ The `providers.github` key configures how **source{d} Lookout** will connect wit
 ```yaml
 providers:
   github:
-    comment_footer: "_If you have feedback about this comment, please, [tell us](%s)._"
+    comment_footer: "_Comment made by '{{.Name}}'{{with .Feedback}}, [tell us]({{.}}){{end}}._"
     # app_id: 1234
     # private_key: ./key.pem
     # installation_sync_interval: 1h
     # watch_min_interval: 2s
 ```
 
-`comment_footer` key defines a format-string that will be used for custom messages for every message posted on GitHub; see how to [add a custom message to the posted comments](#add-a-custom-message-to-the-posted-comments)
+`comment_footer` key defines the [go template](https://golang.org/pkg/text/template) that will be used for custom messages for every message posted on GitHub; see how to [add a custom message to the posted comments](#add-a-custom-message-to-the-posted-comments)
 
 ### Authentication with GitHub
 
@@ -141,16 +141,30 @@ analyzers:
 
 ### Add a Custom Message to the Posted Comments
 
-You can configure **source{d} Lookout** to add a custom message to every comment that each analyzer returns. This custom message will be created following the rule:
-```
-sprintf(providers.github.comment_footer, feedback)
-```
-If any of those two keys are not defined, the custom message won't be added.
+You can configure **source{d} Lookout** to add a custom message to every comment that each analyzer returns. This custom message will be created from the template defined by `providers.github.comment_footer`, using the configuration set for each analyzer.
 
-Example:
-```text
-"_If you have feedback about this comment, please, [tell us](%s)._"
+If the template (`providers.github.comment_footer`) is empty, or the analyzer configuration does not define any of the values that the template requires, the custom message won't be added.
+
+For example, for this configuration, each analyzer needs to define `name` and `settings.email`:
+
+```yaml
+providers:
+  github:
+    comment_footer: "Comment made by analyzer {{.Name}}, [email me]({{.Settings.email}})."
+
+analyzers:
+  - name: Fancy Analyzer
+    addr: ipv4://localhost:9930
+    settings:
+      email: admin@example.org
+  - name: Awesome Analyzer
+    addr: ipv4://localhost:9931
 ```
+
+Comments from `Fancy Analyzer` will have this footer appended:
+>_Comment made by analyzer Fancy Analyzer, [email me](admin@example.org)._
+
+but comments from `Awesome Analyzer` wont have a footer message because in its configuration it's missing the `settings.email` value.
 
 
 ## Timeouts

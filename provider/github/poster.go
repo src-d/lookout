@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"text/template"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/ctxlog"
@@ -32,18 +33,27 @@ const (
 
 // Poster posts comments as Pull Request Reviews.
 type Poster struct {
-	pool *ClientPool
-	conf ProviderConfig
+	pool           *ClientPool
+	conf           ProviderConfig
+	footerTemplate *template.Template
 }
 
 var _ lookout.Poster = &Poster{}
 
 // NewPoster creates a new poster for the GitHub API.
-func NewPoster(pool *ClientPool, conf ProviderConfig) *Poster {
-	return &Poster{
-		pool: pool,
-		conf: conf,
+func NewPoster(pool *ClientPool, conf ProviderConfig) (*Poster, error) {
+	tpl, err := newFooterTemplate(conf.CommentFooter)
+	if ErrEmptyTemplate.Is(err) {
+		log.DefaultLogger.Warningf("no footer template being used: %s", err)
+	} else if err != nil {
+		return nil, err
 	}
+
+	return &Poster{
+		pool:           pool,
+		conf:           conf,
+		footerTemplate: tpl,
+	}, nil
 }
 
 // Post posts comments as a Pull Request Review.
@@ -157,14 +167,10 @@ func (p *Poster) createReviewRequest(
 	}
 
 	var bodyComments []string
-	tmpl := p.conf.CommentFooter
-
 	for _, aComments := range aCommentsList {
 		ctx, _ := ctxlog.WithLogFields(ctx, log.Fields{
 			"analyzer": aComments.Config.Name,
 		})
-
-		url := aComments.Config.Feedback
 
 		forBody, ghComments := convertComments(ctx, aComments.Comments, dl)
 
@@ -175,13 +181,13 @@ func (p *Poster) createReviewRequest(
 		ghComments = mergeComments(ghComments)
 
 		for i, c := range ghComments {
-			body := addFootnote(c.GetBody(), tmpl, url)
+			body := addFootnote(ctx, c.GetBody(), p.footerTemplate, &aComments.Config)
 			ghComments[i].Body = &body
 		}
 
 		bodyComments = append(
 			bodyComments,
-			addFootnote(strings.Join(forBody, "\n\n"), tmpl, url),
+			addFootnote(ctx, strings.Join(forBody, "\n\n"), p.footerTemplate, &aComments.Config),
 		)
 		req.Comments = append(req.Comments, ghComments...)
 	}

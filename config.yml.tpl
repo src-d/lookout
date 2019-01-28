@@ -8,7 +8,7 @@ analyzers:
 
 providers:
   github:
-    comment_footer: '_If you have feedback about this comment, please, [tell us](%s)._'
+    comment_footer: "_{{if .Feedback}}If you have feedback about this comment made by the analyzer {{.Name}}, please, [tell us]({{.Feedback}}){{else}}Comment made by the analyzer {{.Name}}{{end}}._"
     # The minimum watch interval to discover new pull requests and push events
     watch_min_interval: 2s
     # Authorization with GitHub App
