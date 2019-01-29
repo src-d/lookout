@@ -25,10 +25,17 @@ func Get(ctx context.Context) log.Logger {
 	return NewLogger(fields)
 }
 
-// Fields returns the context log fields. It can be nil
+// Fields returns a copy of the context log fields. It can be nil
 func Fields(ctx context.Context) log.Fields {
 	if v := ctx.Value(logFieldsKey); v != nil {
-		return v.(log.Fields)
+		f := v.(log.Fields)
+		copy := make(map[string]interface{}, len(f))
+
+		for key, val := range f {
+			copy[key] = val
+		}
+
+		return copy
 	}
 
 	return nil
@@ -41,16 +48,16 @@ func WithLogFields(ctx context.Context, fields log.Fields) (context.Context, log
 		return ctx, Get(ctx)
 	}
 
-	var newFields log.Fields
+	newFields := make(map[string]interface{}, len(fields))
 
 	if v := ctx.Value(logFieldsKey); v != nil {
-		newFields = v.(log.Fields)
-
-		for k, v := range fields {
-			newFields[k] = v
+		for key, val := range v.(log.Fields) {
+			newFields[key] = val
 		}
-	} else {
-		newFields = fields
+	}
+
+	for key, val := range fields {
+		newFields[key] = val
 	}
 
 	ctx = set(ctx, newFields)
