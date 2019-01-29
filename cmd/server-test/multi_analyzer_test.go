@@ -40,9 +40,11 @@ func (suite *MultiDummyIntegrationSuite) TestSuccessReview() {
 
 	str := suite.GrepAll(suite.r, []string{
 		"processing pull request",
-		`msg="posting analysis" analyzer=Dummy1 app=lookoutd comments=4`,
 		`status=success`,
 	})
+
+	foundCommentsLen := suite.EgrepFromString(str, `msg="posting analysis" analyzer=Dummy[12] app=lookoutd comments=4`)
+	suite.Require().True(foundCommentsLen)
 
 	dummy1First := `{"analyzer-name":"Dummy1","file":"another\.go","text":"The file has increased in 4 lines\."}.*` +
 		`{"analyzer-name":"Dummy1","file":"another\.go","line":3,"text":"This line exceeded 120 chars\."}.*` +
