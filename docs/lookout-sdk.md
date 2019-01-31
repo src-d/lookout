@@ -22,7 +22,7 @@ If your analyzer makes use of UAST, you will also need a [Babelfish server](http
 To start it using [Docker Compose](https://docs.docker.com/compose/) clone this repository, or download [`docker-compose.yml`](../docker-compose.yml), and run:
 
 ```shell
-$ docker-compose up bblfshd
+$ docker-compose up bblfsh
 ```
 
 This will create the [bblfshd](https://github.com/bblfsh/bblfshd) container listening on `localhost:9432`.
