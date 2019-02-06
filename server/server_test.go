@@ -463,10 +463,6 @@ func setupMockedServer(params mockedServerParams) (*WatcherMock, *PosterMock) {
 
 		//TODO
 		organizationOp = &store.NoopOrganizationOperator{}
-	} else {
-		eventOp = &store.NoopEventOperator{}
-		commentOp = &store.NoopCommentOperator{}
-		organizationOp = &store.NoopOrganizationOperator{}
 	}
 
 	analyzers := map[string]lookout.Analyzer{
@@ -476,9 +472,17 @@ func setupMockedServer(params mockedServerParams) (*WatcherMock, *PosterMock) {
 		},
 	}
 
-	srv := NewServer(
-		poster, fileGetter, analyzers, eventOp, commentOp, organizationOp,
-		params.ReviewTimeout, params.PushTimeout)
+	srv := NewServer(Options{
+		Poster:         poster,
+		FileGetter:     fileGetter,
+		Analyzers:      analyzers,
+		EventOp:        eventOp,
+		CommentOp:      commentOp,
+		OrganizationOp: organizationOp,
+		ReviewTimeout:  params.ReviewTimeout,
+		PushTimeout:    params.PushTimeout,
+	})
+
 	watcher.Watch(context.TODO(), srv.HandleEvent)
 
 	return watcher, poster

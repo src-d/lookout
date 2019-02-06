@@ -73,10 +73,16 @@ func (c *ServeCommand) ExecuteContext(ctx context.Context, args []string) error 
 		return err
 	}
 
-	server := server.NewServer(
-		poster, dataHandler.FileGetter, analyzers,
-		eventOp, commentsOp, organizationsOp,
-		c.conf.Timeout.AnalyzerReview, c.conf.Timeout.AnalyzerPush)
+	server := server.NewServer(server.Options{
+		Poster:         poster,
+		FileGetter:     dataHandler.FileGetter,
+		Analyzers:      analyzers,
+		EventOp:        eventOp,
+		CommentOp:      commentsOp,
+		OrganizationOp: organizationsOp,
+		ReviewTimeout:  c.conf.Timeout.AnalyzerReview,
+		PushTimeout:    c.conf.Timeout.AnalyzerPush,
+	})
 
 	startDataServer, stopDataServer := c.initDataServer(dataHandler)
 	go func() {

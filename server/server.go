@@ -40,10 +40,6 @@ type reqSent func(
 
 // Server implements glue between providers / data-server / analyzers
 type Server struct {
-	// ExitOnError set to true would stop the server and return an error
-	// if any analyzer or posting failed
-	ExitOnError bool
-
 	poster         lookout.Poster
 	fileGetter     lookout.FileGetter
 	analyzers      map[string]lookout.Analyzer
@@ -53,23 +49,62 @@ type Server struct {
 
 	analyzerReviewTimeout time.Duration
 	analyzerPushTimeout   time.Duration
+
+	exitOnError bool
 }
 
-// NewServer creates a new Server with the given configuration. If the Timeouts
-// are zero it means no timeout.
-func NewServer(
-	p lookout.Poster,
-	fileGetter lookout.FileGetter,
-	analyzers map[string]lookout.Analyzer,
-	eventOp store.EventOperator,
-	commentOp store.CommentOperator,
-	organizationOp store.OrganizationOperator,
-	reviewTimeout time.Duration,
-	pushTimeout time.Duration,
-) *Server {
-	return &Server{false, p, fileGetter, analyzers,
-		eventOp, commentOp, organizationOp,
-		reviewTimeout, pushTimeout}
+// Options defines the options for NewServer
+type Options struct {
+	Poster     lookout.Poster
+	FileGetter lookout.FileGetter
+	Analyzers  map[string]lookout.Analyzer
+
+	// EventOp is the operator for the Event persistence. Can be left unset.
+	EventOp store.EventOperator
+	// CommentOp is the operator for the Comment persistence. Can be left unset.
+	CommentOp store.CommentOperator
+	// OrganizationOp is the operator for the Organization persistence. Can be left unset.
+	OrganizationOp store.OrganizationOperator
+
+	// ReviewTimeout is the timeout for an analyzer to reply a NotifyReviewEvent.
+	// Zero means no timeout.
+	ReviewTimeout time.Duration
+	// PushTimeout is the timeout for an analyzer to reply a NotifyPushEvent.
+	// Zero means no timeout.
+	PushTimeout time.Duration
+
+	// ExitOnError set to true will stop the server and return an error
+	// if any analyzer Notify* call or a posting call fails
+	ExitOnError bool
+}
+
+// NewServer creates a new Server with the given options
+func NewServer(opt Options) *Server {
+	server := Server{
+		poster:                opt.Poster,
+		fileGetter:            opt.FileGetter,
+		analyzers:             opt.Analyzers,
+		eventOp:               opt.EventOp,
+		commentOp:             opt.CommentOp,
+		organizationOp:        opt.OrganizationOp,
+		analyzerReviewTimeout: opt.ReviewTimeout,
+		analyzerPushTimeout:   opt.PushTimeout,
+		exitOnError:           opt.ExitOnError,
+	}
+
+	if opt.EventOp == nil {
+		server.eventOp = &store.NoopEventOperator{}
+	}
+
+	if opt.CommentOp == nil {
+		server.commentOp = &store.NoopCommentOperator{}
+	}
+
+	if opt.OrganizationOp == nil {
+		server.organizationOp = &store.NoopOrganizationOperator{}
+	}
+
+	return &server
 }
 
 // HandleEvent processes the event calling the analyzers, and posting the results
@@ -123,7 +158,7 @@ func (s *Server) HandleEvent(ctx context.Context, e lookout.Event) error {
 	}
 
 	// don't fail on event processing error, just skip it
-	if !s.ExitOnError {
+	if !s.exitOnError {
 		return nil
 	}
 
@@ -352,7 +387,7 @@ func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.
 
 				aLogger.Errorf(err, errMessage)
 
-				if s.ExitOnError {
+				if s.exitOnError {
 					errCh <- err
 				}
 
