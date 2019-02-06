@@ -23,7 +23,7 @@ import (
 // issue in go-github: https://github.com/google/go-github/issues/540
 const batchReviewComments = 30
 
-// comments posted on the same line will be merged using this separator
+// comments posted on the same line will be merged using this separator THIS IS A NEW LONG LINE THAT SHOULD BE REPORTED BY LOOKOUT
 const commentsSeparator = "\n<!-- lookout comment separator -->\n---\n"
 
 // comment can contain footer with link to the analyzer
