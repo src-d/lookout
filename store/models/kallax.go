@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/src-d/lookout"
 	"gopkg.in/src-d/go-kallax.v1"
 	"gopkg.in/src-d/go-kallax.v1/types"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
@@ -1043,7 +1044,7 @@ func (rs *OrganizationResultSet) Close() error {
 }
 
 // NewPushEvent returns a new instance of PushEvent.
-func NewPushEvent(e *pb.PushEvent) (record *PushEvent) {
+func NewPushEvent(e *lookout.PushEvent) (record *PushEvent) {
 	return newPushEvent(e)
 }
 
@@ -1060,21 +1061,23 @@ func (r *PushEvent) ColumnAddress(col string) (interface{}, error) {
 	case "status":
 		return (*string)(&r.Status), nil
 	case "provider":
-		return &r.PushEvent.Provider, nil
+		return &r.PushEvent.PushEvent.Provider, nil
 	case "internal_id":
-		return &r.PushEvent.InternalID, nil
+		return &r.PushEvent.PushEvent.InternalID, nil
 	case "created_at":
-		return &r.PushEvent.CreatedAt, nil
+		return &r.PushEvent.PushEvent.CreatedAt, nil
 	case "commits":
-		return &r.PushEvent.Commits, nil
+		return &r.PushEvent.PushEvent.Commits, nil
 	case "distinct_commits":
-		return &r.PushEvent.DistinctCommits, nil
+		return &r.PushEvent.PushEvent.DistinctCommits, nil
 	case "configuration":
-		return types.JSON(&r.PushEvent.Configuration), nil
+		return types.JSON(&r.PushEvent.PushEvent.Configuration), nil
 	case "base":
-		return types.JSON(&r.PushEvent.CommitRevision.Base), nil
+		return types.JSON(&r.PushEvent.PushEvent.CommitRevision.Base), nil
 	case "head":
-		return types.JSON(&r.PushEvent.CommitRevision.Head), nil
+		return types.JSON(&r.PushEvent.PushEvent.CommitRevision.Head), nil
+	case "organization_id":
+		return &r.PushEvent.OrganizationID, nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in PushEvent: %s", col)
@@ -1089,21 +1092,23 @@ func (r *PushEvent) Value(col string) (interface{}, error) {
 	case "status":
 		return (string)(r.Status), nil
 	case "provider":
-		return r.PushEvent.Provider, nil
+		return r.PushEvent.PushEvent.Provider, nil
 	case "internal_id":
-		return r.PushEvent.InternalID, nil
+		return r.PushEvent.PushEvent.InternalID, nil
 	case "created_at":
-		return r.PushEvent.CreatedAt, nil
+		return r.PushEvent.PushEvent.CreatedAt, nil
 	case "commits":
-		return r.PushEvent.Commits, nil
+		return r.PushEvent.PushEvent.Commits, nil
 	case "distinct_commits":
-		return r.PushEvent.DistinctCommits, nil
+		return r.PushEvent.PushEvent.DistinctCommits, nil
 	case "configuration":
-		return types.JSON(r.PushEvent.Configuration), nil
+		return types.JSON(r.PushEvent.PushEvent.Configuration), nil
 	case "base":
-		return types.JSON(r.PushEvent.CommitRevision.Base), nil
+		return types.JSON(r.PushEvent.PushEvent.CommitRevision.Base), nil
 	case "head":
-		return types.JSON(r.PushEvent.CommitRevision.Head), nil
+		return types.JSON(r.PushEvent.PushEvent.CommitRevision.Head), nil
+	case "organization_id":
+		return r.PushEvent.OrganizationID, nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in PushEvent: %s", col)
@@ -1418,6 +1423,12 @@ func (q *PushEventQuery) FindByDistinctCommits(cond kallax.ScalarCond, v uint32)
 	return q.Where(cond(Schema.PushEvent.DistinctCommits, v))
 }
 
+// FindByOrganizationID adds a new filter to the query that will require that
+// the OrganizationID property is equal to the passed value.
+func (q *PushEventQuery) FindByOrganizationID(v string) *PushEventQuery {
+	return q.Where(kallax.Eq(Schema.PushEvent.OrganizationID, v))
+}
+
 // PushEventResultSet is the set of results returned by a query to the
 // database.
 type PushEventResultSet struct {
@@ -1527,7 +1538,7 @@ func (rs *PushEventResultSet) Close() error {
 }
 
 // NewReviewEvent returns a new instance of ReviewEvent.
-func NewReviewEvent(e *pb.ReviewEvent) (record *ReviewEvent) {
+func NewReviewEvent(e *lookout.ReviewEvent) (record *ReviewEvent) {
 	return newReviewEvent(e)
 }
 
@@ -2104,7 +2115,7 @@ func (rs *ReviewEventResultSet) Close() error {
 }
 
 // NewReviewTarget returns a new instance of ReviewTarget.
-func NewReviewTarget(e *pb.ReviewEvent) (record *ReviewTarget) {
+func NewReviewTarget(e *lookout.ReviewEvent) (record *ReviewTarget) {
 	return newReviewTarget(e)
 }
 
@@ -2626,6 +2637,7 @@ type schemaPushEvent struct {
 	Configuration   *schemaPushEventConfiguration
 	Base            *schemaPushEventBase
 	Head            *schemaPushEventHead
+	OrganizationID  kallax.SchemaField
 }
 
 type schemaReviewEvent struct {
@@ -2786,6 +2798,7 @@ var Schema = &schema{
 			kallax.NewSchemaField("configuration"),
 			kallax.NewSchemaField("base"),
 			kallax.NewSchemaField("head"),
+			kallax.NewSchemaField("organization_id"),
 		),
 		ID:              kallax.NewSchemaField("id"),
 		Status:          kallax.NewSchemaField("status"),
@@ -2813,6 +2826,7 @@ var Schema = &schema{
 			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "push_event", "head", "reference_name"),
 			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "push_event", "head", "hash"),
 		},
+		OrganizationID: kallax.NewSchemaField("organization_id"),
 	},
 	ReviewEvent: &schemaReviewEvent{
 		BaseSchema: kallax.NewBaseSchema(

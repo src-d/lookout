@@ -492,21 +492,43 @@ BrEfqBqlfnb6e6/Rd+1/r9F2v/qAkEbyctsCgwlzDFkKD3HiVb39dU/7K/mXugcAAP//av1XvtoAAAA=
 `,
 	},
 
+	"/store/migrations/1548435439_event_wrappers.down.sql": {
+		name:    "1548435439_event_wrappers.down.sql",
+		local:   "store/migrations/1548435439_event_wrappers.down.sql",
+		size:    69,
+		modtime: 1,
+		compressed: `
+H4sIAAAAAAAC/3Jydff0s+bicvQJcQ1SCHF08nFVKCgtzohPLUvNK1FwCfIPUHD29wn19VPIL0pPzMus
+SizJzM+Lz0yx5uJy9vf19Qyx5gIEAAD//5tdm8pFAAAA
+`,
+	},
+
+	"/store/migrations/1548435439_event_wrappers.up.sql": {
+		name:    "1548435439_event_wrappers.up.sql",
+		local:   "store/migrations/1548435439_event_wrappers.up.sql",
+		size:    82,
+		modtime: 1,
+		compressed: `
+H4sIAAAAAAAC/wTAwQoCIRAG4Ps8xf8entxdCWEcIcazCEl50agpoqffbwuXKI7Is4Yr1G8c8Py8H7V/
++zT448CeuSTBet3bHP9mY806brD+M0hWSGF2RHtOKaqjMwAA//8FYkZlUgAAAA==
+`,
+	},
+
 	"/store/migrations/lock.json": {
 		name:    "lock.json",
 		local:   "store/migrations/lock.json",
-		size:    8554,
+		size:    8751,
 		modtime: 1,
 		compressed: `
-H4sIAAAAAAAC/+xZwW7bMAy95ysEn/sFue44IBiG7jQMAW0zLgeJ8iQqm1Pk34e4bRY7drYVWyulugSG
-CUbvUSSfLN4vlCpuodToi6X6vFBKqfv+V6liBQaLpSoqawyyFDdPhndWB8O/PE69Bp5UH53697dd278P
-YWz54MiA695jVyyVuIAD60fcoEOuDs4ctB4YV1ZWQespv09M38LBaQPa49Gyv7kMu3IIgvUaZBq+kEEv
-YFrZXWDRr/maNEJbXwMNh1vC72vcIsv6mRl1mcTpsk/1MF558OfHGnhM8hPTfiYa5wieGY4NaZzZT/wh
-MW+kJp5BTizYoIsZ/HlwUwl7ZXlDdb/eJP6SGuKoGQCD7nbj/Igm/o9PXxYnXM5E1LoGmHYgZPntKGnr
-7JbqaHfuN+gPbckx6FnVSaL0m5TLpg3+biTAV180XkCCTzPjcsHnL5d/0beMIfGpnldq8kJcyTpxHg/y
-Edzw0DIg8dVbLmPmUILHRKHfIdSxQv8j8Z78fs7ynQXwPxLwa4Ouwf4KZ7rtWqsROGYS3gZXpdq1+vAn
-ij0LXha8PDK4mpGBgGvwdWYGD0u/3NDgb85jI2x5nJdrM98QvZUDssPWehLrulkK8V9McDDlXAZFgH7Y
-jBeHp/3PAAAA//+UEnKLaiEAAA==
+H4sIAAAAAAAC/+xZzW7bMAy+5ykEn/sEue44IBiG7jQMhmzTLgeJ8iQqm1Pk3Qe7bWY7drYVWyulugSG
+CYbfR/HP4v1GiOxWFgpcthWfN0IIcT/8CpHtpIZsK7LSaA3E2c2T4J1RXtMvjbHWRBOrk9Lw/rZrh/fe
+zyUfLGppu/fQZVvB1sNE+hFqsEBlr0xeqYlwZ3jnlVrS+0T4zfdKtVQOTpLjzWXYpQXJUOWSl+EzanAs
+dcuHCywGm69Jw7fVNdCwsEf4nsMeiPNnRtRlEmOzT/kwtzz581MOPAb5SHRc8cY5gme6o0YFK+cJPzjk
+g1RIK8iRGBqwIYM/d24sbi8N1VgN9hbxF9ggBc1AklTdYR4fwfj/8enLZsTlrIka20jCg2Q09HY6aWvN
+HqtgT+436PuyZEmq1a4TReo3MadN693drAFffdI4luxdnBGXEj59ufyLuqU1sot1XqnQMVLJeeQ8HtqH
+t9OhZULiqzNUhMyhkA4ihX4HsooU+njaDbeY/tEEsngJkGaQ1MX/IwGXa7ANDPdQy73DGAWSQibhjLdl
+rKV3cH+k2FPXTl077T2uZu/B0jbwOouPB9Mvt/n4m3lshi3tJFNupmuutzIgW2iNQza2W6UQ/u0KeV2s
+RVAA6KfFeNM/HX8GAAD//8vlmYAvIgAA
 `,
 	},
 
@@ -544,6 +566,8 @@ var _escDirs = map[string][]os.FileInfo{
 		_escData["/store/migrations/1547744983_organizations.up.sql"],
 		_escData["/store/migrations/1548157581_organizations_constraints.down.sql"],
 		_escData["/store/migrations/1548157581_organizations_constraints.up.sql"],
+		_escData["/store/migrations/1548435439_event_wrappers.down.sql"],
+		_escData["/store/migrations/1548435439_event_wrappers.up.sql"],
 		_escData["/store/migrations/lock.json"],
 	},
 }
