@@ -2,14 +2,15 @@ package github
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/google/go-github/github"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/ctxlog"
+	errors "gopkg.in/src-d/go-errors.v1"
 	log "gopkg.in/src-d/go-log.v1"
 )
 
@@ -28,6 +29,13 @@ const commentsSeparator = "\n<!-- lookout comment separator -->\n---\n"
 
 // comment can contain footer with link to the analyzer
 const footnoteSeparator = "\n<!-- lookout footnote separator -->\n"
+
+var (
+	ErrEmptyTemplate = errors.NewKind("empty footer template")
+	ErrOldTemplate   = errors.NewKind("old footer template: '%%s' placeholder is no longer supported: '%s'")
+	ErrParseTemplate = errors.NewKind("error parsing footer template: %s")
+	ErrTemplateError = errors.NewKind("error generating the footer: %s")
+)
 
 // createReview creates pull request review on github using multiple http calls
 // in case of too many comments
@@ -207,13 +215,53 @@ func splitReviewRequest(review *github.PullRequestReviewRequest, n int) []*githu
 	return result
 }
 
-// addFootnote adds footnote link to text of a comment
-func addFootnote(text, tmpl, url string) string {
-	if text == "" || tmpl == "" || url == "" {
-		return text
+func newFooterTemplate(tpl string) (*template.Template, error) {
+	if tpl == "" {
+		return nil, ErrEmptyTemplate.New()
 	}
 
-	return text + footnoteSeparator + fmt.Sprintf(tmpl, url)
+	if strings.Index(tpl, "%s") >= 0 {
+		return nil, ErrOldTemplate.New(tpl)
+	}
+
+	template, err := template.New("footer").Parse(tpl)
+	if err != nil {
+		return nil, ErrParseTemplate.New(err)
+	}
+
+	return template.Option("missingkey=error"), nil
+}
+
+// addFootnote adds footnote link to text of a comment
+func addFootnote(
+	ctx context.Context,
+	comment string, tmpl *template.Template, analyzerConf *lookout.AnalyzerConfig,
+) string {
+	if comment == "" || tmpl == nil {
+		return comment
+	}
+
+	footer, err := getFootnote(tmpl, analyzerConf)
+	if err != nil {
+		ctxlog.Get(ctx).Warningf("footer could not be generated: %s", err)
+		return comment
+	}
+
+	return comment + footer
+}
+
+func getFootnote(tmpl *template.Template, analyzerConf *lookout.AnalyzerConfig) (string, error) {
+	var footer strings.Builder
+	if err := tmpl.Execute(&footer, analyzerConf); err != nil {
+		return "", ErrTemplateError.New(err)
+	}
+
+	footerTxt := footer.String()
+	if footerTxt == "" {
+		return "", nil
+	}
+
+	return footnoteSeparator + footer.String(), nil
 }
 
 // removeFootnote removes footnote and returns only text of a comment

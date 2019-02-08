@@ -225,3 +225,12 @@ func TestConvertCommentsWrongFile(t *testing.T) {
 		Body:     strptr("Line comment"),
 	}}, ghComments)
 }
+
+func TestCouldNotExecuteFooterTemplate(t *testing.T) {
+	require := require.New(t)
+
+	unkonwnDataTemplate, err := newFooterTemplate("Old template {{.UnknownData}}")
+	require.Nil(err)
+	commentsWrongTemplate := addFootnote(context.TODO(), "comments", unkonwnDataTemplate, nil)
+	require.Equal("comments", commentsWrongTemplate)
+}

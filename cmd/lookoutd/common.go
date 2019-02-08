@@ -324,7 +324,7 @@ func (c *queueConsumerCommand) initPoster(conf Config) (lookout.Poster, error) {
 
 	switch c.Provider {
 	case github.Provider:
-		return github.NewPoster(c.pool, conf.Providers.Github), nil
+		return github.NewPoster(c.pool, conf.Providers.Github)
 	case json.Provider:
 		return json.NewPoster(os.Stdout), nil
 	default:
