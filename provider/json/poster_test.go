@@ -5,6 +5,8 @@ import (
 	"context"
 	"testing"
 
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
+
 	"github.com/src-d/lookout"
 
 	"github.com/stretchr/testify/require"
@@ -25,18 +27,19 @@ func TestPoster_Post_OK(t *testing.T) {
 
 	p := NewPoster(&b)
 	ev := &lookout.ReviewEvent{
-		Provider: Provider,
-		CommitRevision: lookout.CommitRevision{
-			Base: lookout.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/foo/bar",
-				ReferenceName:         base1,
-				Hash:                  hash1,
-			},
-			Head: lookout.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/foo/bar",
-				ReferenceName:         head1,
-				Hash:                  hash2,
-			}}}
+		ReviewEvent: pb.ReviewEvent{
+			Provider: Provider,
+			CommitRevision: lookout.CommitRevision{
+				Base: lookout.ReferencePointer{
+					InternalRepositoryURL: "https://github.com/foo/bar",
+					ReferenceName:         base1,
+					Hash:                  hash1,
+				},
+				Head: lookout.ReferencePointer{
+					InternalRepositoryURL: "https://github.com/foo/bar",
+					ReferenceName:         head1,
+					Hash:                  hash2,
+				}}}}
 	cs := []*lookout.Comment{&lookout.Comment{
 		Text: "This is a global comment",
 	}, &lookout.Comment{

@@ -19,22 +19,25 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	queue "gopkg.in/src-d/go-queue.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 var (
 	longLineFixture = fixtures.GetAll()[0]
 
 	mockEventA = lookout.ReviewEvent{
-		Provider:       "github",
-		InternalID:     "1234",
-		CommitRevision: *longLineFixture.GetCommitRevision(),
-	}
+		ReviewEvent: pb.ReviewEvent{
+			Provider:       "github",
+			InternalID:     "1234",
+			CommitRevision: *longLineFixture.GetCommitRevision(),
+		}}
 
 	mockEventB = lookout.PushEvent{
-		Provider:       "github",
-		InternalID:     "5678",
-		CommitRevision: *longLineFixture.GetCommitRevision(),
-	}
+		PushEvent: pb.PushEvent{
+			Provider:       "github",
+			InternalID:     "5678",
+			CommitRevision: *longLineFixture.GetCommitRevision(),
+		}}
 
 	fakeEvent = lookout_mock.FakeEvent{}
 )

@@ -18,48 +18,48 @@ import (
 )
 
 var correctReviewEvent = lookout.ReviewEvent{
-	Provider:    "Mock",
-	InternalID:  "internal-id",
-	IsMergeable: true,
-	Source: lookout.ReferencePointer{
-		InternalRepositoryURL: "file:///test",
-		ReferenceName:         "feature",
-		Hash:                  "source-hash",
-	},
-	Merge: lookout.ReferencePointer{
-		InternalRepositoryURL: "file:///test",
-		ReferenceName:         "merge-branch",
-		Hash:                  "merge-hash",
-	},
-	CommitRevision: lookout.CommitRevision{
-		Base: lookout.ReferencePointer{
+	ReviewEvent: pb.ReviewEvent{
+		Provider:    "Mock",
+		InternalID:  "internal-id",
+		IsMergeable: true,
+		Source: lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///test",
-			ReferenceName:         "master",
-			Hash:                  "base-hash",
+			ReferenceName:         "feature",
+			Hash:                  "source-hash",
 		},
-		Head: lookout.ReferencePointer{
+		Merge: lookout.ReferencePointer{
 			InternalRepositoryURL: "file:///test",
-			ReferenceName:         "master",
-			Hash:                  "head-hash",
+			ReferenceName:         "merge-branch",
+			Hash:                  "merge-hash",
 		},
-	},
-}
+		CommitRevision: lookout.CommitRevision{
+			Base: lookout.ReferencePointer{
+				InternalRepositoryURL: "file:///test",
+				ReferenceName:         "master",
+				Hash:                  "base-hash",
+			},
+			Head: lookout.ReferencePointer{
+				InternalRepositoryURL: "file:///test",
+				ReferenceName:         "master",
+				Hash:                  "head-hash",
+			}}}}
+
 var correctPushEvent = lookout.PushEvent{
-	Provider:   "Mock",
-	InternalID: "internal-id",
-	CommitRevision: lookout.CommitRevision{
-		Base: lookout.ReferencePointer{
-			InternalRepositoryURL: "file:///test",
-			ReferenceName:         "master",
-			Hash:                  "base-hash",
-		},
-		Head: lookout.ReferencePointer{
-			InternalRepositoryURL: "file:///test",
-			ReferenceName:         "master",
-			Hash:                  "head-hash",
-		},
-	},
-}
+	PushEvent: pb.PushEvent{
+		Provider:   "Mock",
+		InternalID: "internal-id",
+		CommitRevision: lookout.CommitRevision{
+			Base: lookout.ReferencePointer{
+				InternalRepositoryURL: "file:///test",
+				ReferenceName:         "master",
+				Hash:                  "base-hash",
+			},
+			Head: lookout.ReferencePointer{
+				InternalRepositoryURL: "file:///test",
+				ReferenceName:         "master",
+				Hash:                  "head-hash",
+			}}}}
+
 var globalConfig = lookout.AnalyzerConfig{
 	Name: "test",
 	Settings: map[string]interface{}{
@@ -552,14 +552,14 @@ func (g *FileGetterMockWithConfig) GetFiles(_ context.Context, req *lookout.File
 }
 
 type AnalyzerClientMock struct {
-	reviewEvents    []*lookout.ReviewEvent
-	pushEvents      []*lookout.PushEvent
+	reviewEvents    []*pb.ReviewEvent
+	pushEvents      []*pb.PushEvent
 	CommentsBuilder func(ev lookout.Event, from, to lookout.ReferencePointer) []*lookout.Comment
 	ReviewSleep     time.Duration
 	PushSleep       time.Duration
 }
 
-func (a *AnalyzerClientMock) NotifyReviewEvent(ctx context.Context, in *lookout.ReviewEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
+func (a *AnalyzerClientMock) NotifyReviewEvent(ctx context.Context, in *pb.ReviewEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
 	if a.ReviewSleep > 0 {
 		select {
 		case <-time.After(a.ReviewSleep):
@@ -570,11 +570,12 @@ func (a *AnalyzerClientMock) NotifyReviewEvent(ctx context.Context, in *lookout.
 
 	a.reviewEvents = append(a.reviewEvents, in)
 	return &lookout.EventResponse{
-		Comments: a.CommentsBuilder(in, in.CommitRevision.Base, in.CommitRevision.Head),
+		Comments: a.CommentsBuilder(&lookout.ReviewEvent{ReviewEvent: *in},
+			in.CommitRevision.Base, in.CommitRevision.Head),
 	}, nil
 }
 
-func (a *AnalyzerClientMock) NotifyPushEvent(ctx context.Context, in *lookout.PushEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
+func (a *AnalyzerClientMock) NotifyPushEvent(ctx context.Context, in *pb.PushEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
 	if a.PushSleep > 0 {
 		select {
 		case <-time.After(a.PushSleep):
@@ -585,19 +586,20 @@ func (a *AnalyzerClientMock) NotifyPushEvent(ctx context.Context, in *lookout.Pu
 
 	a.pushEvents = append(a.pushEvents, in)
 	return &lookout.EventResponse{
-		Comments: a.CommentsBuilder(in, in.CommitRevision.Base, in.CommitRevision.Head),
+		Comments: a.CommentsBuilder(&lookout.PushEvent{PushEvent: *in},
+			in.CommitRevision.Base, in.CommitRevision.Head),
 	}, nil
 }
 
-func (a *AnalyzerClientMock) PopReviewEvents() []*lookout.ReviewEvent {
+func (a *AnalyzerClientMock) PopReviewEvents() []*pb.ReviewEvent {
 	res := a.reviewEvents[:]
-	a.reviewEvents = []*lookout.ReviewEvent{}
+	a.reviewEvents = []*pb.ReviewEvent{}
 	return res
 }
 
-func (a *AnalyzerClientMock) PopPushEvents() []*lookout.PushEvent {
+func (a *AnalyzerClientMock) PopPushEvents() []*pb.PushEvent {
 	res := a.pushEvents[:]
-	a.pushEvents = []*lookout.PushEvent{}
+	a.pushEvents = []*pb.PushEvent{}
 	return res
 }
 

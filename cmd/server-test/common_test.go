@@ -29,7 +29,7 @@ func (suite *IntegrationSuite) sendEvent(json string) {
 
 type jsonReviewEvent struct {
 	Event string `json:"event"`
-	*lookout.ReviewEvent
+	*pb.ReviewEvent
 }
 
 func (e *jsonReviewEvent) String() string {
@@ -40,7 +40,7 @@ func (e *jsonReviewEvent) String() string {
 
 type jsonPushEvent struct {
 	Event string `json:"event"`
-	*lookout.PushEvent
+	*pb.PushEvent
 }
 
 func (e *jsonPushEvent) String() string {
@@ -50,8 +50,8 @@ func (e *jsonPushEvent) String() string {
 }
 
 type mockAnalyzer interface {
-	NotifyReviewEvent(context.Context, *lookout.ReviewEvent) (*lookout.EventResponse, error)
-	NotifyPushEvent(context.Context, *lookout.PushEvent) (*lookout.EventResponse, error)
+	NotifyReviewEvent(context.Context, *pb.ReviewEvent) (*lookout.EventResponse, error)
+	NotifyPushEvent(context.Context, *pb.PushEvent) (*lookout.EventResponse, error)
 }
 
 func startMockAnalyzer(ctx context.Context, a mockAnalyzer) error {
@@ -79,7 +79,7 @@ func startMockAnalyzer(ctx context.Context, a mockAnalyzer) error {
 var longLineFixture = fixtures.GetByName("new-go-file-too-long-line")
 
 var successEvent = &jsonReviewEvent{
-	ReviewEvent: &lookout.ReviewEvent{
+	ReviewEvent: &pb.ReviewEvent{
 		InternalID:     "1",
 		Number:         1,
 		CommitRevision: *longLineFixture.GetCommitRevision(),

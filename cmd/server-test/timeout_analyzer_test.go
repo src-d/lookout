@@ -11,18 +11,19 @@ import (
 	"github.com/src-d/lookout"
 
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 const dummyConfigFileWithTimeouts = "../../fixtures/dummy_config_with_timeouts.yml"
 
 type timeoutErrAnalyzer struct{}
 
-func (a *timeoutErrAnalyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent) (*lookout.EventResponse, error) {
+func (a *timeoutErrAnalyzer) NotifyReviewEvent(ctx context.Context, e *pb.ReviewEvent) (*lookout.EventResponse, error) {
 	time.Sleep(1 * time.Millisecond)
 	return nil, errors.New("review error")
 }
 
-func (a *timeoutErrAnalyzer) NotifyPushEvent(ctx context.Context, e *lookout.PushEvent) (*lookout.EventResponse, error) {
+func (a *timeoutErrAnalyzer) NotifyPushEvent(ctx context.Context, e *pb.PushEvent) (*lookout.EventResponse, error) {
 	time.Sleep(1 * time.Millisecond)
 	return nil, errors.New("push error")
 }

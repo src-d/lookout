@@ -333,11 +333,11 @@ func (s *WatcherTestSuite) TestCustomMinInterval() {
 	client.BaseURL = s.githubURL
 	client.UploadURL = s.githubURL
 
-	repo, _ := pb.ParseRepositoryInfo("github.com/mock/test")
+	repo, _ := parseTestRepositoryInfo("github.com/mock/test")
 
 	pool := &ClientPool{
-		byClients: map[*Client][]*lookout.RepositoryInfo{
-			client: []*lookout.RepositoryInfo{repo},
+		byClients: map[*Client][]*repositoryInfo{
+			client: []*repositoryInfo{repo},
 		},
 		byRepo: map[string]*Client{"mock/test": client},
 		subs:   make(map[chan ClientPoolEvent]bool),
@@ -373,7 +373,7 @@ func (s *WatcherTestSuite) TestAddRepo() {
 	go func() {
 		time.Sleep(minInterval) // make sure we add new repo after some calls were done already
 		c, _ := w.pool.Client("mock", "test-a")
-		repo, _ := pb.ParseRepositoryInfo("github.com/mock/test-b")
+		repo, _ := parseTestRepositoryInfo("github.com/mock/test-b")
 		w.pool.Update(c, append(w.pool.ReposByClient(c), repo))
 	}()
 
@@ -402,7 +402,7 @@ func (s *WatcherTestSuite) TestRemoveRepo() {
 	go func() {
 		time.Sleep(minInterval * 5) // make sure we add new repo after some calls were done already
 		c, _ := w.pool.Client("mock", "test-a")
-		var repos []*lookout.RepositoryInfo
+		var repos []*repositoryInfo
 		for _, r := range w.pool.ReposByClient(c) {
 			if r.FullName == "mock/test-a" {
 				repos = append(repos, r)
@@ -438,8 +438,8 @@ func (s *WatcherTestSuite) TestAddClient() {
 	go func() {
 		time.Sleep(minInterval) // make sure we add new repo after some calls were done already
 		c := newClient(s.githubURL, s.cache)
-		repo, _ := pb.ParseRepositoryInfo("github.com/mock/test-b")
-		w.pool.Update(c, []*lookout.RepositoryInfo{repo})
+		repo, _ := parseTestRepositoryInfo("github.com/mock/test-b")
+		w.pool.Update(c, []*repositoryInfo{repo})
 	}()
 
 	err := w.Watch(ctx, func(context.Context, lookout.Event) error {
@@ -463,14 +463,14 @@ func (s *WatcherTestSuite) TestRemoveClient() {
 	defer cancel()
 
 	// construct watcher
-	repo1, _ := pb.ParseRepositoryInfo("github.com/mock/test-a")
-	repo2, _ := pb.ParseRepositoryInfo("github.com/mock/test-b")
+	repo1, _ := parseTestRepositoryInfo("github.com/mock/test-a")
+	repo2, _ := parseTestRepositoryInfo("github.com/mock/test-b")
 
 	client1 := newClient(s.githubURL, s.cache)
 	client2 := newClient(s.githubURL, s.cache)
-	byClients := map[*Client][]*lookout.RepositoryInfo{
-		client1: []*lookout.RepositoryInfo{repo1},
-		client2: []*lookout.RepositoryInfo{repo2},
+	byClients := map[*Client][]*repositoryInfo{
+		client1: []*repositoryInfo{repo1},
+		client2: []*repositoryInfo{repo2},
 	}
 	byRepo := map[string]*Client{
 		repo1.FullName: client1,

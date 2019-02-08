@@ -27,3 +27,16 @@ func (e *FakeEvent) Revision() *lookout.CommitRevision {
 func (e *FakeEvent) Validate() error {
 	return nil
 }
+
+// GetProvider returns the name of the provider that created this event
+func (e *FakeEvent) GetProvider() string {
+	return ""
+}
+
+// GetOrganizationID returns the organization to which this event's repository
+// belongs to
+func (e *FakeEvent) GetOrganizationID() string {
+	return ""
+}
+
+var _ lookout.Event = &FakeEvent{}

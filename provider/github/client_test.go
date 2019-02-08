@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/google/go-github/github"
-	"github.com/src-d/lookout"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
@@ -20,9 +19,9 @@ func TestClientPoolUpdate(t *testing.T) {
 
 	// add new client
 	firstClient := &Client{}
-	info11, _ := pb.ParseRepositoryInfo("github.com/foo/bar1")
-	info12, _ := pb.ParseRepositoryInfo("github.com/foo/bar2")
-	firstClientRepos := []*lookout.RepositoryInfo{
+	info11, _ := parseTestRepositoryInfo("github.com/foo/bar1")
+	info12, _ := parseTestRepositoryInfo("github.com/foo/bar2")
+	firstClientRepos := []*repositoryInfo{
 		info11,
 		info12,
 	}
@@ -43,9 +42,9 @@ func TestClientPoolUpdate(t *testing.T) {
 
 	// add one more client
 	secondClient := &Client{}
-	info21, _ := pb.ParseRepositoryInfo("github.com/bar/foo1")
-	info22, _ := pb.ParseRepositoryInfo("github.com/bar/foo2")
-	secondClientRepos := []*lookout.RepositoryInfo{
+	info21, _ := parseTestRepositoryInfo("github.com/bar/foo1")
+	info22, _ := parseTestRepositoryInfo("github.com/bar/foo2")
+	secondClientRepos := []*repositoryInfo{
 		info21,
 		info22,
 	}
@@ -65,7 +64,7 @@ func TestClientPoolUpdate(t *testing.T) {
 	require.Equal(secondClientRepos, p.ReposByClient(secondClient))
 
 	// add new repo
-	info13, _ := pb.ParseRepositoryInfo("github.com/foo/bar3")
+	info13, _ := parseTestRepositoryInfo("github.com/foo/bar3")
 	firstClientRepos = append(firstClientRepos, info13)
 
 	p.Update(firstClient, firstClientRepos)
@@ -77,7 +76,7 @@ func TestClientPoolUpdate(t *testing.T) {
 	require.Equal(firstClient, c)
 
 	// remove repo
-	firstClientRepos = []*lookout.RepositoryInfo{
+	firstClientRepos = []*repositoryInfo{
 		info11,
 		info13,
 	}
@@ -96,11 +95,11 @@ func TestClientPoolUpdate(t *testing.T) {
 	require.False(ok)
 
 	// update without repos
-	p.Update(firstClient, []*lookout.RepositoryInfo{})
+	p.Update(firstClient, []*repositoryInfo{})
 	require.Len(p.Clients(), 0)
 
 	// update without repos once again
-	p.Update(firstClient, []*lookout.RepositoryInfo{})
+	p.Update(firstClient, []*repositoryInfo{})
 	require.Len(p.Clients(), 0)
 }
 
@@ -111,10 +110,10 @@ func TestClientPoolMultipleDeleteRepos(t *testing.T) {
 
 	// add new client
 	client := &Client{}
-	info1, _ := pb.ParseRepositoryInfo("github.com/foo/bar1")
-	info2, _ := pb.ParseRepositoryInfo("github.com/foo/bar2")
-	info3, _ := pb.ParseRepositoryInfo("github.com/foo/bar3")
-	repos := []*lookout.RepositoryInfo{
+	info1, _ := parseTestRepositoryInfo("github.com/foo/bar1")
+	info2, _ := parseTestRepositoryInfo("github.com/foo/bar2")
+	info3, _ := parseTestRepositoryInfo("github.com/foo/bar3")
+	repos := []*repositoryInfo{
 		info1,
 		info2,
 		info3,
@@ -125,11 +124,12 @@ func TestClientPoolMultipleDeleteRepos(t *testing.T) {
 	require.Len(p.ReposByClient(client), 3)
 
 	// remove repos
-	newRepos := []*lookout.RepositoryInfo{info2}
+	newRepos := []*repositoryInfo{info2}
 	p.Update(client, newRepos)
 
 	require.Equal(newRepos, p.ReposByClient(client))
 }
+
 func TestErrorResponseDoesNotPanic(t *testing.T) {
 	require := require.New(t)
 
@@ -167,4 +167,15 @@ func TestErrorResponseDoesNotPanic(t *testing.T) {
 	require.NotPanics(processAPIError(apiResponseErrWithProperEmbededResponse), "API error should not panic when stringed")
 	require.NotPanics(processAPIError(apiResponseErrWithEmbededResponseWithoutRequest), "API error with embedded empty response should not panic when stringed")
 	require.NotPanics(processAPIError(apiResponseErrWithoutEmbededResponse), "empty API error should not panic when stringed")
+}
+
+// parseTestRepositoryInfo is a convenience wrapper around pb.ParseRepositoryInfo
+// for testing
+func parseTestRepositoryInfo(input string) (*repositoryInfo, error) {
+	r, err := pb.ParseRepositoryInfo(input)
+	if err != nil {
+		return nil, err
+	}
+
+	return &repositoryInfo{RepositoryInfo: *r}, nil
 }

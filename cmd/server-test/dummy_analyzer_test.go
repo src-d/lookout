@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/src-d/lookout"
 	fixtures "github.com/src-d/lookout-test-fixtures"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 const dummyConfigFile = "../../fixtures/dummy_config.yml"
@@ -58,7 +58,7 @@ func (suite *DummyIntegrationSuite) TestReviewDontPostSameComment() {
 	fixture := fixtures.GetByName("incremental-pr")
 
 	rev0Event := &jsonReviewEvent{
-		ReviewEvent: &lookout.ReviewEvent{
+		ReviewEvent: &pb.ReviewEvent{
 			InternalID:     "some-id",
 			Number:         1,
 			CommitRevision: *fixture.GetRevision(0).GetCommitRevision(),
@@ -72,7 +72,7 @@ func (suite *DummyIntegrationSuite) TestReviewDontPostSameComment() {
 	})
 
 	rev1Event := &jsonReviewEvent{
-		ReviewEvent: &lookout.ReviewEvent{
+		ReviewEvent: &pb.ReviewEvent{
 			InternalID:     "some-id",
 			Number:         1,
 			CommitRevision: *fixture.GetRevision(1).GetCommitRevision(),
@@ -92,7 +92,7 @@ func (suite *DummyIntegrationSuite) TestReviewDontPostSameComment() {
 
 func (suite *DummyIntegrationSuite) TestWrongRevision() {
 	e := &jsonReviewEvent{
-		ReviewEvent: &lookout.ReviewEvent{
+		ReviewEvent: &pb.ReviewEvent{
 			InternalID:     "3",
 			Number:         3,
 			CommitRevision: *longLineFixture.GetCommitRevision(),
@@ -108,7 +108,7 @@ func (suite *DummyIntegrationSuite) TestWrongRevision() {
 
 func (suite *DummyIntegrationSuite) TestSuccessPush() {
 	pushEvent := jsonPushEvent{
-		PushEvent: &lookout.PushEvent{
+		PushEvent: &pb.PushEvent{
 			InternalID:     "1",
 			CommitRevision: *longLineFixture.GetCommitRevision(),
 		},

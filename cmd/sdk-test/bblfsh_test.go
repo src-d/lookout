@@ -144,7 +144,7 @@ var _ lookout.AnalyzerServer = &BbblfshClientAnalyzer{}
 
 type BbblfshClientAnalyzer struct{}
 
-func (a *BbblfshClientAnalyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent) (*lookout.EventResponse, error) {
+func (a *BbblfshClientAnalyzer) NotifyReviewEvent(ctx context.Context, e *pb.ReviewEvent) (*lookout.EventResponse, error) {
 	dataServer, _ := pb.ToGoGrpcAddress("ipv4://localhost:10301")
 	bblfshConn, err := grpchelper.DialContext(context.Background(), dataServer, grpc.WithInsecure())
 	if err != nil {
@@ -170,6 +170,6 @@ func (a *BbblfshClientAnalyzer) NotifyReviewEvent(ctx context.Context, e *lookou
 	}, nil
 }
 
-func (a *BbblfshClientAnalyzer) NotifyPushEvent(ctx context.Context, e *lookout.PushEvent) (*lookout.EventResponse, error) {
+func (a *BbblfshClientAnalyzer) NotifyPushEvent(ctx context.Context, e *pb.PushEvent) (*lookout.EventResponse, error) {
 	return nil, nil
 }
