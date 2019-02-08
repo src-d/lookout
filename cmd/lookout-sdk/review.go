@@ -6,11 +6,11 @@ import (
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/server"
-	"github.com/src-d/lookout/store"
 
 	uuid "github.com/satori/go.uuid"
 	gocli "gopkg.in/src-d/go-cli.v0"
 	log "gopkg.in/src-d/go-log.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 func init() {
@@ -54,16 +54,14 @@ func (c *ReviewCommand) Execute(args []string) error {
 		return err
 	}
 
-	srv := server.NewServer(
-		&server.LogPoster{log.DefaultLogger}, dataHandler.FileGetter,
-		map[string]lookout.Analyzer{
-			"test-analyzes": lookout.Analyzer{
-				Client: client,
-			},
+	srv := server.NewServer(server.Options{
+		Poster:     &server.LogPoster{Log: log.DefaultLogger},
+		FileGetter: dataHandler.FileGetter,
+		Analyzers: map[string]lookout.Analyzer{
+			"test-analyzer": lookout.Analyzer{Client: client},
 		},
-		&store.NoopEventOperator{}, &store.NoopCommentOperator{},
-		0, 0)
-	srv.ExitOnError = true
+		ExitOnError: true,
+	})
 
 	id, err := uuid.NewV4()
 	if err != nil {
@@ -71,17 +69,19 @@ func (c *ReviewCommand) Execute(args []string) error {
 	}
 
 	err = srv.HandleReview(context.TODO(), &lookout.ReviewEvent{
-		InternalID:  id.String(),
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-		IsMergeable: true,
-		Source:      *toRef,
-		Merge:       *toRef,
-		CommitRevision: lookout.CommitRevision{
-			Base: *fromRef,
-			Head: *toRef,
-		},
-		Configuration: conf}, false)
+		ReviewEvent: pb.ReviewEvent{
+			InternalID:  id.String(),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			IsMergeable: true,
+			Source:      *toRef,
+			Merge:       *toRef,
+			CommitRevision: lookout.CommitRevision{
+				Base: *fromRef,
+				Head: *toRef,
+			},
+			Configuration: conf}},
+		false)
 
 	stopDataServer()
 

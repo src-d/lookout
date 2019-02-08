@@ -40,32 +40,71 @@ type reqSent func(
 
 // Server implements glue between providers / data-server / analyzers
 type Server struct {
-	// ExitOnError set to true would stop the server and return an error
-	// if any analyzer or posting failed
-	ExitOnError bool
-
-	poster     lookout.Poster
-	fileGetter lookout.FileGetter
-	analyzers  map[string]lookout.Analyzer
-	eventOp    store.EventOperator
-	commentOp  store.CommentOperator
+	poster         lookout.Poster
+	fileGetter     lookout.FileGetter
+	analyzers      map[string]lookout.Analyzer
+	eventOp        store.EventOperator
+	commentOp      store.CommentOperator
+	organizationOp store.OrganizationOperator
 
 	analyzerReviewTimeout time.Duration
 	analyzerPushTimeout   time.Duration
+
+	exitOnError bool
 }
 
-// NewServer creates a new Server with the given configuration. If the Timeouts
-// are zero it means no timeout.
-func NewServer(
-	p lookout.Poster,
-	fileGetter lookout.FileGetter,
-	analyzers map[string]lookout.Analyzer,
-	eventOp store.EventOperator,
-	commentOp store.CommentOperator,
-	reviewTimeout time.Duration,
-	pushTimeout time.Duration,
-) *Server {
-	return &Server{false, p, fileGetter, analyzers, eventOp, commentOp, reviewTimeout, pushTimeout}
+// Options defines the options for NewServer
+type Options struct {
+	Poster     lookout.Poster
+	FileGetter lookout.FileGetter
+	Analyzers  map[string]lookout.Analyzer
+
+	// EventOp is the operator for the Event persistence. Can be left unset.
+	EventOp store.EventOperator
+	// CommentOp is the operator for the Comment persistence. Can be left unset.
+	CommentOp store.CommentOperator
+	// OrganizationOp is the operator for the Organization persistence. Can be left unset.
+	OrganizationOp store.OrganizationOperator
+
+	// ReviewTimeout is the timeout for an analyzer to reply a NotifyReviewEvent.
+	// Zero means no timeout.
+	ReviewTimeout time.Duration
+	// PushTimeout is the timeout for an analyzer to reply a NotifyPushEvent.
+	// Zero means no timeout.
+	PushTimeout time.Duration
+
+	// ExitOnError set to true will stop the server and return an error
+	// if any analyzer Notify* call or a posting call fails
+	ExitOnError bool
+}
+
+// NewServer creates a new Server with the given options
+func NewServer(opt Options) *Server {
+	server := Server{
+		poster:                opt.Poster,
+		fileGetter:            opt.FileGetter,
+		analyzers:             opt.Analyzers,
+		eventOp:               opt.EventOp,
+		commentOp:             opt.CommentOp,
+		organizationOp:        opt.OrganizationOp,
+		analyzerReviewTimeout: opt.ReviewTimeout,
+		analyzerPushTimeout:   opt.PushTimeout,
+		exitOnError:           opt.ExitOnError,
+	}
+
+	if opt.EventOp == nil {
+		server.eventOp = &store.NoopEventOperator{}
+	}
+
+	if opt.CommentOp == nil {
+		server.commentOp = &store.NoopCommentOperator{}
+	}
+
+	if opt.OrganizationOp == nil {
+		server.organizationOp = &store.NoopOrganizationOperator{}
+	}
+
+	return &server
 }
 
 // HandleEvent processes the event calling the analyzers, and posting the results
@@ -119,7 +158,7 @@ func (s *Server) HandleEvent(ctx context.Context, e lookout.Event) error {
 	}
 
 	// don't fail on event processing error, just skip it
-	if !s.ExitOnError {
+	if !s.exitOnError {
 		return nil
 	}
 
@@ -137,10 +176,17 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent, safeP
 		return err
 	}
 
-	conf, err := s.getConfig(ctx, e)
+	repoConf, err := s.getConfig(ctx, e)
 	if err != nil {
 		return err
 	}
+
+	orgConf, err := s.getOrgConfig(ctx, e)
+	if err != nil {
+		return err
+	}
+
+	conf := mergeConfigs(orgConf, repoConf)
 
 	s.status(ctx, e, lookout.PendingAnalysisStatus)
 
@@ -160,7 +206,7 @@ func (s *Server) HandleReview(ctx context.Context, e *lookout.ReviewEvent, safeP
 			defer cancel()
 		}
 
-		resp, err := a.NotifyReviewEvent(ctx, e)
+		resp, err := a.NotifyReviewEvent(ctx, &e.ReviewEvent)
 		if err != nil {
 			return nil, err
 		}
@@ -192,10 +238,17 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent, safePosti
 		return err
 	}
 
-	conf, err := s.getConfig(ctx, e)
+	repoConf, err := s.getConfig(ctx, e)
 	if err != nil {
 		return err
 	}
+
+	orgConf, err := s.getOrgConfig(ctx, e)
+	if err != nil {
+		return err
+	}
+
+	conf := mergeConfigs(orgConf, repoConf)
 
 	s.status(ctx, e, lookout.PendingAnalysisStatus)
 
@@ -215,7 +268,7 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent, safePosti
 			defer cancel()
 		}
 
-		resp, err := a.NotifyPushEvent(ctx, e)
+		resp, err := a.NotifyPushEvent(ctx, &e.PushEvent)
 		if err != nil {
 			return nil, err
 		}
@@ -260,9 +313,19 @@ func (s *Server) getConfig(ctx context.Context, e lookout.Event) (map[string]loo
 		return nil, nil
 	}
 
+	parseCtx, _ := ctxlog.WithLogFields(ctx, log.Fields{"config-file": "repository .lookout.yml"})
+	conf, err := s.parseConfig(parseCtx, configContent)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the local .lookout.yml file from the repository: %s", err)
+	}
+
+	return conf, nil
+}
+
+func (s *Server) parseConfig(ctx context.Context, configContent []byte) (map[string]lookout.AnalyzerConfig, error) {
 	var conf Config
 	if err := yaml.Unmarshal(configContent, &conf); err != nil {
-		return nil, fmt.Errorf("Can't parse configuration file: %s", err)
+		return nil, fmt.Errorf("can't parse configuration file: %s", err)
 	}
 
 	res := make(map[string]lookout.AnalyzerConfig, len(s.analyzers))
@@ -271,13 +334,28 @@ func (s *Server) getConfig(ctx context.Context, e lookout.Event) (map[string]loo
 	}
 	for _, aConf := range conf.Analyzers {
 		if _, ok := s.analyzers[aConf.Name]; !ok {
-			ctxlog.Get(ctx).Warningf("analyzer '%s' required by local config isn't enabled on server", aConf.Name)
+			ctxlog.Get(ctx).Warningf("analyzer '%s' required by configuration file isn't enabled on server", aConf.Name)
 			continue
 		}
 		res[aConf.Name] = aConf
 	}
 
 	return res, nil
+}
+
+func (s *Server) getOrgConfig(ctx context.Context, e lookout.Event) (map[string]lookout.AnalyzerConfig, error) {
+	configContent, err := s.organizationOp.Config(ctx, e.GetProvider(), e.GetOrganizationID())
+	if err != nil {
+		return nil, fmt.Errorf("could not load default configuration for organization from the DB: %s", err)
+	}
+
+	parseCtx, _ := ctxlog.WithLogFields(ctx, log.Fields{"config-file": "organization default"})
+	conf, err := s.parseConfig(parseCtx, []byte(configContent))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the organization default configuration from the DB: %s", err)
+	}
+
+	return conf, nil
 }
 
 func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.AnalyzerConfig, send reqSent, logErrorMessages map[codes.Code]string) ([]lookout.AnalyzerComments, error) {
@@ -290,7 +368,7 @@ func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.
 
 	for name, a := range s.analyzers {
 		if a.Config.Disabled || conf[name].Disabled {
-			ctxlog.Get(ctx).Infof("analyzer %s disabled by local .lookout.yml", name)
+			ctxlog.Get(ctx).Infof("analyzer %s disabled by local repository configuration", name)
 			commentsCh <- nil
 			continue
 		}
@@ -316,7 +394,7 @@ func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.
 
 				aLogger.Errorf(err, errMessage)
 
-				if s.ExitOnError {
+				if s.exitOnError {
 					errCh <- err
 				}
 
@@ -348,6 +426,33 @@ func (s *Server) concurrentRequest(ctx context.Context, conf map[string]lookout.
 	}
 
 	return comments, nil
+}
+
+func mergeConfigs(global, local map[string]lookout.AnalyzerConfig) map[string]lookout.AnalyzerConfig {
+	if local == nil {
+		return global
+	}
+
+	if global == nil {
+		return local
+	}
+
+	merged := make(map[string]lookout.AnalyzerConfig)
+	for k, v := range global {
+		merged[k] = v
+	}
+
+	for k, v := range local {
+		if globalV, ok := merged[k]; ok {
+			globalV.Settings = mergeMaps(globalV.Settings, v.Settings)
+			merged[k] = globalV
+			continue
+		}
+
+		merged[k] = v
+	}
+
+	return merged
 }
 
 func mergeSettings(global, local map[string]interface{}) map[string]interface{} {

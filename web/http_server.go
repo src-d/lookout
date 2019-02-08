@@ -37,6 +37,11 @@ func NewHTTPServer(auth *Auth, gh *GitHub, static *Static) *HTTPServer {
 	r.With(auth.Middleware).Route("/api", func(r chi.Router) {
 		r.Get("/me", auth.Me)
 		r.Get("/orgs", gh.Orgs)
+
+		r.Route("/org/{orgName}", func(r chi.Router) {
+			r.Get("/", gh.Org)
+			r.Put("/", gh.UpdateOrg)
+		})
 	})
 	r.Get("/static/*", static.ServeHTTP)
 	r.Get("/*", static.ServeHTTP)

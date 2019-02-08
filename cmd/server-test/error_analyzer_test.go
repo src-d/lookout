@@ -11,15 +11,16 @@ import (
 	"github.com/src-d/lookout"
 
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 type errAnalyzer struct{}
 
-func (a *errAnalyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent) (*lookout.EventResponse, error) {
+func (a *errAnalyzer) NotifyReviewEvent(ctx context.Context, e *pb.ReviewEvent) (*lookout.EventResponse, error) {
 	return nil, errors.New("review error")
 }
 
-func (a *errAnalyzer) NotifyPushEvent(ctx context.Context, e *lookout.PushEvent) (*lookout.EventResponse, error) {
+func (a *errAnalyzer) NotifyPushEvent(ctx context.Context, e *pb.PushEvent) (*lookout.EventResponse, error) {
 	return nil, errors.New("push error")
 }
 

@@ -446,21 +446,89 @@ zCtJLcpLzInPTLHm4nL29/X1DLHmAgQAAP//0vNoAUcAAAA=
 `,
 	},
 
+	"/store/migrations/1547744983_organizations.down.sql": {
+		name:    "1547744983_organizations.down.sql",
+		local:   "store/migrations/1547744983_organizations.down.sql",
+		size:    42,
+		modtime: 1,
+		compressed: `
+H4sIAAAAAAAC/3Jydff0s+bicgnyD1AIcXTycVXIL0pPzMusSizJzM+z5uJy9vf19Qyx5gIEAAD//3ZC
+3tcqAAAA
+`,
+	},
+
+	"/store/migrations/1547744983_organizations.up.sql": {
+		name:    "1547744983_organizations.up.sql",
+		local:   "store/migrations/1547744983_organizations.up.sql",
+		size:    155,
+		modtime: 1,
+		compressed: `
+H4sIAAAAAAAC/2TKwQoCIRCA4bPzFHMs2Dfw5C4SkrohdthTSNoyEGOIG9HTdwui6/9/oz4YLwGmoFXU
+GNVoNda2JqZ36lQZdyAo47ZRRj9H9Gdr8RSMU2HBo14GEI9Wn5RLw15e/YsGEMS9NE73C+W/d618o/U3
+w14CwDQ7Z6KETwAAAP//+lQfNZsAAAA=
+`,
+	},
+
+	"/store/migrations/1548157581_organizations_constraints.down.sql": {
+		name:    "1548157581_organizations_constraints.down.sql",
+		local:   "store/migrations/1548157581_organizations_constraints.down.sql",
+		size:    40,
+		modtime: 1,
+		compressed: `
+H4sIAAAAAAAC/3IJ8g9Q8PRzcY1QyC9KT8zLrEosyczPi0/Ozy3IL84sSY0vyE6ttOYCBAAA//+4y7zd
+KAAAAA==
+`,
+	},
+
+	"/store/migrations/1548157581_organizations_constraints.up.sql": {
+		name:    "1548157581_organizations_constraints.up.sql",
+		local:   "store/migrations/1548157581_organizations_constraints.up.sql",
+		size:    218,
+		modtime: 1,
+		compressed: `
+H4sIAAAAAAAC/3SNsW7CMBRF5/or7thGqfIBnarWQ5ZURURiix72IzzFsS3bQYSvR8oEA/O955ymwhg+
+J3KOrjCJqbAFQSyWRSxikpnSionXGseloJwZFKMTQ0WChwujGJApWVGGnLbDAwXJeI8pXMRyqiG+cPLk
+BrEfqBqlfnb6e6/Rd+1/r9F2v/qAkEbyctsCgwlzDFkKD3HiVb39dU/7K/mXugcAAP//av1XvtoAAAA=
+`,
+	},
+
+	"/store/migrations/1548435439_event_wrappers.down.sql": {
+		name:    "1548435439_event_wrappers.down.sql",
+		local:   "store/migrations/1548435439_event_wrappers.down.sql",
+		size:    69,
+		modtime: 1,
+		compressed: `
+H4sIAAAAAAAC/3Jydff0s+bicvQJcQ1SCHF08nFVKCgtzohPLUvNK1FwCfIPUHD29wn19VPIL0pPzMus
+SizJzM+Lz0yx5uJy9vf19Qyx5gIEAAD//5tdm8pFAAAA
+`,
+	},
+
+	"/store/migrations/1548435439_event_wrappers.up.sql": {
+		name:    "1548435439_event_wrappers.up.sql",
+		local:   "store/migrations/1548435439_event_wrappers.up.sql",
+		size:    82,
+		modtime: 1,
+		compressed: `
+H4sIAAAAAAAC/wTAwQoCIRAG4Ps8xf8entxdCWEcIcazCEl50agpoqffbwuXKI7Is4Yr1G8c8Py8H7V/
++zT448CeuSTBet3bHP9mY806brD+M0hWSGF2RHtOKaqjMwAA//8FYkZlUgAAAA==
+`,
+	},
+
 	"/store/migrations/lock.json": {
 		name:    "lock.json",
 		local:   "store/migrations/lock.json",
-		size:    7731,
+		size:    8751,
 		modtime: 1,
 		compressed: `
-H4sIAAAAAAAC/+xZwY6bQAy95ytGnPcLcu2xUlRV21NVIQMO62rGQ2c8adlV/r2C7qaBQNqu1Gagc4kQ
-luP3jMfPmKeNUtk9FBp9tlUfN0op9dT/KpXtwGC2VVlpjUGW7O7F8MbqYPinx7nXwJOqk1N//75t+vsh
-jC3vHBlw7Vtss60SF3BgfY97dMhl58xB64FxZ2UXtJ7y+8D0JXROe9AeT5bj3XXYpUMQrHKQafhCBr2A
-aeTxCos+5i1phKZaAw2HB8KvOR6QJX9lRV0ncR725TyMIw/+/HQGnov8zHScycYlglemY08aZ54nfpOY
-H6QmnkFOLFijixn8ZXKXkvbS8p6qPt4k/oJq4qgZAINuH8f1EU3+n68+bc64XIhoE/zDqJOsXke9gAS/
-zFPTOHugKtqa+wX6rqE6Bj2rl9E3rXWMYN3oTOKX2ngr8kJcSr5wHr0E1sGBkOVpEp+95SJmDgV4XCj0
-B4QqVui/Jd6TLwJJvpMA/kUCPjfoauzfRafbrrUagWMm4W1w5VK7Vp/+hWJPgpcEL+0+V7P7FHA13mb5
-+SP0v9t+/sk8NsKWvkuks5k2RP/LgOywsZ7EunaWQvyLCQ6mmKugCNAPm/Gmuzp+DwAA//+IbZL/Mx4A
-AA==
+H4sIAAAAAAAC/+xZzW7bMAy+5ykEn/sEue44IBiG7jQMhmzTLgeJ8iQqm1Pk3Qe7bWY7drYVWyulugSG
+CYbfR/HP4v1GiOxWFgpcthWfN0IIcT/8CpHtpIZsK7LSaA3E2c2T4J1RXtMvjbHWRBOrk9Lw/rZrh/fe
+zyUfLGppu/fQZVvB1sNE+hFqsEBlr0xeqYlwZ3jnlVrS+0T4zfdKtVQOTpLjzWXYpQXJUOWSl+EzanAs
+dcuHCywGm69Jw7fVNdCwsEf4nsMeiPNnRtRlEmOzT/kwtzz581MOPAb5SHRc8cY5gme6o0YFK+cJPzjk
+g1RIK8iRGBqwIYM/d24sbi8N1VgN9hbxF9ggBc1AklTdYR4fwfj/8enLZsTlrIka20jCg2Q09HY6aWvN
+HqtgT+436PuyZEmq1a4TReo3MadN693drAFffdI4luxdnBGXEj59ufyLuqU1sot1XqnQMVLJeeQ8HtqH
+t9OhZULiqzNUhMyhkA4ihX4HsooU+njaDbeY/tEEsngJkGaQ1MX/IwGXa7ANDPdQy73DGAWSQibhjLdl
+rKV3cH+k2FPXTl077T2uZu/B0jbwOouPB9Mvt/n4m3lshi3tJFNupmuutzIgW2iNQza2W6UQ/u0KeV2s
+RVAA6KfFeNM/HX8GAAD//8vlmYAvIgAA
 `,
 	},
 
@@ -494,6 +562,12 @@ var _escDirs = map[string][]os.FileInfo{
 		_escData["/store/migrations/1537528735_migrate_review_event_id.up.sql"],
 		_escData["/store/migrations/1539095669_delete_old_internal_id.down.sql"],
 		_escData["/store/migrations/1539095669_delete_old_internal_id.up.sql"],
+		_escData["/store/migrations/1547744983_organizations.down.sql"],
+		_escData["/store/migrations/1547744983_organizations.up.sql"],
+		_escData["/store/migrations/1548157581_organizations_constraints.down.sql"],
+		_escData["/store/migrations/1548157581_organizations_constraints.up.sql"],
+		_escData["/store/migrations/1548435439_event_wrappers.down.sql"],
+		_escData["/store/migrations/1548435439_event_wrappers.up.sql"],
 		_escData["/store/migrations/lock.json"],
 	},
 }

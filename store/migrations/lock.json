@@ -81,6 +81,43 @@
       ]
     },
     {
+      "Name": "organization",
+      "Columns": [
+        {
+          "Name": "id",
+          "Type": "uuid",
+          "PrimaryKey": true,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "provider",
+          "Type": "text",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "internal_id",
+          "Type": "text",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "config",
+          "Type": "text",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        }
+      ]
+    },
+    {
       "Name": "push_event",
       "Columns": [
         {
@@ -158,6 +195,14 @@
         {
           "Name": "head",
           "Type": "jsonb",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true,
+          "Unique": false
+        },
+        {
+          "Name": "organization_id",
+          "Type": "text",
           "PrimaryKey": false,
           "Reference": null,
           "NotNull": true,

@@ -23,6 +23,16 @@ type CommentOperator interface {
 	Posted(context.Context, lookout.Event, *lookout.Comment) (bool, error)
 }
 
+// OrganizationOperator manages persistence of default config for organizations
+type OrganizationOperator interface {
+	// Save persists the given config, updating the current one if it exists
+	// for the given (provider, orgID)
+	Save(ctx context.Context, provider string, orgID string, config string) error
+	// Config returns the stored config for the given (provider, orgID). If there
+	// are no records in the DB, it returns "" without error.
+	Config(ctx context.Context, provider string, orgID string) (string, error)
+}
+
 // NoopEventOperator satisfies EventOperator interface but does nothing
 type NoopEventOperator struct{}
 
@@ -52,3 +62,21 @@ func (o *NoopCommentOperator) Save(context.Context, lookout.Event, *lookout.Comm
 func (o *NoopCommentOperator) Posted(context.Context, lookout.Event, *lookout.Comment) (bool, error) {
 	return false, nil
 }
+
+// NoopOrganizationOperator satisfies OrganizationOperator interface but does nothing
+type NoopOrganizationOperator struct{}
+
+var _ OrganizationOperator = &NoopOrganizationOperator{}
+
+// Save persists the given config, updating the current one if it exists
+// for the given (provider, orgID)
+func (o *NoopOrganizationOperator) Save(ctx context.Context, provider string, orgID string, config string) error {
+	return nil
+}
+
+// Config returns the stored config for the given (provider, orgID). If there
+// are no records in the DB, it returns "" without error.
+func (o *NoopOrganizationOperator) Config(ctx context.Context, provider string, orgID string) (string, error) {
+	return "", nil
+}
+

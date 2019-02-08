@@ -7,22 +7,23 @@ import (
 
 	fixtures "github.com/src-d/lookout-test-fixtures"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 var (
 	longLineFixture = fixtures.GetAll()[0]
 
-	mockEventA = ReviewEvent{
+	mockEventA = ReviewEvent{ReviewEvent: pb.ReviewEvent{
 		Provider:       "github",
 		InternalID:     "1234",
 		CommitRevision: *longLineFixture.GetCommitRevision(),
-	}
+	}}
 
-	mockEventB = PushEvent{
+	mockEventB = PushEvent{PushEvent: pb.PushEvent{
 		Provider:       "github",
 		InternalID:     "5678",
 		CommitRevision: *longLineFixture.GetCommitRevision(),
-	}
+	}}
 )
 
 func TestCachedHandler(t *testing.T) {

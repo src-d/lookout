@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
+
 	"github.com/google/go-github/github"
 	"github.com/gregjones/httpcache"
 	"github.com/src-d/lookout"
@@ -27,40 +29,44 @@ var (
 
 var (
 	mockEvent = &lookout.ReviewEvent{
-		Provider: Provider,
-		CommitRevision: lookout.CommitRevision{
-			Base: lookout.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/foo/bar",
-				ReferenceName:         base1,
-				Hash:                  hash1,
-			},
-			Head: lookout.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/foo/bar",
-				ReferenceName:         head1,
-				Hash:                  hash2,
-			}}}
+		ReviewEvent: pb.ReviewEvent{
+			Provider: Provider,
+			CommitRevision: lookout.CommitRevision{
+				Base: lookout.ReferencePointer{
+					InternalRepositoryURL: "https://github.com/foo/bar",
+					ReferenceName:         base1,
+					Hash:                  hash1,
+				},
+				Head: lookout.ReferencePointer{
+					InternalRepositoryURL: "https://github.com/foo/bar",
+					ReferenceName:         head1,
+					Hash:                  hash2,
+				}}}}
 
 	badProviderEvent = &lookout.ReviewEvent{
-		Provider: "badprovider",
-		CommitRevision: lookout.CommitRevision{
-			Base: lookout.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/foo/bar",
-			}}}
+		ReviewEvent: pb.ReviewEvent{
+			Provider: "badprovider",
+			CommitRevision: lookout.CommitRevision{
+				Base: lookout.ReferencePointer{
+					InternalRepositoryURL: "https://github.com/foo/bar",
+				}}}}
 
 	noRepoEvent = &lookout.ReviewEvent{
-		Provider: Provider,
-	}
+		ReviewEvent: pb.ReviewEvent{
+			Provider: Provider,
+		}}
 
 	badReferenceEvent = &lookout.ReviewEvent{
-		Provider: Provider,
-		CommitRevision: lookout.CommitRevision{
-			Base: lookout.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/foo/bar",
-			},
-			Head: lookout.ReferencePointer{
-				InternalRepositoryURL: "https://github.com/foo/bar",
-				ReferenceName:         plumbing.ReferenceName("BAD"),
-			}}}
+		ReviewEvent: pb.ReviewEvent{
+			Provider: Provider,
+			CommitRevision: lookout.CommitRevision{
+				Base: lookout.ReferencePointer{
+					InternalRepositoryURL: "https://github.com/foo/bar",
+				},
+				Head: lookout.ReferencePointer{
+					InternalRepositoryURL: "https://github.com/foo/bar",
+					ReferenceName:         plumbing.ReferenceName("BAD"),
+				}}}}
 )
 
 var mockComments = []*lookout.Comment{

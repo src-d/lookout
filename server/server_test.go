@@ -17,53 +17,58 @@ import (
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
-var correctReviewEvent = lookout.ReviewEvent{
-	Provider:    "Mock",
-	InternalID:  "internal-id",
-	IsMergeable: true,
-	Source: lookout.ReferencePointer{
-		InternalRepositoryURL: "file:///test",
-		ReferenceName:         "feature",
-		Hash:                  "source-hash",
-	},
-	Merge: lookout.ReferencePointer{
-		InternalRepositoryURL: "file:///test",
-		ReferenceName:         "merge-branch",
-		Hash:                  "merge-hash",
-	},
-	CommitRevision: lookout.CommitRevision{
-		Base: lookout.ReferencePointer{
-			InternalRepositoryURL: "file:///test",
-			ReferenceName:         "master",
-			Hash:                  "base-hash",
-		},
-		Head: lookout.ReferencePointer{
-			InternalRepositoryURL: "file:///test",
-			ReferenceName:         "master",
-			Hash:                  "head-hash",
-		},
-	},
+func correctReviewEvent() *lookout.ReviewEvent {
+	return &lookout.ReviewEvent{
+		ReviewEvent: pb.ReviewEvent{
+			Provider:    "Mock",
+			InternalID:  "internal-id",
+			IsMergeable: true,
+			Source: lookout.ReferencePointer{
+				InternalRepositoryURL: "file:///test",
+				ReferenceName:         "feature",
+				Hash:                  "source-hash",
+			},
+			Merge: lookout.ReferencePointer{
+				InternalRepositoryURL: "file:///test",
+				ReferenceName:         "merge-branch",
+				Hash:                  "merge-hash",
+			},
+			CommitRevision: lookout.CommitRevision{
+				Base: lookout.ReferencePointer{
+					InternalRepositoryURL: "file:///test",
+					ReferenceName:         "master",
+					Hash:                  "base-hash",
+				},
+				Head: lookout.ReferencePointer{
+					InternalRepositoryURL: "file:///test",
+					ReferenceName:         "master",
+					Hash:                  "head-hash",
+				}}}}
 }
-var correctPushEvent = lookout.PushEvent{
-	Provider:   "Mock",
-	InternalID: "internal-id",
-	CommitRevision: lookout.CommitRevision{
-		Base: lookout.ReferencePointer{
-			InternalRepositoryURL: "file:///test",
-			ReferenceName:         "master",
-			Hash:                  "base-hash",
-		},
-		Head: lookout.ReferencePointer{
-			InternalRepositoryURL: "file:///test",
-			ReferenceName:         "master",
-			Hash:                  "head-hash",
-		},
-	},
+
+func correctPushEvent() *lookout.PushEvent {
+	return &lookout.PushEvent{
+		PushEvent: pb.PushEvent{
+			Provider:   "Mock",
+			InternalID: "internal-id",
+			CommitRevision: lookout.CommitRevision{
+				Base: lookout.ReferencePointer{
+					InternalRepositoryURL: "file:///test",
+					ReferenceName:         "master",
+					Hash:                  "base-hash",
+				},
+				Head: lookout.ReferencePointer{
+					InternalRepositoryURL: "file:///test",
+					ReferenceName:         "master",
+					Hash:                  "head-hash",
+				}}}}
 }
+
 var globalConfig = lookout.AnalyzerConfig{
 	Name: "test",
 	Settings: map[string]interface{}{
-		"key_from_global": 1,
+		"global_key": "global",
+		"reused_key": "global",
 	},
 }
 
@@ -80,7 +85,7 @@ func (s *ServerTestSuite) TestReview() {
 
 	watcher, poster := setupMockedServerDefault()
 
-	reviewEvent := &correctReviewEvent
+	reviewEvent := correctReviewEvent()
 
 	err := watcher.Send(reviewEvent)
 	require.Nil(err)
@@ -98,7 +103,7 @@ func (s *ServerTestSuite) TestPush() {
 
 	watcher, poster := setupMockedServerDefault()
 
-	pushEvent := &correctPushEvent
+	pushEvent := correctPushEvent()
 
 	err := watcher.Send(pushEvent)
 	require.Nil(err)
@@ -125,7 +130,7 @@ func (s *ServerTestSuite) TestReviewTimeout() {
 		ReviewTimeout:  reviewTimeout,
 	})
 
-	reviewEvent := &correctReviewEvent
+	reviewEvent := correctReviewEvent()
 
 	err := watcher.Send(reviewEvent)
 	require.Nil(err)
@@ -134,7 +139,7 @@ func (s *ServerTestSuite) TestReviewTimeout() {
 	// shouldn't comment anything as goes timeout
 	require.Len(comments, 0)
 
-	pushEvent := &correctPushEvent
+	pushEvent := correctPushEvent()
 
 	// send other event without timeout
 	err = watcher.Send(pushEvent)
@@ -158,7 +163,7 @@ func (s *ServerTestSuite) TestPushTimeout() {
 		PushTimeout:    pushTimeout,
 	})
 
-	pushEvent := &correctPushEvent
+	pushEvent := correctPushEvent()
 
 	err := watcher.Send(pushEvent)
 	require.Nil(err)
@@ -167,7 +172,7 @@ func (s *ServerTestSuite) TestPushTimeout() {
 	// shouldn't comment anything as goes timeout
 	require.Len(comments, 0)
 
-	reviewEvent := &correctReviewEvent
+	reviewEvent := correctReviewEvent()
 
 	// send other event without timeout
 	err = watcher.Send(reviewEvent)
@@ -186,7 +191,7 @@ func (s *ServerTestSuite) TestPersistedReview() {
 		Persist:        true,
 	})
 
-	reviewEvent := &correctReviewEvent
+	reviewEvent := correctReviewEvent()
 
 	err := watcher.Send(reviewEvent)
 	require.Nil(err)
@@ -229,7 +234,7 @@ func (s *ServerTestSuite) TestReviewDuplicatedComments() {
 		AnalyzerClient: client,
 	})
 
-	reviewEvent := &correctReviewEvent
+	reviewEvent := correctReviewEvent()
 
 	err := watcher.Send(reviewEvent)
 	require.Nil(err)
@@ -265,7 +270,7 @@ func (s *ServerTestSuite) TestIncrementalReview() {
 		Persist:        true,
 	})
 
-	reviewEvent := &correctReviewEvent
+	reviewEvent := correctReviewEvent()
 
 	err := watcher.Send(reviewEvent)
 	require.Nil(err)
@@ -298,7 +303,7 @@ func (s *ServerTestSuite) TestAnalyzerConfigDisabled() {
 		},
 	})
 
-	err := watcher.Send(&correctReviewEvent)
+	err := watcher.Send(correctReviewEvent())
 	require.Nil(err)
 
 	comments := poster.PopComments()
@@ -308,55 +313,133 @@ func (s *ServerTestSuite) TestAnalyzerConfigDisabled() {
 	require.Equal(lookout.SuccessAnalysisStatus, status)
 }
 
-func (s *ServerTestSuite) TestMergeConfigWithoutLocal() {
-	require := s.Require()
-
-	client := &AnalyzerClientMock{CommentsBuilder: makeComments}
-	watcher, _ := setupMockedServer(mockedServerParams{
-		AnalyzerClient: client,
-		AnalyzerConfig: &globalConfig,
-	})
-
-	err := watcher.Send(&correctReviewEvent)
-	require.Nil(err)
-
-	es := client.PopReviewEvents()
-	require.Len(es, 1)
-
-	require.Equal(pb.ToStruct(globalConfig.Settings), &es[0].Configuration)
-}
-
-func (s *ServerTestSuite) TestMergeConfigWithLocal() {
-	require := s.Require()
-
+func (s *ServerTestSuite) TestMergeConfig() {
 	fileGetter := &FileGetterMockWithConfig{
 		content: `analyzers:
  - name: mock
    settings:
-     some: value
+     local_key:  local
+     reused_key: local
 `,
 	}
-	client := &AnalyzerClientMock{CommentsBuilder: makeComments}
 
-	watcher, _ := setupMockedServer(mockedServerParams{
-		AnalyzerClient: client,
-		AnalyzerConfig: &globalConfig,
-		FileGetter:     fileGetter,
-	})
-
-	err := watcher.Send(&correctReviewEvent)
-	require.Nil(err)
-
-	es := client.PopReviewEvents()
-	require.Len(es, 1)
-
-	expectedMap := make(map[string]interface{})
-	for k, v := range globalConfig.Settings {
-		expectedMap[k] = v
+	testCases := []struct {
+		name           string
+		AnalyzerConfig *lookout.AnalyzerConfig
+		FileGetter     lookout.FileGetter
+		OrganizationOp store.OrganizationOperator
+		expectedMap    map[string]interface{}
+	}{
+		{
+			name:        "none",
+			expectedMap: map[string]interface{}{},
+		},
+		{
+			name:       "local",
+			FileGetter: fileGetter,
+			expectedMap: map[string]interface{}{
+				"local_key":  "local",
+				"reused_key": "local",
+			},
+		},
+		{
+			name:           "org",
+			OrganizationOp: &OrganizationOperatorMock{},
+			expectedMap: map[string]interface{}{
+				"org_key":    "org",
+				"reused_key": "org",
+			},
+		},
+		{
+			name:           "org,local",
+			FileGetter:     fileGetter,
+			OrganizationOp: &OrganizationOperatorMock{},
+			expectedMap: map[string]interface{}{
+				"local_key":  "local",
+				"org_key":    "org",
+				"reused_key": "local",
+			},
+		},
+		{
+			name:           "global",
+			AnalyzerConfig: &globalConfig,
+			expectedMap: map[string]interface{}{
+				"global_key": "global",
+				"reused_key": "global",
+			},
+		},
+		{
+			name:           "global,local",
+			AnalyzerConfig: &globalConfig,
+			FileGetter:     fileGetter,
+			expectedMap: map[string]interface{}{
+				"global_key": "global",
+				"local_key":  "local",
+				"reused_key": "local",
+			},
+		},
+		{
+			name:           "global,org",
+			AnalyzerConfig: &globalConfig,
+			OrganizationOp: &OrganizationOperatorMock{},
+			expectedMap: map[string]interface{}{
+				"global_key": "global",
+				"org_key":    "org",
+				"reused_key": "org",
+			},
+		},
+		{
+			name:           "global,org,local",
+			AnalyzerConfig: &globalConfig,
+			FileGetter:     fileGetter,
+			OrganizationOp: &OrganizationOperatorMock{},
+			expectedMap: map[string]interface{}{
+				"global_key": "global",
+				"local_key":  "local",
+				"org_key":    "org",
+				"reused_key": "local",
+			},
+		},
 	}
-	expectedMap["some"] = "value"
 
-	require.Equal(pb.ToStruct(expectedMap), &es[0].Configuration)
+	for _, tc := range testCases {
+		s.T().Run(tc.name, func(t *testing.T) {
+			client := &AnalyzerClientMock{CommentsBuilder: makeComments}
+
+			watcher, _ := setupMockedServer(mockedServerParams{
+				AnalyzerClient: client,
+				AnalyzerConfig: tc.AnalyzerConfig,
+				FileGetter:     tc.FileGetter,
+				OrganizationOp: tc.OrganizationOp,
+			})
+
+			t.Run("review", func(t *testing.T) {
+				require := require.New(t)
+
+				err := watcher.Send(correctReviewEvent())
+				require.Nil(err)
+				es := client.PopReviewEvents()
+				require.Len(es, 1)
+
+				require.Equal(
+					pb.ToStruct(tc.expectedMap).GetFields(),
+					es[0].Configuration.GetFields())
+			})
+
+			t.Run("push", func(t *testing.T) {
+				require := require.New(t)
+
+				err := watcher.Send(correctPushEvent())
+				require.Nil(err)
+				es := client.PopPushEvents()
+				require.Len(es, 1)
+
+				require.Equal(
+					pb.ToStruct(tc.expectedMap).GetFields(),
+					es[0].Configuration.GetFields())
+			})
+		})
+	}
 }
 
 func TestServerTestSuite(t *testing.T) {
@@ -420,6 +503,7 @@ type mockedServerParams struct {
 	FileGetter     lookout.FileGetter
 	EventOp        store.EventOperator
 	CommentOp      store.CommentOperator
+	OrganizationOp store.OrganizationOperator
 	ReviewTimeout  time.Duration
 	PushTimeout    time.Duration
 	Persist        bool
@@ -454,14 +538,16 @@ func setupMockedServer(params mockedServerParams) (*WatcherMock, *PosterMock) {
 		analyzerConfig = *params.AnalyzerConfig
 	}
 
-	var eventOp store.EventOperator
-	var commentOp store.CommentOperator
+	eventOp := params.EventOp
+	commentOp := params.CommentOp
+	organizationOp := params.OrganizationOp
+
 	if params.Persist {
 		eventOp = store.NewMemEventOperator()
 		commentOp = store.NewMemCommentOperator()
-	} else {
-		eventOp = &store.NoopEventOperator{}
-		commentOp = &store.NoopCommentOperator{}
+
+		//TODO
+		organizationOp = &store.NoopOrganizationOperator{}
 	}
 
 	analyzers := map[string]lookout.Analyzer{
@@ -471,9 +557,17 @@ func setupMockedServer(params mockedServerParams) (*WatcherMock, *PosterMock) {
 		},
 	}
 
-	srv := NewServer(
-		poster, fileGetter, analyzers, eventOp, commentOp,
-		params.ReviewTimeout, params.PushTimeout)
+	srv := NewServer(Options{
+		Poster:         poster,
+		FileGetter:     fileGetter,
+		Analyzers:      analyzers,
+		EventOp:        eventOp,
+		CommentOp:      commentOp,
+		OrganizationOp: organizationOp,
+		ReviewTimeout:  params.ReviewTimeout,
+		PushTimeout:    params.PushTimeout,
+	})
+
 	watcher.Watch(context.TODO(), srv.HandleEvent)
 
 	return watcher, poster
@@ -546,15 +640,34 @@ func (g *FileGetterMockWithConfig) GetFiles(_ context.Context, req *lookout.File
 	return &NoopFileScanner{}, nil
 }
 
+type OrganizationOperatorMock struct{}
+
+func (o *OrganizationOperatorMock) Save(ctx context.Context, provider string, orgID string, config string) error {
+	return nil
+}
+
+func (o *OrganizationOperatorMock) Config(ctx context.Context, provider string, orgID string) (string, error) {
+	val := `
+analyzers:
+  - name: mock
+    settings:
+      org_key:    org
+      reused_key: org
+`
+	return val, nil
+}
+
+var _ store.OrganizationOperator = &OrganizationOperatorMock{}
+
 type AnalyzerClientMock struct {
-	reviewEvents    []*lookout.ReviewEvent
-	pushEvents      []*lookout.PushEvent
+	reviewEvents    []*pb.ReviewEvent
+	pushEvents      []*pb.PushEvent
 	CommentsBuilder func(ev lookout.Event, from, to lookout.ReferencePointer) []*lookout.Comment
 	ReviewSleep     time.Duration
 	PushSleep       time.Duration
 }
 
-func (a *AnalyzerClientMock) NotifyReviewEvent(ctx context.Context, in *lookout.ReviewEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
+func (a *AnalyzerClientMock) NotifyReviewEvent(ctx context.Context, in *pb.ReviewEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
 	if a.ReviewSleep > 0 {
 		select {
 		case <-time.After(a.ReviewSleep):
@@ -565,11 +678,12 @@ func (a *AnalyzerClientMock) NotifyReviewEvent(ctx context.Context, in *lookout.
 
 	a.reviewEvents = append(a.reviewEvents, in)
 	return &lookout.EventResponse{
-		Comments: a.CommentsBuilder(in, in.CommitRevision.Base, in.CommitRevision.Head),
+		Comments: a.CommentsBuilder(&lookout.ReviewEvent{ReviewEvent: *in},
+			in.CommitRevision.Base, in.CommitRevision.Head),
 	}, nil
 }
 
-func (a *AnalyzerClientMock) NotifyPushEvent(ctx context.Context, in *lookout.PushEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
+func (a *AnalyzerClientMock) NotifyPushEvent(ctx context.Context, in *pb.PushEvent, opts ...grpc.CallOption) (*lookout.EventResponse, error) {
 	if a.PushSleep > 0 {
 		select {
 		case <-time.After(a.PushSleep):
@@ -580,19 +694,20 @@ func (a *AnalyzerClientMock) NotifyPushEvent(ctx context.Context, in *lookout.Pu
 
 	a.pushEvents = append(a.pushEvents, in)
 	return &lookout.EventResponse{
-		Comments: a.CommentsBuilder(in, in.CommitRevision.Base, in.CommitRevision.Head),
+		Comments: a.CommentsBuilder(&lookout.PushEvent{PushEvent: *in},
+			in.CommitRevision.Base, in.CommitRevision.Head),
 	}, nil
 }
 
-func (a *AnalyzerClientMock) PopReviewEvents() []*lookout.ReviewEvent {
+func (a *AnalyzerClientMock) PopReviewEvents() []*pb.ReviewEvent {
 	res := a.reviewEvents[:]
-	a.reviewEvents = []*lookout.ReviewEvent{}
+	a.reviewEvents = []*pb.ReviewEvent{}
 	return res
 }
 
-func (a *AnalyzerClientMock) PopPushEvents() []*lookout.PushEvent {
+func (a *AnalyzerClientMock) PopPushEvents() []*pb.PushEvent {
 	res := a.pushEvents[:]
-	a.pushEvents = []*lookout.PushEvent{}
+	a.pushEvents = []*pb.PushEvent{}
 	return res
 }
 

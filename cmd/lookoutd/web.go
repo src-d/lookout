@@ -5,6 +5,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/src-d/lookout/store"
+	"github.com/src-d/lookout/store/models"
+
+	"github.com/src-d/lookout/util/cli"
 	"github.com/src-d/lookout/web"
 	gocli "gopkg.in/src-d/go-cli.v0"
 	log "gopkg.in/src-d/go-log.v1"
@@ -18,6 +22,7 @@ func init() {
 type WebCommand struct {
 	gocli.PlainCommand `name:"web" short-description:"run web server" long-description:"Starts web server for lookoutd"`
 	lookoutdBaseCommand
+	cli.DBOptions
 
 	Host       string `long:"host" env:"LOOKOUT_WEB_HOST" default:"0.0.0.0" description:"IP address to bind the HTTP server"`
 	Port       int    `long:"port" env:"LOOKOUT_WEB_PORT" default:"8080" description:"Port to bind the HTTP server"`
@@ -67,11 +72,21 @@ func (c *WebCommand) Execute(args []string) error {
 		return fmt.Errorf("Missing field in configuration file: web signing_key is required")
 	}
 
-	auth := web.NewAuth(ghConfg.ClientID, ghConfg.ClientSecret, conf.Web.SigningKey)
-	gh := web.GitHub{
-		AppID:      ghConfg.AppID,
-		PrivateKey: ghConfg.PrivateKey,
+	db, err := c.InitDB()
+	if err != nil {
+		return fmt.Errorf("Can't connect to the DB: %s", err)
 	}
+
+	auth := web.NewAuth(ghConfg.ClientID, ghConfg.ClientSecret, conf.Web.SigningKey)
+
+	orgStore := models.NewOrganizationStore(db)
+	orgOp := store.NewDBOrganizationOperator(orgStore)
+	gh := web.GitHub{
+		AppID:          ghConfg.AppID,
+		PrivateKey:     ghConfg.PrivateKey,
+		OrganizationOp: orgOp,
+	}
+
 	static := web.NewStatic("/build/public", c.ServerURL, c.FooterHTML)
 	server := web.NewHTTPServer(auth, &gh, static)
 	addr := fmt.Sprintf("%s:%d", c.Host, c.Port)

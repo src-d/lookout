@@ -46,7 +46,7 @@ func (c *ServeCommand) ExecuteContext(ctx context.Context, args []string) error 
 		return fmt.Errorf("Can't connect to the DB: %s", err)
 	}
 
-	eventOp, commentsOp := c.initDBOperators(db)
+	eventOp, commentsOp, organizationsOp := c.initDBOperators(db)
 
 	analyzers, err := c.initAnalyzers(c.conf)
 	if err != nil {
@@ -73,10 +73,16 @@ func (c *ServeCommand) ExecuteContext(ctx context.Context, args []string) error 
 		return err
 	}
 
-	server := server.NewServer(
-		poster, dataHandler.FileGetter, analyzers,
-		eventOp, commentsOp,
-		c.conf.Timeout.AnalyzerReview, c.conf.Timeout.AnalyzerPush)
+	server := server.NewServer(server.Options{
+		Poster:         poster,
+		FileGetter:     dataHandler.FileGetter,
+		Analyzers:      analyzers,
+		EventOp:        eventOp,
+		CommentOp:      commentsOp,
+		OrganizationOp: organizationsOp,
+		ReviewTimeout:  c.conf.Timeout.AnalyzerReview,
+		PushTimeout:    c.conf.Timeout.AnalyzerPush,
+	})
 
 	startDataServer, stopDataServer := c.initDataServer(dataHandler)
 	go func() {

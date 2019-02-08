@@ -9,6 +9,7 @@ import (
 	"github.com/src-d/lookout"
 
 	"gopkg.in/src-d/go-git.v4/utils/binary"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 type Analyzer struct {
@@ -20,7 +21,7 @@ type Analyzer struct {
 
 var _ lookout.AnalyzerServer = &Analyzer{}
 
-func (a *Analyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent) (
+func (a *Analyzer) NotifyReviewEvent(ctx context.Context, e *pb.ReviewEvent) (
 	*lookout.EventResponse, error) {
 
 	changes, err := a.DataClient.GetChanges(ctx, &lookout.ChangesRequest{
@@ -53,7 +54,7 @@ func (a *Analyzer) NotifyReviewEvent(ctx context.Context, e *lookout.ReviewEvent
 	return resp, nil
 }
 
-func (a *Analyzer) NotifyPushEvent(ctx context.Context, e *lookout.PushEvent) (*lookout.EventResponse, error) {
+func (a *Analyzer) NotifyPushEvent(ctx context.Context, e *pb.PushEvent) (*lookout.EventResponse, error) {
 	resp := &lookout.EventResponse{AnalyzerVersion: a.Version}
 
 	if !a.RequestFilesPush {
