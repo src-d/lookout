@@ -238,10 +238,17 @@ func (s *Server) HandlePush(ctx context.Context, e *lookout.PushEvent, safePosti
 		return err
 	}
 
-	conf, err := s.getConfig(ctx, e)
+	repoConf, err := s.getConfig(ctx, e)
 	if err != nil {
 		return err
 	}
+
+	orgConf, err := s.getOrgConfig(ctx, e)
+	if err != nil {
+		return err
+	}
+
+	conf := mergeConfigs(orgConf, repoConf)
 
 	s.status(ctx, e, lookout.PendingAnalysisStatus)
 
