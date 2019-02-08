@@ -1,3 +1,9 @@
+branches:
+  only:
+  - master
+  - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+  - /^dummy-v\d+\.\d+(\.\d+)?(-\S*)?$/
+
 language: go
 
 sudo: required
