@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	kallax "gopkg.in/src-d/go-kallax.v1"
+	"gopkg.in/src-d/go-kallax.v1"
 	"gopkg.in/src-d/go-kallax.v1/types"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
