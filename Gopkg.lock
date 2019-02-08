@@ -723,12 +723,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:251a6672526e992d31a9db679a7aa0a2d19b96f95af3417d237d65135ccd0fef"
+  digest = "1:287650d5cb3abfeae85442acb7a4f4e19ac5882486e1d11d400273d50381e4b9"
   name = "gopkg.in/src-d/go-git-fixtures.v3"
   packages = ["."]
   pruneopts = "T"
-  revision = "a29d269c3be65e4d1b20c29133c74e0551e1aa5d"
-  version = "v3.1.0"
+  revision = "49a975e8b44a25af2e567da5982bb709d574e61c"
+  version = "v3.3.0"
 
 [[projects]]
   digest = "1:8225fd93ba0a18906b05a2ab52808349968f11a8c9c4be27001c2d10dbf781ef"
