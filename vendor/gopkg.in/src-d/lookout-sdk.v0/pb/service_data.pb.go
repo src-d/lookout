@@ -27,18 +27,22 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
+// File is a repository file.
 type File struct {
 	// File path.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// POSIX-style file mode.
 	Mode uint32 `protobuf:"varint,2,opt,name=mode,proto3" json:"mode,omitempty"`
-	// Hash of the file contents.
+	// SHA1 hash of the file contents.
 	Hash string `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"`
-	// Raw content of the file.
+	// Raw content of the file. It will be empty if WantContents was not set in
+	// the request.
 	Content []byte `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
-	// UAST.
+	// UAST is a Babelfish v1 UAST of the file contents. It will be empty if
+	// WantUAST was not set in the request.
 	UAST *uast.Node `protobuf:"bytes,5,opt,name=uast,proto3" json:"uast,omitempty"`
-	// Programming/data/markup language of the file.
+	// Programming/data/markup language of the file as returned by enry. It will
+	// be empty unless WantLanguage or WantUAST were set in the request.
 	Language string `protobuf:"bytes,6,opt,name=language,proto3" json:"language,omitempty"`
 }
 
@@ -46,7 +50,7 @@ func (m *File) Reset()         { *m = File{} }
 func (m *File) String() string { return proto.CompactTextString(m) }
 func (*File) ProtoMessage()    {}
 func (*File) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_data_bf480d1e54cbad0a, []int{0}
+	return fileDescriptor_service_data_8336abc41c19202a, []int{0}
 }
 func (m *File) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -75,8 +79,13 @@ func (m *File) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_File proto.InternalMessageInfo
 
+// Change contains two versions of a File in a revision range.
 type Change struct {
+	// Base is the file version at the base of the revision range. It will be
+	// empty for new files.
 	Base *File `protobuf:"bytes,1,opt,name=base,proto3" json:"base,omitempty"`
+	// Head is the file version at the head of the revision range. It will be
+	// empty for deleted files.
 	Head *File `protobuf:"bytes,2,opt,name=head,proto3" json:"head,omitempty"`
 }
 
@@ -84,7 +93,7 @@ func (m *Change) Reset()         { *m = Change{} }
 func (m *Change) String() string { return proto.CompactTextString(m) }
 func (*Change) ProtoMessage()    {}
 func (*Change) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_data_bf480d1e54cbad0a, []int{1}
+	return fileDescriptor_service_data_8336abc41c19202a, []int{1}
 }
 func (m *Change) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -113,23 +122,39 @@ func (m *Change) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Change proto.InternalMessageInfo
 
+// ChangesRequest defines a request of Changes to the Data service.
 type ChangesRequest struct {
-	Base             *ReferencePointer `protobuf:"bytes,1,opt,name=base,proto3" json:"base,omitempty"`
-	Head             *ReferencePointer `protobuf:"bytes,2,opt,name=head,proto3" json:"head,omitempty"`
-	IncludePattern   string            `protobuf:"bytes,3,opt,name=include_pattern,json=includePattern,proto3" json:"include_pattern,omitempty"`
-	ExcludePattern   string            `protobuf:"bytes,4,opt,name=exclude_pattern,json=excludePattern,proto3" json:"exclude_pattern,omitempty"`
-	ExcludeVendored  bool              `protobuf:"varint,5,opt,name=exclude_vendored,json=excludeVendored,proto3" json:"exclude_vendored,omitempty"`
-	WantContents     bool              `protobuf:"varint,6,opt,name=want_contents,json=wantContents,proto3" json:"want_contents,omitempty"`
-	WantUAST         bool              `protobuf:"varint,7,opt,name=want_uast,json=wantUast,proto3" json:"want_uast,omitempty"`
-	WantLanguage     bool              `protobuf:"varint,8,opt,name=want_language,json=wantLanguage,proto3" json:"want_language,omitempty"`
-	IncludeLanguages []string          `protobuf:"bytes,9,rep,name=include_languages,json=includeLanguages,proto3" json:"include_languages,omitempty"`
+	// Base of the revision range.
+	Base *ReferencePointer `protobuf:"bytes,1,opt,name=base,proto3" json:"base,omitempty"`
+	// Head of the revision range.
+	Head *ReferencePointer `protobuf:"bytes,2,opt,name=head,proto3" json:"head,omitempty"`
+	// IncludePattern is a regexp. Only the files with matching file paths will
+	// be included in the response.
+	IncludePattern string `protobuf:"bytes,3,opt,name=include_pattern,json=includePattern,proto3" json:"include_pattern,omitempty"`
+	// ExcludePattern is a regexp. Any files with matching file paths will be
+	// excluded from the response.
+	ExcludePattern string `protobuf:"bytes,4,opt,name=exclude_pattern,json=excludePattern,proto3" json:"exclude_pattern,omitempty"`
+	// ExcludeVendored will exclude any verdored file from the response. The
+	// list of paths considered as vendor is available at:
+	// https://github.com/github/linguist/blob/master/lib/linguist/vendor.yml
+	ExcludeVendored bool `protobuf:"varint,5,opt,name=exclude_vendored,json=excludeVendored,proto3" json:"exclude_vendored,omitempty"`
+	// WantContents will fill the response file Content.
+	WantContents bool `protobuf:"varint,6,opt,name=want_contents,json=wantContents,proto3" json:"want_contents,omitempty"`
+	// WantUAST will fill the response file UAST and Language.
+	WantUAST bool `protobuf:"varint,7,opt,name=want_uast,json=wantUast,proto3" json:"want_uast,omitempty"`
+	// WantLanguage will fill the response file Language.
+	WantLanguage bool `protobuf:"varint,8,opt,name=want_language,json=wantLanguage,proto3" json:"want_language,omitempty"`
+	// IncludeLanguages will filter files by language. The language names are
+	// case insensitive. The list of language names is available at
+	// https://github.com/github/linguist/blob/master/lib/linguist/languages.yml
+	IncludeLanguages []string `protobuf:"bytes,9,rep,name=include_languages,json=includeLanguages,proto3" json:"include_languages,omitempty"`
 }
 
 func (m *ChangesRequest) Reset()         { *m = ChangesRequest{} }
 func (m *ChangesRequest) String() string { return proto.CompactTextString(m) }
 func (*ChangesRequest) ProtoMessage()    {}
 func (*ChangesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_data_bf480d1e54cbad0a, []int{2}
+	return fileDescriptor_service_data_8336abc41c19202a, []int{2}
 }
 func (m *ChangesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -158,15 +183,29 @@ func (m *ChangesRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ChangesRequest proto.InternalMessageInfo
 
+// FilesRequest defines a request of Files to the Data service.
 type FilesRequest struct {
-	Revision        *ReferencePointer `protobuf:"bytes,1,opt,name=revision,proto3" json:"revision,omitempty"`
-	IncludePattern  string            `protobuf:"bytes,2,opt,name=include_pattern,json=includePattern,proto3" json:"include_pattern,omitempty"`
-	ExcludePattern  string            `protobuf:"bytes,3,opt,name=exclude_pattern,json=excludePattern,proto3" json:"exclude_pattern,omitempty"`
-	ExcludeVendored bool              `protobuf:"varint,4,opt,name=exclude_vendored,json=excludeVendored,proto3" json:"exclude_vendored,omitempty"`
-	WantContents    bool              `protobuf:"varint,5,opt,name=want_contents,json=wantContents,proto3" json:"want_contents,omitempty"`
-	WantUAST        bool              `protobuf:"varint,6,opt,name=want_uast,json=wantUast,proto3" json:"want_uast,omitempty"`
-	// WantLanguage set to true if UAST was requested
-	WantLanguage     bool     `protobuf:"varint,7,opt,name=want_language,json=wantLanguage,proto3" json:"want_language,omitempty"`
+	// Revision of the file.
+	Revision *ReferencePointer `protobuf:"bytes,1,opt,name=revision,proto3" json:"revision,omitempty"`
+	// IncludePattern is a regexp. Only the files with matching file paths will
+	// be included in the response.
+	IncludePattern string `protobuf:"bytes,2,opt,name=include_pattern,json=includePattern,proto3" json:"include_pattern,omitempty"`
+	// ExcludePattern is a regexp. Any files with matching file paths will be
+	// excluded from the response.
+	ExcludePattern string `protobuf:"bytes,3,opt,name=exclude_pattern,json=excludePattern,proto3" json:"exclude_pattern,omitempty"`
+	// ExcludeVendored will exclude any verdored file from the response. The
+	// list of paths considered as vendor is available at:
+	// https://github.com/github/linguist/blob/master/lib/linguist/vendor.yml
+	ExcludeVendored bool `protobuf:"varint,4,opt,name=exclude_vendored,json=excludeVendored,proto3" json:"exclude_vendored,omitempty"`
+	// WantContents will fill the response file Content.
+	WantContents bool `protobuf:"varint,5,opt,name=want_contents,json=wantContents,proto3" json:"want_contents,omitempty"`
+	// WantUAST will fill the response file UAST and Language.
+	WantUAST bool `protobuf:"varint,6,opt,name=want_uast,json=wantUast,proto3" json:"want_uast,omitempty"`
+	// WantLanguage will fill the response file Language.
+	WantLanguage bool `protobuf:"varint,7,opt,name=want_language,json=wantLanguage,proto3" json:"want_language,omitempty"`
+	// IncludeLanguages will filter files by language. The language names are
+	// case insensitive. The list of language names is available at
+	// https://github.com/github/linguist/blob/master/lib/linguist/languages.yml
 	IncludeLanguages []string `protobuf:"bytes,8,rep,name=include_languages,json=includeLanguages,proto3" json:"include_languages,omitempty"`
 }
 
@@ -174,7 +213,7 @@ func (m *FilesRequest) Reset()         { *m = FilesRequest{} }
 func (m *FilesRequest) String() string { return proto.CompactTextString(m) }
 func (*FilesRequest) ProtoMessage()    {}
 func (*FilesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_data_bf480d1e54cbad0a, []int{3}
+	return fileDescriptor_service_data_8336abc41c19202a, []int{3}
 }
 func (m *FilesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -222,7 +261,9 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type DataClient interface {
+	// GetChanges returns a stream of Changes
 	GetChanges(ctx context.Context, in *ChangesRequest, opts ...grpc.CallOption) (Data_GetChangesClient, error)
+	// GetFiles returns a stream of Files
 	GetFiles(ctx context.Context, in *FilesRequest, opts ...grpc.CallOption) (Data_GetFilesClient, error)
 }
 
@@ -300,7 +341,9 @@ func (x *dataGetFilesClient) Recv() (*File, error) {
 
 // DataServer is the server API for Data service.
 type DataServer interface {
+	// GetChanges returns a stream of Changes
 	GetChanges(*ChangesRequest, Data_GetChangesServer) error
+	// GetFiles returns a stream of Files
 	GetFiles(*FilesRequest, Data_GetFilesServer) error
 }
 
@@ -1792,10 +1835,10 @@ var (
 )
 
 func init() {
-	proto.RegisterFile("lookout/sdk/service_data.proto", fileDescriptor_service_data_bf480d1e54cbad0a)
+	proto.RegisterFile("lookout/sdk/service_data.proto", fileDescriptor_service_data_8336abc41c19202a)
 }
 
-var fileDescriptor_service_data_bf480d1e54cbad0a = []byte{
+var fileDescriptor_service_data_8336abc41c19202a = []byte{
 	// 615 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x94, 0xc1, 0x6e, 0xd3, 0x30,
 	0x18, 0xc7, 0x9b, 0x36, 0xeb, 0x5c, 0xaf, 0x1b, 0xc3, 0x42, 0x22, 0xaa, 0xa6, 0xb4, 0x8c, 0x03,

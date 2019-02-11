@@ -89,6 +89,7 @@ func DialContext(ctx context.Context, target string, opts ...grpc.DialOption) (*
 			grpc.MaxCallRecvMsgSize(maxMessageSize),
 			grpc.MaxCallSendMsgSize(maxMessageSize),
 		),
+		grpc.WithInsecure(),
 	)
 
 	return grpc.DialContext(ctx, target, opts...)

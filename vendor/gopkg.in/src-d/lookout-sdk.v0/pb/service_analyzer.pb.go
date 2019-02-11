@@ -26,16 +26,20 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
+// EventResponse contains the results of a Review or Push event.
 type EventResponse struct {
-	AnalyzerVersion string     `protobuf:"bytes,1,opt,name=analyzer_version,json=analyzerVersion,proto3" json:"analyzer_version,omitempty"`
-	Comments        []*Comment `protobuf:"bytes,2,rep,name=comments,proto3" json:"comments,omitempty"`
+	// AnalyzerVersion must be set to the current analyzer version. Used for
+	// logging.
+	AnalyzerVersion string `protobuf:"bytes,1,opt,name=analyzer_version,json=analyzerVersion,proto3" json:"analyzer_version,omitempty"`
+	// Comments to post as the analysis result.
+	Comments []*Comment `protobuf:"bytes,2,rep,name=comments,proto3" json:"comments,omitempty"`
 }
 
 func (m *EventResponse) Reset()         { *m = EventResponse{} }
 func (m *EventResponse) String() string { return proto.CompactTextString(m) }
 func (*EventResponse) ProtoMessage()    {}
 func (*EventResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_analyzer_7c2ea649f74307b7, []int{0}
+	return fileDescriptor_service_analyzer_b61e608e8648a938, []int{0}
 }
 func (m *EventResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -81,7 +85,7 @@ func (m *Comment) Reset()         { *m = Comment{} }
 func (m *Comment) String() string { return proto.CompactTextString(m) }
 func (*Comment) ProtoMessage()    {}
 func (*Comment) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_analyzer_7c2ea649f74307b7, []int{1}
+	return fileDescriptor_service_analyzer_b61e608e8648a938, []int{1}
 }
 func (m *Comment) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -127,7 +131,11 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type AnalyzerClient interface {
+	// NotifyReviewEvent returns comments for a ReviewEvent.
 	NotifyReviewEvent(ctx context.Context, in *ReviewEvent, opts ...grpc.CallOption) (*EventResponse, error)
+	// NotifyPushEvent is not expected to return any comments. Its purpose for
+	// now is to notify the analyzer of a new push to a repository, that could
+	// be used to trigger training tasks over new contents.
 	NotifyPushEvent(ctx context.Context, in *PushEvent, opts ...grpc.CallOption) (*EventResponse, error)
 }
 
@@ -159,7 +167,11 @@ func (c *analyzerClient) NotifyPushEvent(ctx context.Context, in *PushEvent, opt
 
 // AnalyzerServer is the server API for Analyzer service.
 type AnalyzerServer interface {
+	// NotifyReviewEvent returns comments for a ReviewEvent.
 	NotifyReviewEvent(context.Context, *ReviewEvent) (*EventResponse, error)
+	// NotifyPushEvent is not expected to return any comments. Its purpose for
+	// now is to notify the analyzer of a new push to a repository, that could
+	// be used to trigger training tasks over new contents.
 	NotifyPushEvent(context.Context, *PushEvent) (*EventResponse, error)
 }
 
@@ -722,10 +734,10 @@ var (
 )
 
 func init() {
-	proto.RegisterFile("lookout/sdk/service_analyzer.proto", fileDescriptor_service_analyzer_7c2ea649f74307b7)
+	proto.RegisterFile("lookout/sdk/service_analyzer.proto", fileDescriptor_service_analyzer_b61e608e8648a938)
 }
 
-var fileDescriptor_service_analyzer_7c2ea649f74307b7 = []byte{
+var fileDescriptor_service_analyzer_b61e608e8648a938 = []byte{
 	// 325 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x90, 0xb1, 0x6e, 0xfa, 0x30,
 	0x10, 0xc6, 0x63, 0xe0, 0xff, 0x2f, 0x35, 0x42, 0x14, 0x2f, 0x8d, 0x50, 0x65, 0x45, 0x2c, 0x4d,
