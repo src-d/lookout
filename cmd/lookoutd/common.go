@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/gregjones/httpcache/diskcache"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/provider/github"
 	"github.com/src-d/lookout/provider/json"
@@ -25,7 +26,6 @@ import (
 	"github.com/src-d/lookout/util/cli"
 	"github.com/src-d/lookout/util/grpchelper"
 
-	"github.com/gregjones/httpcache/diskcache"
 	"github.com/jinzhu/copier"
 	"github.com/sanity-io/litter"
 	"google.golang.org/grpc"
@@ -83,6 +83,9 @@ type queueConsumerCommand struct {
 }
 
 var defaultInstallationsSyncInterval = 5 * time.Minute
+
+// diskcachePath is the path used on disk for caching responses
+var diskcachePath = "/tmp/github"
 
 // Config holds the main configuration
 type Config struct {
@@ -188,19 +191,22 @@ func (c *queueConsumerCommand) logConfig(conf Config) {
 }
 
 func (c *lookoutdCommand) initProvider(conf Config) error {
+	os.RemoveAll(diskcachePath)
+	cache := cache.NewValidableCache(diskcache.New(diskcachePath))
+
 	switch c.Provider {
 	case github.Provider:
 		if conf.Providers.Github.PrivateKey != "" || conf.Providers.Github.AppID != 0 {
-			return c.initProviderGithubApp(conf)
+			return c.initProviderGithubApp(conf, cache)
 		}
 
-		return c.initProviderGithubToken(conf)
+		return c.initProviderGithubToken(conf, cache)
 	}
 
 	return nil
 }
 
-func (c *lookoutdCommand) initProviderGithubToken(conf Config) error {
+func (c *lookoutdCommand) initProviderGithubToken(conf Config, cache *cache.ValidableCache) error {
 	noDefaultAuth := c.GithubUser == "" || c.GithubToken == ""
 	defaultConfig := github.ClientConfig{
 		User:  c.GithubUser,
@@ -226,7 +232,6 @@ func (c *lookoutdCommand) initProviderGithubToken(conf Config) error {
 		}
 	}
 
-	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
 	pool, err := github.NewClientPoolFromTokens(repoToConfig, cache, conf.Timeout.GithubRequest)
 	if err != nil {
 		return err
@@ -236,7 +241,7 @@ func (c *lookoutdCommand) initProviderGithubToken(conf Config) error {
 	return nil
 }
 
-func (c *lookoutdCommand) initProviderGithubApp(conf Config) error {
+func (c *lookoutdCommand) initProviderGithubApp(conf Config, cache *cache.ValidableCache) error {
 	if conf.Providers.Github.PrivateKey == "" {
 		return fmt.Errorf("missing GitHub App private key filepath in config")
 	}
@@ -253,7 +258,6 @@ func (c *lookoutdCommand) initProviderGithubApp(conf Config) error {
 		}
 	}
 
-	cache := cache.NewValidableCache(diskcache.New("/tmp/github"))
 	insts, err := github.NewInstallations(
 		conf.Providers.Github.AppID, conf.Providers.Github.PrivateKey,
 		cache, conf.Providers.Github.WatchMinInterval, conf.Timeout.GithubRequest)
