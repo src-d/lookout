@@ -45,7 +45,6 @@ func (c *ServeCommand) Execute(args []string) error {
 	conn, err := grpchelper.DialContext(
 		context.Background(),
 		c.DataServer,
-		grpc.WithInsecure(),
 		grpc.WithDefaultCallOptions(grpc.FailFast(false)),
 	)
 	if err != nil {

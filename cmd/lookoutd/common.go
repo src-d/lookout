@@ -346,7 +346,7 @@ func (c *queueConsumerCommand) startAnalyzer(conf lookout.AnalyzerConfig) (looko
 	}
 
 	ctx := context.Background()
-	conn, err := grpchelper.DialContext(ctx, addr, grpc.WithInsecure())
+	conn, err := grpchelper.DialContext(ctx, addr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a client connection to address '%s' in config for analyzer %s: %s", conf.Addr, conf.Name, err)
 	}
@@ -366,7 +366,7 @@ func (c *queueConsumerCommand) initDataHandler(conf Config) (*lookout.DataServer
 		return nil, err
 	}
 
-	bblfshConn, err := grpchelper.DialContext(context.Background(), c.Bblfshd, grpc.WithInsecure())
+	bblfshConn, err := grpchelper.DialContext(context.Background(), c.Bblfshd)
 	if err != nil {
 		return nil, err
 	}

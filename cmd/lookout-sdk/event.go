@@ -107,7 +107,7 @@ func (c *EventCommand) makeDataServerHandler() (*lookout.DataServerHandler, erro
 	}
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	bblfshConn, err := grpchelper.DialContext(timeoutCtx, grpcAddr, grpc.WithInsecure(), grpc.WithBlock())
+	bblfshConn, err := grpchelper.DialContext(timeoutCtx, grpcAddr, grpc.WithBlock())
 	if err != nil {
 		log.Warningf("bblfshd instance could not be found at %s. No UASTs will be available to analyzers. Error: %s", c.Bblfshd, err)
 		dataService = &noBblfshService{
@@ -185,7 +185,6 @@ func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
 	conn, err := grpchelper.DialContext(
 		timeoutCtx,
 		grpcAddr,
-		grpc.WithInsecure(),
 		grpc.WithBlock(),
 	)
 	if err != nil {
