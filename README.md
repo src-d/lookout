@@ -81,7 +81,7 @@ $ GITHUB_USER=<user> GITHUB_TOKEN=<token> docker-compose up --force-recreate
 
 Once it is running, **source{d} Lookout** will start posting the comments returned by `dummy` analyzer into the pull requests opened at GitHub in the repositories that you configured to be watched.
 
-You can stop it by pressing `ctrl+c`
+You can stop it by pressing `ctrl+c`.
 
 If you want to try **source{d} Lookout** with your own analyzer instead of `dummy` one, you must run it in advance, then [set it into `config.yml`](/docs/configuration.md#analyzers) and then run:
 
