@@ -11,7 +11,6 @@ import (
 
 	"github.com/src-d/lookout/util/grpchelper"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc"
 	"gopkg.in/bblfsh/sdk.v1/protocol"
 	log "gopkg.in/src-d/go-log.v1"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
@@ -47,7 +46,7 @@ func (suite *ProxyIntegrationSuite) TestParseOk() {
 	addr, err := pb.ToGoGrpcAddress("ipv4://localhost:10301")
 	suite.NoError(err)
 
-	bblfshConn, err := grpchelper.DialContext(context.Background(), addr, grpc.WithInsecure())
+	bblfshConn, err := grpchelper.DialContext(context.Background(), addr)
 	suite.NoError(err)
 
 	client := protocol.NewProtocolServiceClient(bblfshConn)

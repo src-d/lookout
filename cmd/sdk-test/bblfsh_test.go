@@ -11,7 +11,6 @@ import (
 	fixtures "github.com/src-d/lookout-test-fixtures"
 	"github.com/src-d/lookout/util/grpchelper"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc"
 	"gopkg.in/bblfsh/sdk.v1/protocol"
 	log "gopkg.in/src-d/go-log.v1"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
@@ -146,7 +145,7 @@ type BbblfshClientAnalyzer struct{}
 
 func (a *BbblfshClientAnalyzer) NotifyReviewEvent(ctx context.Context, e *pb.ReviewEvent) (*lookout.EventResponse, error) {
 	dataServer, _ := pb.ToGoGrpcAddress("ipv4://localhost:10301")
-	bblfshConn, err := grpchelper.DialContext(context.Background(), dataServer, grpc.WithInsecure())
+	bblfshConn, err := grpchelper.DialContext(context.Background(), dataServer)
 	if err != nil {
 		return nil, err
 	}
