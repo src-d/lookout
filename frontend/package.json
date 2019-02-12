@@ -28,7 +28,7 @@
     "not op_mini all"
   ],
   "devDependencies": {
-    "@types/jest": "^23.3.10",
+    "@types/jest": "23.3.10",
     "@types/node": "^10.12.15",
     "@types/react": "^16.7.17",
     "@types/react-dom": "^16.0.11",
