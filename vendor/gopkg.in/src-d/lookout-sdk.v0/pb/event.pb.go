@@ -30,9 +30,9 @@ const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
 // CommitRevision defines a range of commits, from a base to a head.
 type CommitRevision struct {
-	// Base of the revision.
+	// Base of the revision range.
 	Base ReferencePointer `protobuf:"bytes,1,opt,name=base,proto3" json:"base"`
-	// Head of the revision.
+	// Head of the revision range.
 	Head ReferencePointer `protobuf:"bytes,2,opt,name=head,proto3" json:"head"`
 }
 
@@ -40,7 +40,7 @@ func (m *CommitRevision) Reset()         { *m = CommitRevision{} }
 func (m *CommitRevision) String() string { return proto.CompactTextString(m) }
 func (*CommitRevision) ProtoMessage()    {}
 func (*CommitRevision) Descriptor() ([]byte, []int) {
-	return fileDescriptor_event_14ac73e0bd818cbc, []int{0}
+	return fileDescriptor_event_66536adea92194a3, []int{0}
 }
 func (m *CommitRevision) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -69,13 +69,13 @@ func (m *CommitRevision) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CommitRevision proto.InternalMessageInfo
 
-// ReferencePointer is the reference to a git refererence in a repository.
+// ReferencePointer is a pointer to a git refererence in a repository.
 type ReferencePointer struct {
 	// InternalRepositoryURL is the original clone URL, not canonicalized.
 	InternalRepositoryURL string `protobuf:"bytes,1,opt,name=internal_repository_url,json=internalRepositoryUrl,proto3" json:"internal_repository_url,omitempty"`
-	// ReferenceName is the name of the reference pointing.
+	// ReferenceName is the name of the target reference.
 	ReferenceName gopkg_in_src_d_go_git_v4_plumbing.ReferenceName `protobuf:"bytes,2,opt,name=reference_name,json=referenceName,proto3,casttype=gopkg.in/src-d/go-git.v4/plumbing.ReferenceName" json:"reference_name,omitempty"`
-	// Hash is the hash of the reference pointing.
+	// Hash is the full SHA1 of the target reference.
 	Hash string `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"`
 }
 
@@ -83,7 +83,7 @@ func (m *ReferencePointer) Reset()         { *m = ReferencePointer{} }
 func (m *ReferencePointer) String() string { return proto.CompactTextString(m) }
 func (*ReferencePointer) ProtoMessage()    {}
 func (*ReferencePointer) Descriptor() ([]byte, []int) {
-	return fileDescriptor_event_14ac73e0bd818cbc, []int{1}
+	return fileDescriptor_event_66536adea92194a3, []int{1}
 }
 func (m *ReferencePointer) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -118,14 +118,15 @@ type PushEvent struct {
 	Provider string `protobuf:"bytes,1,opt,name=provider,proto3" json:"provider,omitempty"`
 	// InternalId is the internal id for this event at the provider.
 	InternalID string `protobuf:"bytes,2,opt,name=internal_id,json=internalId,proto3" json:"internal_id,omitempty"`
-	// CreateAt is the timestamp of the creation date of the push event.
+	// CreatedAt is the timestamp of the creation date of the push event.
 	CreatedAt time.Time `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3,stdtime" json:"created_at"`
 	// Commits is the number of commits in the push.
 	Commits uint32 `protobuf:"varint,4,opt,name=commits,proto3" json:"commits,omitempty"`
-	// Commits is the number of distinct commits in the push.
+	// DistinctCommits is the number of distinct commits in the push.
 	DistinctCommits uint32 `protobuf:"varint,5,opt,name=distinct_commits,json=distinctCommits,proto3" json:"distinct_commits,omitempty"`
-	// Configuration contains any configuration related to specific analyzer
-	Configuration  types.Struct `protobuf:"bytes,6,opt,name=configuration,proto3" json:"configuration"`
+	// Configuration related to the specific analyzer receiving the PushEvent.
+	Configuration types.Struct `protobuf:"bytes,6,opt,name=configuration,proto3" json:"configuration"`
+	// CommitRevision is the revision range of this push.
 	CommitRevision `protobuf:"bytes,7,opt,name=commit_revision,json=commitRevision,proto3,embedded=commit_revision" json:"commit_revision"`
 }
 
@@ -133,7 +134,7 @@ func (m *PushEvent) Reset()         { *m = PushEvent{} }
 func (m *PushEvent) String() string { return proto.CompactTextString(m) }
 func (*PushEvent) ProtoMessage()    {}
 func (*PushEvent) Descriptor() ([]byte, []int) {
-	return fileDescriptor_event_14ac73e0bd818cbc, []int{2}
+	return fileDescriptor_event_66536adea92194a3, []int{2}
 }
 func (m *PushEvent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -162,13 +163,13 @@ func (m *PushEvent) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_PushEvent proto.InternalMessageInfo
 
-// ReviewEvent represents a Review (PullRequest in case of Github) being created or updated.
+// ReviewEvent represents a Review (pull request in case of GitHub) being created or updated.
 type ReviewEvent struct {
 	// Provider triggering this event.
 	Provider string `protobuf:"bytes,1,opt,name=provider,proto3" json:"provider,omitempty"`
 	// InternalId is the internal id for this event at the provider.
 	InternalID string `protobuf:"bytes,2,opt,name=internal_id,json=internalId,proto3" json:"internal_id,omitempty"`
-	// CreateAt is the timestamp of the creation date of the push event.
+	// CreatedAt is the timestamp of the creation date of the review event.
 	CreatedAt time.Time `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3,stdtime" json:"created_at"`
 	// UpdatedAt is the timestamp of the last modification of the pull request.
 	UpdatedAt time.Time `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3,stdtime" json:"updated_at"`
@@ -178,12 +179,13 @@ type ReviewEvent struct {
 	Source ReferencePointer `protobuf:"bytes,8,opt,name=source,proto3" json:"source"`
 	// Merge reference to the branch and repository where the merged Pull Request is stored.
 	Merge ReferencePointer `protobuf:"bytes,9,opt,name=merge,proto3" json:"merge"`
-	// Configuration contains any configuration related to specific analyzer
+	// Configuration related to the specific analyzer receiving the ReviewEvent.
 	Configuration types.Struct `protobuf:"bytes,10,opt,name=configuration,proto3" json:"configuration"`
 	// RepositoryId is internal provider repository id
 	RepositoryID uint32 `protobuf:"varint,11,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	// Number is internal provider id of review scoped by repository
-	Number         uint32 `protobuf:"varint,12,opt,name=number,proto3" json:"number,omitempty"`
+	Number uint32 `protobuf:"varint,12,opt,name=number,proto3" json:"number,omitempty"`
+	// CommitRevision is the revision range of this review.
 	CommitRevision `protobuf:"bytes,7,opt,name=commit_revision,json=commitRevision,proto3,embedded=commit_revision" json:"commit_revision"`
 }
 
@@ -191,7 +193,7 @@ func (m *ReviewEvent) Reset()         { *m = ReviewEvent{} }
 func (m *ReviewEvent) String() string { return proto.CompactTextString(m) }
 func (*ReviewEvent) ProtoMessage()    {}
 func (*ReviewEvent) Descriptor() ([]byte, []int) {
-	return fileDescriptor_event_14ac73e0bd818cbc, []int{3}
+	return fileDescriptor_event_66536adea92194a3, []int{3}
 }
 func (m *ReviewEvent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1515,9 +1517,9 @@ var (
 	ErrIntOverflowEvent   = fmt.Errorf("proto: integer overflow")
 )
 
-func init() { proto.RegisterFile("lookout/sdk/event.proto", fileDescriptor_event_14ac73e0bd818cbc) }
+func init() { proto.RegisterFile("lookout/sdk/event.proto", fileDescriptor_event_66536adea92194a3) }
 
-var fileDescriptor_event_14ac73e0bd818cbc = []byte{
+var fileDescriptor_event_66536adea92194a3 = []byte{
 	// 651 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x94, 0xcb, 0x6e, 0xd3, 0x4c,
 	0x14, 0xc7, 0xe3, 0x7e, 0x6e, 0x9a, 0x9c, 0x5c, 0x5a, 0x8d, 0xbe, 0x52, 0x13, 0x55, 0x76, 0xc9,
