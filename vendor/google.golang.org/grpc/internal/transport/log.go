@@ -1,5 +1,3 @@
-// +build go1.6,!go1.8
-
 /*
  *
  * Copyright 2017 gRPC authors.
@@ -18,17 +16,29 @@
  *
  */
 
-package naming
+// This file contains wrappers for grpclog functions.
+// The transport package only logs to verbose level 2 by default.
 
-import (
-	"net"
+package transport
 
-	"golang.org/x/net/context"
-)
+import "google.golang.org/grpc/grpclog"
 
-var (
-	lookupHost = func(ctx context.Context, host string) ([]string, error) { return net.LookupHost(host) }
-	lookupSRV  = func(ctx context.Context, service, proto, name string) (string, []*net.SRV, error) {
-		return net.LookupSRV(service, proto, name)
+const logLevel = 2
+
+func infof(format string, args ...interface{}) {
+	if grpclog.V(logLevel) {
+		grpclog.Infof(format, args...)
 	}
-)
+}
+
+func warningf(format string, args ...interface{}) {
+	if grpclog.V(logLevel) {
+		grpclog.Warningf(format, args...)
+	}
+}
+
+func errorf(format string, args ...interface{}) {
+	if grpclog.V(logLevel) {
+		grpclog.Errorf(format, args...)
+	}
+}
