@@ -79,7 +79,7 @@
   version = "v3.3.3"
 
 [[projects]]
-  digest = "1:983cb7d70588854e2706e32c61698bbf0eab4956fca89e86c1c10d7213679a0e"
+  digest = "1:1f05c5d4f7fe7a5ce1c509907a9f367f89e0c23de046263b8e298a7e350d0153"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -89,8 +89,8 @@
     "types",
   ]
   pruneopts = "NUT"
-  revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
-  version = "v1.1.1"
+  revision = "4cbf7e384e768b4e01799441fdf2a706a5635ae7"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:dba2eb731d0aa85da282a1afa4239603ff164856db8ab7e46c21f8a299255fac"
@@ -128,12 +128,12 @@
   revision = "e89373fe6b4a7413d7acd6da1725b83ef713e6e4"
 
 [[projects]]
-  digest = "1:63ede27834b468648817fb80cfb95d40abfc61341f89cb7a0d6779b6aa955425"
+  digest = "1:ff98bd3732a981a61d88dce04d0ab8e05e5ad46fe67cbc2e107fcb8250ba68f1"
   name = "github.com/google/go-github"
   packages = ["github"]
   pruneopts = "NUT"
-  revision = "a5cb647b1fac8ba77e1cf25af2f9526658ab63e3"
-  version = "v21.0.0"
+  revision = "1c3f0aaee1ce742b655f1ba8f33740103e904c5c"
+  version = "v24.0.0"
 
 [[projects]]
   branch = "master"
@@ -169,14 +169,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7fdf3223c7372d1ced0b98bf53457c5e89d89aecbad9a77ba9fcc6e01f9e5621"
+  digest = "1:a86d65bc23eea505cd9139178e4d889733928fe165c7a008f41eaab039edf9df"
   name = "github.com/gregjones/httpcache"
   packages = [
     ".",
     "diskcache",
   ]
   pruneopts = "NUT"
-  revision = "9cad4c3443a7200dd6400aef47183728de563a38"
+  revision = "3befbb6ad0cc97d4c25d851e9528915809e1a22f"
 
 [[projects]]
   digest = "1:7fdbd8167ecc1f2d879c2379d5b57f1979aa61c76822610b22b15301c9a3df7b"
@@ -324,6 +324,14 @@
   revision = "3864e76763d94a6df2f9960b16a20a33da9f9a66"
 
 [[projects]]
+  digest = "1:7a880746686307655232135521a665f5c719013a978cf2d560c050fbb27489f0"
+  name = "github.com/moovweb/rubex"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "cb849acea6148000db8a55743f71476b0897ea41"
+  version = "6.3.107"
+
+[[projects]]
   branch = "master"
   digest = "1:e2962a2cae643693cc9704d8a464665f05c365d276d41005209b8af66c106dfe"
   name = "github.com/mwitkow/grpc-proxy"
@@ -441,11 +449,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:36d801c057aadb14b3e7e3a19640199072cb0a9bc194968d622016572777b6b0"
+  digest = "1:0a77a893f09a715a9a22ba7e2166d0a852a9346056c8aa92c73141350e1bccff"
   name = "github.com/src-d/lookout-test-fixtures"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "6ed9bf1fcf2a2d0ef170646acc041c2926eff51c"
+  revision = "d569521bafdb5577ea8356810cc502a7a325281e"
 
 [[projects]]
   branch = "master"
@@ -464,7 +472,7 @@
   version = "v0.1.1"
 
 [[projects]]
-  digest = "1:f1e5a94fc8fde9a67a97106d7d7d386ad0b938b41fde2b110e70447590aea6e7"
+  digest = "1:e753e81f12213af0b7a07b159415b536ffe518d849f71c0de7f081ca23a3bb98"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
@@ -473,8 +481,8 @@
     "suite",
   ]
   pruneopts = "NUT"
-  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
-  version = "v1.2.2"
+  revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
+  version = "v1.3.0"
 
 [[projects]]
   branch = "master"
@@ -618,23 +626,30 @@
   revision = "80063a038e333bbe006c878e4c5ce4c74d055498"
 
 [[projects]]
-  digest = "1:d0e5846da58e4e20d1bbd7502b24f31d37e3ac1e02a9042d95bd93c2d0c139dd"
+  digest = "1:4837585442801f3c7ebd044a96fce852242529a73bdd96fcba2119ff74987b0b"
   name = "google.golang.org/grpc"
   packages = [
     ".",
     "balancer",
     "balancer/base",
     "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
     "codes",
     "connectivity",
     "credentials",
+    "credentials/internal",
     "encoding",
     "encoding/proto",
     "grpclog",
     "internal",
     "internal/backoff",
+    "internal/binarylog",
     "internal/channelz",
+    "internal/envconfig",
     "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
+    "internal/transport",
     "keepalive",
     "metadata",
     "naming",
@@ -645,14 +660,13 @@
     "stats",
     "status",
     "tap",
-    "transport",
   ]
   pruneopts = "NUT"
-  revision = "168a6198bcb0ef175f7dacec0b8691fc141dc9b8"
-  version = "v1.13.0"
+  revision = "a02b0774206b209466313a0b525d2c738fe407eb"
+  version = "v1.18.0"
 
 [[projects]]
-  digest = "1:85ce4b06f191dd616ad7f4377843ea08db7db003757bd0a67e1b3ac4cbd5c2ef"
+  digest = "1:d95a7444db17dcabe06077bf64b572b4036e4184fb4ae1fc1c118eedff42199a"
   name = "gopkg.in/bblfsh/sdk.v1"
   packages = [
     "manifest",
@@ -660,8 +674,8 @@
     "uast",
   ]
   pruneopts = "NUT"
-  revision = "96e92bdde3785e655b8095a576addd52b96c6c61"
-  version = "v1.16.0"
+  revision = "94e3b212553e761677da180f321d9a7a60ebec5f"
+  version = "v1.16.1"
 
 [[projects]]
   branch = "v1"
@@ -672,16 +686,17 @@
   revision = "20d25e2804050c1cd24a7eea1e7a6447dd0e74ec"
 
 [[projects]]
-  digest = "1:d11329b27b0f34c399185531f3232493d7da40f576574da04776812b0a94f66b"
+  digest = "1:c7dc9446f0afe62237d33b91071427dee495c54329fb9b50e70067e26967f7ac"
   name = "gopkg.in/src-d/enry.v1"
   packages = [
     ".",
     "data",
     "internal/tokenizer",
+    "regex",
   ]
   pruneopts = "NUT"
-  revision = "6712d4219fb747194f38d0fc72121ca0a46ebcea"
-  version = "v1.6.4"
+  revision = "fe18dc0830edf4f567b398c8e2b5500af239623a"
+  version = "v1.6.8"
 
 [[projects]]
   digest = "1:b3aa16e13560619b05e0bf75832cf74272c183b5879a29415cf23b12c3ea0e92"
@@ -723,15 +738,15 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:251a6672526e992d31a9db679a7aa0a2d19b96f95af3417d237d65135ccd0fef"
+  digest = "1:287650d5cb3abfeae85442acb7a4f4e19ac5882486e1d11d400273d50381e4b9"
   name = "gopkg.in/src-d/go-git-fixtures.v3"
   packages = ["."]
   pruneopts = "T"
-  revision = "a29d269c3be65e4d1b20c29133c74e0551e1aa5d"
-  version = "v3.1.0"
+  revision = "49a975e8b44a25af2e567da5982bb709d574e61c"
+  version = "v3.3.0"
 
 [[projects]]
-  digest = "1:8225fd93ba0a18906b05a2ab52808349968f11a8c9c4be27001c2d10dbf781ef"
+  digest = "1:121a091d3097060d20b8fa3f3da6d153f4e19922a70a458466d8b74380760ff7"
   name = "gopkg.in/src-d/go-git.v4"
   packages = [
     ".",
@@ -776,8 +791,8 @@
     "utils/merkletrie/noder",
   ]
   pruneopts = "NUT"
-  revision = "cd64b4d630b6c2d2b3d72e9615e14f9d58bb5787"
-  version = "v4.7.1"
+  revision = "a1f6ef44dfed1253ef7f3bc049f66b15f8fc2ab2"
+  version = "v4.9.1"
 
 [[projects]]
   digest = "1:c1d9b0ec7eca0c5f1b82abe29ec426a94f43b0f1a4641f99ac80af921fe123fe"
@@ -846,12 +861,12 @@
   version = "v0.1.2"
 
 [[projects]]
-  digest = "1:7c95b35057a0ff2e19f707173cc1a947fa43a6eb5c4d300d196ece0334046082"
+  digest = "1:18108594151654e9e696b27b181b953f9a90b16bf14d253dd1b397b025a1487f"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
-  version = "v2.2.1"
+  revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
+  version = "v2.2.2"
 
 [solve-meta]
   analyzer-name = "dep"
