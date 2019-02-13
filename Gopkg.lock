@@ -449,11 +449,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:36d801c057aadb14b3e7e3a19640199072cb0a9bc194968d622016572777b6b0"
+  digest = "1:0a77a893f09a715a9a22ba7e2166d0a852a9346056c8aa92c73141350e1bccff"
   name = "github.com/src-d/lookout-test-fixtures"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "6ed9bf1fcf2a2d0ef170646acc041c2926eff51c"
+  revision = "d569521bafdb5577ea8356810cc502a7a325281e"
 
 [[projects]]
   branch = "master"

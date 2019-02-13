@@ -119,6 +119,15 @@ var fixtures = Fixtures{
 		},
 		CurrentRevision: 1,
 	},
+	{
+		Name: "get-changes-from-outdated-pr",
+		URL: PullRequestURL{
+			Owner:  "src-d",
+			Repo:   "lookout-test-fixtures",
+			Number: 20,
+		},
+		CurrentRevision: 0,
+	},
 }
 
 // PullRequestURL is a struct with information about a pull request URL:
