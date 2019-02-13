@@ -195,7 +195,11 @@ func (w *Watcher) processRepoPRs(
 		return c.watchMinInterval, nil
 	}
 
-	if err != nil && !NoErrNotModified.Is(err) {
+	if NoErrNotModified.Is(err) {
+		return c.watchMinInterval, nil
+	}
+
+	if err != nil {
 		return c.watchMinInterval, err
 	}
 
@@ -226,7 +230,11 @@ func (w *Watcher) processRepoEvents(
 		return c.PollInterval(eventsCategory), nil
 	}
 
-	if err != nil && !NoErrNotModified.Is(err) {
+	if NoErrNotModified.Is(err) {
+		return c.PollInterval(eventsCategory), nil
+	}
+
+	if err != nil {
 		return c.PollInterval(eventsCategory), err
 	}
 
