@@ -747,12 +747,13 @@
   version = "v3.3.0"
 
 [[projects]]
-  digest = "1:121a091d3097060d20b8fa3f3da6d153f4e19922a70a458466d8b74380760ff7"
+  digest = "1:bcee186946d33b2e3befed808ee6ffe73387345807187e51790e3e148b5344c2"
   name = "gopkg.in/src-d/go-git.v4"
   packages = [
     ".",
     "config",
     "internal/revision",
+    "internal/url",
     "plumbing",
     "plumbing/cache",
     "plumbing/filemode",
@@ -792,8 +793,8 @@
     "utils/merkletrie/noder",
   ]
   pruneopts = "NUT"
-  revision = "a1f6ef44dfed1253ef7f3bc049f66b15f8fc2ab2"
-  version = "v4.9.1"
+  revision = "db6c41c156481962abf9a55a324858674c25ab08"
+  version = "v4.10.0"
 
 [[projects]]
   digest = "1:c1d9b0ec7eca0c5f1b82abe29ec426a94f43b0f1a4641f99ac80af921fe123fe"
