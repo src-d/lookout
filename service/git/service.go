@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/service/git/merge-base"
 	"github.com/src-d/lookout/util/ctxlog"
 
 	errors "gopkg.in/src-d/go-errors.v1"
@@ -50,6 +51,49 @@ func validateReferences(ctx context.Context, validateRefName bool, refs ...*look
 	return nil
 }
 
+func (r *Service) getFrom(
+	ctx context.Context,
+	base, head *lookout.ReferencePointer,
+) (
+	*lookout.ReferencePointer, error,
+) {
+	commits, storer, err := r.loader.LoadCommits(ctx, *base, *head)
+	if err != nil {
+		return nil, err
+	}
+
+	var commonAncestor *object.Commit
+	res, err := merge_base.MergeBase(storer, commits[0], commits[1])
+	if err != nil {
+		return nil, err
+	}
+
+	if len(res) == 0 {
+		// If there is no common ancestor between two commits it means that they
+		// don't have a common history. That PR won't be able to be created in
+		// GitHub, but in other situations (ie. with lookout-sdk), an analyzer
+		// could be interested in analyzing the difference between both commints.
+		return base, nil
+	}
+
+	commonAncestor = res[0]
+
+	/*
+		// TODO(dpordomingo): uncomment this after testing that it's not a problem
+		// returning commits without ReferenceName (see comment below)
+		if base.Hash == commonAncestor.Hash.String() {
+			return base, nil
+		}
+	*/
+
+	return &lookout.ReferencePointer{
+		InternalRepositoryURL: base.InternalRepositoryURL,
+		// ReferenceName can be undefined for a random commit inside that repository
+		ReferenceName: "",
+		Hash:          commonAncestor.Hash.String(),
+	}, nil
+}
+
 // GetChanges returns a ChangeScanner that scans all changes according to the request.
 func (r *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 	lookout.ChangeScanner, error) {
@@ -58,7 +102,25 @@ func (r *Service) GetChanges(ctx context.Context, req *lookout.ChangesRequest) (
 		return nil, err
 	}
 
-	base, head, err := r.loadTrees(ctx, req.Base, req.Head)
+	var from *lookout.ReferencePointer
+
+	// The standard behavior for getting the changes between two commits is like doing
+	// `git diff base...head`, also `git diff $(git merge-base base head) head`
+	// (as it appears in `Changes` tab in GitHub PRs)
+	// If it is desited to get all changes between `base` and `head`,
+	// (as done by `git diff base..head`) it must be sent `req.TwoDotsMode` as true
+	if req.TwoDotsMode {
+		from = req.Base
+	} else {
+		if req.Base != nil {
+			from, err = r.getFrom(ctx, req.Base, req.Head)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	base, head, err := r.loadTrees(ctx, from, req.Head)
 	if err != nil {
 		return nil, err
 	}
@@ -111,8 +173,6 @@ func (r *Service) GetFiles(ctx context.Context, req *lookout.FilesRequest) (
 	return scanner, nil
 }
 
-const maxResolveLength = 20
-
 func (r *Service) loadTrees(ctx context.Context,
 	base, head *lookout.ReferencePointer) (*object.Tree, *object.Tree, error) {
 
@@ -125,7 +185,7 @@ func (r *Service) loadTrees(ctx context.Context,
 
 	ctxlog.Get(ctx).Debugf("load trees for references: %v", rps)
 
-	commits, err := r.loader.LoadCommits(ctx, rps...)
+	commits, _, err := r.loader.LoadCommits(ctx, rps...)
 	if err != nil {
 		return nil, nil, err
 	}

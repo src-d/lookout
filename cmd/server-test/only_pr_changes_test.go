@@ -58,4 +58,3 @@ func (suite *reviewOnlyPrChangesIntegrationSuite) TestAnalyzerErr() {
 	suite.sendEvent(jsonReviewEvent.String())
 	suite.GrepAndNotAll(suite.r, expectedComments, notExpectedComments)
 }
-

@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 )
 
 type MockCommitLoader struct {
@@ -18,15 +19,15 @@ type MockCommitLoader struct {
 }
 
 func (m *MockCommitLoader) LoadCommits(ctx context.Context,
-	rps ...lookout.ReferencePointer) ([]*object.Commit, error) {
+	rps ...lookout.ReferencePointer) ([]*object.Commit, storer.Storer, error) {
 
 	args := m.Called(ctx, rps)
 	r0 := args.Get(0)
 	if r0 == nil {
-		return nil, args.Error(1)
+		return nil, nil, args.Error(1)
 	}
 
-	return r0.([]*object.Commit), args.Error(1)
+	return r0.([]*object.Commit), nil, args.Error(1)
 }
 
 type MockSyncer struct {
@@ -103,7 +104,7 @@ func (s *LibraryCommitLoaderTestSuite) TestErrorOnMultiRepos() {
 
 	cl := NewLibraryCommitLoader(&Library{}, &LibrarySyncer{})
 
-	commits, err := cl.LoadCommits(context.TODO(), rpsDifferentRepos...)
+	commits, _, err := cl.LoadCommits(context.TODO(), rpsDifferentRepos...)
 
 	require.Nil(commits)
 	require.Errorf(err, "loading commits from multiple repositories is not supported")
@@ -120,7 +121,7 @@ func (s *LibraryCommitLoaderTestSuite) TestErrorOnSync() {
 
 	cl := NewLibraryCommitLoader(&Library{}, ms)
 
-	commits, err := cl.LoadCommits(ctx, rpsSameRepos...)
+	commits, _, err := cl.LoadCommits(ctx, rpsSameRepos...)
 
 	require.Nil(commits)
 	require.EqualError(err, "sync mock error")
@@ -140,7 +141,7 @@ func (s *LibraryCommitLoaderTestSuite) TestErrorOnGetOrInit() {
 
 	cl := NewLibraryCommitLoader(ml, ms)
 
-	commits, err := cl.LoadCommits(ctx, rpsSameRepos...)
+	commits, _, err := cl.LoadCommits(ctx, rpsSameRepos...)
 
 	require.Nil(commits)
 	require.EqualError(err, "get or init mock error")
@@ -154,7 +155,7 @@ func (s *LibraryCommitLoaderTestSuite) TestEmpty() {
 
 	rps := []lookout.ReferencePointer{}
 
-	commits, err := cl.LoadCommits(context.TODO(), rps...)
+	commits, _, err := cl.LoadCommits(context.TODO(), rps...)
 
 	require.Nil(commits)
 	require.Nil(err)

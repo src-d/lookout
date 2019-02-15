@@ -13,7 +13,7 @@ import (
 
 type CommitLoader interface {
 	LoadCommits(context.Context, ...lookout.ReferencePointer) (
-		[]*object.Commit, error)
+		[]*object.Commit, storer.Storer, error)
 }
 
 type LibraryCommitLoader struct {
@@ -30,31 +30,36 @@ func NewLibraryCommitLoader(l ReposCollectionHandler, s Syncer) *LibraryCommitLo
 
 func (l *LibraryCommitLoader) LoadCommits(
 	ctx context.Context, rps ...lookout.ReferencePointer) (
-	[]*object.Commit, error) {
+	[]*object.Commit, storer.Storer, error) {
 
 	if len(rps) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	frp := rps[0]
 	for _, orp := range rps[1:] {
 		if orp.InternalRepositoryURL != frp.InternalRepositoryURL {
-			return nil, fmt.Errorf(
+			return nil, nil, fmt.Errorf(
 				"loading commits from multiple repositories is not supported")
 		}
 	}
 
 	if err := l.Syncer.Sync(ctx, rps...); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	r, err := l.Library.GetOrInit(ctx, frp.Repository())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	storerCl := NewStorerCommitLoader(r.Storer)
-	return storerCl.LoadCommits(ctx, rps...)
+	commits, _, err := storerCl.LoadCommits(ctx, rps...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return commits, storerCl.Storer, nil
 }
 
 type StorerCommitLoader struct {
@@ -68,17 +73,17 @@ func NewStorerCommitLoader(storer storer.Storer) *StorerCommitLoader {
 }
 
 func (l *StorerCommitLoader) LoadCommits(ctx context.Context,
-	rps ...lookout.ReferencePointer) ([]*object.Commit, error) {
+	rps ...lookout.ReferencePointer) ([]*object.Commit, storer.Storer, error) {
 
 	commits := make([]*object.Commit, len(rps))
 	for i, rp := range rps {
 		commit, err := object.GetCommit(l.Storer, plumbing.NewHash(rp.Hash))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		commits[i] = commit
 	}
 
-	return commits, nil
+	return commits, l.Storer, nil
 }
