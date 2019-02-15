@@ -119,8 +119,8 @@ func (s *ServerTestSuite) TestPush() {
 func (s *ServerTestSuite) TestReviewTimeout() {
 	require := s.Require()
 
-	reviewSleep, _ := time.ParseDuration("5ms")
-	reviewTimeout, _ := time.ParseDuration("1ms")
+	reviewSleep := 200 * time.Millisecond
+	reviewTimeout := 100 * time.Millisecond
 	client := &AnalyzerClientMock{
 		CommentsBuilder: makeComments,
 		ReviewSleep:     reviewSleep,
@@ -152,8 +152,8 @@ func (s *ServerTestSuite) TestReviewTimeout() {
 func (s *ServerTestSuite) TestPushTimeout() {
 	require := s.Require()
 
-	pushSleep, _ := time.ParseDuration("5ms")
-	pushTimeout, _ := time.ParseDuration("1ms")
+	pushSleep := 200 * time.Millisecond
+	pushTimeout := 100 * time.Millisecond
 	client := &AnalyzerClientMock{
 		CommentsBuilder: makeComments,
 		PushSleep:       pushSleep,
