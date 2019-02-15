@@ -686,17 +686,18 @@
   revision = "20d25e2804050c1cd24a7eea1e7a6447dd0e74ec"
 
 [[projects]]
-  digest = "1:c7dc9446f0afe62237d33b91071427dee495c54329fb9b50e70067e26967f7ac"
+  digest = "1:57a3ce4850faf6af62c1a8c9ae41870084cfabaeba01b57cdc81967c11246a04"
   name = "gopkg.in/src-d/enry.v1"
   packages = [
     ".",
     "data",
+    "data/rule",
     "internal/tokenizer",
     "regex",
   ]
   pruneopts = "NUT"
-  revision = "fe18dc0830edf4f567b398c8e2b5500af239623a"
-  version = "v1.6.8"
+  revision = "349975078557b0663f7a68ea3e1536de289cc4ca"
+  version = "v1.7.0"
 
 [[projects]]
   digest = "1:b3aa16e13560619b05e0bf75832cf74272c183b5879a29415cf23b12c3ea0e92"
