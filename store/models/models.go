@@ -7,7 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/src-d/lookout"
-	kallax "gopkg.in/src-d/go-kallax.v1"
+	"gopkg.in/src-d/go-kallax.v1"
 )
 
 // ReviewEvent is a persisted model for review event
@@ -20,7 +20,6 @@ type ReviewEvent struct {
 	// those fields can change with each push
 	IsMergeable   bool
 	Source        lookout.ReferencePointer
-	Merge         lookout.ReferencePointer
 	Configuration types.Struct
 	Base          lookout.ReferencePointer
 	Head          lookout.ReferencePointer
@@ -38,7 +37,6 @@ func newReviewEvent(e *lookout.ReviewEvent) *ReviewEvent {
 		InternalID:    e.ID().String(),
 		IsMergeable:   e.IsMergeable,
 		Source:        e.Source,
-		Merge:         e.Merge,
 		Configuration: e.Configuration,
 		Base:          e.Base,
 		Head:          e.Head,

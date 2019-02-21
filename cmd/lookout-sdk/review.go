@@ -75,7 +75,6 @@ func (c *ReviewCommand) Execute(args []string) error {
 			UpdatedAt:   time.Now(),
 			IsMergeable: true,
 			Source:      *toRef,
-			Merge:       *toRef,
 			CommitRevision: lookout.CommitRevision{
 				Base: *fromRef,
 				Head: *toRef,
