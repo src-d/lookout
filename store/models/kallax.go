@@ -1560,8 +1560,6 @@ func (r *ReviewEvent) ColumnAddress(col string) (interface{}, error) {
 		return &r.IsMergeable, nil
 	case "source":
 		return types.JSON(&r.Source), nil
-	case "merge":
-		return types.JSON(&r.Merge), nil
 	case "configuration":
 		return types.JSON(&r.Configuration), nil
 	case "base":
@@ -1593,8 +1591,6 @@ func (r *ReviewEvent) Value(col string) (interface{}, error) {
 		return r.IsMergeable, nil
 	case "source":
 		return types.JSON(r.Source), nil
-	case "merge":
-		return types.JSON(r.Merge), nil
 	case "configuration":
 		return types.JSON(r.Configuration), nil
 	case "base":
@@ -2647,7 +2643,6 @@ type schemaReviewEvent struct {
 	InternalID     kallax.SchemaField
 	IsMergeable    kallax.SchemaField
 	Source         *schemaReviewEventSource
-	Merge          *schemaReviewEventMerge
 	Configuration  *schemaReviewEventConfiguration
 	Base           *schemaReviewEventBase
 	Head           *schemaReviewEventHead
@@ -2705,13 +2700,6 @@ type schemaReviewEventConfiguration struct {
 }
 
 type schemaReviewEventHead struct {
-	*kallax.BaseSchemaField
-	InternalRepositoryURL kallax.SchemaField
-	ReferenceName         kallax.SchemaField
-	Hash                  kallax.SchemaField
-}
-
-type schemaReviewEventMerge struct {
 	*kallax.BaseSchemaField
 	InternalRepositoryURL kallax.SchemaField
 	ReferenceName         kallax.SchemaField
@@ -2845,7 +2833,6 @@ var Schema = &schema{
 			kallax.NewSchemaField("internal_id"),
 			kallax.NewSchemaField("is_mergeable"),
 			kallax.NewSchemaField("source"),
-			kallax.NewSchemaField("merge"),
 			kallax.NewSchemaField("configuration"),
 			kallax.NewSchemaField("base"),
 			kallax.NewSchemaField("head"),
@@ -2862,12 +2849,6 @@ var Schema = &schema{
 			InternalRepositoryURL: kallax.NewJSONSchemaKey(kallax.JSONText, "source", "internal_repository_url"),
 			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "source", "reference_name"),
 			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "source", "hash"),
-		},
-		Merge: &schemaReviewEventMerge{
-			BaseSchemaField:       kallax.NewSchemaField("merge").(*kallax.BaseSchemaField),
-			InternalRepositoryURL: kallax.NewJSONSchemaKey(kallax.JSONText, "merge", "internal_repository_url"),
-			ReferenceName:         kallax.NewJSONSchemaKey(kallax.JSONText, "merge", "reference_name"),
-			Hash:                  kallax.NewJSONSchemaKey(kallax.JSONText, "merge", "hash"),
 		},
 		Configuration: &schemaReviewEventConfiguration{
 			BaseSchemaField:      kallax.NewSchemaField("configuration").(*kallax.BaseSchemaField),
