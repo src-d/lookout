@@ -453,7 +453,7 @@
   name = "github.com/src-d/lookout-test-fixtures"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "d569521bafdb5577ea8356810cc502a7a325281e"
+  revision = "95f3273a018a1bf5c354e6ce9182530561b8fea1"
 
 [[projects]]
   branch = "master"
@@ -828,12 +828,12 @@
   version = "v1.0.5"
 
 [[projects]]
-  digest = "1:cc43cf8db0a3af60f61a7382b745b98cef3f067636905368dcdd79175c57515a"
+  digest = "1:de45b6e52a8d24074dab7f60e23f4c21fbacae44a36c7eb29f85e763905635b4"
   name = "gopkg.in/src-d/lookout-sdk.v0"
   packages = ["pb"]
   pruneopts = "NUT"
-  revision = "16c3f752a712574f492c922cab897aa5b3709d9d"
-  version = "v0.4.1"
+  revision = "3fe28cc0d4ae4e6e0d424d8f97696e730d0cb63a"
+  version = "v0.5.0"
 
 [[projects]]
   digest = "1:20d5d24cfd1dac53cbf730d5c9861c0792c68ae547e67fc16fa0ed0660481b0a"

@@ -28,11 +28,6 @@ func correctReviewEvent() *lookout.ReviewEvent {
 				ReferenceName:         "feature",
 				Hash:                  "source-hash",
 			},
-			Merge: lookout.ReferencePointer{
-				InternalRepositoryURL: "file:///test",
-				ReferenceName:         "merge-branch",
-				Hash:                  "merge-hash",
-			},
 			CommitRevision: lookout.CommitRevision{
 				Base: lookout.ReferencePointer{
 					InternalRepositoryURL: "file:///test",

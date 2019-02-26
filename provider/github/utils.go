@@ -77,11 +77,6 @@ func castPullRequest(ctx context.Context, r *repositoryInfo, pr *github.PullRequ
 	pre.Number = uint32(pr.GetNumber())
 	pre.RepositoryID = uint32(pr.GetHead().GetRepo().GetID())
 	pre.Source = castPullRequestBranch(ctx, pr.GetHead())
-	pre.Merge = lookout.ReferencePointer{
-		InternalRepositoryURL: r.CloneURL,
-		ReferenceName:         plumbing.ReferenceName(fmt.Sprintf("refs/pull/%d/merge", pr.GetNumber())),
-		Hash:                  pr.GetMergeCommitSHA(),
-	}
 
 	pre.Base = castPullRequestBranch(ctx, pr.GetBase())
 	pre.Head = lookout.ReferencePointer{

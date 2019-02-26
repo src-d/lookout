@@ -254,14 +254,6 @@
           "Unique": false
         },
         {
-          "Name": "merge",
-          "Type": "jsonb",
-          "PrimaryKey": false,
-          "Reference": null,
-          "NotNull": true,
-          "Unique": false
-        },
-        {
           "Name": "configuration",
           "Type": "jsonb",
           "PrimaryKey": false,
