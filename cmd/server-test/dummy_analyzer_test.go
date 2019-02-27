@@ -11,8 +11,6 @@ import (
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
-const dummyConfigFile = "../../fixtures/dummy_config.yml"
-
 type DummyIntegrationSuite struct {
 	IntegrationSuite
 }
