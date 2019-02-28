@@ -116,7 +116,7 @@ jobs:
       stage: release
       script:
         - PKG_OS=linux make build
-        - DOCKER_PUSH_LATEST=true make docker-push
+        - make docker-push-latest-release
     - name: 'push dummy analyzer image to Docker Hub'
       stage: release dummy analyzer
       script:
