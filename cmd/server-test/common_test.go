@@ -7,14 +7,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/src-d/lookout"
-	fixtures "github.com/src-d/lookout-test-fixtures"
 	"github.com/src-d/lookout/util/cmdtest"
 	"github.com/src-d/lookout/util/grpchelper"
-	log "gopkg.in/src-d/go-log.v1"
+
+	"github.com/src-d/lookout-test-fixtures"
+	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-log.v1"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
+
+const dummyConfigFile = "../../fixtures/dummy_config.yml"
 
 type IntegrationSuite struct {
 	cmdtest.IntegrationSuite
@@ -74,6 +79,55 @@ func startMockAnalyzer(ctx context.Context, a mockAnalyzer) error {
 		server.Stop()
 	}()
 	return nil
+}
+
+func castPullRequest(fixture *fixtures.Fixture) (*jsonReviewEvent, error) {
+	pr := fixture.GetPR()
+
+	baseRepoCloneUrl := pr.GetBase().GetRepo().GetCloneURL()
+	baseRepoInfo, err := pb.ParseRepositoryInfo(baseRepoCloneUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	headRepoCloneUrl := pr.GetHead().GetRepo().GetCloneURL()
+	headRepoInfo, err := pb.ParseRepositoryInfo(headRepoCloneUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	event := pb.ReviewEvent{}
+
+	event.Provider = "github"
+	event.InternalID = strconv.FormatInt(pr.GetID(), 10)
+
+	event.Number = uint32(pr.GetNumber())
+	event.RepositoryID = uint32(pr.GetHead().GetRepo().GetID())
+
+	sourceRefName := fmt.Sprintf("refs/heads/%s", pr.GetHead().GetRef())
+	event.Source = lookout.ReferencePointer{
+		InternalRepositoryURL: headRepoInfo.CloneURL,
+		ReferenceName:         plumbing.ReferenceName(sourceRefName),
+		Hash:                  pr.GetHead().GetSHA(),
+	}
+
+	baseRefName := fmt.Sprintf("refs/heads/%s", pr.GetBase().GetRef())
+	event.Base = lookout.ReferencePointer{
+		InternalRepositoryURL: baseRepoInfo.CloneURL,
+		ReferenceName:         plumbing.ReferenceName(baseRefName),
+		Hash:                  pr.GetBase().GetSHA(),
+	}
+
+	headRefName := fmt.Sprintf("refs/pull/%d/head", pr.GetNumber())
+	event.Head = lookout.ReferencePointer{
+		InternalRepositoryURL: baseRepoInfo.CloneURL,
+		ReferenceName:         plumbing.ReferenceName(headRefName),
+		Hash:                  pr.GetHead().GetSHA(),
+	}
+
+	event.IsMergeable = pr.GetMergeable()
+
+	return &jsonReviewEvent{ReviewEvent: &event}, nil
 }
 
 var longLineFixture = fixtures.GetByName("new-go-file-too-long-line")
