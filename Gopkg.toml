@@ -1,3 +1,5 @@
+ignored = ["github.com/mjibson/esc"]
+
 [prune]
   go-tests = true
   unused-packages = true

@@ -5,8 +5,7 @@
 PROJECT = lookout
 COMMANDS = cmd/lookoutd
 DEPENDENCIES = \
-	gopkg.in/src-d/go-kallax.v1 \
-	github.com/mjibson/esc
+	gopkg.in/src-d/go-kallax.v1
 
 # Backend services
 POSTGRESQL_VERSION = 9.6
@@ -21,6 +20,15 @@ MAKEFILE := $(CI_PATH)/Makefile.main
 $(MAKEFILE):
 	git clone --quiet --depth 1 -b $(CI_BRANCH) $(CI_REPOSITORY) $(CI_PATH);
 -include $(MAKEFILE)
+
+$(GODEP):
+	export INSTALL_DIRECTORY=$(CI_PATH); \
+	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | bash
+
+dependencies: $(GODEP)
+	cd tools; \
+	../$(GODEP) ensure -v; \
+	$(GOCMD) install ./vendor/github.com/mjibson/esc;
 
 # Main dockerfile
 DOCKERFILES=./docker/Dockerfile:$(PROJECT)
@@ -125,4 +133,3 @@ endif
 
 .PHONY: ci-integration-dependencies
 ci-integration-dependencies: prepare-services ci-start-bblfsh
-
