@@ -816,7 +816,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:30a3b11284f8d5d7cd70b69ce248b3b1be42d60925f890041bd8053aa4e84b57"
+  digest = "1:94d3abe04aeb23ef597a2584dea33f8a544f13a8432cfbb9ad9e41ead107947a"
   name = "gopkg.in/src-d/go-queue.v1"
   packages = [
     ".",
@@ -824,8 +824,8 @@
     "memory",
   ]
   pruneopts = "NUT"
-  revision = "a66740343c2e86af43071508783c16b9c5f92319"
-  version = "v1.0.5"
+  revision = "dc171cdd582e12c07dd42a20e01913e5dea2fa2d"
+  version = "v1.0.6"
 
 [[projects]]
   digest = "1:de45b6e52a8d24074dab7f60e23f4c21fbacae44a36c7eb29f85e763905635b4"
