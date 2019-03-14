@@ -7,7 +7,7 @@ branches: [master]
 # ANCHORS
 
 build: &build
-  image: golang:1.10-stretch
+  image: golang:1.12-stretch
   commands:
     - make dependencies
     - PKG_OS=linux DOCKER_OS=linux DOCKER_ARCH=amd64 make packages
