@@ -666,7 +666,7 @@
   version = "v1.18.0"
 
 [[projects]]
-  digest = "1:d95a7444db17dcabe06077bf64b572b4036e4184fb4ae1fc1c118eedff42199a"
+  digest = "1:85ce4b06f191dd616ad7f4377843ea08db7db003757bd0a67e1b3ac4cbd5c2ef"
   name = "gopkg.in/bblfsh/sdk.v1"
   packages = [
     "manifest",
@@ -674,8 +674,8 @@
     "uast",
   ]
   pruneopts = "NUT"
-  revision = "94e3b212553e761677da180f321d9a7a60ebec5f"
-  version = "v1.16.1"
+  revision = "96b20b225b3093661e5f3f3bdf9b3beb5d1040a6"
+  version = "v1.17"
 
 [[projects]]
   branch = "v1"
