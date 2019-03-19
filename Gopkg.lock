@@ -324,14 +324,6 @@
   revision = "3864e76763d94a6df2f9960b16a20a33da9f9a66"
 
 [[projects]]
-  digest = "1:7a880746686307655232135521a665f5c719013a978cf2d560c050fbb27489f0"
-  name = "github.com/moovweb/rubex"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "cb849acea6148000db8a55743f71476b0897ea41"
-  version = "6.3.107"
-
-[[projects]]
   branch = "master"
   digest = "1:e2962a2cae643693cc9704d8a464665f05c365d276d41005209b8af66c106dfe"
   name = "github.com/mwitkow/grpc-proxy"
@@ -446,6 +438,14 @@
   pruneopts = "NUT"
   revision = "f187355171c936ac84a82793659ebb4936bc1c23"
   version = "v1.3.0"
+
+[[projects]]
+  digest = "1:1e756bf46ac38206112db9743c8960d0eb7a56ea8e6f4c4feb523436c8b6e59a"
+  name = "github.com/src-d/go-oniguruma"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "788303971318a98ac6d485136e6ae95d155c0876"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -686,7 +686,7 @@
   revision = "20d25e2804050c1cd24a7eea1e7a6447dd0e74ec"
 
 [[projects]]
-  digest = "1:57a3ce4850faf6af62c1a8c9ae41870084cfabaeba01b57cdc81967c11246a04"
+  digest = "1:ae8fa21ce1a1759d939097b704c4dfafacb19a1a3e2db8016008f5ef7fff5c99"
   name = "gopkg.in/src-d/enry.v1"
   packages = [
     ".",
@@ -696,8 +696,8 @@
     "regex",
   ]
   pruneopts = "NUT"
-  revision = "e067e4504402176864d8b5464bfed5b7e6d40307"
-  version = "v1.7.1"
+  revision = "6526da77b3bda1165dc0cb2b9b06102b22c1bb66"
+  version = "v1.7.2"
 
 [[projects]]
   digest = "1:b3aa16e13560619b05e0bf75832cf74272c183b5879a29415cf23b12c3ea0e92"
