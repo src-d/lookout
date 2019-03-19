@@ -2,12 +2,12 @@
 #include <stdio.h>
 #include <string.h>
 #ifdef BENCHMARK_CHELP
-#include <sys/time.h> 
+#include <sys/time.h>
 #endif
 #include "chelper.h"
 
 int NewOnigRegex( char *pattern, int pattern_length, int option,
-                  OnigRegex *regex, OnigRegion **region, OnigErrorInfo **error_info, char **error_buffer) {
+                  OnigRegex *regex, OnigRegion **region, OnigEncoding *encoding, OnigErrorInfo **error_info, char **error_buffer) {
     int ret = ONIG_NORMAL;
     int error_msg_len = 0;
 
@@ -17,14 +17,16 @@ int NewOnigRegex( char *pattern, int pattern_length, int option,
     *error_info = (OnigErrorInfo *) malloc(sizeof(OnigErrorInfo));
     memset(*error_info, 0, sizeof(OnigErrorInfo));
 
+    *encoding = (void*)ONIG_ENCODING_UTF8;
+
     *error_buffer = (char*) malloc(ONIG_MAX_ERROR_MESSAGE_LEN * sizeof(char));
 
     memset(*error_buffer, 0, ONIG_MAX_ERROR_MESSAGE_LEN * sizeof(char));
 
     *region = onig_region_new();
 
-    ret = onig_new_default(regex, pattern_start, pattern_end, (OnigOptionType)(option), *error_info);
-  
+    ret = onig_new(regex, pattern_start, pattern_end, (OnigOptionType)(option), *encoding, OnigDefaultSyntax, *error_info);
+
     if (ret != ONIG_NORMAL) {
         error_msg_len = onig_error_code_to_str((unsigned char*)(*error_buffer), ret, *error_info);
         if (error_msg_len >= ONIG_MAX_ERROR_MESSAGE_LEN) {
@@ -63,13 +65,13 @@ int SearchOnigRegex( void *str, int str_length, int offset, int option,
     }
     else if (captures != NULL) {
         int i;
-		int count = 0;
+        int count = 0;
         for (i = 0; i < region->num_regs; i++) {
-			captures[2*count] = region->beg[i];
-			captures[2*count+1] = region->end[i];
-			count ++;
+            captures[2*count] = region->beg[i];
+            captures[2*count+1] = region->end[i];
+            count ++;
         }
-		*numCaptures = count;
+        *numCaptures = count;
     }
 
 #ifdef BENCHMARK_CHELP
@@ -127,56 +129,56 @@ int LookupOnigCaptureByName(char *name, int name_length,
 }
 
 typedef struct {
-	char *nameBuffer;
-	int bufferOffset;
-	int bufferSize;
-	int *numbers;
-	int numIndex;
+    char *nameBuffer;
+    int bufferOffset;
+    int bufferSize;
+    int *numbers;
+    int numIndex;
 } group_info_t;
 
 int name_callback(const UChar* name, const UChar* name_end,
           int ngroup_num, int* group_nums,
           regex_t* reg, void* arg)
 {
-	int nameLen, offset, newOffset;
-	group_info_t *groupInfo;
-	
-	groupInfo = (group_info_t*) arg;
-	offset = groupInfo->bufferOffset;
-	nameLen = name_end - name;
-	newOffset = offset + nameLen;
-	
-	//if there are already names, add a ";"
-	if (offset > 0) {
-		newOffset += 1;
-	}
-	
-	if (newOffset <= groupInfo->bufferSize) {
-		if (offset > 0) {
-			groupInfo->nameBuffer[offset] = ';';
-			offset += 1;
-		} 
-		strncpy(&groupInfo->nameBuffer[offset], name, nameLen);
-	}
-	groupInfo->bufferOffset = newOffset;
-	if (ngroup_num > 0) {
-		groupInfo->numbers[groupInfo->numIndex] = group_nums[ngroup_num-1];
-	} else {
-		groupInfo->numbers[groupInfo->numIndex] = -1;
-	}
-	groupInfo->numIndex += 1;
-	return 0;  /* 0: continue */
+    int nameLen, offset, newOffset;
+    group_info_t *groupInfo;
+
+    groupInfo = (group_info_t*) arg;
+    offset = groupInfo->bufferOffset;
+    nameLen = name_end - name;
+    newOffset = offset + nameLen;
+
+    //if there are already names, add a ";"
+    if (offset > 0) {
+        newOffset += 1;
+    }
+
+    if (newOffset <= groupInfo->bufferSize) {
+        if (offset > 0) {
+            groupInfo->nameBuffer[offset] = ';';
+            offset += 1;
+        }
+        memcpy(&groupInfo->nameBuffer[offset], name, nameLen);
+    }
+    groupInfo->bufferOffset = newOffset;
+    if (ngroup_num > 0) {
+        groupInfo->numbers[groupInfo->numIndex] = group_nums[ngroup_num-1];
+    } else {
+        groupInfo->numbers[groupInfo->numIndex] = -1;
+    }
+    groupInfo->numIndex += 1;
+    return 0;  /* 0: continue */
 }
 
 int GetCaptureNames(OnigRegex reg, void *buffer, int bufferSize, int* groupNumbers) {
-	int ret;
-	group_info_t groupInfo;
-	groupInfo.nameBuffer = (char*)buffer;
-	groupInfo.bufferOffset = 0;
-	groupInfo.bufferSize = bufferSize;
-	groupInfo.numbers = groupNumbers;
-	groupInfo.numIndex = 0;
-	onig_foreach_name(reg, name_callback, (void* )&groupInfo);
-	return groupInfo.bufferOffset;
+    int ret;
+    group_info_t groupInfo;
+    groupInfo.nameBuffer = (char*)buffer;
+    groupInfo.bufferOffset = 0;
+    groupInfo.bufferSize = bufferSize;
+    groupInfo.numbers = groupNumbers;
+    groupInfo.numIndex = 0;
+    onig_foreach_name(reg, name_callback, (void* )&groupInfo);
+    return groupInfo.bufferOffset;
 }
 
