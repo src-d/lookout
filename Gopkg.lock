@@ -179,12 +179,9 @@
   revision = "3befbb6ad0cc97d4c25d851e9528915809e1a22f"
 
 [[projects]]
-  digest = "1:7fdbd8167ecc1f2d879c2379d5b57f1979aa61c76822610b22b15301c9a3df7b"
+  digest = "1:1b497700cbc61544430babb4e4fd4313758bb9fec7144ca50c625fa6ce8266c7"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
-  packages = [
-    ".",
-    "logging",
-  ]
+  packages = ["."]
   pruneopts = "NUT"
   revision = "c250d6563d4d4c20252cd865923440e829844f4e"
   version = "v1.0.0"
@@ -449,11 +446,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:dbc72b8a0dce02b605b481aa9c38d368202755c50cdee8eb2b1fcf2b3ed8c0a6"
+  digest = "1:e3f8025131d19a6047e48c0cb8da35ae6e4edd4d39cb3625797de59cf314434a"
   name = "github.com/src-d/lookout-test-fixtures"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "e56c92c0db9040963dd9cee228ac6299083a0a27"
+  revision = "11bd377268683951838a5bce2e356228a43f894c"
 
 [[projects]]
   branch = "master"
@@ -828,12 +825,12 @@
   version = "v1.0.6"
 
 [[projects]]
-  digest = "1:de45b6e52a8d24074dab7f60e23f4c21fbacae44a36c7eb29f85e763905635b4"
+  digest = "1:92cc9d97593717b562efc57404d5d1ea0be1d1f7b7bf9b1ae2e7496ee9a08e77"
   name = "gopkg.in/src-d/lookout-sdk.v0"
   packages = ["pb"]
   pruneopts = "NUT"
-  revision = "3fe28cc0d4ae4e6e0d424d8f97696e730d0cb63a"
-  version = "v0.5.0"
+  revision = "8de6a00fca7c92c99c42c1100cc2075c849bab2a"
+  version = "v0.6.2"
 
 [[projects]]
   digest = "1:20d5d24cfd1dac53cbf730d5c9861c0792c68ae547e67fc16fa0ed0660481b0a"
@@ -888,7 +885,6 @@
     "github.com/gregjones/httpcache",
     "github.com/gregjones/httpcache/diskcache",
     "github.com/grpc-ecosystem/go-grpc-middleware",
-    "github.com/grpc-ecosystem/go-grpc-middleware/logging",
     "github.com/hashicorp/golang-lru",
     "github.com/jinzhu/copier",
     "github.com/lib/pq",

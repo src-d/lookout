@@ -67,7 +67,7 @@
 
 [[constraint]]
   name = "gopkg.in/src-d/lookout-sdk.v0"
-  version = "0.5.0"
+  version = "0.6.2"
 
 [[constraint]]
   name = "github.com/sanity-io/litter"
