@@ -154,6 +154,9 @@ var fixtures = Fixtures{{
 	Tags:         []string{"thinpack"}, // adds commit on top of spinnaker fixture 06ce06d0fc49646c4de733c45b7788aabad98a6f via a thin pack
 	PackfileHash: plumbing.NewHash("ee4fef0ef8be5053ebae4ce75acf062ddf3031fb"),
 	Head:         plumbing.NewHash("ee372bb08322c1e6e7c6c4f953cc6bf72784e7fb"), // the thin pack adds this commit
+}, {
+	Tags:       []string{"merge-base"},
+	DotGitHash: plumbing.NewHash("26baa505b9f6fb2024b9999c140b75514718c988"),
 }}
 
 func All() Fixtures {
