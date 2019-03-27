@@ -80,6 +80,11 @@ func NewClientPoolFromTokens(
 
 		byClients[client] = append(byClients[client], repos...)
 		for _, r := range repos {
+			err := ClientCanPush(client, r)
+			if err != nil {
+				return nil, err
+			}
+
 			byRepo[r.FullName] = client
 		}
 	}

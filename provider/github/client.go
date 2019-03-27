@@ -476,3 +476,14 @@ func ValidateTokenPermissions(client *Client) error {
 
 	return nil
 }
+
+// ClientCanPush check if the client has push access to a repository
+// returns error if it permission is missed
+func ClientCanPush(client *Client, repo *repositoryInfo) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// To check access for any user client has to have push access
+	_, _, err := client.Repositories.IsCollaborator(ctx, repo.Owner, repo.Name, "whatever")
+	return err
+}
