@@ -70,6 +70,9 @@ func NewClientPoolFromTokens(
 		}
 
 		client := NewClient(rt, cache, conf.MinInterval, gitAuth, timeout)
+		if err := ValidateTokenPermissions(client); err != nil {
+			return nil, err
+		}
 
 		if _, ok := byClients[client]; !ok {
 			byClients[client] = []*repositoryInfo{}

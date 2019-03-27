@@ -1,10 +1,13 @@
 package github
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/google/go-github/github"
 	"github.com/stretchr/testify/assert"
@@ -178,4 +181,42 @@ func parseTestRepositoryInfo(input string) (*repositoryInfo, error) {
 	}
 
 	return &repositoryInfo{RepositoryInfo: *r}, nil
+}
+
+func TestValidateTokenPermissions(t *testing.T) {
+	require := require.New(t)
+
+	c := mockedClientWithScopes("")
+	require.EqualError(ValidateTokenPermissions(c), "token doesn't have permission scope 'repo'")
+
+	c = mockedClientWithScopes("a,b")
+	require.EqualError(ValidateTokenPermissions(c), "token doesn't have permission scope 'repo'")
+
+	c = mockedClientWithScopes("repo")
+	require.NoError(ValidateTokenPermissions(c))
+
+	c = mockedClientWithScopes("a,repo")
+	require.NoError(ValidateTokenPermissions(c))
+
+	c = mockedClientWithScopes("repo,b")
+	require.NoError(ValidateTokenPermissions(c))
+}
+
+func mockedClientWithScopes(scopes string) *Client {
+	mt := roundTripFunc(func(req *http.Request) *http.Response {
+		h := make(http.Header)
+		h.Add("X-Oauth-Scopes", scopes)
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewBufferString("{}")),
+			Header:     h,
+		}
+	})
+	return NewClient(mt, nil, "", nil, time.Millisecond)
+}
+
+type roundTripFunc func(req *http.Request) *http.Response
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req), nil
 }

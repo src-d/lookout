@@ -443,3 +443,36 @@ func handleAPIError(resp *github.Response, err error, msg string) error {
 		msg,
 	)
 }
+
+// ValidateTokenPermissions checks that client has necessary permissions required by lookout
+// returns error if any is missed
+func ValidateTokenPermissions(client *Client) error {
+	// actually we don't need ALL repo scope but we ask for it in documentation
+	// so let's be consistent
+	required := []string{"repo"}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// authorizations api can be accessed only with username and password, not token
+	// read headers of any endpoint instead
+	_, r, err := client.Users.Get(ctx, "me")
+	if err != nil {
+		return err
+	}
+
+	scopes := strings.Split(r.Header.Get("X-Oauth-Scopes"), ",")
+	scopesMap := make(map[string]bool, len(scopes))
+	for _, scope := range scopes {
+		scopesMap[strings.TrimSpace(scope)] = true
+	}
+
+	for _, scope := range required {
+		_, ok := scopesMap[scope]
+		if !ok {
+			return fmt.Errorf("token doesn't have permission scope '%s'", scope)
+		}
+	}
+
+	return nil
+}
