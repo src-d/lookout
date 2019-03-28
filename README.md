@@ -5,7 +5,7 @@
 **Service for assisted code review, that allows running custom code Analyzers on pull requests.**
 
 [![GitHub version](https://badge.fury.io/gh/src-d%2Flookout.svg)](https://github.com/src-d/lookout/releases)
-[![Build Status](https://travis-ci.org/src-d/lookout.svg?branch=master)](https://travis-ci.org/src-d/lookout)
+[![Build Status](https://travis-ci.com/src-d/lookout.svg?branch=master)](https://travis-ci.com/src-d/lookout)
 ![Development](https://svg-badge.appspot.com/badge/stability/development?color=D6604A)
 [![Code Coverage](https://codecov.io/github/src-d/lookout/coverage.svg)](https://codecov.io/github/src-d/lookout)
 [![Go Report Card](https://goreportcard.com/badge/github.com/src-d/lookout)](https://goreportcard.com/report/github.com/src-d/lookout)
