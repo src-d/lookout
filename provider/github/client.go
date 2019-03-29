@@ -29,6 +29,12 @@ const (
 	ClientPoolEventRemove ClientPoolEventType = "remove"
 )
 
+// keep default into our package to be able to override them in tests
+var (
+	defaultBaseURL       = "https://api.github.com/"
+	defaultUploadBaseURL = "https://uploads.github.com/"
+)
+
 // ClientPoolEvent defines change in ClientPool
 type ClientPoolEvent struct {
 	Type   ClientPoolEventType
@@ -274,11 +280,15 @@ func NewClient(
 		}
 	}
 
-	return &Client{
-		Client: github.NewClient(&http.Client{
+	ghClient, _ := github.NewEnterpriseClient(
+		defaultBaseURL,
+		defaultUploadBaseURL,
+		&http.Client{
 			Transport: limitRT,
 			Timeout:   timeout,
-		}),
+		})
+	return &Client{
+		Client:           ghClient,
 		cache:            cache,
 		limitRT:          limitRT,
 		watchMinInterval: interval,

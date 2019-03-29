@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-github/github"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/cache"
 
@@ -38,6 +40,12 @@ type WatcherTestSuite struct {
 func (s *WatcherTestSuite) SetupTest() {
 	s.mux = http.NewServeMux()
 	s.server = httptest.NewServer(s.mux)
+
+	s.mux.HandleFunc("/users/me", func(w http.ResponseWriter, r *http.Request) {
+		// set headers to pass token checks
+		w.Header().Add("X-Oauth-Scopes", "repo")
+		json.NewEncoder(w).Encode(&github.User{})
+	})
 
 	s.cache = cache.NewValidableCache(httpcache.NewMemoryCache())
 	s.githubURL, _ = url.Parse(s.server.URL + "/")
@@ -538,18 +546,11 @@ func newTestPool(s suite.Suite, repoURLs []string, githubURL *url.URL, cache *ca
 		repoToConfig[url] = config
 	}
 
+	defaultBaseURL = githubURL.String()
+	defaultUploadBaseURL = githubURL.String()
+
 	pool, err := NewClientPoolFromTokens(repoToConfig, cache, 0)
 	s.NoError(err)
-
-	for client := range pool.byClients {
-		client.BaseURL = githubURL
-		client.UploadURL = githubURL
-	}
-
-	for _, client := range pool.byRepo {
-		client.BaseURL = githubURL
-		client.UploadURL = githubURL
-	}
 
 	return pool
 }

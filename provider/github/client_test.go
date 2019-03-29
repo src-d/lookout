@@ -15,6 +15,12 @@ import (
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
+// set default urls to empty to make sure tests don't hit github
+func init() {
+	defaultBaseURL = ""
+	defaultUploadBaseURL = ""
+}
+
 func TestClientPoolUpdate(t *testing.T) {
 	require := require.New(t)
 
