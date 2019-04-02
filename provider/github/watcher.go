@@ -257,6 +257,12 @@ func (w *Watcher) handlePrs(ctx context.Context,
 	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{"repo": r.CloneURL})
 
 	for _, e := range prs {
+		// github doesn't run any checks on draft PRs
+		// emulate this behaviour by skipping prs as long as they are draft
+		if e.GetDraft() {
+			continue
+		}
+
 		ctx, _ := ctxlog.WithLogFields(ctx, log.Fields{
 			"github.pr": e.GetNumber(),
 		})
