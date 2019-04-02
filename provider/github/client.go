@@ -251,6 +251,9 @@ type Client struct {
 	limitRT          *limitRoundTripper
 	watchMinInterval time.Duration
 	gitAuth          gitAuthFn
+
+	mutex    sync.Mutex
+	username string
 }
 
 // NewClient creates new Client.
@@ -309,6 +312,27 @@ func (c *Client) PollInterval(cat pollLimitCategory) time.Duration {
 // Validate validates cache by path
 func (c *Client) Validate(path string) error {
 	return c.cache.Validate(path)
+}
+
+// Username returns name of the user for the current client
+func (c *Client) Username() (string, error) {
+	if c.username != "" {
+		return c.username, nil
+	}
+
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	if c.username != "" {
+		return c.username, nil
+	}
+
+	u, _, err := c.Users.Get(context.Background(), "me")
+	if err != nil {
+		return "", err
+	}
+
+	c.username = u.GetName()
+	return c.username, nil
 }
 
 type rateLimitCategory uint8
@@ -487,13 +511,26 @@ func ValidateTokenPermissions(client *Client) error {
 	return nil
 }
 
-// ClientCanPush check if the client has push access to a repository
+// CanPostStatus check if the client has push access to a repository
+// which is required for updating status. It assumes client has correct scope.
 // returns error if it permission is missed
-func ClientCanPush(client *Client, repo *repositoryInfo) error {
+func CanPostStatus(client *Client, repo *repositoryInfo) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// To check access for any user client has to have push access
-	_, _, err := client.Repositories.IsCollaborator(ctx, repo.Owner, repo.Name, "whatever")
+	user, err := client.Username()
+	if err != nil {
+		return err
+	}
+
+	r, _, err := client.Repositories.GetPermissionLevel(ctx, repo.Owner, repo.Name, user)
+	if err != nil {
+		return err
+	}
+
+	if r.GetPermission() != "admin" && r.GetPermission() != "write" {
+		return fmt.Errorf("client does not have write access to repository %s", repo.FullName)
+	}
+
 	return err
 }
