@@ -2,10 +2,12 @@ package github
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -225,4 +227,23 @@ type roundTripFunc func(req *http.Request) *http.Response
 
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req), nil
+}
+
+// returns correct permissions to pass the permissions checks
+func mockPermissions(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/users/me" {
+			// set headers to pass token checks
+			w.Header().Add("X-Oauth-Scopes", "repo")
+			json.NewEncoder(w).Encode(&github.User{})
+			return
+		}
+
+		if strings.HasSuffix(r.URL.Path, "/collaborators/permission") {
+			json.NewEncoder(w).Encode(&github.RepositoryPermissionLevel{Permission: strptr("write")})
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	})
 }

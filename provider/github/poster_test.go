@@ -100,13 +100,7 @@ type PosterTestSuite struct {
 
 func (s *PosterTestSuite) SetupTest() {
 	s.mux = http.NewServeMux()
-	s.server = httptest.NewServer(s.mux)
-
-	s.mux.HandleFunc("/users/me", func(w http.ResponseWriter, r *http.Request) {
-		// set headers to pass token checks
-		w.Header().Add("X-Oauth-Scopes", "repo")
-		json.NewEncoder(w).Encode(&github.User{})
-	})
+	s.server = httptest.NewServer(mockPermissions(s.mux))
 
 	cache := cache.NewValidableCache(httpcache.NewMemoryCache())
 	githubURL, _ := url.Parse(s.server.URL + "/")
