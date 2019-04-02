@@ -481,8 +481,8 @@ func handleAPIError(resp *github.Response, err error, msg string) error {
 // ValidateTokenPermissions checks that client has necessary permissions required by lookout
 // returns error if any is missed
 func ValidateTokenPermissions(client *Client) error {
-	// actually we don't need ALL repo scope but we ask for it in documentation
-	// so let's be consistent
+	// we need `repo` access to be able to read from private repositories
+	// and `repo:status` which is part of `repo` for posting statuses
 	required := []string{"repo"}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
