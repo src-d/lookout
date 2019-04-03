@@ -155,6 +155,30 @@ func (s *WatcherTestSuite) TestWatch() {
 	}
 }
 
+func (s *WatcherTestSuite) TestWatchDraftPR() {
+	called := false
+	ctx, cancel := context.WithCancel(context.Background())
+	s.mux.HandleFunc("/repos/mock/test/pulls", func(w http.ResponseWriter, r *http.Request) {
+		if called {
+			cancel()
+		}
+		fmt.Fprint(w, `[{"id":1},{"id":2,"draft":true},{"id":3}]`)
+		called = true
+	})
+	s.mux.HandleFunc("/repos/mock/test/events", emptyArrayHandler)
+
+	var processedEvents []*lookout.ReviewEvent
+	w := s.newWatcher([]string{"github.com/mock/test"})
+	w.Watch(ctx, func(ctx context.Context, e lookout.Event) error {
+		processedEvents = append(processedEvents, e.(*lookout.ReviewEvent))
+		return nil
+	})
+
+	s.Len(processedEvents, 2)
+	s.Equal("1", processedEvents[0].InternalID)
+	s.Equal("3", processedEvents[1].InternalID)
+}
+
 func (s *WatcherTestSuite) TestWatch_CallbackError_Pull() {
 	var calls int32
 
