@@ -3,7 +3,6 @@ package grpchelper
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	log "gopkg.in/src-d/go-log.v1"
@@ -13,36 +12,45 @@ import (
 // LogAsDebug allows to log gRPC messages as debug level instead of info level
 var LogAsDebug = false
 
-// NewServer creates new grpc.Server with custom message size
-func NewServer(opts ...grpc.ServerOption) *grpc.Server {
-	opts = append(opts,
-		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			CtxlogStreamServerInterceptor,
-			LogStreamServerInterceptor(LogAsDebug),
-		)),
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			CtxlogUnaryServerInterceptor,
-			LogUnaryServerInterceptor(LogAsDebug),
-		)),
-	)
-
-	return pb.NewServer(opts...)
+var logFn = func(fields pb.Fields, format string, args ...interface{}) {
+	l := log.With(log.Fields(fields))
+	if LogAsDebug {
+		l.Debugf(format, args...)
+	} else {
+		l.Infof(format, args...)
+	}
 }
 
-// DialContext creates a client connection to the given target with custom message size
-func DialContext(ctx context.Context, target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	opts = append(opts,
-		grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(
-			LogStreamClientInterceptor(LogAsDebug),
-			CtxlogStreamClientInterceptor,
-		)),
-		grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(
-			LogUnaryClientInterceptor(LogAsDebug),
-			CtxlogUnaryClientInterceptor,
-		)),
+// NewServer creates new grpc.Server with custom options and log interceptors
+func NewServer(opts ...grpc.ServerOption) *grpc.Server {
+	return pb.NewServerWithInterceptors(
+		[]grpc.StreamServerInterceptor{
+			pb.LogStreamServerInterceptor(logFn),
+			CtxlogStreamServerInterceptor,
+		},
+		[]grpc.UnaryServerInterceptor{
+			pb.LogUnaryServerInterceptor(logFn),
+			CtxlogUnaryServerInterceptor,
+		},
+		opts...,
 	)
+}
 
-	return pb.DialContext(ctx, target, opts...)
+// DialContext creates a client connection to the given target with custom
+// options and log interceptors
+func DialContext(ctx context.Context, target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	return pb.DialContextWithInterceptors(
+		ctx, target,
+		[]grpc.StreamClientInterceptor{
+			CtxlogStreamClientInterceptor,
+			pb.LogStreamClientInterceptor(logFn),
+		},
+		[]grpc.UnaryClientInterceptor{
+			CtxlogUnaryClientInterceptor,
+			pb.LogUnaryClientInterceptor(logFn),
+		},
+		opts...,
+	)
 }
 
 func logConnStatus(l log.Logger, state connectivity.State) {

@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/url"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
 )
@@ -74,7 +75,30 @@ func Listen(address string) (net.Listener, error) {
 
 // NewServer creates new grpc.Server with custom message size
 func NewServer(opts ...grpc.ServerOption) *grpc.Server {
+	return NewServerWithInterceptors(nil, nil, opts...)
+}
+
+// NewServerWithInterceptors creates new grpc.Server with custom message size and default interceptors.
+// The provided interceptors be executed after the default ones.
+func NewServerWithInterceptors(
+	streamInterceptors []grpc.StreamServerInterceptor,
+	unaryInterceptors []grpc.UnaryServerInterceptor,
+	opts ...grpc.ServerOption,
+) *grpc.Server {
+	streamInterceptors = append(
+		[]grpc.StreamServerInterceptor{CtxlogStreamServerInterceptor},
+		streamInterceptors...)
+	unaryInterceptors = append(
+		[]grpc.UnaryServerInterceptor{CtxlogUnaryServerInterceptor},
+		unaryInterceptors...)
+
 	opts = append(opts,
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			streamInterceptors...,
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			unaryInterceptors...,
+		)),
 		grpc.MaxRecvMsgSize(maxMessageSize),
 		grpc.MaxSendMsgSize(maxMessageSize),
 	)
@@ -82,9 +106,36 @@ func NewServer(opts ...grpc.ServerOption) *grpc.Server {
 	return grpc.NewServer(opts...)
 }
 
-// DialContext creates a client connection to the given target with custom message size
+// DialContext creates a client connection to the given target with custom message size and default interceptors
 func DialContext(ctx context.Context, target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	return DialContextWithInterceptors(ctx, target, nil, nil, opts...)
+}
+
+// DialContextWithInterceptors creates a client connection to the given target with custom message size and default interceptors.
+// The provided interceptors will be executed before the default ones.
+func DialContextWithInterceptors(
+	ctx context.Context,
+	target string,
+	streamInterceptors []grpc.StreamClientInterceptor,
+	unaryInterceptors []grpc.UnaryClientInterceptor,
+	opts ...grpc.DialOption,
+) (*grpc.ClientConn, error) {
+	streamInterceptors = append(
+		streamInterceptors,
+		CtxlogStreamClientInterceptor,
+	)
+	unaryInterceptors = append(
+		unaryInterceptors,
+		CtxlogUnaryClientInterceptor,
+	)
+
 	opts = append(opts,
+		grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(
+			streamInterceptors...,
+		)),
+		grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(
+			unaryInterceptors...,
+		)),
 		grpc.WithDefaultCallOptions(
 			grpc.MaxCallRecvMsgSize(maxMessageSize),
 			grpc.MaxCallSendMsgSize(maxMessageSize),

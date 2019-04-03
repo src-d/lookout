@@ -2,47 +2,39 @@ package grpchelper
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/src-d/lookout/util/ctxlog"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	log "gopkg.in/src-d/go-log.v1"
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 const logFieldsKey = "log-fields"
 
 // CtxlogUnaryClientInterceptor is a unary client interceptor that adds the
-// ctxlog log.Fields to the grpc metadata, with the key 'logFieldsKey'.
+// ctxlog log.Fields to the grpc metadata, with the method pb.AddLogFields
 func CtxlogUnaryClientInterceptor(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 	ctx = setLogFieldsMetadata(ctx)
 	return invoker(ctx, method, req, reply, cc, opts...)
 }
 
 // CtxlogStreamClientInterceptor is a streaming client interceptor that adds the
-// ctxlog log.Fields to the grpc metadata, with the key 'logFieldsKey'.
+// ctxlog log.Fields to the grpc metadata, with the method pb.AddLogFields
 func CtxlogStreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 	ctx = setLogFieldsMetadata(ctx)
 	return streamer(ctx, desc, cc, method, opts...)
 }
 
 // setLogFieldsMetadata returns a new context with the ctxlog log.Fields stored
-// into the grpc metadata, with the key 'logFieldsKey'.
+// into the grpc metadata, with the method pb.AddLogFields
 func setLogFieldsMetadata(ctx context.Context) context.Context {
 	f := ctxlog.Fields(ctx)
-
 	// Delete the fields that should not cross to the gRPC server logs
 	delete(f, "app")
 
-	bytes, err := json.Marshal(f)
-	if err != nil {
-		ctxlog.Get(ctx).Errorf(err, "log.Fields could not be marshaled to JSON")
-		return ctx
-	}
-
-	return metadata.AppendToOutgoingContext(ctx, logFieldsKey, string(bytes))
+	return pb.AddLogFields(ctx, pb.Fields(f))
 }
 
 // CtxlogUnaryServerInterceptor is a unary server interceptor that adds
@@ -66,18 +58,7 @@ func CtxlogStreamServerInterceptor(srv interface{}, stream grpc.ServerStream, in
 // setContextLogger returns a new context containing a ctxlog configured with
 // the log Fields found in the given ctx metadata.
 func setContextLogger(ctx context.Context) context.Context {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok || len(md[logFieldsKey]) == 0 {
-		return ctx
-	}
-
-	var f log.Fields
-	err := json.Unmarshal([]byte(md[logFieldsKey][0]), &f)
-	if err != nil {
-		ctxlog.Get(ctx).Errorf(err, "log.Fields could not be unmarshaled from JSON")
-		return ctx
-	}
-
+	f := log.Fields(pb.GetLogFields(ctx))
 	// Delete the fields that we don't want overwritten by a gRPC client
 	delete(f, "app")
 
