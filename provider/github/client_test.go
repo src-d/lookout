@@ -210,6 +210,53 @@ func TestValidateTokenPermissions(t *testing.T) {
 	require.NoError(ValidateTokenPermissions(c))
 }
 
+func TestCanPostStatus(t *testing.T) {
+	require := require.New(t)
+
+	mt := roundTripFunc(func(req *http.Request) *http.Response {
+		fmt.Println(req.URL.Path)
+		if req.URL.Path == "/users/me" {
+			b, _ := json.Marshal(&github.User{Name: strptr("test")})
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       ioutil.NopCloser(bytes.NewBuffer(b)),
+				Header:     make(http.Header),
+			}
+		}
+
+		for _, access := range []string{"none", "read", "write", "admin"} {
+			if req.URL.Path == "/repos/access/"+access+"/collaborators/test/permission" {
+				b, _ := json.Marshal(github.RepositoryPermissionLevel{Permission: strptr(access)})
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       ioutil.NopCloser(bytes.NewReader(b)),
+					Header:     make(http.Header),
+				}
+			}
+		}
+
+		return &http.Response{
+			StatusCode: http.StatusBadRequest,
+			Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
+			Header:     make(http.Header),
+		}
+	})
+
+	client := NewClient(mt, nil, "", nil, time.Millisecond)
+
+	repo, _ := parseTestRepositoryInfo("github.com/access/none")
+	require.EqualError(CanPostStatus(client, repo), "token doesn't have write access to repository access/none")
+
+	repo, _ = parseTestRepositoryInfo("github.com/access/read")
+	require.EqualError(CanPostStatus(client, repo), "token doesn't have write access to repository access/read")
+
+	repo, _ = parseTestRepositoryInfo("github.com/access/write")
+	require.NoError(CanPostStatus(client, repo))
+
+	repo, _ = parseTestRepositoryInfo("github.com/access/admin")
+	require.NoError(CanPostStatus(client, repo))
+}
+
 func mockedClientWithScopes(scopes string) *Client {
 	mt := roundTripFunc(func(req *http.Request) *http.Response {
 		h := make(http.Header)
