@@ -70,6 +70,9 @@ func NewClientPoolFromTokens(
 		}
 
 		client := NewClient(rt, cache, conf.MinInterval, gitAuth, timeout)
+		if err := ValidateTokenPermissions(client); err != nil {
+			return nil, err
+		}
 
 		if _, ok := byClients[client]; !ok {
 			byClients[client] = []*repositoryInfo{}
@@ -77,6 +80,11 @@ func NewClientPoolFromTokens(
 
 		byClients[client] = append(byClients[client], repos...)
 		for _, r := range repos {
+			err := CanPostStatus(client, r)
+			if err != nil {
+				return nil, err
+			}
+
 			byRepo[r.FullName] = client
 		}
 	}

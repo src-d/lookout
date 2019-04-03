@@ -29,6 +29,12 @@ const (
 	ClientPoolEventRemove ClientPoolEventType = "remove"
 )
 
+// keep default into our package to be able to override them in tests
+var (
+	defaultBaseURL       = "https://api.github.com/"
+	defaultUploadBaseURL = "https://uploads.github.com/"
+)
+
 // ClientPoolEvent defines change in ClientPool
 type ClientPoolEvent struct {
 	Type   ClientPoolEventType
@@ -245,6 +251,9 @@ type Client struct {
 	limitRT          *limitRoundTripper
 	watchMinInterval time.Duration
 	gitAuth          gitAuthFn
+
+	mutex    sync.Mutex
+	username string
 }
 
 // NewClient creates new Client.
@@ -274,11 +283,15 @@ func NewClient(
 		}
 	}
 
-	return &Client{
-		Client: github.NewClient(&http.Client{
+	ghClient, _ := github.NewEnterpriseClient(
+		defaultBaseURL,
+		defaultUploadBaseURL,
+		&http.Client{
 			Transport: limitRT,
 			Timeout:   timeout,
-		}),
+		})
+	return &Client{
+		Client:           ghClient,
 		cache:            cache,
 		limitRT:          limitRT,
 		watchMinInterval: interval,
@@ -299,6 +312,27 @@ func (c *Client) PollInterval(cat pollLimitCategory) time.Duration {
 // Validate validates cache by path
 func (c *Client) Validate(path string) error {
 	return c.cache.Validate(path)
+}
+
+// Username returns name of the user for the current client
+func (c *Client) Username() (string, error) {
+	if c.username != "" {
+		return c.username, nil
+	}
+
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	if c.username != "" {
+		return c.username, nil
+	}
+
+	u, _, err := c.Users.Get(context.Background(), "me")
+	if err != nil {
+		return "", err
+	}
+
+	c.username = u.GetName()
+	return c.username, nil
 }
 
 type rateLimitCategory uint8
@@ -442,4 +476,61 @@ func handleAPIError(resp *github.Response, err error, msg string) error {
 		fmt.Errorf("bad HTTP status: %d", resp.StatusCode),
 		msg,
 	)
+}
+
+// ValidateTokenPermissions checks that client has necessary permissions required by lookout
+// returns error if any is missed
+func ValidateTokenPermissions(client *Client) error {
+	// we need `repo` access to be able to read from private repositories
+	// and `repo:status` which is part of `repo` for posting statuses
+	required := []string{"repo"}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// authorizations api can be accessed only with username and password, not token
+	// read headers of any endpoint instead
+	_, r, err := client.Users.Get(ctx, "me")
+	if err != nil {
+		return err
+	}
+
+	scopes := strings.Split(r.Header.Get("X-Oauth-Scopes"), ",")
+	scopesMap := make(map[string]bool, len(scopes))
+	for _, scope := range scopes {
+		scopesMap[strings.TrimSpace(scope)] = true
+	}
+
+	for _, scope := range required {
+		_, ok := scopesMap[scope]
+		if !ok {
+			return fmt.Errorf("token doesn't have permission scope '%s'", scope)
+		}
+	}
+
+	return nil
+}
+
+// CanPostStatus check if the client has push access to a repository
+// which is required for updating status. It assumes client has correct scope.
+// returns error if it permission is missed
+func CanPostStatus(client *Client, repo *repositoryInfo) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	user, err := client.Username()
+	if err != nil {
+		return err
+	}
+
+	r, _, err := client.Repositories.GetPermissionLevel(ctx, repo.Owner, repo.Name, user)
+	if err != nil {
+		return err
+	}
+
+	if r.GetPermission() != "admin" && r.GetPermission() != "write" {
+		return fmt.Errorf("token doesn't have write access to repository %s", repo.FullName)
+	}
+
+	return err
 }

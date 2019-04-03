@@ -37,7 +37,7 @@ type WatcherTestSuite struct {
 
 func (s *WatcherTestSuite) SetupTest() {
 	s.mux = http.NewServeMux()
-	s.server = httptest.NewServer(s.mux)
+	s.server = httptest.NewServer(mockPermissions(s.mux))
 
 	s.cache = cache.NewValidableCache(httpcache.NewMemoryCache())
 	s.githubURL, _ = url.Parse(s.server.URL + "/")
@@ -538,18 +538,11 @@ func newTestPool(s suite.Suite, repoURLs []string, githubURL *url.URL, cache *ca
 		repoToConfig[url] = config
 	}
 
+	defaultBaseURL = githubURL.String()
+	defaultUploadBaseURL = githubURL.String()
+
 	pool, err := NewClientPoolFromTokens(repoToConfig, cache, 0)
 	s.NoError(err)
-
-	for client := range pool.byClients {
-		client.BaseURL = githubURL
-		client.UploadURL = githubURL
-	}
-
-	for _, client := range pool.byRepo {
-		client.BaseURL = githubURL
-		client.UploadURL = githubURL
-	}
 
 	return pool
 }

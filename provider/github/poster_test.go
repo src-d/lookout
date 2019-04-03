@@ -100,7 +100,7 @@ type PosterTestSuite struct {
 
 func (s *PosterTestSuite) SetupTest() {
 	s.mux = http.NewServeMux()
-	s.server = httptest.NewServer(s.mux)
+	s.server = httptest.NewServer(mockPermissions(s.mux))
 
 	cache := cache.NewValidableCache(httpcache.NewMemoryCache())
 	githubURL, _ := url.Parse(s.server.URL + "/")

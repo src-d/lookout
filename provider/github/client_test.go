@@ -1,16 +1,27 @@
 package github
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-github/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
+
+// set default urls to empty to make sure tests don't hit github
+func init() {
+	defaultBaseURL = ""
+	defaultUploadBaseURL = ""
+}
 
 func TestClientPoolUpdate(t *testing.T) {
 	require := require.New(t)
@@ -178,4 +189,108 @@ func parseTestRepositoryInfo(input string) (*repositoryInfo, error) {
 	}
 
 	return &repositoryInfo{RepositoryInfo: *r}, nil
+}
+
+func TestValidateTokenPermissions(t *testing.T) {
+	require := require.New(t)
+
+	c := mockedClientWithScopes("")
+	require.EqualError(ValidateTokenPermissions(c), "token doesn't have permission scope 'repo'")
+
+	c = mockedClientWithScopes("a,b")
+	require.EqualError(ValidateTokenPermissions(c), "token doesn't have permission scope 'repo'")
+
+	c = mockedClientWithScopes("repo")
+	require.NoError(ValidateTokenPermissions(c))
+
+	c = mockedClientWithScopes("a,repo")
+	require.NoError(ValidateTokenPermissions(c))
+
+	c = mockedClientWithScopes("repo,b")
+	require.NoError(ValidateTokenPermissions(c))
+}
+
+func TestCanPostStatus(t *testing.T) {
+	require := require.New(t)
+
+	mt := roundTripFunc(func(req *http.Request) *http.Response {
+		fmt.Println(req.URL.Path)
+		if req.URL.Path == "/users/me" {
+			b, _ := json.Marshal(&github.User{Name: strptr("test")})
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       ioutil.NopCloser(bytes.NewBuffer(b)),
+				Header:     make(http.Header),
+			}
+		}
+
+		for _, access := range []string{"none", "read", "write", "admin"} {
+			if req.URL.Path == "/repos/access/"+access+"/collaborators/test/permission" {
+				b, _ := json.Marshal(github.RepositoryPermissionLevel{Permission: strptr(access)})
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       ioutil.NopCloser(bytes.NewReader(b)),
+					Header:     make(http.Header),
+				}
+			}
+		}
+
+		return &http.Response{
+			StatusCode: http.StatusBadRequest,
+			Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
+			Header:     make(http.Header),
+		}
+	})
+
+	client := NewClient(mt, nil, "", nil, time.Millisecond)
+
+	repo, _ := parseTestRepositoryInfo("github.com/access/none")
+	require.EqualError(CanPostStatus(client, repo), "token doesn't have write access to repository access/none")
+
+	repo, _ = parseTestRepositoryInfo("github.com/access/read")
+	require.EqualError(CanPostStatus(client, repo), "token doesn't have write access to repository access/read")
+
+	repo, _ = parseTestRepositoryInfo("github.com/access/write")
+	require.NoError(CanPostStatus(client, repo))
+
+	repo, _ = parseTestRepositoryInfo("github.com/access/admin")
+	require.NoError(CanPostStatus(client, repo))
+}
+
+func mockedClientWithScopes(scopes string) *Client {
+	mt := roundTripFunc(func(req *http.Request) *http.Response {
+		h := make(http.Header)
+		h.Add("X-Oauth-Scopes", scopes)
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewBufferString("{}")),
+			Header:     h,
+		}
+	})
+	return NewClient(mt, nil, "", nil, time.Millisecond)
+}
+
+type roundTripFunc func(req *http.Request) *http.Response
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req), nil
+}
+
+// returns correct permissions to pass the permissions checks
+func mockPermissions(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/users/me" {
+			// set headers to pass token checks
+			w.Header().Add("X-Oauth-Scopes", "repo")
+			json.NewEncoder(w).Encode(&github.User{})
+			return
+		}
+
+		if strings.HasSuffix(r.URL.Path, "/collaborators/permission") {
+			json.NewEncoder(w).Encode(&github.RepositoryPermissionLevel{Permission: strptr("write")})
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	})
 }
