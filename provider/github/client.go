@@ -529,7 +529,7 @@ func CanPostStatus(client *Client, repo *repositoryInfo) error {
 	}
 
 	if r.GetPermission() != "admin" && r.GetPermission() != "write" {
-		return fmt.Errorf("client does not have write access to repository %s", repo.FullName)
+		return fmt.Errorf("token doesn't have write access to repository %s", repo.FullName)
 	}
 
 	return err
