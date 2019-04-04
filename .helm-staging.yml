@@ -53,10 +53,13 @@ bblfshd-sidecar:
       javascript:
         repository: bblfsh/javascript-driver
         tag: v1.2.0
-      # for the rest we can use latests
+      # for the rest we can use latest
       python:
         repository: bblfsh/python-driver
-        tag: v2.6.0
+        tag: v2.8.2
+      cpp:
+        repository: bblfsh/cpp-driver
+        tag: v1.2.3
       java:
         repository: bblfsh/java-driver
         tag: v2.6.2
@@ -69,12 +72,9 @@ bblfshd-sidecar:
       go:
         repository: bblfsh/go-driver
         tag: v2.5.2
-      php:
-        repository: bblfsh/php-driver
-        tag: v2.7.3
-      cpp:
-        repository: bblfsh/cpp-driver
-        tag: v1.2.3
       csharp:
         repository: bblfsh/csharp-driver
         tag: v1.4.2
+      php:
+        repository: bblfsh/php-driver
+        tag: v2.7.3
