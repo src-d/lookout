@@ -157,30 +157,86 @@ func TestDataServerHandlerCancel(t *testing.T) {
 
 	// MockService doesn't respect context cancellation
 	// which means only DataServerHandler would handle it
-	changesSrv := &mockDataGetChangesServer{&mockServerStream{ctx}}
+	changesSrv := &mockDataGetChangesServer{
+		mockServerStream: &mockServerStream{ctx}}
 	err := h.GetChanges(changesReq, changesSrv)
 	require.EqualError(err, "request canceled: context canceled")
 
-	filesSrv := &mockDataGetFilesServer{&mockServerStream{ctx}}
+	filesSrv := &mockDataGetFilesServer{
+		mockServerStream: &mockServerStream{ctx}}
 	err = h.GetFiles(filesReq, filesSrv)
 	require.EqualError(err, "request canceled: context canceled")
 }
 
+func TestDataServerHandlerSendError(t *testing.T) {
+	require := require.New(t)
+
+	revision := &ReferencePointer{
+		InternalRepositoryURL: "repo",
+		Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
+	}
+	changesReq := &ChangesRequest{Head: revision}
+	filesReq := &FilesRequest{Revision: revision}
+	changes := generateChanges(1)
+	files := generateFiles(1)
+	changeTick := make(chan struct{}, 1)
+	fileTick := make(chan struct{}, 1)
+	dr := &MockService{
+		T:                t,
+		ExpectedCRequest: changesReq,
+		ExpectedFRequest: filesReq,
+		ChangeScanner: &SliceChangeScanner{
+			Changes:    changes,
+			ChangeTick: changeTick,
+		},
+		FileScanner: &SliceFileScanner{
+			Files:    files,
+			FileTick: fileTick,
+		},
+	}
+	h := &DataServerHandler{ChangeGetter: dr, FileGetter: dr}
+
+	changesSrv := &mockDataGetChangesServer{
+		sendReturnErr:    true,
+		mockServerStream: &mockServerStream{context.Background()},
+	}
+	changeTick <- struct{}{}
+	err := h.GetChanges(changesReq, changesSrv)
+	require.EqualError(err, "send error")
+
+	filesSrv := &mockDataGetFilesServer{
+		sendReturnErr:    true,
+		mockServerStream: &mockServerStream{context.Background()}}
+	fileTick <- struct{}{}
+	err = h.GetFiles(filesReq, filesSrv)
+	require.EqualError(err, "send error")
+}
+
 type mockDataGetChangesServer struct {
+	sendReturnErr bool
 	*mockServerStream
 }
 
 // Send implements pb.Data_GetChangesServer
 func (s *mockDataGetChangesServer) Send(*pb.Change) error {
+	if s.sendReturnErr {
+		return fmt.Errorf("send error")
+	}
+
 	return nil
 }
 
 type mockDataGetFilesServer struct {
+	sendReturnErr bool
 	*mockServerStream
 }
 
 // Send implements pb.Data_GetFilesServer
 func (s *mockDataGetFilesServer) Send(*pb.File) error {
+	if s.sendReturnErr {
+		return fmt.Errorf("send error")
+	}
+
 	return nil
 }
 
