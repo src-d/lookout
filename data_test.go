@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
@@ -120,6 +121,89 @@ func TestServerGetFilesOk(t *testing.T) {
 
 		tearDownDataServer(t, srv)
 	}
+}
+
+func TestDataServerHandlerCancel(t *testing.T) {
+	require := require.New(t)
+
+	revision := &ReferencePointer{
+		InternalRepositoryURL: "repo",
+		Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
+	}
+	changesReq := &ChangesRequest{Head: revision}
+	filesReq := &FilesRequest{Revision: revision}
+	changes := generateChanges(1)
+	files := generateFiles(1)
+	changeTick := make(chan struct{}, 1)
+	fileTick := make(chan struct{}, 1)
+	dr := &MockService{
+		T:                t,
+		ExpectedCRequest: changesReq,
+		ExpectedFRequest: filesReq,
+		ChangeScanner: &SliceChangeScanner{
+			Changes:    changes,
+			ChangeTick: changeTick,
+		},
+		FileScanner: &SliceFileScanner{
+			Files:    files,
+			FileTick: fileTick,
+		},
+	}
+	h := &DataServerHandler{ChangeGetter: dr, FileGetter: dr}
+
+	// create cancelled context
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	// MockService doesn't respect context cancellation
+	// which means only DataServerHandler would handle it
+	changesSrv := &mockDataGetChangesServer{&mockServerStream{ctx}}
+	err := h.GetChanges(changesReq, changesSrv)
+	require.EqualError(err, "request canceled: context canceled")
+
+	filesSrv := &mockDataGetFilesServer{&mockServerStream{ctx}}
+	err = h.GetFiles(filesReq, filesSrv)
+	require.EqualError(err, "request canceled: context canceled")
+}
+
+type mockDataGetChangesServer struct {
+	*mockServerStream
+}
+
+// Send implements pb.Data_GetChangesServer
+func (s *mockDataGetChangesServer) Send(*pb.Change) error {
+	return nil
+}
+
+type mockDataGetFilesServer struct {
+	*mockServerStream
+}
+
+// Send implements pb.Data_GetFilesServer
+func (s *mockDataGetFilesServer) Send(*pb.File) error {
+	return nil
+}
+
+// Implements only `Context() context.Context` method to be able to test client cancellation
+type mockServerStream struct {
+	ctx context.Context
+}
+
+func (s *mockServerStream) SetHeader(metadata.MD) error {
+	return nil
+}
+func (s *mockServerStream) SendHeader(metadata.MD) error {
+	return nil
+}
+func (s *mockServerStream) SetTrailer(metadata.MD) {}
+func (s *mockServerStream) Context() context.Context {
+	return s.ctx
+}
+func (s *mockServerStream) SendMsg(m interface{}) error {
+	return nil
+}
+func (s *mockServerStream) RecvMsg(m interface{}) error {
+	return nil
 }
 
 func TestServerGetChangesError(t *testing.T) {
