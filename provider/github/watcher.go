@@ -254,7 +254,7 @@ func (w *Watcher) handlePrs(ctx context.Context,
 		return nil
 	}
 
-	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{"repo": r.CloneURL})
+	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{"repository": r.CloneURL})
 
 	for _, e := range prs {
 		// github doesn't run any checks on draft PRs
@@ -291,7 +291,7 @@ func (w *Watcher) handleEvents(
 		return nil
 	}
 
-	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{"repo": r.CloneURL})
+	ctx, logger := ctxlog.WithLogFields(ctx, log.Fields{"repository": r.CloneURL})
 
 	for _, e := range events {
 		event, err := w.handleEvent(r, e)
