@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
@@ -122,97 +123,143 @@ func TestServerGetFilesOk(t *testing.T) {
 	}
 }
 
-func TestServerCancel(t *testing.T) {
-	for i := 0; i <= 10; i++ {
-		for j := 0; j < i; j++ {
-			revision := &ReferencePointer{
-				InternalRepositoryURL: "repo",
-				Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
-			}
-			changesReq := &ChangesRequest{Head: revision}
-			filesReq := &FilesRequest{Revision: revision}
-			changes := generateChanges(i)
-			files := generateFiles(i)
-			changeTick := make(chan struct{}, 1)
-			fileTick := make(chan struct{}, 1)
-			dr := &MockService{
-				T:                t,
-				ExpectedCRequest: changesReq,
-				ExpectedFRequest: filesReq,
-				ChangeScanner: &SliceChangeScanner{
-					Changes:    changes,
-					ChangeTick: changeTick,
-				},
-				FileScanner: &SliceFileScanner{
-					Files:    files,
-					FileTick: fileTick,
-				},
-			}
-			srv, client := setupDataServer(t, dr)
+func TestDataServerHandlerCancel(t *testing.T) {
+	require := require.New(t)
 
-			t.Run(fmt.Sprintf("get-changes-size-%d-cancel-at-%d", i, j),
-				func(t *testing.T) {
-					require := require.New(t)
-
-					ctx, cancel := context.WithCancel(context.Background())
-					respClient, err := client.GetChanges(ctx, changesReq)
-					require.NoError(err)
-					require.NotNil(respClient)
-					require.NoError(respClient.CloseSend())
-
-					for idx, change := range changes {
-						if idx >= j {
-							break
-						}
-
-						changeTick <- struct{}{}
-						actualResp, err := respClient.Recv()
-						require.NoError(err)
-						require.Equal(change, actualResp)
-					}
-
-					cancel()
-					changeTick <- struct{}{}
-					actualResp, err := respClient.Recv()
-					require.Error(err)
-					require.Contains(err.Error(), "context cancel")
-					require.Zero(actualResp)
-				})
-
-			t.Run(fmt.Sprintf("get-files-size-%d-cancel-at-%d", i, j),
-				func(t *testing.T) {
-					require := require.New(t)
-
-					ctx, cancel := context.WithCancel(context.Background())
-					respClient, err := client.GetFiles(ctx, filesReq)
-					require.NoError(err)
-					require.NotNil(respClient)
-					require.NoError(respClient.CloseSend())
-
-					for idx, file := range files {
-						if idx >= j {
-							break
-						}
-
-						fileTick <- struct{}{}
-						actualResp, err := respClient.Recv()
-						require.NoError(err)
-						require.Equal(file, actualResp)
-					}
-
-					cancel()
-					fileTick <- struct{}{}
-					actualResp, err := respClient.Recv()
-					require.Error(err)
-					require.Contains(err.Error(), "context cancel")
-					require.Zero(actualResp)
-				})
-
-			close(changeTick)
-			close(fileTick)
-			tearDownDataServer(t, srv)
-		}
+	revision := &ReferencePointer{
+		InternalRepositoryURL: "repo",
+		Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
 	}
+	changesReq := &ChangesRequest{Head: revision}
+	filesReq := &FilesRequest{Revision: revision}
+	changes := generateChanges(1)
+	files := generateFiles(1)
+	changeTick := make(chan struct{}, 1)
+	fileTick := make(chan struct{}, 1)
+	dr := &MockService{
+		T:                t,
+		ExpectedCRequest: changesReq,
+		ExpectedFRequest: filesReq,
+		ChangeScanner: &SliceChangeScanner{
+			Changes:    changes,
+			ChangeTick: changeTick,
+		},
+		FileScanner: &SliceFileScanner{
+			Files:    files,
+			FileTick: fileTick,
+		},
+	}
+	h := &DataServerHandler{ChangeGetter: dr, FileGetter: dr}
+
+	// create cancelled context
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	// MockService doesn't respect context cancellation
+	// which means only DataServerHandler would handle it
+	changesSrv := &mockDataGetChangesServer{
+		mockServerStream: &mockServerStream{ctx}}
+	err := h.GetChanges(changesReq, changesSrv)
+	require.EqualError(err, "request canceled: context canceled")
+
+	filesSrv := &mockDataGetFilesServer{
+		mockServerStream: &mockServerStream{ctx}}
+	err = h.GetFiles(filesReq, filesSrv)
+	require.EqualError(err, "request canceled: context canceled")
+}
+
+func TestDataServerHandlerSendError(t *testing.T) {
+	require := require.New(t)
+
+	revision := &ReferencePointer{
+		InternalRepositoryURL: "repo",
+		Hash:                  "5262fd2b59d10e335a5c941140df16950958322d",
+	}
+	changesReq := &ChangesRequest{Head: revision}
+	filesReq := &FilesRequest{Revision: revision}
+	changes := generateChanges(1)
+	files := generateFiles(1)
+	changeTick := make(chan struct{}, 1)
+	fileTick := make(chan struct{}, 1)
+	dr := &MockService{
+		T:                t,
+		ExpectedCRequest: changesReq,
+		ExpectedFRequest: filesReq,
+		ChangeScanner: &SliceChangeScanner{
+			Changes:    changes,
+			ChangeTick: changeTick,
+		},
+		FileScanner: &SliceFileScanner{
+			Files:    files,
+			FileTick: fileTick,
+		},
+	}
+	h := &DataServerHandler{ChangeGetter: dr, FileGetter: dr}
+
+	changesSrv := &mockDataGetChangesServer{
+		sendReturnErr:    true,
+		mockServerStream: &mockServerStream{context.Background()},
+	}
+	changeTick <- struct{}{}
+	err := h.GetChanges(changesReq, changesSrv)
+	require.EqualError(err, "send error")
+
+	filesSrv := &mockDataGetFilesServer{
+		sendReturnErr:    true,
+		mockServerStream: &mockServerStream{context.Background()}}
+	fileTick <- struct{}{}
+	err = h.GetFiles(filesReq, filesSrv)
+	require.EqualError(err, "send error")
+}
+
+type mockDataGetChangesServer struct {
+	sendReturnErr bool
+	*mockServerStream
+}
+
+// Send implements pb.Data_GetChangesServer
+func (s *mockDataGetChangesServer) Send(*pb.Change) error {
+	if s.sendReturnErr {
+		return fmt.Errorf("send error")
+	}
+
+	return nil
+}
+
+type mockDataGetFilesServer struct {
+	sendReturnErr bool
+	*mockServerStream
+}
+
+// Send implements pb.Data_GetFilesServer
+func (s *mockDataGetFilesServer) Send(*pb.File) error {
+	if s.sendReturnErr {
+		return fmt.Errorf("send error")
+	}
+
+	return nil
+}
+
+// Implements only `Context() context.Context` method to be able to test client cancellation
+type mockServerStream struct {
+	ctx context.Context
+}
+
+func (s *mockServerStream) SetHeader(metadata.MD) error {
+	return nil
+}
+func (s *mockServerStream) SendHeader(metadata.MD) error {
+	return nil
+}
+func (s *mockServerStream) SetTrailer(metadata.MD) {}
+func (s *mockServerStream) Context() context.Context {
+	return s.ctx
+}
+func (s *mockServerStream) SendMsg(m interface{}) error {
+	return nil
+}
+func (s *mockServerStream) RecvMsg(m interface{}) error {
+	return nil
 }
 
 func TestServerGetChangesError(t *testing.T) {
