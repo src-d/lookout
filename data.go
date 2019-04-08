@@ -265,6 +265,10 @@ type FnChangeScanner struct {
 	err     error
 }
 
+func NewFnChangeScanner(scanner ChangeScanner, fn func(*Change) (bool, error)) *FnChangeScanner {
+	return &FnChangeScanner{Scanner: scanner, Fn: fn}
+}
+
 func (s *FnChangeScanner) Next() bool {
 	if s.done {
 		return false
@@ -327,6 +331,10 @@ type FnFileScanner struct {
 	started bool
 	done    bool
 	err     error
+}
+
+func NewFnFileScanner(scanner FileScanner, fn func(*File) (bool, error)) *FnFileScanner {
+	return &FnFileScanner{Scanner: scanner, Fn: fn}
 }
 
 func (s *FnFileScanner) Next() bool {
