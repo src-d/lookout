@@ -72,7 +72,7 @@ func (suite *BblfshIntegrationSuite) TestReviewUAST() {
 
 func (suite *BblfshIntegrationSuite) TestReviewLanguage() {
 	r := suite.RunReview()
-	suite.GrepTrue(r, `The file has language detected: "Go"`)
+	suite.GrepTrue(r, `The file has language detected: \"Go\"`)
 }
 
 func (suite *BblfshIntegrationSuite) TestPushNoBblfshError() {
@@ -102,7 +102,7 @@ func (suite *BblfshIntegrationSuite) TestPushUAST() {
 
 func (suite *BblfshIntegrationSuite) TestPushLanguage() {
 	r := suite.RunPush()
-	suite.GrepTrue(r, `The file has language detected: "Go"`)
+	suite.GrepTrue(r, `The file has language detected: \"Go\"`)
 }
 
 func (suite *BblfshIntegrationSuite) TestConnectToDataServer() {
