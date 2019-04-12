@@ -326,12 +326,12 @@ func (c *Client) Username() (string, error) {
 		return c.username, nil
 	}
 
-	u, _, err := c.Users.Get(context.Background(), "me")
+	u, _, err := c.Users.Get(context.Background(), "")
 	if err != nil {
 		return "", err
 	}
 
-	c.username = u.GetName()
+	c.username = u.GetLogin()
 	return c.username, nil
 }
 
@@ -490,7 +490,7 @@ func ValidateTokenPermissions(client *Client) error {
 
 	// authorizations api can be accessed only with username and password, not token
 	// read headers of any endpoint instead
-	_, r, err := client.Users.Get(ctx, "me")
+	_, r, err := client.Users.Get(ctx, "")
 	if err != nil {
 		return err
 	}

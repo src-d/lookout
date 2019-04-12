@@ -214,9 +214,8 @@ func TestCanPostStatus(t *testing.T) {
 	require := require.New(t)
 
 	mt := roundTripFunc(func(req *http.Request) *http.Response {
-		fmt.Println(req.URL.Path)
-		if req.URL.Path == "/users/me" {
-			b, _ := json.Marshal(&github.User{Name: strptr("test")})
+		if req.URL.Path == "/user" {
+			b, _ := json.Marshal(&github.User{Login: strptr("test")})
 			return &http.Response{
 				StatusCode: http.StatusOK,
 				Body:       ioutil.NopCloser(bytes.NewBuffer(b)),
@@ -279,7 +278,7 @@ func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 // returns correct permissions to pass the permissions checks
 func mockPermissions(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/users/me" {
+		if r.URL.Path == "/user" {
 			// set headers to pass token checks
 			w.Header().Add("X-Oauth-Scopes", "repo")
 			json.NewEncoder(w).Encode(&github.User{})
