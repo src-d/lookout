@@ -3,59 +3,35 @@ package queue
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/ctxlog"
 
 	log "gopkg.in/src-d/go-log.v1"
-	"gopkg.in/src-d/go-queue.v1"
+	queue "gopkg.in/src-d/go-queue.v1"
 	_ "gopkg.in/src-d/go-queue.v1/amqp"
 	_ "gopkg.in/src-d/go-queue.v1/memory"
-	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 // QueueJob is the data sent to the queue
 type QueueJob struct {
-	EventType lookout.EventType
-	// Exported so go-queue marshals it, but should be accessed through Event()
-	ReviewEvent *lookout.ReviewEvent
-	// Exported so go-queue marshals it, but should be accessed through Event()
-	PushEvent *lookout.PushEvent
+	*Event
 	// LogFields contains ctxlog logger fields to keep log continuity
 	LogFields log.Fields
 }
 
 // NewQueueJob creates a new QueueJob from the given Event
 func NewQueueJob(ctx context.Context, e lookout.Event) (*QueueJob, error) {
-	qJob := QueueJob{
-		EventType: e.Type(),
+	ev, err := NewEvent(e)
+	if err != nil {
+		return nil, err
+	}
+
+	return &QueueJob{
+		Event:     ev,
 		LogFields: ctxlog.Fields(ctx),
-	}
-
-	switch ev := e.(type) {
-	case *lookout.ReviewEvent:
-		qJob.ReviewEvent = ev
-	case *lookout.PushEvent:
-		qJob.PushEvent = ev
-	default:
-		return nil, fmt.Errorf("unsupported event type %s", reflect.TypeOf(e).String())
-	}
-
-	return &qJob, nil
-}
-
-// Event returns the lookout Event stored in this queue job
-func (j QueueJob) Event() (lookout.Event, error) {
-	switch j.EventType {
-	case pb.PushEventType:
-		return j.PushEvent, nil
-	case pb.ReviewEventType:
-		return j.ReviewEvent, nil
-	}
-
-	return nil, fmt.Errorf("queue does not contain a valid lookout event")
+	}, nil
 }
 
 // EventEnqueuer returns an event handler that pushes events to the queue.
@@ -126,7 +102,7 @@ func RunEventDequeuer(
 				return
 			}
 
-			event, err := qJob.Event()
+			event, err := qJob.ToInterface()
 			if err != nil {
 				ctxlog.Get(ctx).Errorf(err, "error handling the queue job")
 				consumedJob.Reject(false)

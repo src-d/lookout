@@ -75,7 +75,7 @@ func (s *QueueJobTestSuite) TestCreationWithReviewEvent() {
 	require.NoError(err)
 	require.NotNil(qJob)
 
-	qEv, err := qJob.Event()
+	qEv, err := qJob.ToInterface()
 	require.NoError(err)
 	require.NotNil(qEv)
 	require.EqualValues(&mockEventA, qEv)
@@ -91,7 +91,7 @@ func (s *QueueJobTestSuite) TestCreationWithPushEvent() {
 	require.NoError(err)
 	require.NotNil(qJob)
 
-	qEv, err := qJob.Event()
+	qEv, err := qJob.ToInterface()
 	require.NoError(err)
 	require.NotNil(qEv)
 	require.EqualValues(&mockEventB, qEv)
@@ -111,9 +111,9 @@ func (s *QueueJobTestSuite) TestCreationWithFakeEvent() {
 func (s *QueueJobTestSuite) TestEventMethodWithFakeEvent() {
 	require := s.Require()
 
-	qj := QueueJob{EventType: fakeEvent.Type()}
-	qEv, err := qj.Event()
-	require.EqualError(err, "queue does not contain a valid lookout event")
+	qj := QueueJob{Event: &Event{}}
+	qEv, err := qj.ToInterface()
+	require.EqualError(err, "unknown lookout event")
 	require.Nil(qEv)
 }
 

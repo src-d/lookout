@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/src-d/lookout"
+	lookout_mock "github.com/src-d/lookout/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,9 +45,9 @@ func (s *EventSuite) TestPushEvent() {
 func (s *EventSuite) TestUnknownEvent() {
 	require := s.Require()
 
-	le := &unknownEvent{}
+	le := &lookout_mock.FakeEvent{}
 	e, err := NewEvent(le)
-	require.EqualError(err, "unsupported event type *queue.unknownEvent")
+	require.EqualError(err, "unsupported event type *mock.FakeEvent")
 	require.Nil(e)
 
 	e = &Event{
@@ -70,7 +71,3 @@ func (s *EventSuite) TestEmptyEvent() {
 	require.EqualError(err, "unknown lookout event")
 	require.Nil(ue)
 }
-
-type unknownEvent struct{ lookout.Event }
-
-func (e *unknownEvent) Type() lookout.EventType { return 0 }
