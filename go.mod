@@ -75,7 +75,7 @@ require (
 	gopkg.in/src-d/go-cli.v0 v0.0.0-20181105080154-d492247bbc0d
 	gopkg.in/src-d/go-errors.v0 v0.1.0
 	gopkg.in/src-d/go-errors.v1 v1.0.0
-	gopkg.in/src-d/go-git-fixtures.v3 v3.3.0
+	gopkg.in/src-d/go-git-fixtures.v3 v3.4.0
 	gopkg.in/src-d/go-git.v4 v4.10.0
 	gopkg.in/src-d/go-kallax.v1 v1.3.5
 	gopkg.in/src-d/go-log.v1 v1.0.1
