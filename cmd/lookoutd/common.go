@@ -14,7 +14,7 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/provider/github"
 	"github.com/src-d/lookout/provider/json"
-	queue_util "github.com/src-d/lookout/queue"
+	lookoutQueue "github.com/src-d/lookout/queue"
 	"github.com/src-d/lookout/server"
 	"github.com/src-d/lookout/service/bblfsh"
 	"github.com/src-d/lookout/service/enry"
@@ -479,7 +479,7 @@ func (c *lookoutdCommand) runEventEnqueuer(
 	return cli.RunWatcher(
 		ctx,
 		watcher,
-		lookout.CachedHandler(queue_util.EventEnqueuer(ctx, qOpt.Q)))
+		lookout.CachedHandler(lookoutQueue.EventEnqueuer(ctx, qOpt.Q)))
 }
 
 func (c *queueConsumerCommand) runEventDequeuer(ctx context.Context, qOpt cli.QueueOptions, server *server.Server) error {
@@ -488,5 +488,5 @@ func (c *queueConsumerCommand) runEventDequeuer(ctx context.Context, qOpt cli.Qu
 		log.Infof("option --workers is 0, it will be set to the number of processors: %d", c.Workers)
 	}
 
-	return queue_util.RunEventDequeuer(ctx, qOpt.Q, server.HandleEvent, c.Workers)
+	return lookoutQueue.RunEventDequeuer(ctx, qOpt.Q, server.HandleEvent, c.Workers)
 }

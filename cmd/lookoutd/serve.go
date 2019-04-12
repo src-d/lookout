@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	lookoutQueue "github.com/src-d/lookout/queue"
 	"github.com/src-d/lookout/server"
 	"github.com/src-d/lookout/util/cli"
 	"github.com/src-d/lookout/util/ctxlog"
 
 	gocli "gopkg.in/src-d/go-cli.v0"
+	queue "gopkg.in/src-d/go-queue.v1"
 )
 
 func init() {
@@ -53,28 +55,35 @@ func (c *ServeCommand) ExecuteContext(ctx context.Context, args []string) error 
 		return err
 	}
 
+	posterQ, err := newMemQueue("poster-queue")
+	if err != nil {
+		return err
+	}
+
 	poster, err := c.initPoster(c.conf)
 	if err != nil {
 		return err
 	}
+
+	posterInQueue := lookoutQueue.NewPoster(poster, posterQ)
 
 	watcher, err := c.initWatcher(c.conf)
 	if err != nil {
 		return err
 	}
 
+	// this options are for event queue actually
 	qOpt := cli.QueueOptions{
 		Queue:  "mem-queue",
 		Broker: "memory://",
 	}
-
 	err = qOpt.InitQueue()
 	if err != nil {
 		return err
 	}
 
 	server := server.NewServer(server.Options{
-		Poster:         poster,
+		Poster:         posterInQueue,
 		FileGetter:     dataHandler.FileGetter,
 		Analyzers:      analyzers,
 		EventOp:        eventOp,
@@ -109,6 +118,14 @@ func (c *ServeCommand) ExecuteContext(ctx context.Context, args []string) error 
 		stopCh <- err
 	}()
 
+	go func() {
+		err := posterInQueue.Consume(ctx, 1)
+		if err != context.Canceled {
+			ctxlog.Get(ctx).Errorf(err, "poster consumer stopped")
+		}
+		stopCh <- err
+	}()
+
 	c.probeReadiness = true
 
 	select {
@@ -127,4 +144,13 @@ func (c *ServeCommand) ExecuteContext(ctx context.Context, args []string) error 
 	}
 
 	return nil
+}
+
+func newMemQueue(name string) (queue.Queue, error) {
+	b, err := queue.NewBroker("memory://")
+	if err != nil {
+		return nil, err
+	}
+
+	return b.Queue(name)
 }
