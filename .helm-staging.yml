@@ -49,9 +49,11 @@ bblfshd-sidecar:
     tag: v2.12.0
   drivers:
     languages:
+      # for js we have to lock old version due to style-analyzer
       javascript:
         repository: bblfsh/javascript-driver
         tag: v2.7.1
+      # for the rest we can use latest
       python:
         repository: bblfsh/python-driver
         tag: v2.8.2
