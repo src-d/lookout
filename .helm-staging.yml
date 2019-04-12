@@ -52,7 +52,7 @@ bblfshd-sidecar:
       # for js we have to lock old version due to style-analyzer
       javascript:
         repository: bblfsh/javascript-driver
-        tag: v1.2.0
+        tag: v2.7.1
       # for the rest we can use latest
       python:
         repository: bblfsh/python-driver
