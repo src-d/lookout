@@ -71,7 +71,7 @@ type QueueJobTestSuite struct {
 func (s *QueueJobTestSuite) TestCreationWithReviewEvent() {
 	require := s.Require()
 
-	qJob, err := NewQueueJob(context.TODO(), &mockEventA)
+	qJob, err := newEventJob(context.TODO(), &mockEventA)
 	require.NoError(err)
 	require.NotNil(qJob)
 
@@ -87,7 +87,7 @@ func (s *QueueJobTestSuite) TestCreationWithReviewEvent() {
 func (s *QueueJobTestSuite) TestCreationWithPushEvent() {
 	require := s.Require()
 
-	qJob, err := NewQueueJob(context.TODO(), &mockEventB)
+	qJob, err := newEventJob(context.TODO(), &mockEventB)
 	require.NoError(err)
 	require.NotNil(qJob)
 
@@ -103,7 +103,7 @@ func (s *QueueJobTestSuite) TestCreationWithPushEvent() {
 func (s *QueueJobTestSuite) TestCreationWithFakeEvent() {
 	require := s.Require()
 
-	qJob, err := NewQueueJob(context.TODO(), &fakeEvent)
+	qJob, err := newEventJob(context.TODO(), &fakeEvent)
 	require.EqualError(err, "unsupported event type *mock.FakeEvent")
 	require.Nil(qJob)
 }
@@ -111,7 +111,7 @@ func (s *QueueJobTestSuite) TestCreationWithFakeEvent() {
 func (s *QueueJobTestSuite) TestEventMethodWithFakeEvent() {
 	require := s.Require()
 
-	qj := QueueJob{Event: &Event{}}
+	qj := eventJob{Event: &Event{}}
 	qEv, err := qj.ToInterface()
 	require.EqualError(err, "unknown lookout event")
 	require.Nil(qEv)
