@@ -683,7 +683,7 @@
   revision = "20d25e2804050c1cd24a7eea1e7a6447dd0e74ec"
 
 [[projects]]
-  digest = "1:ae8fa21ce1a1759d939097b704c4dfafacb19a1a3e2db8016008f5ef7fff5c99"
+  digest = "1:7352a1824c04d564bf8cde1d420882859f4d9a938ec6a94f5081bffe22154b46"
   name = "gopkg.in/src-d/enry.v1"
   packages = [
     ".",
@@ -693,8 +693,8 @@
     "regex",
   ]
   pruneopts = "NUT"
-  revision = "6526da77b3bda1165dc0cb2b9b06102b22c1bb66"
-  version = "v1.7.2"
+  revision = "ab3c26b46dfaf8281bf78f2e998111e6a40829bf"
+  version = "v1.7.3"
 
 [[projects]]
   digest = "1:b3aa16e13560619b05e0bf75832cf74272c183b5879a29415cf23b12c3ea0e92"
