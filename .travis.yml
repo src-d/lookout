@@ -71,7 +71,7 @@ jobs:
     - name: 'Web Tests'
       stage: tests
       script:
-        - make dependencies
+        - make -f Makefile.web dependencies
         - make -f Makefile.web build
         - make -f Makefile.web test
         - make -f Makefile.web lint
