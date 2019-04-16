@@ -324,21 +324,29 @@ func Init() error {
 	// And then GOPATH
 	srcs = append(srcs, build.Default.SrcDirs()...)
 
+	fmt.Println("in vendor")
+	fmt.Println(srcs)
 	for _, src := range srcs {
 		rf := filepath.Join(
 			src, "gopkg.in/src-d/go-git-fixtures.v3",
 		)
+		fmt.Println(rf)
 		if _, err := os.Stat(filepath.Join(rf, DataFolder)); err == nil {
 			RootFolder = rf
+			fmt.Println(RootFolder)
 			return nil
 		}
 	}
 
+	fmt.Println("local cache")
 	// Try the modules local cache
 	if dir, err := os.Getwd(); err == nil {
+		fmt.Println(dir)
 		if pkg, err := build.Default.Import("gopkg.in/src-d/go-git-fixtures.v3", dir, build.FindOnly); err == nil {
+			fmt.Println(pkg.Dir, DataFolder)
 			if _, err := os.Stat(filepath.Join(pkg.Dir, DataFolder)); err == nil {
 				RootFolder = pkg.Dir
+				fmt.Println(RootFolder)
 				return nil
 			}
 

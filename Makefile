@@ -184,3 +184,6 @@ $(DEPENDENCIES): $(TOOLS_GOMOD)
 $(TOOLS_GOMOD):
 	mkdir -p $(TOOLS_PATH)
 	cd $(TOOLS_PATH) && $(GOCMD) mod init tools
+
+extra_test:
+	$(GOTEST) ./dummy
