@@ -14,7 +14,7 @@ import (
 	"github.com/src-d/lookout/util/cache"
 	"github.com/src-d/lookout/util/ctxlog"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v24/github"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	log "gopkg.in/src-d/go-log.v1"
 )

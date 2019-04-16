@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v24/github"
 )
 
 var reviewPathRegexp = regexp.MustCompile("/repos/.+/.+/pulls/[0-9]+/review")

@@ -15,7 +15,7 @@ require (
 	github.com/golang-migrate/migrate v3.2.0+incompatible
 	github.com/golang/protobuf v0.0.0-20180724203048-93b26e6a70e3
 	github.com/google/btree v0.0.0-20180124185431-e89373fe6b4a
-	github.com/google/go-github v0.0.0-20190228024924-7462feb2032c
+	github.com/google/go-github/v24 v24.0.1
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/securecookie v1.1.1

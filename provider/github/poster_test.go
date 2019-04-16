@@ -12,7 +12,7 @@ import (
 
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v24/github"
 	"github.com/gregjones/httpcache"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/cache"
