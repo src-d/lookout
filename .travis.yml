@@ -83,9 +83,9 @@ jobs:
     - name: 'Generated code'
       script:
         - make dependencies
-        - go generate ./...
+        - make generate-go
         - make no-changes-in-commit
-        - kallax migrate --input ./store/models/ --out ./store/migrations --name test-changes
+        - make generate-migrations
         - make no-changes-in-commit
         - make pack-migrations
         - make no-changes-in-commit

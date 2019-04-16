@@ -42,6 +42,9 @@ LOOKOUT_BIN := $(BIN_PATH)/lookoutd
 ESC_BIN := esc
 TOC_GENERATOR := $(CI_PATH)/gh-md-toc
 
+# Migrations
+MIGRTION_NAME ?= test-changes
+
 .PHONY: pack-migrations
 pack-migrations:
 	chmod -R go=r $(MIGRATIONS_PATH); \
@@ -141,3 +144,18 @@ clean: clean_modcache
 .PHONY: clean_modcache
 clean_modcache:
 	@$(GOCLEAN) -modcache
+
+
+.PHONY: generate
+generate: | generate-go generate-migrations pack-migrations vendor
+
+.PHONY: generate-go
+generate-go:
+	GO111MODULE=off $(GOCMD) generate ./...
+
+.PHONY: generate-migrations
+generate-migrations:
+	GO111MODULE=off kallax migrate \
+		--input ./store/models/ \
+		--out ./store/migrations \
+		--name $(MIGRTION_NAME)
