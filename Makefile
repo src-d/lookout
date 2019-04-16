@@ -8,7 +8,7 @@ PROJECT = lookout
 COMMANDS = cmd/lookoutd
 DEPENDENCIES = \
 	gopkg.in/src-d/go-kallax.v1 \
-	github.com/mjibson/esc
+	github.com/mjibson/esc@v0.2.0
 
 # Backend services
 POSTGRESQL_VERSION = 9.6
@@ -161,8 +161,23 @@ generate-migrations:
 		--name $(MIGRTION_NAME)
 
 
-GOGET := GO111MODULE=off $(GOGET)
+TOOLS_PATH := $(ROOT_DIR)/$(BUILD_PATH)/tools
+TOOLS_BIN_PATH := $(TOOLS_PATH)/bin
+TOOLS_GOMOD := $(TOOLS_PATH)/go.mod
+
+export PATH := $(PATH):$(TOOLS_BIN_PATH)
 
 # The @echo replaces the commands defined by `Makefile.main::dependencies`
 dependencies:
 	@echo;
+
+$(DEPENDENCIES): $(TOOLS_GOMOD)
+	@echo "installing $@ ..."
+	PACKAGE=`cut -d'@' -f1 <<< '$@'`; \
+	cd $(TOOLS_PATH); \
+	GOBIN=$(TOOLS_BIN_PATH) $(GOCMD) get $@ && \
+	GOBIN=$(TOOLS_BIN_PATH) $(GOCMD) install $${PACKAGE}/...;
+
+$(TOOLS_GOMOD):
+	mkdir -p $(TOOLS_PATH)
+	cd $(TOOLS_PATH) && $(GOCMD) mod init tools
