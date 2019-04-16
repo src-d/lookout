@@ -159,3 +159,7 @@ generate-migrations:
 		--input ./store/models/ \
 		--out ./store/migrations \
 		--name $(MIGRTION_NAME)
+
+# The @echo replaces the commands defined by `Makefile.main::dependencies`
+dependencies:
+	@echo;
