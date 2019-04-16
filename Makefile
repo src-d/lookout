@@ -31,6 +31,9 @@ DOCKERFILES=./docker/Dockerfile:$(PROJECT)
 OS := $(shell uname)
 CONFIG_FILE := config.yml
 
+export GO111MODULE := on
+export GOFLAGS := -mod=vendor
+
 # SDK binaries
 DUMMY_BIN := $(BIN_PATH)/dummy
 LOOKOUT_SDK_BIN := $(BIN_PATH)/lookout-sdk
