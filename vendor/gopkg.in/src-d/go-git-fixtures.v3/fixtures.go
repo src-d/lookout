@@ -328,8 +328,7 @@ func Init() error {
 		rf := filepath.Join(
 			src, "gopkg.in/src-d/go-git-fixtures.v3",
 		)
-
-		if _, err := os.Stat(rf); err == nil {
+		if _, err := os.Stat(filepath.Join(rf, DataFolder)); err == nil {
 			RootFolder = rf
 			return nil
 		}
@@ -338,8 +337,11 @@ func Init() error {
 	// Try the modules local cache
 	if dir, err := os.Getwd(); err == nil {
 		if pkg, err := build.Default.Import("gopkg.in/src-d/go-git-fixtures.v3", dir, build.FindOnly); err == nil {
-			RootFolder = pkg.Dir
-			return nil
+			if _, err := os.Stat(filepath.Join(pkg.Dir, DataFolder)); err == nil {
+				RootFolder = pkg.Dir
+				return nil
+			}
+
 		}
 	}
 
