@@ -160,6 +160,9 @@ generate-migrations:
 		--out ./store/migrations \
 		--name $(MIGRTION_NAME)
 
+
+GOGET := GO111MODULE=off $(GOGET)
+
 # The @echo replaces the commands defined by `Makefile.main::dependencies`
 dependencies:
 	@echo;
