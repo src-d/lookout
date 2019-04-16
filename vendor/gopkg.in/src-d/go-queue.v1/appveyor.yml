@@ -1,0 +1,22 @@
+version: "{build}"
+image: Visual Studio 2017
+platform: x64
+
+clone_folder: c:\gopath\src\gopkg.in\src-d\go-queue.v1
+
+environment:
+  GOPATH: c:\gopath
+  RABBITMQ_VERSION: any
+
+cache:
+  - C:\Users\appveyor\AppData\Local\Temp\chocolatey\ -> appveyor.yml
+
+install:
+  - set PATH=%GOPATH%\bin;C:\go\bin;C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;C:\msys64\usr\bin;%PATH%;"C:\Program Files\Git\mingw64\bin"
+  - mingw32-make ci-install
+
+test_script:
+  - mingw32-make test
+
+build: off
+deploy: off
