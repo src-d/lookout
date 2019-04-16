@@ -2,6 +2,10 @@ module github.com/src-d/lookout
 
 go 1.12
 
+replace github.com/Sirupsen/logrus => github.com/sirupsen/logrus v1.4.1
+
+replace google.golang.org/cloud => cloud.google.com/go v0.37.4
+
 require (
 	github.com/Masterminds/squirrel v0.0.0-20170825200431-a6b93000bd21 // indirect
 	github.com/Microsoft/go-winio v0.4.12 // indirect
