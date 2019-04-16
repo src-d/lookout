@@ -1,6 +1,8 @@
 # Deletes all the extensions using make implicit rules
 .SUFFIXES:
 
+ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
 # Package configuration
 PROJECT = lookout
 COMMANDS = cmd/lookoutd
@@ -126,3 +128,16 @@ endif
 .PHONY: ci-integration-dependencies
 ci-integration-dependencies: prepare-services ci-start-bblfsh
 
+VENDOR_PATH := $(ROOT_DIR)/vendor
+
+.PHONY: vendor
+vendor:
+	@$(GOCMD) mod tidy -v
+	@$(GOCMD) mod vendor -v
+	@$(GOCMD) mod verify
+
+clean: clean_modcache
+
+.PHONY: clean_modcache
+clean_modcache:
+	@$(GOCLEAN) -modcache

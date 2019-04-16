@@ -33,7 +33,10 @@ $ make pack-migrations
 
 ### Dependencies
 
-Go dependencies are managed with [dep](https://golang.github.io/dep/). Use `make godep` to make sure the `vendor` directory is up to date, and commit any necessary changes.
+Go dependencies are managed with [go Modules](https://github.com/golang/go/wiki/Modules). Use `make vendor` to make sure the `vendor` directory is up to date, and commit any necessary changes.
+
+In some circumstances `go.sum` and/or `vendor/modules.txt` are not the same locally than
+when generated in the CI. When it happens, just run `make clean` before `make vendor`.
 
 
 ### TOC

@@ -21,6 +21,11 @@ addons:
 go:
   - '1.12.x'
 
+env:
+  global:
+    - GO111MODULE=on
+    - GOFLAGS=-mod=vendor
+
 before_install:
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
   - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 90
@@ -84,9 +89,7 @@ jobs:
         - make no-changes-in-commit
         - make pack-migrations
         - make no-changes-in-commit
-        - make build
-        - make no-changes-in-commit
-        - make godep
+        - make vendor
         - make no-changes-in-commit
     - name: 'linux packages'
       stage: release
