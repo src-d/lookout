@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/alcortesm/tgz"
@@ -324,12 +325,11 @@ func Init() error {
 	// And then GOPATH
 	srcs = append(srcs, build.Default.SrcDirs()...)
 
+	fmt.Println("VENDOR")
 	fmt.Println("in vendor")
 	fmt.Println(srcs)
 	for _, src := range srcs {
-		rf := filepath.Join(
-			src, "gopkg.in/src-d/go-git-fixtures.v3",
-		)
+		rf := filepath.Join(src, packagePath)
 		fmt.Println(rf)
 		if _, err := os.Stat(filepath.Join(rf, DataFolder)); err == nil {
 			RootFolder = rf
@@ -342,7 +342,7 @@ func Init() error {
 	// Try the modules local cache
 	if dir, err := os.Getwd(); err == nil {
 		fmt.Println(dir)
-		if pkg, err := build.Default.Import("gopkg.in/src-d/go-git-fixtures.v3", dir, build.FindOnly); err == nil {
+		if pkg, err := build.Default.Import(packagePath, dir, build.FindOnly); err == nil {
 			fmt.Println(pkg.Dir, DataFolder)
 			if _, err := os.Stat(filepath.Join(pkg.Dir, DataFolder)); err == nil {
 				RootFolder = pkg.Dir
@@ -350,11 +350,26 @@ func Init() error {
 				return nil
 			}
 
+		} else {
+			fmt.Println(err)
 		}
+	}
+
+	fmt.Println("PANIC MODE")
+
+	cachedPath := filepath.Join(build.Default.GOPATH, "pkg/mod", packagePath)
+	// Try the modules local cache
+	fmt.Println(cachedPath)
+	if _, err := os.Stat(filepath.Join(cachedPath, DataFolder)); err == nil {
+		RootFolder = cachedPath
+		fmt.Println(RootFolder)
+		return nil
 	}
 
 	return errors.New("fixtures folder not found")
 }
+
+var packagePath = reflect.TypeOf(Fixture{}).PkgPath()
 
 func vendorDirectories() []string {
 	dir, err := os.Getwd()

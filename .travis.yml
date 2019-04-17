@@ -24,7 +24,6 @@ go:
 env:
   global:
     - GO111MODULE=on
-    - GOFLAGS=-mod=vendor
 
 before_install:
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90

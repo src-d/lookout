@@ -32,7 +32,7 @@ OS := $(shell uname)
 CONFIG_FILE := config.yml
 
 export GO111MODULE := on
-export GOFLAGS := -mod=vendor
+#export GOFLAGS := -mod=vendor
 
 # SDK binaries
 DUMMY_BIN := $(BIN_PATH)/dummy
