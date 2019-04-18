@@ -167,7 +167,7 @@ func (c *EventCommand) initDataServer(srv *lookout.DataServerHandler) (startFunc
 	return start, stop
 }
 
-func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
+func (c *EventCommand) analyzer() (lookout.Analyzer, error) {
 	if c.Args.Analyzer == "" {
 		c.Args.Analyzer = "ipv4://localhost:9930"
 	}
@@ -177,7 +177,7 @@ func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
 
 	grpcAddr, err := pb.ToGoGrpcAddress(c.Args.Analyzer)
 	if err != nil {
-		return nil, fmt.Errorf("Can't resolve address of analyzer '%s': %s", c.Args.Analyzer, err)
+		return lookout.Analyzer{}, fmt.Errorf("Can't resolve address of analyzer '%s': %s", c.Args.Analyzer, err)
 	}
 
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -188,10 +188,18 @@ func (c *EventCommand) analyzerClient() (lookout.AnalyzerClient, error) {
 		grpc.WithBlock(),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Can't connect to analyzer '%s': %s", grpcAddr, err)
+		return lookout.Analyzer{}, fmt.Errorf("Can't connect to analyzer '%s': %s", grpcAddr, err)
 	}
 
-	return lookout.NewAnalyzerClient(conn), nil
+	client := lookout.NewAnalyzerClient(conn)
+
+	return lookout.Analyzer{
+		Client: client,
+		Config: lookout.AnalyzerConfig{
+			Name: "test-analyzer",
+			Addr: c.Args.Analyzer,
+		},
+	}, nil
 }
 
 func (c *EventCommand) parseConfig() (types.Struct, error) {
