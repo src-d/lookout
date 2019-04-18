@@ -4,17 +4,19 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"github.com/src-d/lookout"
+	"github.com/src-d/lookout/provider/json"
 	"github.com/src-d/lookout/server"
+
+	"gopkg.in/src-d/lookout-sdk.v0/pb"
 
 	uuid "github.com/satori/go.uuid"
 	gocli "gopkg.in/src-d/go-cli.v0"
 	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
-	log "gopkg.in/src-d/go-log.v1"
-	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 
 func init() {
@@ -59,7 +61,7 @@ func (c *PushCommand) Execute(args []string) error {
 	}
 
 	srv := server.NewServer(server.Options{
-		Poster:     &server.LogPoster{Log: log.DefaultLogger},
+		Poster:     json.NewPoster(os.Stdout),
 		FileGetter: dataHandler.FileGetter,
 		Analyzers: map[string]lookout.Analyzer{
 			"test-analyzer": lookout.Analyzer{Client: client},
