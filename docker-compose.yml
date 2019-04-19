@@ -22,7 +22,7 @@ services:
     ports:
       - "9930:9930"
   bblfsh:
-    image: "bblfsh/bblfshd:v2.12.0-drivers"
+    image: "bblfsh/bblfshd:v2.12.1-drivers"
     privileged: true
     ports:
       - "9432:9432"
