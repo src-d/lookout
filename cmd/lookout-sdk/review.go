@@ -51,7 +51,7 @@ func (c *ReviewCommand) Execute(args []string) error {
 		stopCh <- startDataServer()
 	}()
 
-	client, err := c.analyzerClient()
+	analyzer, err := c.analyzer()
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (c *ReviewCommand) Execute(args []string) error {
 		Poster:     json.NewPoster(os.Stdout),
 		FileGetter: dataHandler.FileGetter,
 		Analyzers: map[string]lookout.Analyzer{
-			"test-analyzer": lookout.Analyzer{Client: client},
+			analyzer.Config.Name: analyzer,
 		},
 		ExitOnError: true,
 	})
