@@ -46,7 +46,7 @@ analyzers:
 
 bblfshd-sidecar:
   image:
-    tag: v2.12.0
+    tag: v2.12.1
   drivers:
     languages:
       # for js we have to lock old version due to style-analyzer
@@ -56,25 +56,25 @@ bblfshd-sidecar:
       # for the rest we can use latest
       python:
         repository: bblfsh/python-driver
-        tag: v2.8.2
+        tag: v2.8.3
       cpp:
         repository: bblfsh/cpp-driver
-        tag: v1.2.3
+        tag: v1.2.4
       java:
         repository: bblfsh/java-driver
-        tag: v2.6.2
+        tag: v2.6.3
       bash:
         repository: bblfsh/bash-driver
-        tag: v2.5.1
+        tag: v2.5.2
       ruby:
         repository: bblfsh/ruby-driver
         tag: v2.9.2
       go:
         repository: bblfsh/go-driver
-        tag: v2.5.2
+        tag: v2.5.3
       csharp:
         repository: bblfsh/csharp-driver
-        tag: v1.4.2
+        tag: v1.4.3
       php:
         repository: bblfsh/php-driver
-        tag: v2.7.3
+        tag: v2.7.4
