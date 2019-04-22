@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	lookoutQueue "github.com/src-d/lookout/queue"
 	"github.com/src-d/lookout/server"
 	"github.com/src-d/lookout/util/cli"
 	"github.com/src-d/lookout/util/ctxlog"
@@ -59,13 +60,20 @@ func (c *WorkCommand) ExecuteContext(ctx context.Context, args []string) error {
 		return err
 	}
 
-	err = c.InitQueue()
+	posterQ, err := c.PosterQueue()
+	if err != nil {
+		return err
+	}
+
+	posterInQueue := lookoutQueue.NewPoster(poster, posterQ)
+
+	eventsQ, err := c.EventsQueue()
 	if err != nil {
 		return err
 	}
 
 	server := server.NewServer(server.Options{
-		Poster:         poster,
+		Poster:         posterInQueue,
 		FileGetter:     dataHandler.FileGetter,
 		Analyzers:      analyzers,
 		EventOp:        eventOp,
@@ -85,9 +93,18 @@ func (c *WorkCommand) ExecuteContext(ctx context.Context, args []string) error {
 	}()
 
 	go func() {
-		err := c.runEventDequeuer(ctx, c.QueueOptions.Q, server)
+		err := c.runEventDequeuer(ctx, eventsQ, server)
 		if err != context.Canceled {
 			ctxlog.Get(ctx).Errorf(err, "event dequeuer stopped")
+		}
+		stopCh <- err
+	}()
+
+	go func() {
+		// TODO number of workers should be configurable
+		err := posterInQueue.Consume(ctx, 1)
+		if err != context.Canceled {
+			ctxlog.Get(ctx).Errorf(err, "poster consumer stopped")
 		}
 		stopCh <- err
 	}()

@@ -113,6 +113,7 @@ func (c *ServeCommand) ExecuteContext(ctx context.Context, args []string) error 
 	}()
 
 	go func() {
+		// TODO number of workers should be configurable
 		err := posterInQueue.Consume(ctx, 1)
 		if err != context.Canceled {
 			ctxlog.Get(ctx).Errorf(err, "poster consumer stopped")
