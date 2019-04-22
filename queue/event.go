@@ -11,9 +11,9 @@ import (
 // Event allows to marshal and unmarshal lookout.Event interface
 type Event struct {
 	EventType lookout.EventType
-	// Exported so go-queue marshals it, but should be accessed through Event()
+	// Exported so go-queue marshals it, but should be accessed through ToInterface()
 	ReviewEvent *lookout.ReviewEvent
-	// Exported so go-queue marshals it, but should be accessed through Event()
+	// Exported so go-queue marshals it, but should be accessed through ToInterface()
 	PushEvent *lookout.PushEvent
 }
 
