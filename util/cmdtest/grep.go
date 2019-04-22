@@ -49,7 +49,7 @@ func (s *IntegrationSuite) GrepAndNotAll(r io.Reader, strs []string, noStrs []st
 		if !strings.Contains(read, st) {
 			fmt.Printf("'%s' is not found in output:\n", st)
 			fmt.Println(read)
-			fmt.Printf("\nThe complete command output:\n%s", s.logBuf.String())
+			fmt.Printf("\nThe complete command output:\n%s", s.readBuf.String())
 			s.Stop()
 			s.Suite.T().FailNow()
 		}
@@ -59,7 +59,7 @@ func (s *IntegrationSuite) GrepAndNotAll(r io.Reader, strs []string, noStrs []st
 		if strings.Contains(read, st) {
 			fmt.Printf("'%s' should not be in output:\n", st)
 			fmt.Println(read)
-			fmt.Printf("\nThe complete command output:\n%s", s.logBuf.String())
+			fmt.Printf("\nThe complete command output:\n%s", s.readBuf.String())
 			s.Stop()
 			s.Suite.T().FailNow()
 		}
@@ -101,7 +101,7 @@ func (s *IntegrationSuite) scanAndFind(r io.Reader, fn func(*bytes.Buffer, strin
 	}
 
 	if extraDebug {
-		fmt.Printf("The complete command output so far:\n%s", s.logBuf.String())
+		fmt.Printf("The complete command output so far:\n%s", s.readBuf.String())
 	}
 
 	return found, buf
@@ -117,7 +117,7 @@ func (s *IntegrationSuite) iterAndFind(str []string, fn func(string) bool, calle
 	}
 
 	if extraDebug {
-		fmt.Printf("The complete command output so far:\n%s", s.logBuf.String())
+		fmt.Printf("The complete command output so far:\n%s", s.readBuf.String())
 	}
 
 	return found
