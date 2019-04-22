@@ -32,6 +32,7 @@ import (
 	"gopkg.in/src-d/go-billy.v4/osfs"
 	gocli "gopkg.in/src-d/go-cli.v0"
 	log "gopkg.in/src-d/go-log.v1"
+	queue "gopkg.in/src-d/go-queue.v1"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -473,20 +474,20 @@ func (c *queueConsumerCommand) initAnalyzers(conf Config) (map[string]lookout.An
 
 func (c *lookoutdCommand) runEventEnqueuer(
 	ctx context.Context,
-	qOpt cli.QueueOptions,
+	q queue.Queue,
 	watcher lookout.Watcher,
 ) error {
 	return cli.RunWatcher(
 		ctx,
 		watcher,
-		lookout.CachedHandler(lookoutQueue.EventEnqueuer(ctx, qOpt.Q)))
+		lookout.CachedHandler(lookoutQueue.EventEnqueuer(ctx, q)))
 }
 
-func (c *queueConsumerCommand) runEventDequeuer(ctx context.Context, qOpt cli.QueueOptions, server *server.Server) error {
+func (c *queueConsumerCommand) runEventDequeuer(ctx context.Context, q queue.Queue, server *server.Server) error {
 	if c.Workers <= 0 {
 		c.Workers = runtime.NumCPU()
 		log.Infof("option --workers is 0, it will be set to the number of processors: %d", c.Workers)
 	}
 
-	return lookoutQueue.RunEventDequeuer(ctx, qOpt.Q, server.HandleEvent, c.Workers)
+	return lookoutQueue.RunEventDequeuer(ctx, q, server.HandleEvent, c.Workers)
 }

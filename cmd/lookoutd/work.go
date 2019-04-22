@@ -85,7 +85,7 @@ func (c *WorkCommand) ExecuteContext(ctx context.Context, args []string) error {
 	}()
 
 	go func() {
-		err := c.runEventDequeuer(ctx, c.QueueOptions, server)
+		err := c.runEventDequeuer(ctx, c.QueueOptions.Q, server)
 		if err != context.Canceled {
 			ctxlog.Get(ctx).Errorf(err, "event dequeuer stopped")
 		}

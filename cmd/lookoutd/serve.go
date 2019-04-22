@@ -6,7 +6,6 @@ import (
 
 	lookoutQueue "github.com/src-d/lookout/queue"
 	"github.com/src-d/lookout/server"
-	"github.com/src-d/lookout/util/cli"
 	"github.com/src-d/lookout/util/ctxlog"
 
 	gocli "gopkg.in/src-d/go-cli.v0"
@@ -72,12 +71,7 @@ func (c *ServeCommand) ExecuteContext(ctx context.Context, args []string) error 
 		return err
 	}
 
-	// this options are for event queue actually
-	qOpt := cli.QueueOptions{
-		Queue:  "mem-queue",
-		Broker: "memory://",
-	}
-	err = qOpt.InitQueue()
+	eventsQ, err := newMemQueue("events-queue")
 	if err != nil {
 		return err
 	}
@@ -103,7 +97,7 @@ func (c *ServeCommand) ExecuteContext(ctx context.Context, args []string) error 
 	}()
 
 	go func() {
-		err := c.runEventDequeuer(ctx, qOpt, server)
+		err := c.runEventDequeuer(ctx, eventsQ, server)
 		if err != context.Canceled {
 			ctxlog.Get(ctx).Errorf(err, "event dequeuer stopped")
 		}
@@ -111,7 +105,7 @@ func (c *ServeCommand) ExecuteContext(ctx context.Context, args []string) error 
 	}()
 
 	go func() {
-		err := c.runEventEnqueuer(ctx, qOpt, watcher)
+		err := c.runEventEnqueuer(ctx, eventsQ, watcher)
 		if err != context.Canceled {
 			ctxlog.Get(ctx).Errorf(err, "event enqueuer stopped")
 		}

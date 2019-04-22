@@ -45,7 +45,7 @@ func (c *WatchCommand) ExecuteContext(ctx context.Context, args []string) error 
 	}
 
 	go func() {
-		err := c.runEventEnqueuer(ctx, c.QueueOptions, watcher)
+		err := c.runEventEnqueuer(ctx, c.QueueOptions.Q, watcher)
 		if err != context.Canceled {
 			ctxlog.Get(ctx).Errorf(err, "event enqueuer stopped")
 		}
