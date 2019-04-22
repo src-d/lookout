@@ -934,10 +934,10 @@
     "@types/history" "*"
     "@types/react" "*"
 
-"@types/react@*", "@types/react@^16.8.7":
-  version "16.8.7"
-  resolved "https://registry.yarnpkg.com/@types/react/-/react-16.8.7.tgz#7b1c0223dd5494f9b4501ad2a69aa6acb350a29b"
-  integrity sha512-0xbkIyrDNKUn4IJVf8JaCn+ucao/cq6ZB8O6kSzhrJub1cVSqgTArtG0qCfdERWKMEIvUbrwLXeQMqWEsyr9dA==
+"@types/react@*", "@types/react@^16.8.14":
+  version "16.8.14"
+  resolved "https://registry.yarnpkg.com/@types/react/-/react-16.8.14.tgz#b561bfabeb8f60d12e6d4766367e7a9ae927aa18"
+  integrity sha512-26tFVJ1omGmzIdFTFmnC5zhz1GTaqCjxgUxV4KzWvsybF42P7/j4RBn6UeO3KbHPXqKWZszMXMoI65xIWm954A==
   dependencies:
     "@types/prop-types" "*"
     csstype "^2.2.0"
