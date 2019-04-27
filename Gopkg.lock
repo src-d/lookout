@@ -806,12 +806,12 @@
   version = "v1.3.5"
 
 [[projects]]
-  digest = "1:0d4af6fbf8a26e281ba21b1075844804a6509fbd170369a6f466a8b2fcdbb0b2"
+  digest = "1:6cf2456946e9960a23d6c41a1b521ab6e91286a4e18a12aa73baf359a831800d"
   name = "gopkg.in/src-d/go-log.v1"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "289c0569da6b085f689b7b133944816c3428ed64"
-  version = "v1.0.1"
+  revision = "2b0b5b62e97231e1300500d4c6170ca84028f545"
+  version = "v1.0.2"
 
 [[projects]]
   digest = "1:94d3abe04aeb23ef597a2584dea33f8a544f13a8432cfbb9ad9e41ead107947a"
