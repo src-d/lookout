@@ -533,7 +533,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2cd113b6cf2ddeddb6f38afa1ec276319769f1614f8b9377eabba134a1dc7e8e"
+  digest = "1:8fd591143b9d0c45b83558065a9361e274160fc1c11ed6ad5978383dfe8ccd2d"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -542,7 +542,9 @@
     "http2",
     "http2/hpack",
     "idna",
+    "internal/socks",
     "internal/timeseries",
+    "proxy",
     "trace",
   ]
   pruneopts = "NUT"
@@ -745,7 +747,7 @@
   version = "v3.3.0"
 
 [[projects]]
-  digest = "1:a9a6646fe5aef17a55d66f119337fa69e789e5d9cfcdd0fdfe6782d0fb2fdb7d"
+  digest = "1:e427e71890773bf8c06f2b77b9c51a26b9bd959d7bc67987bddff79900975e97"
   name = "gopkg.in/src-d/go-git.v4"
   packages = [
     ".",
@@ -791,8 +793,8 @@
     "utils/merkletrie/noder",
   ]
   pruneopts = "NUT"
-  revision = "aa6f288c256ff8baf8a7745546a9752323dc0d89"
-  version = "v4.11.0"
+  revision = "f9a30199e7083bdda8adad3a4fa2ec42d25c1fdb"
+  version = "v4.12.0"
 
 [[projects]]
   digest = "1:c1d9b0ec7eca0c5f1b82abe29ec426a94f43b0f1a4641f99ac80af921fe123fe"
