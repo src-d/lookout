@@ -45,9 +45,15 @@ analyzers:
     feedback: https://github.com/src-d/lookout-terraform-analyzer/issues/new
 
 bblfshd-sidecar:
+  metrics:
+    enabled: true
+    namespace: lookout
+    additionalServiceMatchLabels:
+      app: lookout-work
   image:
-    tag: v2.12.1
+    tag: v2.14.0
   drivers:
+    install: true
     languages:
       # for js we have to lock old version due to style-analyzer
       javascript:
