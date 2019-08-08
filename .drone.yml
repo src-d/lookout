@@ -27,7 +27,7 @@ helm_deploy: &helm_deploy
   skip_tls_verify: true
   helm_repos: srcd-stable=https://src-d.github.io/charts/stable/
   chart: srcd-stable/lookout
-  chart-version: 0.7.0
+  chart-version: 0.9.1
   release: lookout
   tiller_ns: lookout
   namespace: lookout
