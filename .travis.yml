@@ -35,6 +35,8 @@ stages:
     if: tag IS present AND NOT tag =~ /^dummy/
   - name: release dummy analyzer
     if: tag IS present AND tag =~ /^dummy/
+  - name: deploy staging
+    if: branch = master AND type = push
 
 jobs:
   include:
@@ -122,6 +124,14 @@ jobs:
       script:
         - PKG_OS=linux make -f Makefile.dummy build
         - DOCKER_PUSH_LATEST=true make -f Makefile.dummy docker-push
+    - name: 'push staging deploy image to DockerHub'
+      stage: deploy staging
+      script:
+        - make dependencies
+        - PKG_OS=linux DOCKER_OS=linux DOCKER_ARCH=amd64 make packages
+        - make docker-push
+        - HELM_RELEASE=lookout HELM_CHART=lookout K8S_NAMESPACE=lookout HELM_ARGS="--namespace lookout --tiller-namespace lookout --repo https://src-d.github.io/charts/stable/ --set image.tag=dev-${TRAVIS_COMMIT:0:7} --version 0.9.1 -f .helm-staging.yml" make deploy
+
 before_cache:
   # make bblfsh images readable
   - sudo chmod -R 777 $HOME/bblfshd/images
