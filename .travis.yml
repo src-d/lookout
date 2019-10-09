@@ -17,6 +17,8 @@ addons:
     packages:
       - gcc-6
       - g++-6
+      # workaround for https://github.com/smola/ci-tricks/issues/19
+      - rabbitmq-server
 
 go:
   - '1.12.x'
