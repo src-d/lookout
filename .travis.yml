@@ -132,7 +132,7 @@ jobs:
         - make dependencies
         - PKG_OS=linux DOCKER_OS=linux DOCKER_ARCH=amd64 make packages
         - make docker-push
-        - HELM_RELEASE=lookout HELM_CHART=lookout K8S_NAMESPACE=lookout HELM_ARGS="--namespace lookout --tiller-namespace lookout --repo https://src-d.github.io/charts/stable/ --set image.tag=dev-${TRAVIS_COMMIT:0:7} --version 0.9.1 -f .helm-staging.yml" make deploy
+        - HELM_RELEASE=lookout HELM_CHART=lookout K8S_NAMESPACE=lookout HELM_ARGS="--namespace lookout --tiller-namespace lookout --repo https://src-d.github.io/charts/stable/ --set image.lookout.tag=dev-${TRAVIS_COMMIT:0:7} --version 0.9.1 -f .helm-staging.yml" make deploy
 
 before_cache:
   # make bblfsh images readable
