@@ -1,0 +1,7 @@
+[[constraint]]
+  name = "github.com/mjibson/esc"
+  revision = "0ea7db170df78dcddf3e223365f444163147fe89"
+
+[prune]
+  go-tests = true
+  unused-packages = true
