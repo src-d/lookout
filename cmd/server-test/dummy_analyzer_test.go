@@ -34,11 +34,13 @@ func (suite *DummyIntegrationSuite) TearDownTest() {
 
 func (suite *DummyIntegrationSuite) TestSuccessReview() {
 	suite.sendEvent(successJSON)
-	suite.GrepAll(suite.r, []string{
-		`processing pull request`,
-		`{"analyzer-name":"Dummy","file":"another.go","line":3,"text":"This line exceeded`,
-		`status=success`,
-	})
+	// status & comments can appear in random order
+	// we don't know when server finished posting comments anymore
+	// let's read everything from the output during some time and hope it finished
+	time.Sleep(5 * time.Second)
+	str := suite.AllOutput()
+	suite.Require().Contains(str, `status=success`)
+	suite.Require().Contains(str, `{"analyzer-name":"Dummy","file":"another.go","line":3,"text":"This line exceeded`)
 }
 
 func (suite *DummyIntegrationSuite) TestGRPCLogs() {
@@ -64,10 +66,13 @@ func (suite *DummyIntegrationSuite) TestReviewDontPostSameComment() {
 	}
 
 	suite.sendEvent(rev0Event.String())
-	suite.GrepAll(suite.r, []string{
-		`{"analyzer-name":"Dummy","file":"dummy.go","line":5,"text":"This line exceeded`,
-		`status=success`,
-	})
+	// status & comments can appear in random order
+	// we don't know when server finished posting comments anymore
+	// let's read everything from the output during some time and hope it finished
+	time.Sleep(3 * time.Second)
+	str := suite.AllOutput()
+	suite.Require().Contains(str, `status=success`)
+	suite.Require().Contains(str, `{"analyzer-name":"Dummy","file":"dummy.go","line":5,"text":"This line exceeded`)
 
 	rev1Event := &jsonReviewEvent{
 		ReviewEvent: &pb.ReviewEvent{
@@ -77,15 +82,17 @@ func (suite *DummyIntegrationSuite) TestReviewDontPostSameComment() {
 		},
 	}
 
+	prevStrLen := len(str)
 	suite.sendEvent(rev1Event.String())
-	suite.GrepAndNotAll(suite.r,
-		[]string{
-			`processing pull request`,
-			`{"analyzer-name":"Dummy","file":"dummy.go","text":"The file has increased`,
-			`status=success`,
-		}, []string{
-			`{"analyzer-name":"Dummy","file":"dummy.go","line":5,"text":"This line exceeded`,
-		})
+	// status & comments can appear in random order
+	// we don't know when server finished posting comments anymore
+	// let's read everything from the output during some time and hope it finished
+	time.Sleep(5 * time.Second)
+	str = suite.AllOutput()[prevStrLen:]
+	suite.Require().Contains(str, `posting analysis`)
+	suite.Require().Contains(str, `status=success`)
+	suite.Require().Contains(str, `{"analyzer-name":"Dummy","file":"dummy.go","text":"The file has increased`)
+	suite.Require().NotContains(str, `{"analyzer-name":"Dummy","file":"dummy.go","line":5,"text":"This line exceeded`)
 }
 
 func (suite *DummyIntegrationSuite) TestWrongRevision() {

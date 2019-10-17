@@ -37,12 +37,14 @@ func (suite *MultiDummyIntegrationSuite) TearDownTest() {
 
 func (suite *MultiDummyIntegrationSuite) TestSuccessReview() {
 	suite.sendEvent(successJSON)
+	// we don't know when server finished posting comments anymore
+	// let's read everything from the output during some time and hope it finished
+	time.Sleep(5 * time.Second)
+	str := suite.AllOutput()
 
-	str := suite.GrepAll(suite.r, []string{
-		"processing pull request",
-		`msg="posting analysis" app=lookoutd comments=4`,
-		`status=success`,
-	})
+	suite.Require().Contains(str, "processing pull request")
+	suite.Require().Contains(str, `msg="posting analysis" app=lookoutd comments=4`)
+	suite.Require().Contains(str, `status=success`)
 
 	dummy1First := `{"analyzer-name":"Dummy1","file":"another\.go","text":"The file has increased in 4 lines\."}.*` +
 		`{"analyzer-name":"Dummy1","file":"another\.go","line":3,"text":"This line exceeded 120 chars\."}.*` +

@@ -13,9 +13,9 @@ import (
 	"github.com/src-d/lookout/util/cmdtest"
 	"github.com/src-d/lookout/util/grpchelper"
 
-	"github.com/src-d/lookout-test-fixtures"
+	fixtures "github.com/src-d/lookout-test-fixtures"
 	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-log.v1"
+	log "gopkg.in/src-d/go-log.v1"
 	"gopkg.in/src-d/lookout-sdk.v0/pb"
 )
 

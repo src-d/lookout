@@ -31,7 +31,8 @@ type IntegrationSuite struct {
 	Stop func()
 	wg   sync.WaitGroup
 
-	logBuf *bytes.Buffer
+	readBuf   *bytes.Buffer
+	unreadBuf *bytes.Buffer
 }
 
 func init() {
@@ -149,18 +150,20 @@ func (suite *IntegrationSuite) StartWorker(args ...string) (io.Reader, io.WriteC
 func (suite *IntegrationSuite) startLookoutd(args ...string) (io.Reader, io.WriteCloser) {
 	require := suite.Require()
 
-	r, outputWriter := io.Pipe()
-	suite.logBuf = &bytes.Buffer{}
-	tee := io.TeeReader(r, suite.logBuf)
+	suite.unreadBuf = &bytes.Buffer{}
+	suite.readBuf = &bytes.Buffer{}
 
 	cmd := exec.CommandContext(suite.Ctx, lookoutBin, args...)
-	cmd.Stdout = outputWriter
-	cmd.Stderr = outputWriter
+	cmd.Stdout = suite.unreadBuf
+	cmd.Stderr = suite.unreadBuf
+
+	r := &testReader{buf: suite.unreadBuf}
+	tee := io.TeeReader(r, suite.readBuf)
 
 	go func() {
 		// cmd.Wait() will not finish until stdout is closed
 		<-suite.Ctx.Done()
-		outputWriter.Close()
+		r.Close()
 	}()
 
 	fmt.Printf("starting lookoutd %s\n", strings.Join(args, " "))
@@ -179,7 +182,7 @@ func (suite *IntegrationSuite) startLookoutd(args ...string) (io.Reader, io.Writ
 			// don't print error if killed by cancel
 			if suite.Ctx.Err() != context.Canceled {
 				fmt.Println("lookoutd exited with error:", err)
-				fmt.Printf("output:\n%s", suite.logBuf.String())
+				fmt.Printf("output:\n%s", suite.readBuf.String())
 				// T.Fail cannot be called from a goroutine
 				suite.Stop()
 				os.Exit(1)
@@ -256,5 +259,48 @@ func (suite *IntegrationSuite) runQuery(db *sql.DB, query string) {
 
 // Output returns the output read so far from the reader returned in StartLookoutd
 func (suite *IntegrationSuite) Output() string {
-	return suite.logBuf.String()
+	return suite.readBuf.String()
+}
+
+// AllOutput returns the all output returned in StartLookoutd
+func (suite *IntegrationSuite) AllOutput() string {
+	return suite.readBuf.String() + suite.unreadBuf.String()
+}
+
+// a reader that uses bytes.Buffer but doesn't return EOF when the buffer ends
+// need for compatibility with previous code
+type testReader struct {
+	buf    *bytes.Buffer
+	closed bool
+	wait   bool
+}
+
+func (r *testReader) Read(p []byte) (int, error) {
+	if r.closed {
+		return 0, io.EOF
+	}
+
+	if r.wait {
+		for {
+			n, err := r.buf.Read(p)
+			if err != io.EOF {
+				r.wait = false
+				return n, err
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+
+	n, err := r.buf.Read(p)
+	if err == io.EOF {
+		r.wait = true
+		return n, nil
+	}
+
+	return n, err
+}
+
+func (r *testReader) Close() error {
+	r.closed = true
+	return nil
 }
