@@ -1,0 +1,28 @@
+language: go
+
+go:
+  - 1.11.x
+  - 1.10.x
+
+go_import_path: gopkg.in/src-d/go-queue.v1
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - go: tip
+
+services:
+  - docker
+
+sudo: required
+
+before_install:
+  - docker pull rabbitmq:3-management
+  - docker run -d --name rabbitmq -p 127.0.0.1:5672:5672 rabbitmq:3-management
+  - docker ps -a
+
+install:
+  - make dependencies
+
+script:
+  - make test-coverage

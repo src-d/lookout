@@ -13,7 +13,7 @@ import (
 
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/go-chi/chi"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v24/github"
 	"github.com/src-d/lookout/store"
 	"github.com/src-d/lookout/util/ctxlog"
 	yaml "gopkg.in/yaml.v2"

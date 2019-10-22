@@ -23,6 +23,10 @@ addons:
 go:
   - '1.12.x'
 
+env:
+  global:
+    - GO111MODULE=on
+
 before_install:
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
   - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 90
@@ -75,22 +79,20 @@ jobs:
     - name: 'Web Tests'
       stage: tests
       script:
-        - make dependencies
+        - make -f Makefile.web dependencies
         - make -f Makefile.web build
         - make -f Makefile.web test
         - make -f Makefile.web lint
     - name: 'Generated code'
       script:
         - make dependencies
-        - go generate ./...
+        - make generate-go
         - make no-changes-in-commit
-        - kallax migrate --input ./store/models/ --out ./store/migrations --name test-changes
+        - make generate-migrations
         - make no-changes-in-commit
         - make pack-migrations
         - make no-changes-in-commit
-        - make build
-        - make no-changes-in-commit
-        - make godep
+        - make vendor
         - make no-changes-in-commit
     - name: 'linux packages'
       stage: release

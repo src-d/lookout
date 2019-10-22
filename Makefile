@@ -1,12 +1,14 @@
 # Deletes all the extensions using make implicit rules
 .SUFFIXES:
 
+ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
 # Package configuration
 PROJECT = lookout
 COMMANDS = cmd/lookoutd
 DEPENDENCIES = \
 	gopkg.in/src-d/go-kallax.v1 \
-	github.com/mjibson/esc
+	github.com/mjibson/esc@v0.2.0
 
 # Backend services
 POSTGRESQL_VERSION = 9.6
@@ -29,6 +31,9 @@ DOCKERFILES=./docker/Dockerfile:$(PROJECT)
 OS := $(shell uname)
 CONFIG_FILE := config.yml
 
+export GO111MODULE := on
+#export GOFLAGS := -mod=vendor
+
 # SDK binaries
 DUMMY_BIN := $(BIN_PATH)/dummy
 LOOKOUT_SDK_BIN := $(BIN_PATH)/lookout-sdk
@@ -39,6 +44,9 @@ LOOKOUT_BIN := $(BIN_PATH)/lookoutd
 # Tools
 ESC_BIN := esc
 TOC_GENERATOR := $(CI_PATH)/gh-md-toc
+
+# Migrations
+MIGRTION_NAME ?= test-changes
 
 .PHONY: pack-migrations
 pack-migrations:
@@ -126,3 +134,56 @@ endif
 .PHONY: ci-integration-dependencies
 ci-integration-dependencies: prepare-services ci-start-bblfsh
 
+VENDOR_PATH := $(ROOT_DIR)/vendor
+
+.PHONY: vendor
+vendor:
+	@$(GOCMD) mod tidy -v
+	@$(GOCMD) mod vendor -v
+	@$(GOCMD) mod verify
+
+clean: clean_modcache
+
+.PHONY: clean_modcache
+clean_modcache:
+	@$(GOCLEAN) -modcache
+
+
+.PHONY: generate
+generate: | generate-go generate-migrations pack-migrations vendor
+
+.PHONY: generate-go
+generate-go:
+	GO111MODULE=off $(GOCMD) generate ./...
+
+.PHONY: generate-migrations
+generate-migrations:
+	GO111MODULE=off kallax migrate \
+		--input ./store/models/ \
+		--out ./store/migrations \
+		--name $(MIGRTION_NAME)
+
+
+TOOLS_PATH := $(ROOT_DIR)/$(BUILD_PATH)/tools
+TOOLS_BIN_PATH := $(TOOLS_PATH)/bin
+TOOLS_GOMOD := $(TOOLS_PATH)/go.mod
+
+export PATH := $(PATH):$(TOOLS_BIN_PATH)
+
+# The @echo replaces the commands defined by `Makefile.main::dependencies`
+dependencies:
+	@echo;
+
+$(DEPENDENCIES): $(TOOLS_GOMOD)
+	@echo "installing $@ ..."
+	PACKAGE=`cut -d'@' -f1 <<< '$@'`; \
+	cd $(TOOLS_PATH); \
+	GOBIN=$(TOOLS_BIN_PATH) $(GOCMD) get $@ && \
+	GOBIN=$(TOOLS_BIN_PATH) $(GOCMD) install $${PACKAGE}/...;
+
+$(TOOLS_GOMOD):
+	mkdir -p $(TOOLS_PATH)
+	cd $(TOOLS_PATH) && $(GOCMD) mod init tools
+
+extra_test:
+	$(GOTEST) ./dummy

@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/alcortesm/tgz"
@@ -154,6 +155,9 @@ var fixtures = Fixtures{{
 	Tags:         []string{"thinpack"}, // adds commit on top of spinnaker fixture 06ce06d0fc49646c4de733c45b7788aabad98a6f via a thin pack
 	PackfileHash: plumbing.NewHash("ee4fef0ef8be5053ebae4ce75acf062ddf3031fb"),
 	Head:         plumbing.NewHash("ee372bb08322c1e6e7c6c4f953cc6bf72784e7fb"), // the thin pack adds this commit
+}, {
+	Tags:       []string{"merge-base"},
+	DotGitHash: plumbing.NewHash("26baa505b9f6fb2024b9999c140b75514718c988"),
 }}
 
 func All() Fixtures {
@@ -321,19 +325,51 @@ func Init() error {
 	// And then GOPATH
 	srcs = append(srcs, build.Default.SrcDirs()...)
 
+	fmt.Println("VENDOR")
+	fmt.Println("in vendor")
+	fmt.Println(srcs)
 	for _, src := range srcs {
-		rf := filepath.Join(
-			src, "gopkg.in/src-d/go-git-fixtures.v3",
-		)
-
-		if _, err := os.Stat(rf); err == nil {
+		rf := filepath.Join(src, packagePath)
+		fmt.Println(rf)
+		if _, err := os.Stat(filepath.Join(rf, DataFolder)); err == nil {
 			RootFolder = rf
+			fmt.Println(RootFolder)
 			return nil
 		}
 	}
 
+	fmt.Println("local cache")
+	// Try the modules local cache
+	if dir, err := os.Getwd(); err == nil {
+		fmt.Println(dir)
+		if pkg, err := build.Default.Import(packagePath, dir, build.FindOnly); err == nil {
+			fmt.Println(pkg.Dir, DataFolder)
+			if _, err := os.Stat(filepath.Join(pkg.Dir, DataFolder)); err == nil {
+				RootFolder = pkg.Dir
+				fmt.Println(RootFolder)
+				return nil
+			}
+
+		} else {
+			fmt.Println(err)
+		}
+	}
+
+	fmt.Println("PANIC MODE")
+
+	cachedPath := filepath.Join(build.Default.GOPATH, "pkg/mod", packagePath)
+	// Try the modules local cache
+	fmt.Println(cachedPath)
+	if _, err := os.Stat(filepath.Join(cachedPath, DataFolder)); err == nil {
+		RootFolder = cachedPath
+		fmt.Println(RootFolder)
+		return nil
+	}
+
 	return errors.New("fixtures folder not found")
 }
+
+var packagePath = reflect.TypeOf(Fixture{}).PkgPath()
 
 func vendorDirectories() []string {
 	dir, err := os.Getwd()

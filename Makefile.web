@@ -2,13 +2,19 @@
 
 -include Makefile
 
-# Makefile.main::test -> this::test
-test: web-test
-
-# this::build -> Makefile.main::build -> Makefile.main::$(COMMANDS)
-# The @echo forces this prerequisites to be run before `Makefile.main::build` ones.
-build: web-build web-pack
+# The @echo replaces the commands defined by `Makefile.main::$(COMMANDS)`
+$(COMMANDS):
 	@echo
+
+# The @echo replaces the commands defined by `Makefile.main::dependencies`
+dependencies:
+	@echo
+
+# The @echo replaces the commands defined by `Makefile.main::test`
+test: web-test
+	@echo
+
+build: web-build web-pack
 
 # To be used as -tags
 WITH_STATIC_TAG := with_static

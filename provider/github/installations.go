@@ -11,7 +11,7 @@ import (
 	"github.com/src-d/lookout/util/ctxlog"
 
 	"github.com/bradleyfalzon/ghinstallation"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v24/github"
 	"github.com/gregjones/httpcache"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	githttp "gopkg.in/src-d/go-git.v4/plumbing/transport/http"

@@ -14,26 +14,43 @@ this project follows the following guidelines.
 
 Before submitting a pull request make sure all the generated code changes are also committed.
 
+To do so, you can generate all needed code and then ensure that nothing is pending to be committed running:
+
+```shell
+$ make dependencies
+$ make generate
+$ make no-changes-in-commit
+```
+
+The output of the last command should be empty if there is nothing pending to be committed.
+
+Otherwise you must commit generated code as produced by the following steps:
+
 
 ### kallax
 
 To generate go code from [kallax](https://github.com/src-d/go-kallax) models, run:
 
 ```shell
-$ go generate ./...
+$ make generate-go
 ```
 
 To update embedded migrations with the new files:
 
 ```shell
-$ make dependencies
-$ kallax migrate --input ./store/models/ --out ./store/migrations --name <name>
+$ MIGRTION_NAME=<name> make generate-migrations
 $ make pack-migrations
 ```
 
+where `<name>` is a short and descriptive name of the purpose of the migration; example: `delete_users_table`
+
+
 ### Dependencies
 
-Go dependencies are managed with [dep](https://golang.github.io/dep/). Use `make godep` to make sure the `vendor` directory is up to date, and commit any necessary changes.
+Go dependencies are managed with [go Modules](https://github.com/golang/go/wiki/Modules). Use `make vendor` to make sure the `vendor` directory is up to date, and commit any necessary changes.
+
+In some circumstances `go.sum` and/or `vendor/modules.txt` are not the same locally than
+when generated in the CI. When it happens, just run `make clean` before `make vendor`.
 
 
 ### TOC

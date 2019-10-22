@@ -9,7 +9,7 @@ import (
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/ctxlog"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v24/github"
 	errors "gopkg.in/src-d/go-errors.v1"
 	log "gopkg.in/src-d/go-log.v1"
 )

@@ -7,7 +7,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v24/github"
 	"github.com/src-d/lookout"
 	"github.com/src-d/lookout/util/ctxlog"
 	errors "gopkg.in/src-d/go-errors.v1"
