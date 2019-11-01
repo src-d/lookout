@@ -71,7 +71,7 @@
 
 [[constraint]]
   name = "github.com/sanity-io/litter"
-  revision = "09e3a73d5b65eac2f14578aec8fb74ee9b4f1a5e"
+  version = "^1.2.0"
 
 [[constraint]]
   name = "github.com/bradleyfalzon/ghinstallation"

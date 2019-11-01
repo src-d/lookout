@@ -385,11 +385,12 @@
   version = "v1.6.0"
 
 [[projects]]
-  digest = "1:5cb64ae11c6690416028ba76726f101ffc669cbfacf05cdb5607c52bcfff11a0"
+  digest = "1:d18e718c5421c2219806cee12d9d7f40c57dad1207d6de70402b5f75869f34ff"
   name = "github.com/sanity-io/litter"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "09e3a73d5b65eac2f14578aec8fb74ee9b4f1a5e"
+  revision = "6d3310f9743f04a36bd5c898067ecb80ac3b332b"
+  version = "v1.2.0"
 
 [[projects]]
   branch = "master"
