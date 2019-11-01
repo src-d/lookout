@@ -79,7 +79,7 @@
   version = "v3.3.3"
 
 [[projects]]
-  digest = "1:9de28de6b4453a6a96cdbb16b86d48f2640397e6739ed2d3d7ee5fd55b93d193"
+  digest = "1:a25f6712ab0e2e053ea8a723d345105367bc5a695deeda08d95ef3f30b9d1944"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -89,8 +89,8 @@
     "types",
   ]
   pruneopts = "NUT"
-  revision = "ba06b47c162d49f2af050fb4c75bcbc86a159d5c"
-  version = "v1.2.1"
+  revision = "5628607bb4c51c3157aacc3a50f0ab707582b805"
+  version = "v1.3.1"
 
 [[projects]]
   digest = "1:dba2eb731d0aa85da282a1afa4239603ff164856db8ab7e46c21f8a299255fac"
